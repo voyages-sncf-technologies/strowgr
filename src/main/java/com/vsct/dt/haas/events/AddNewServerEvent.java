@@ -1,5 +1,7 @@
 package com.vsct.dt.haas.events;
 
+import com.vsct.dt.haas.state.Server;
+
 /**
  * Created by william_montaz on 02/02/2016.
  */
@@ -7,17 +9,13 @@ public class AddNewServerEvent {
     private final String application;
     private final String platform;
     private final String backendName;
-    private final String serverName;
-    private final String ip;
-    private final String port;
+    private final Server server;
 
-    public AddNewServerEvent(String application, String platform, String backendName, String serverName, String ip, String port) {
+    public AddNewServerEvent(String application, String platform, String backendName, Server server) {
         this.application = application;
         this.platform = platform;
         this.backendName = backendName;
-        this.serverName = serverName;
-        this.ip = ip;
-        this.port = port;
+        this.server = server;
     }
 
     public String getApplication() {
@@ -32,15 +30,7 @@ public class AddNewServerEvent {
         return backendName;
     }
 
-    public String getServerName() {
-        return serverName;
-    }
-
-    public String getIp() {
-        return ip;
-    }
-
-    public String getPort() {
-        return port;
+    public Server getServer() {
+        return server;
     }
 }
