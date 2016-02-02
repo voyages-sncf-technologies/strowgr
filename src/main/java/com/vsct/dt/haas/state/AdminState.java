@@ -9,6 +9,8 @@ import com.github.mustachejava.MustacheFactory;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.haas.events.*;
 import com.vsct.dt.haas.nsq.AddNewEntryPointPayload;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Base64;
@@ -21,6 +23,8 @@ import java.util.concurrent.TimeoutException;
  * Created by william_montaz on 02/02/2016.
  */
 public class AdminState {
+
+    Logger LOGGER = LoggerFactory.getLogger(AdminState.class);
 
     private static final String HAP_NAME = "default-name";
     ClassLoader classLoader = getClass().getClassLoader();
@@ -62,7 +66,7 @@ public class AdminState {
 
         } else {
             /* TODO, if failed we allow to recreate it */
-            System.out.println("AddNewEntryPoint - ERROR - Already an entrypoint for " + event.getEntryPoint().getApplication() + event.getEntryPoint().getPlatform());
+            LOGGER.error("AddNewEntryPoint - ERROR - Already an entrypoint for " + event.getEntryPoint().getApplication() + event.getEntryPoint().getPlatform());
         }
     }
 
@@ -76,17 +80,17 @@ public class AdminState {
             EntryPoint entryPoint = entryPointOptional.get();
 
             if (entryPoint.getStatus().equals(EntryPointStatus.DEPLOYED)) {
-                System.out.println("EntryPointDeployed - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is already deployed");
+                LOGGER.error("EntryPointDeployed - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is already deployed");
                 return;
             } else if (entryPoint.getStatus().equals(EntryPointStatus.FAILED)) {
-                System.out.println("EntryPointDeployed - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " was failed");
+                LOGGER.error("EntryPointDeployed - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " was failed");
                 return;
             }
 
             this.putEntryPoint(entryPoint.changeStatus(EntryPointStatus.DEPLOYED));
 
         } else {
-            System.out.println("EntryPointDeployed - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
+            LOGGER.error("EntryPointDeployed - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
         }
 
     }
@@ -107,11 +111,11 @@ public class AdminState {
 
 
             } else {
-                System.out.println("AddNewServer - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is not deployed");
+                LOGGER.error("AddNewServer - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is not deployed");
             }
 
         } else {
-            System.out.println("AddNewServer - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
+            LOGGER.error("AddNewServer - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
         }
 
     }
@@ -150,15 +154,15 @@ public class AdminState {
                     }
 
                 } else {
-                    System.out.println("UpdateEntryPoint - INFO - Entrypoint for " + event.getApplication() + event.getPlatform() + " needs no deployment because nothing is pending");
+                    LOGGER.info("UpdateEntryPoint - INFO - Entrypoint for " + event.getApplication() + event.getPlatform() + " needs no deployment because nothing is pending");
                 }
 
             } else {
-                System.out.println("UpdateEntryPoint - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is not deployed");
+                LOGGER.error("UpdateEntryPoint - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is not deployed");
             }
 
         } else {
-            System.out.println("UpdateEntryPoint - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
+            LOGGER.error("UpdateEntryPoint - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
         }
 
     }
@@ -181,13 +185,13 @@ public class AdminState {
                     this.removeCommitingEntryPoint(event.getApplication(), event.getPlatform());
 
                 } else {
-                    System.out.println("CommitedEntryPoint - ERROR - There was no commiting entrypoint for " + event.getApplication() + event.getPlatform());
+                    LOGGER.error("CommitedEntryPoint - ERROR - There was no commiting entrypoint for " + event.getApplication() + event.getPlatform());
                 }
             } else {
-                System.out.println("CommitedEntryPoint - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is not deployed");
+                LOGGER.error("CommitedEntryPoint - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is not deployed");
             }
         } else {
-            System.out.println("CommitedEntryPoint - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
+            LOGGER.error("CommitedEntryPoint - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
         }
 
     }

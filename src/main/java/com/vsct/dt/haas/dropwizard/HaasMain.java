@@ -56,13 +56,9 @@ public class HaasMain extends Application<HaasConfiguration> {
         AdminState adminState = new AdminState();
 
         eventBus.register(adminState);
-        //CatalogService catalogService = new CatalogService(new File(config.getCatalogFile()));
         RestApiResources restApiResource = new RestApiResources(adminState, eventBus);
 
         environment.jersey().register(restApiResource);
-
-   //     environment.healthChecks().register("ping", new PingHealthCheck());
-
 
         //The NSQ Consumers
         NSQLookup lookup = new DefaultNSQLookup();
