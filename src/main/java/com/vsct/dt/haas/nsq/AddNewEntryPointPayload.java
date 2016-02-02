@@ -15,5 +15,5 @@ public class AddNewEntryPointPayload extends Payload {
     public String platform;
 
     @JsonProperty
-    public byte[] conf;
+    public String conf;
 }

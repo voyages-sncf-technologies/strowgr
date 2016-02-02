@@ -31,9 +31,7 @@ public class ScenarioAjoutEntryPoint {
 
     @Test
     public void scenario_add_new_entry_point_when_not_existing(){
-        Haproxy haproxy = new Haproxy("ip_master", "ip_slave");
-
-        AddNewEntryPointEvent addNewEntryPointEvent = new AddNewEntryPointEvent(new EntryPoint(haproxy, "OCE", "REC1", "hapocer1", "54250", ImmutableSet.<Frontend>of(), ImmutableSet.<Backend>of()));
+        AddNewEntryPointEvent addNewEntryPointEvent = new AddNewEntryPointEvent(new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", ImmutableSet.<Frontend>of(), ImmutableSet.<Backend>of()));
 
         assertThat(adminState.getEntryPoint("OCE", "REC1").isPresent()).isFalse();
 
@@ -46,8 +44,7 @@ public class ScenarioAjoutEntryPoint {
 
     @Test
     public void scenario_receive_ep_deployed_event(){
-        Haproxy haproxy = new Haproxy("ip_master", "ip_slave");
-        EntryPoint entryPoint = new EntryPoint(haproxy, "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
 
         adminState.putEntryPoint(entryPoint);
 

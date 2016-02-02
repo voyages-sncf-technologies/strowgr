@@ -1,0 +1,19 @@
+{
+    "haproxy": "default-name",
+    "application": "OCE",
+    "platform": "REC1",
+    "hapUser": "hapocer1",
+    "syslogPort": "33333",
+    "frontends": [
+        {
+            "name": "OCERECWS",
+            "port": "22222"
+        }
+    ],
+    "backends": [
+        {
+            "name": "OCERECWS"
+        }
+    ]
+
+}

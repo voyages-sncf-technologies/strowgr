@@ -1,5 +1,7 @@
 package com.vsct.dt.haas.state;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.HashMap;
@@ -17,7 +19,8 @@ public class Frontend {
 
     private final ImmutableMap<String, String> context;
 
-    public Frontend(String name, String port) {
+    @JsonCreator
+    public Frontend(@JsonProperty("name") String name, @JsonProperty("port") String port) {
         this.name = name;
         this.port = port;
         this.context = ImmutableMap.of();

@@ -1,5 +1,7 @@
 package com.vsct.dt.haas.state;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import sun.security.x509.X509CertInfo;
@@ -14,7 +16,7 @@ public class EntryPoint {
 
     private final EntryPointStatus status;
 
-    private final Haproxy haproxy;
+    private final String haproxy;
 
     private final String application;
     private final String platform;
@@ -27,7 +29,14 @@ public class EntryPoint {
     private final ImmutableSet<Frontend> frontends;
     private final ImmutableSet<Backend> backends;
 
-    public EntryPoint(Haproxy haproxy, String application, String platform, String hapUser, String syslogPort, ImmutableSet<Frontend> frontends, ImmutableSet<Backend> backends) {
+    @JsonCreator
+    public EntryPoint(@JsonProperty("haproxy") String haproxy,
+                      @JsonProperty("application") String application,
+                      @JsonProperty("platform") String platform,
+                      @JsonProperty("hapUser") String hapUser,
+                      @JsonProperty("syslogPort") String syslogPort,
+                      @JsonProperty("frontends") ImmutableSet<Frontend> frontends,
+                      @JsonProperty("backends") ImmutableSet<Backend> backends) {
         this.haproxy = haproxy;
         this.application = application;
         this.platform = platform;
@@ -39,7 +48,7 @@ public class EntryPoint {
         this.context = ImmutableMap.of();
     }
 
-    public EntryPoint(Haproxy haproxy, String application, String platform, String hapUser, String syslogPort, EntryPointStatus status) {
+    public EntryPoint(String haproxy, String application, String platform, String hapUser, String syslogPort, EntryPointStatus status) {
         this.haproxy = haproxy;
         this.application = application;
         this.platform = platform;
@@ -51,7 +60,7 @@ public class EntryPoint {
         this.context = ImmutableMap.of();
     }
 
-    private EntryPoint(Haproxy haproxy, String application, String platform, String hapUser, String syslogPort, EntryPointStatus status, ImmutableSet<Frontend> frontends, ImmutableSet<Backend> backends, ImmutableMap<String, String> context) {
+    private EntryPoint(String haproxy, String application, String platform, String hapUser, String syslogPort, EntryPointStatus status, ImmutableSet<Frontend> frontends, ImmutableSet<Backend> backends, ImmutableMap<String, String> context) {
         this.haproxy = haproxy;
         this.application = application;
         this.platform = platform;

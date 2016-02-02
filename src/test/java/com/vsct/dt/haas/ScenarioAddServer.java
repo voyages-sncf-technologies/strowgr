@@ -33,8 +33,7 @@ public class ScenarioAddServer {
     @Test
     public void scenario_add_new_server_should_add_pending_ep(){
 
-        Haproxy haproxy = new Haproxy("ip_master", "ip_slave");
-        EntryPoint entryPoint = new EntryPoint(haproxy, "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
         adminState.putEntryPoint(entryPoint);
 
         Server server = new Server("instance_name", "server_name", "ip", "port");
@@ -50,8 +49,7 @@ public class ScenarioAddServer {
     @Test
     public void scenario_update_entry_point_should_put_pending_in_commiting(){
 
-        Haproxy haproxy = new Haproxy("ip_master", "ip_slave");
-        EntryPoint entryPoint = new EntryPoint(haproxy, "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
         adminState.putEntryPoint(entryPoint);
         adminState.putPendingEntryPoint(entryPoint);
 
@@ -69,8 +67,7 @@ public class ScenarioAddServer {
 
     @Test
     public void scenario_updated_entry_point_should_remove_from_commiting_and_replace_actual_by_commited(){
-        Haproxy haproxy = new Haproxy("ip_master", "ip_slave");
-        EntryPoint entryPoint = new EntryPoint(haproxy, "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
         adminState.putEntryPoint(entryPoint);
         adminState.putCommitingEntryPoint(entryPoint);
 

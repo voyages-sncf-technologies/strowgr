@@ -15,13 +15,11 @@ import java.util.HashMap;
  */
 public class TemplatingTest {
 
-    Haproxy haproxy = new Haproxy("ip_master", "ip_slave");
-
     @Test
     public void testTemplate() throws IOException {
 
         //Creation de l'entry point
-        EntryPoint entryPoint = new EntryPoint(haproxy, "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
 
         //Ajout d'un frontend
         Frontend frontend = new Frontend("OCEREC1WS", "50200");

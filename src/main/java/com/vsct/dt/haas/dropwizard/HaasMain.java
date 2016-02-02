@@ -62,7 +62,7 @@ public class HaasMain extends Application<HaasConfiguration> {
 
         //The NSQ Consumers
         NSQLookup lookup = new DefaultNSQLookup();
-        lookup.addLookupAddress("floradora", 50160);
+        lookup.addLookupAddress("floradora", 50161);
         NSQConsumer consumer1 = new NSQConsumer(lookup, "entrypoint_deployed_default-name", "admin", (message) -> {
 
             EntryPointDeployedPayload payload = null;

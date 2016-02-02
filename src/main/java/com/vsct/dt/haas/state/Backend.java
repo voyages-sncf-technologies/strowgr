@@ -1,5 +1,7 @@
 package com.vsct.dt.haas.state;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -16,7 +18,8 @@ public class Backend {
     private final ImmutableSet<Server> servers;
     private final ImmutableMap<String, String> context;
 
-    public Backend(String name) {
+    @JsonCreator
+    public Backend(@JsonProperty("name") String name) {
         this.name = name;
         this.servers = ImmutableSet.of();
         this.context = ImmutableMap.of();

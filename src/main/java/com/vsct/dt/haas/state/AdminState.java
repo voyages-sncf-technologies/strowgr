@@ -1,5 +1,6 @@
 package com.vsct.dt.haas.state;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.exceptions.NSQException;
@@ -30,8 +31,11 @@ public class AdminState {
     ClassLoader classLoader = getClass().getClassLoader();
     File file = new File(classLoader.getResource("template.mustache").getFile());
 
+    @JsonProperty
     private Map<String, EntryPoint> entryPoints = new HashMap<>();
+    @JsonProperty
     private Map<String, EntryPoint> pendingEntryPoints = new HashMap<>();
+    @JsonProperty
     private Map<String, EntryPoint> commitingEntryPoints = new HashMap<>();
 
     NSQProducer producer = new NSQProducer().addAddress("floradora", 50150).start();
@@ -60,7 +64,7 @@ public class AdminState {
             AddNewEntryPointPayload addNewEntryPointPayload = new AddNewEntryPointPayload();
             addNewEntryPointPayload.application = event.getEntryPoint().getApplication();
             addNewEntryPointPayload.platform = event.getEntryPoint().getPlatform();
-            addNewEntryPointPayload.conf = Base64.getEncoder().encode(hapconf.getBytes());
+            addNewEntryPointPayload.conf = new String(Base64.getEncoder().encode(hapconf.getBytes()));
 
             producer.produce("new_entrypoint_" + HAP_NAME, objectMapper.writeValueAsBytes(addNewEntryPointPayload));
 
@@ -147,7 +151,7 @@ public class AdminState {
                         AddNewEntryPointPayload addNewEntryPointPayload = new AddNewEntryPointPayload();
                         addNewEntryPointPayload.application = event.getApplication();
                         addNewEntryPointPayload.platform = event.getPlatform();
-                        addNewEntryPointPayload.conf = Base64.getEncoder().encode(hapconf.getBytes());
+                        addNewEntryPointPayload.conf = new String(Base64.getEncoder().encode(hapconf.getBytes()));
 
                         producer.produce("try_update_" + HAP_NAME, objectMapper.writeValueAsBytes(addNewEntryPointPayload));
 
