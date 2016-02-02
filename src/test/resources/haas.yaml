@@ -1,0 +1,4 @@
+server:
+  type: simple
+  rootPath: /api/
+  applicationContextPath: /
