@@ -14,15 +14,14 @@ import javax.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class RestApiResources {
+
+    private final EventBus eventBus;
     private final AdminState adminState;
     Logger LOGGER = LoggerFactory.getLogger(RestApiResources.class);
 
-    private EventBus eventBus;
-
-    public RestApiResources() {
-        eventBus = new EventBus();
-        adminState = new AdminState();
-        eventBus.register(adminState);
+    public RestApiResources(AdminState adminState, EventBus eventBus) {
+        this.eventBus = eventBus;
+        this.adminState = adminState;
     }
 
 
