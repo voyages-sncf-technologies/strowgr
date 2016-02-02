@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"os"
 	"bytes"
-	"encoding/base64"
+//	"encoding/base64"
 )
 
 var (
@@ -19,6 +19,9 @@ var (
 	ip = flag.String("ip", "4.3.2.1", "Node ip address")
 	port = flag.String("port", "58080", "Listen port")
 	lookupd = flag.String("lookupd", "floradora:50161", "NSQ Lookup daemon")
+	pid = flag.String("haproxy-pid", "", "NSQ Lookup daemon")
+	hapHome = flag.String("hap-home", "/HOME/appl/hapadm/", "hap home directory")
+
 	haproxyConf string
 	nodeId string
 	config = nsq.NewConfig()
@@ -28,6 +31,8 @@ type EventMessage struct {
 	Correlationid string
 	Conf          []byte
 	Timestamp     int64
+	Application   string
+	Platform      string
 }
 
 
@@ -79,28 +84,24 @@ func startTryUpdateConsumer() {
 	}
 }
 
+func getArchiveDirectory() string {
+	dir := "version-1"
+	os.MkdirAll(dir, 0755)
+	return dir
+}
+
 func applyConfiguration(newConf []byte) {
+	var archives string = getArchiveDirectory()
 	// /appl/hapadm/DTC/version-1/
-	os.Rename(haproxyConf, "version-1/" + haproxyConf)
+	os.Rename(haproxyConf, archives + "/" + haproxyConf)
 	err := ioutil.WriteFile(haproxyConf, newConf, 0644)
-	if err != nil {
-		log.Fatal(err); return
-	}
+	check(err)
 }
 
 func bodyToDatas(jsonStream []byte) (EventMessage, error) {
-	log.Print("json: %s", jsonStream)
-
 	dec := json.NewDecoder(bytes.NewReader(jsonStream))
 	var message EventMessage
 	dec.Decode(&message)
-	log.Print("%+v", message.Conf)
-
-	decConf, err := base64.StdEncoding.DecodeString(string(message.Conf))
-	check(err)
-	log.Print("%s", decConf)
-	log.Print("%+v", message)
-	//	message.Conf = conf
 	return message, nil
 }
 
