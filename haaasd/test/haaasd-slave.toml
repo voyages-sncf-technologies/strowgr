@@ -1,0 +1,6 @@
+LookupdAddr = 'floradora:50161'
+ClusterId = 'default-name'
+Vip = '127.0.0.1'
+Port = 50001
+HapHome = 'test/hapadm-slave'
+Status = 'slave'
