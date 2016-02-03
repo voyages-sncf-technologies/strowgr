@@ -19,6 +19,7 @@ var (
 	config = nsq.NewConfig()
 	properties haaas.Config
 	daemon *haaas.Daemon
+	producer *nsq.Producer
 )
 
 func main() {
@@ -37,10 +38,12 @@ func main() {
 
 	daemon = haaas.NewDaemon(&properties)
 
-	log.Printf("Starting haaasd for cluster %v", properties.NodeId())
+	log.Printf("Starting haaasd (%s) with id %v", properties.Status, properties.NodeId())
 
 	startTryUpdateConsumer()
 	startUpdateConsumer()
+
+	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
 
 	starRestAPI()
 }
@@ -70,7 +73,7 @@ func startTryUpdateConsumer() {
 			hap := haaas.NewHaproxy(&properties, data.Application, data.Platform)
 			err = hap.ApplyConfiguration(data)
 			if err == nil {
-				publishMessage("update_", data)
+				commitTryUpdate(data)
 			}else {
 				log.Fatal(err)
 			}
@@ -85,6 +88,9 @@ func startTryUpdateConsumer() {
 	}
 }
 
+func commitTryUpdate(data haaas.EventMessage) {
+	publishMessage("update_", data)
+}
 
 func startUpdateConsumer() {
 	updateConsumer, err := nsq.NewConsumer("update_" + properties.ClusterId, properties.NodeId(), config)
@@ -104,8 +110,9 @@ func startUpdateConsumer() {
 
 			hap := haaas.NewHaproxy(&properties, data.Application, data.Platform)
 			err = hap.ApplyConfiguration(data)
+
 			if err == nil {
-				publishMessage("updated_", map[string]string{"application" : data.Application, "platform": data.Platform})
+				commitUpdate(data)
 			}else {
 				log.Fatal(err)
 			}
@@ -120,6 +127,11 @@ func startUpdateConsumer() {
 	}
 }
 
+func commitUpdate(data haaas.EventMessage) {
+	publishMessage("updated_", map[string]string{"application" : data.Application, "platform": data.Platform, "correlationid" : data.Correlationid})
+}
+
+// Unmarshal json to EventMessage
 func bodyToDatas(jsonStream []byte) (haaas.EventMessage, error) {
 	dec := json.NewDecoder(bytes.NewReader(jsonStream))
 	var message haaas.EventMessage
@@ -127,6 +139,9 @@ func bodyToDatas(jsonStream []byte) (haaas.EventMessage, error) {
 	return message, nil
 }
 
+// Start web server
+// endpoints:
+//	/real-ip : get the haaasd ip address as given by the -ip command parameter
 func starRestAPI() {
 	http.HandleFunc("/real-ip", func(writer http.ResponseWriter, request *http.Request) {
 		log.Printf("GET /real-ip")
@@ -139,7 +154,7 @@ func starRestAPI() {
 }
 
 func publishMessage(topic_prefix string, data interface{}) error {
-	producer, _ := nsq.NewProducer("floradora:50150", config)
+//	producer, _ := nsq.NewProducer("floradora:50150", config)
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
 	log.Printf("Publish to %s : %s", topic, jsonMsg)
