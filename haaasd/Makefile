@@ -1,7 +1,8 @@
-.PHONY: all test clean build install
+.PHONY: all test clean build install dist
 
 BUILDDIR=bin
 BINARY=haaasd
+IMAGE=haaasd
 
 VERSION=1.0.0
 
@@ -9,18 +10,19 @@ GOFLAGS ?= $(GOFLAGS:) -a -installsuffix cgo
 
 all: build
 
-build: haaasd.go
-	CGO_ENABLED=0 GOOS=darwin go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-darwin .
-#	CGO_ENABLED=0 GOOS=linux go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux .
+build: cmd/main.go
+	CGO_ENABLED=0 GOOS=darwin go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-darwin ./cmd
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./cmd
+	CGO_ENABLED=0 GOOS=linux GOARCH=386 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux ./cmd
 
 docker-build:
 	docker build -t haaasd-builder -f build.Dockerfile .
 	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin haaasd-builder make
 
-#docker-image: dist
-#	cp Dockerfile dist
-#	docker build -t $(IMAGE) dist
-#
+docker-image: dist
+	cp Dockerfile dist
+	docker build -t $(IMAGE) dist
+
 #docker-push:
 #	docker push $(IMAGE)
 #
@@ -36,10 +38,9 @@ docker-build:
 #logs:
 #	docker-compose -f test.docker-compose.yml  logs
 #
-#dist: ${BUILDDIR}/${BINARY}
-#	rm -fr dist && mkdir dist
-#	cp ${BUILDDIR}/${BINARY} dist
-#	cp -R assets dist/
+dist: ${BUILDDIR}/${BINARY}-linux
+	rm -fr dist && mkdir dist
+	cp ${BUILDDIR}/${BINARY}-linux dist
 
 clean:
-	rm -fr dist
+	rm -fr {dist,bin}
