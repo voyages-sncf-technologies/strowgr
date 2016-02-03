@@ -62,13 +62,33 @@
         <div flex="33">
             <h1>Pending EntryPoints</h1>
             <div flex ng-repeat="entrypoint in entrypoints.pendingEntryPoints">
-                {{entrypoint.application}}/{{entrypoint.platform}}
+                <p class="md-body-1">Status <span class="md-body-2">{{entrypoint.status}}</span></p>
+                <p class="md-body-1">Application <span class="md-body-2">{{entrypoint.application}}</span></p>
+                <p class="md-body-1">Plateforme <span class="md-body-2">{{entrypoint.platform}}</span></p>
+                <p class="md-body-1">HAProxy Cible <span class="md-body-2">{{entrypoint.haproxy}}</span></p>
+                <p class="md-body-1">User HAProxy <span class="md-body-2">{{entrypoint.hapUser}}</span></p>
+                <p class="md-body-1">Port SysLog <span class="md-body-2">{{entrypoint.syslogPort}}</span></p>
+                <p class="md-body-1" ng-repeat="frontend in entrypoint.frontends">Frontend <span class="md-body-2">{{frontend.name}}</span> -> <span class="md-body-2">{{frontend.port}}</span></p>
+                <div ng-repeat="backend in entrypoint.backends" >
+                    <p class="md-body-1" >Backend <span class="md-body-2">{{backend.name}}</span></p>
+                    <p class="md-body-1" ng-repeat="server in backend.servers" style="margin-left: 10px;margin-top: 0px;padding-top: 0px;margin-bottom: 0px;padding-bottom: 0px">Instance <span class="md-body-2">{{server.instanceName}}</span> sur <span class="md-body-2">{{server.name}} ({{server.ip}}:{{server.port}})</span></p>
+                </div>
             </div>
         </div>
         <div flex="33">
             <h1>Commiting EntryPoints</h1>
             <div flex ng-repeat="entrypoint in entrypoints.commitingEntryPoints">
-                {{entrypoint.application}}/{{entrypoint.platform}}
+                <p class="md-body-1">Status <span class="md-body-2">{{entrypoint.status}}</span></p>
+                <p class="md-body-1">Application <span class="md-body-2">{{entrypoint.application}}</span></p>
+                <p class="md-body-1">Plateforme <span class="md-body-2">{{entrypoint.platform}}</span></p>
+                <p class="md-body-1">HAProxy Cible <span class="md-body-2">{{entrypoint.haproxy}}</span></p>
+                <p class="md-body-1">User HAProxy <span class="md-body-2">{{entrypoint.hapUser}}</span></p>
+                <p class="md-body-1">Port SysLog <span class="md-body-2">{{entrypoint.syslogPort}}</span></p>
+                <p class="md-body-1" ng-repeat="frontend in entrypoint.frontends">Frontend <span class="md-body-2">{{frontend.name}}</span> -> <span class="md-body-2">{{frontend.port}}</span></p>
+                <div ng-repeat="backend in entrypoint.backends" >
+                    <p class="md-body-1" >Backend <span class="md-body-2">{{backend.name}}</span></p>
+                    <p class="md-body-1" ng-repeat="server in backend.servers" style="margin-left: 10px;margin-top: 0px;padding-top: 0px;margin-bottom: 0px;padding-bottom: 0px">Instance <span class="md-body-2">{{server.instanceName}}</span> sur <span class="md-body-2">{{server.name}} ({{server.ip}}:{{server.port}})</span></p>
+                </div>
             </div>
         </div>
     </div>
