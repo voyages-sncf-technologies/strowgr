@@ -85,6 +85,17 @@
             <artifactId>angularjs</artifactId>
             <version>1.4.9</version>
         </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>lodash</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>angular-material</artifactId>
+            <version>1.0.4</version>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>

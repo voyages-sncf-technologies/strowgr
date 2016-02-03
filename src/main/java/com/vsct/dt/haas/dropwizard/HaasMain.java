@@ -82,7 +82,7 @@ public class HaasMain extends Application<HaasConfiguration> {
             message.finished();
         });
 
-        NSQConsumer consumer2 = new NSQConsumer(lookup, "new_server_default-name", "admin", (message) -> {
+        NSQConsumer consumer2 = new NSQConsumer(lookup, "newserver", "admin", (message) -> {
 
             NewServerPayload payload = null;
             try {

@@ -30,6 +30,14 @@ public class Frontend {
         return name;
     }
 
+    public String getPort() {
+        return port;
+    }
+
+    public ImmutableMap<String, String> getContext() {
+        return context;
+    }
+
     public Map<String, Object> toMustacheScope(){
         HashMap<String, Object> scope = new HashMap<>();
 

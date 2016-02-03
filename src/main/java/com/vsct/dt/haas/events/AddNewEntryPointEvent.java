@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableSet;
 import com.vsct.dt.haas.state.Backend;
 import com.vsct.dt.haas.state.EntryPoint;
 import com.vsct.dt.haas.state.Frontend;
-import com.vsct.dt.haas.state.Haproxy;
 
 import java.util.HashMap;
 import java.util.HashSet;

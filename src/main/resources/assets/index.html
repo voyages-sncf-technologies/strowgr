@@ -1,38 +1,84 @@
 <!doctype html>
-<html lang="en" ng-app="productCatalogApp">
+<html lang="en" ng-app="admin">
 <head>
     <meta charset="utf-8">
-    <title>Catalogue Produit DT</title>
+    <title>HAAS Admin</title>
 
-    <link rel="stylesheet" href="webjars/angular-material/1.0.0-rc3/angular-material.min.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-          rel="stylesheet">
+    <link rel="stylesheet" href="webjars/angular-material/1.0.4/angular-material.min.css">
 
-    <script src="webjars/angularjs/1.4.8/angular.min.js"></script>
-    <script src="webjars/angularjs/1.4.8/angular-animate.min.js"></script>
-    <script src="webjars/angularjs/1.4.8/angular-aria.min.js"></script>
-    <script src="webjars/angularjs/1.4.8/angular-route.min.js"></script>
-    <script src="webjars/angularjs/1.4.8/angular-animate.min.js"></script>
-    <script src="webjars/angular-material/1.0.0-rc3/angular-material.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular.min.js"></script>
+
+    <script src="webjars/angularjs/1.4.9/angular-animate.min.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular-aria.min.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular-animate.min.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular-messages.min.js"></script>
+
+    <script src="webjars/angular-material/1.0.4/angular-material.js"></script>
 
     <script src="webjars/jquery/3.0.0-alpha1/jquery.min.js"></script>
 
-    <script src="webjars/d3js/3.5.6/d3.min.js"></script>
-
-    <script src="webjars/lodash/3.10.1/lodash.min.js"></script>
-
-    <script src="js/app.js"></script>
-    <script src="js/radarChart.js"></script>
+    <script src="webjars/lodash/4.0.0/lodash.min.js"></script>
 
     <style>
         .layout-margin {
-        margin: 4px;
+            margin: 4px;
         }
     </style>
-</head>
-<body>
 
-HELLO
+    <script type="text/javascript">
+        var admin = angular.module('admin', ['ngMaterial']);
+
+        admin.controller('AdminCtrl', function ($scope, $http) {
+            $http({
+                method: 'GET',
+                url: '/api/infos'
+            }).then(function(response){
+                $scope.entrypoints = response.data;
+            });
+        });
+
+
+    </script>
+</head>
+<body ng-controller="AdminCtrl">
+
+<div layout="row" layout-wrap>
+    <div flex="33">
+        <h1>Current EntryPoints</h1>
+        <div flex ng-repeat="entrypoint in entrypoints.entryPoints">
+            <p>Status {{entrypoint.status}}</p>
+            <p>Application: {{entrypoint.application}}</p>
+            <p>Plateforme: {{entrypoint.platform}}</p>
+            <p>HAProxy Cible: {{entrypoint.haproxy}}</p>
+            <p>User HAProxy: {{entrypoint.hapUser}}</p>
+            <p>Port SysLog: {{entrypoint.syslogPort}}</p>
+            <p>Frontends :</p>
+            <div ng-repeat="frontend in entrypoint.frontends">
+                <p>Nom: {{frontend.name}}</p>
+                <p>Port: {{frontend.port}}</p>
+            </div>
+            <p>Backends :</p>
+            <div ng-repeat="backend in entrypoint.backends">
+                <p>Nom: {{backend.name}}</p>
+                <div ng-repeat="server in backend.servers">
+                    <p>Instance {{server.instanceName}} sur {{server.name}} -> {{server.ip}}:{{server.port}}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div flex="33">
+        <h1>Pending EntryPoints</h1>
+        <div flex ng-repeat="entrypoint in entrypoints.pendingEntryPoints">
+            {{entrypoint.application}}/{{entrypoint.platform}}
+        </div>
+    </div>
+    <div flex="33">
+        <h1>Commiting EntryPoints</h1>
+        <div flex ng-repeat="entrypoint in entrypoints.commitingEntryPoints">
+            {{entrypoint.application}}/{{entrypoint.platform}}
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
