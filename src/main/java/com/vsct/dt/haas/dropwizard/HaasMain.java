@@ -10,7 +10,6 @@ import com.google.common.eventbus.EventBus;
 import com.vsct.dt.haas.dropwizard.resources.RestApiResources;
 import com.vsct.dt.haas.events.AddNewServerEvent;
 import com.vsct.dt.haas.events.CommitedEntryPointEvent;
-import com.vsct.dt.haas.events.EntryPointDeployedEvent;
 import com.vsct.dt.haas.events.UpdateEntryPointEvent;
 import com.vsct.dt.haas.nsq.CommitedEntryPointPayload;
 import com.vsct.dt.haas.nsq.EntryPointDeployedPayload;
@@ -65,24 +64,8 @@ public class HaasMain extends Application<HaasConfiguration> {
         //The NSQ Consumers
         NSQLookup lookup = new DefaultNSQLookup();
         lookup.addLookupAddress("floradora", 50161);
-        NSQConsumer consumer1 = new NSQConsumer(lookup, "entrypoint_deployed_default-name", "admin", (message) -> {
 
-            EntryPointDeployedPayload payload = null;
-            try {
-                payload = objectMapper.readValue(message.getMessage(), EntryPointDeployedPayload.class);
-            } catch (IOException e) {
-                e.printStackTrace();
-                //Avoid republishing message and stop processing
-                message.finished();
-                return;
-            }
-
-            EntryPointDeployedEvent event = new EntryPointDeployedEvent(payload.application, payload.platform);
-            eventBus.post(event);
-            message.finished();
-        });
-
-        NSQConsumer consumer2 = new NSQConsumer(lookup, "newserver", "admin", (message) -> {
+        NSQConsumer consumer1 = new NSQConsumer(lookup, "newserver", "admin", (message) -> {
 
             NewServerPayload payload = null;
             try {
@@ -99,7 +82,7 @@ public class HaasMain extends Application<HaasConfiguration> {
             message.finished();
         });
 
-        NSQConsumer consumer3 = new NSQConsumer(lookup, "updated_default-name", "admin", (message) -> {
+        NSQConsumer consumer2 = new NSQConsumer(lookup, "updated_default-name", "admin", (message) -> {
 
             CommitedEntryPointPayload payload = null;
             try {
@@ -119,7 +102,6 @@ public class HaasMain extends Application<HaasConfiguration> {
 
         consumer1.start();
         consumer2.start();
-        consumer3.start();
 
         Thread autoUpdaterThread = new Thread(new Runnable() {
             @Override

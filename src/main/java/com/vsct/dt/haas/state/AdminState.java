@@ -61,37 +61,11 @@ public class AdminState {
         Optional<EntryPoint> entryPointOptional = this.getEntryPoint(event.getEntryPoint().getApplication(), event.getEntryPoint().getPlatform());
 
         if (!entryPointOptional.isPresent()) {
-            this.putPendingEntryPoint(event.getEntryPoint());
-
+            this.putPendingEntryPoint(event.getEntryPoint()); /* TODO should merge with pending one */
         } else {
             /* TODO, if failed we allow to recreate it */
             LOGGER.error("AddNewEntryPoint - ERROR - Already an entrypoint for " + event.getEntryPoint().getApplication() + event.getEntryPoint().getPlatform());
         }
-    }
-
-    @Subscribe
-    public void entryPointDeployed(EntryPointDeployedEvent event) {
-
-        Optional<EntryPoint> entryPointOptional = this.getEntryPoint(event.getApplication(), event.getPlatform());
-
-        if (entryPointOptional.isPresent()) {
-
-            EntryPoint entryPoint = entryPointOptional.get();
-
-            if (entryPoint.getStatus().equals(EntryPointStatus.DEPLOYED)) {
-                LOGGER.error("EntryPointDeployed - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is already deployed");
-                return;
-            } else if (entryPoint.getStatus().equals(EntryPointStatus.FAILED)) {
-                LOGGER.error("EntryPointDeployed - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " was failed");
-                return;
-            }
-
-            this.putEntryPoint(entryPoint.changeStatus(EntryPointStatus.DEPLOYED));
-
-        } else {
-            LOGGER.error("EntryPointDeployed - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
-        }
-
     }
 
     @Subscribe

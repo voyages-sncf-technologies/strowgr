@@ -14,8 +14,6 @@ import java.util.stream.Collectors;
  */
 public class EntryPoint {
 
-    private final EntryPointStatus status;
-
     private final String haproxy;
 
     private final String application;
@@ -42,31 +40,28 @@ public class EntryPoint {
         this.platform = platform;
         this.hapUser = hapUser;
         this.syslogPort = syslogPort;
-        this.status = EntryPointStatus.DEPLOYING;
         this.frontends = frontends;
         this.backends = backends;
         this.context = ImmutableMap.of();
     }
 
-    public EntryPoint(String haproxy, String application, String platform, String hapUser, String syslogPort, EntryPointStatus status) {
+    public EntryPoint(String haproxy, String application, String platform, String hapUser, String syslogPort) {
         this.haproxy = haproxy;
         this.application = application;
         this.platform = platform;
         this.hapUser = hapUser;
         this.syslogPort = syslogPort;
-        this.status = status;
         this.frontends = ImmutableSet.of();
         this.backends = ImmutableSet.of();
         this.context = ImmutableMap.of();
     }
 
-    private EntryPoint(String haproxy, String application, String platform, String hapUser, String syslogPort, EntryPointStatus status, ImmutableSet<Frontend> frontends, ImmutableSet<Backend> backends, ImmutableMap<String, String> context) {
+    private EntryPoint(String haproxy, String application, String platform, String hapUser, String syslogPort, ImmutableSet<Frontend> frontends, ImmutableSet<Backend> backends, ImmutableMap<String, String> context) {
         this.haproxy = haproxy;
         this.application = application;
         this.platform = platform;
         this.hapUser = hapUser;
         this.syslogPort = syslogPort;
-        this.status = status;
         this.frontends = frontends;
         this.backends = backends;
         this.context = context;
@@ -74,12 +69,12 @@ public class EntryPoint {
 
     public EntryPoint addFrontend(Frontend frontend) {
         ImmutableSet<Frontend> frontends = ImmutableSet.<Frontend>builder().add(frontend).addAll(this.frontends).build();
-        return new EntryPoint(this.haproxy, this.application, this.platform, this.hapUser, this.syslogPort, this.status, frontends, this.backends, this.context);
+        return new EntryPoint(this.haproxy, this.application, this.platform, this.hapUser, this.syslogPort, frontends, this.backends, this.context);
     }
 
     public EntryPoint addBackend(Backend backend) {
         ImmutableSet<Backend> backends = ImmutableSet.<Backend>builder().add(backend).addAll(this.backends).build();
-        return new EntryPoint(this.haproxy, this.application, this.platform, this.hapUser, this.syslogPort, this.status, this.frontends, backends, this.context);
+        return new EntryPoint(this.haproxy, this.application, this.platform, this.hapUser, this.syslogPort, this.frontends, backends, this.context);
     }
 
     public Optional<Backend> getBackend(String name) {
@@ -107,10 +102,6 @@ public class EntryPoint {
         return syslogPort;
     }
 
-    public EntryPointStatus getStatus() {
-        return status;
-    }
-
     public String getHaproxy() {
         return haproxy;
     }
@@ -125,10 +116,6 @@ public class EntryPoint {
 
     public ImmutableSet<Backend> getBackends() {
         return backends;
-    }
-
-    public EntryPoint changeStatus(EntryPointStatus status) {
-        return new EntryPoint(this.haproxy, this.application, this.platform, this.hapUser, this.syslogPort, status, this.frontends, this.backends, this.context);
     }
 
     public EntryPoint addServer(String backendName, Server server) {
@@ -175,7 +162,6 @@ public class EntryPoint {
         if (hapUser != null ? !hapUser.equals(that.hapUser) : that.hapUser != null) return false;
         if (haproxy != null ? !haproxy.equals(that.haproxy) : that.haproxy != null) return false;
         if (platform != null ? !platform.equals(that.platform) : that.platform != null) return false;
-        if (status != that.status) return false;
         if (syslogPort != null ? !syslogPort.equals(that.syslogPort) : that.syslogPort != null) return false;
 
         return true;
@@ -183,8 +169,7 @@ public class EntryPoint {
 
     @Override
     public int hashCode() {
-        int result = status != null ? status.hashCode() : 0;
-        result = 31 * result + (haproxy != null ? haproxy.hashCode() : 0);
+        int result = haproxy != null ? haproxy.hashCode() : 0;
         result = 31 * result + (application != null ? application.hashCode() : 0);
         result = 31 * result + (platform != null ? platform.hashCode() : 0);
         result = 31 * result + (hapUser != null ? hapUser.hashCode() : 0);

@@ -37,39 +37,21 @@ public class ScenarioAjoutEntryPoint {
 
         eventBus.post(addNewEntryPointEvent);
 
-        Optional<EntryPoint> ep = adminState.getEntryPoint("OCE", "REC1");
+        Optional<EntryPoint> ep = adminState.getPendingEntryPoint("OCE", "REC1");
         assertThat(ep.isPresent()).isTrue();
-        assertThat(ep.get().getStatus().equals(EntryPointStatus.DEPLOYING));
     }
 
     @Test
     public void add_new_entry_point_logs_when_existing(){
-        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250");
         adminState.putEntryPoint(entryPoint);
 
         AddNewEntryPointEvent addNewEntryPointEvent = new AddNewEntryPointEvent(new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", ImmutableSet.<Frontend>of(), ImmutableSet.<Backend>of()));
 
         eventBus.post(addNewEntryPointEvent);
 
-        Optional<EntryPoint> ep = adminState.getEntryPoint("OCE", "REC1");
-        assertThat(ep.isPresent()).isTrue();
-        assertThat(ep.get().getStatus().equals(EntryPointStatus.DEPLOYING));
+        Optional<EntryPoint> ep = adminState.getPendingEntryPoint("OCE", "REC1");
+        assertThat(ep.isPresent()).isFalse();
     }
-
-    @Test
-    public void scenario_receive_ep_deployed_event(){
-        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
-
-        adminState.putEntryPoint(entryPoint);
-
-        EntryPointDeployedEvent entryPointDeployedEvent = new EntryPointDeployedEvent("OCE", "REC1");
-        eventBus.post(entryPointDeployedEvent);
-
-        Optional<EntryPoint> ep = adminState.getEntryPoint("OCE", "REC1");
-        assertThat(ep.isPresent()).isTrue();
-        assertThat(ep.get().getStatus()).isEqualTo(EntryPointStatus.DEPLOYED);
-    }
-
-
 
 }

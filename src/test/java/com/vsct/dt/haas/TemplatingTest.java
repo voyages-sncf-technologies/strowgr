@@ -19,7 +19,7 @@ public class TemplatingTest {
     public void testTemplate() throws IOException {
 
         //Creation de l'entry point
-        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250");
 
         //Ajout d'un frontend
         Frontend frontend = new Frontend("OCEREC1WS", "50200");

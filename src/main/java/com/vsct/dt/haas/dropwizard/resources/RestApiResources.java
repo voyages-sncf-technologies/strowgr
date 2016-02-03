@@ -62,14 +62,6 @@ public class RestApiResources {
     }
 
     @GET
-    @Path("/ep-deployed")
-    public StringResponse epDeployed(@QueryParam("application") String application, @QueryParam("platform") String platform){
-        EntryPointDeployedEvent event = new EntryPointDeployedEvent(application, platform);
-        eventBus.post(event);
-        return new StringResponse("Request posted, look info to follow actions");
-    }
-
-    @GET
     @Path("/add-new-server")
     public StringResponse addNewServer(@QueryParam("application") String application,
                                @QueryParam("platform") String platform,

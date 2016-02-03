@@ -1,5 +1,6 @@
 package com.vsct.dt.haas;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.vsct.dt.haas.events.AddNewEntryPointEvent;
 import com.vsct.dt.haas.events.AddNewServerEvent;
@@ -33,7 +34,9 @@ public class ScenarioAddServer {
     @Test
     public void scenario_add_new_server_should_add_pending_ep_when_ep_is_deployed(){
 
-        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
+        Backend backend = new Backend("BACKEND");
+
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", ImmutableSet.<Frontend>of(), ImmutableSet.<Backend>of(backend));
         adminState.putEntryPoint(entryPoint);
 
         Server server = new Server("instance_name", "server_name", "ip", "port");
@@ -49,7 +52,7 @@ public class ScenarioAddServer {
     @Test
     public void scenario_add_new_server_should_do_nothing_when_ep_is_not_deployed(){
 
-        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250");
         adminState.putEntryPoint(entryPoint);
 
         Server server = new Server("instance_name", "server_name", "ip", "port");
@@ -64,8 +67,7 @@ public class ScenarioAddServer {
 
     @Test
     public void scenario_update_entry_point_should_put_pending_in_commiting(){
-
-        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250");
         adminState.putEntryPoint(entryPoint);
         adminState.putPendingEntryPoint(entryPoint);
 
@@ -78,12 +80,11 @@ public class ScenarioAddServer {
 
         ep = adminState.getCommitingEntryPoint("OCE", "REC1");
         assertThat(ep.isPresent()).isTrue();
-
     }
 
     @Test
     public void scenario_updated_entry_point_should_remove_from_commiting_and_replace_actual_by_commited(){
-        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250");
         adminState.putEntryPoint(entryPoint);
         adminState.putCommitingEntryPoint(entryPoint);
 
@@ -93,7 +94,6 @@ public class ScenarioAddServer {
 
         Optional<EntryPoint> ep = adminState.getCommitingEntryPoint("OCE", "REC1");
         assertThat(ep.isPresent()).isFalse();
-
     }
 
 
