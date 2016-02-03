@@ -7,7 +7,7 @@
     "frontends": [
         {
             "name":"OCEREC1WS",
-            "port":"22222"
+            "port":"54000"
         }
     ],
     "backends":[

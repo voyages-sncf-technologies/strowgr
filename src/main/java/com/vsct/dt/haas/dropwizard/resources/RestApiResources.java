@@ -4,6 +4,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.EventBus;
+import com.vsct.dt.haas.dropwizard.StringResponse;
 import com.vsct.dt.haas.events.*;
 import com.vsct.dt.haas.state.AdminState;
 import com.vsct.dt.haas.state.EntryPoint;
@@ -34,13 +35,13 @@ public class RestApiResources {
     @POST
     @Path("/entrypoint")
     @Timed
-    public String addEntryPoint(EntryPoint entryPoint) {
+    public StringResponse addEntryPoint(EntryPoint entryPoint) {
         LOGGER.info("Get all criteria");
 
         AddNewEntryPointEvent event = new AddNewEntryPointEvent(entryPoint);
         eventBus.post(event);
 
-        return "Request posted, look info to follow actions";
+        return new StringResponse("Request posted, look info to follow actions");
     }
 
     @GET
@@ -54,23 +55,23 @@ public class RestApiResources {
     /* DEBUGGING METHODS */
     @GET
     @Path("/reload")
-    public String reload(@QueryParam("application") String application, @QueryParam("platform") String platform) {
+    public StringResponse reload(@QueryParam("application") String application, @QueryParam("platform") String platform) {
         UpdateEntryPointEvent event = new UpdateEntryPointEvent(application, platform);
         eventBus.post(event);
-        return "Request posted, look info to follow actions";
+        return new StringResponse("Request posted, look info to follow actions");
     }
 
     @GET
     @Path("/ep-deployed")
-    public String epDeployed(@QueryParam("application") String application, @QueryParam("platform") String platform){
+    public StringResponse epDeployed(@QueryParam("application") String application, @QueryParam("platform") String platform){
         EntryPointDeployedEvent event = new EntryPointDeployedEvent(application, platform);
         eventBus.post(event);
-        return "Request posted, look info to follow actions";
+        return new StringResponse("Request posted, look info to follow actions");
     }
 
     @GET
     @Path("/add-new-server")
-    public String addNewServer(@QueryParam("application") String application,
+    public StringResponse addNewServer(@QueryParam("application") String application,
                                @QueryParam("platform") String platform,
                                @QueryParam("backend") String backend,
                                @QueryParam("instanceName") String instanceName,
@@ -79,15 +80,15 @@ public class RestApiResources {
                                @QueryParam("port") String port){
         AddNewServerEvent event = new AddNewServerEvent(application, platform, backend, new Server(instanceName, name, ip, port));
         eventBus.post(event);
-        return "Request posted, look info to follow actions";
+        return new StringResponse("Request posted, look info to follow actions");
     }
 
     @GET
     @Path("/ep-updated")
-    public String epUpdated(@QueryParam("application") String application, @QueryParam("platform") String platform){
+    public StringResponse epUpdated(@QueryParam("application") String application, @QueryParam("platform") String platform){
         CommitedEntryPointEvent event = new CommitedEntryPointEvent(application, platform);
         eventBus.post(event);
-        return "Request posted, look info to follow actions";
+        return new StringResponse("Request posted, look info to follow actions");
     }
 
 
