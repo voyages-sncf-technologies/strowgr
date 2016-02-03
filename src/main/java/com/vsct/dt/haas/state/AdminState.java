@@ -53,7 +53,7 @@ public class AdminState {
 
     @JsonIgnore
     public Collection<EntryPoint> getAllEntryPoints() {
-        return this.entryPoints.values();
+        return this.pendingEntryPoints.values();
     }
 
     @Subscribe
@@ -61,15 +61,7 @@ public class AdminState {
         Optional<EntryPoint> entryPointOptional = this.getEntryPoint(event.getEntryPoint().getApplication(), event.getEntryPoint().getPlatform());
 
         if (!entryPointOptional.isPresent()) {
-            this.putEntryPoint(event.getEntryPoint());
-
-            String hapconf = generateTemplate(event.getEntryPoint());
-            AddNewEntryPointPayload addNewEntryPointPayload = new AddNewEntryPointPayload();
-            addNewEntryPointPayload.application = event.getEntryPoint().getApplication();
-            addNewEntryPointPayload.platform = event.getEntryPoint().getPlatform();
-            addNewEntryPointPayload.conf = new String(Base64.getEncoder().encode(hapconf.getBytes()));
-
-            producer.produce("new_entrypoint_" + HAP_NAME, objectMapper.writeValueAsBytes(addNewEntryPointPayload));
+            this.putPendingEntryPoint(event.getEntryPoint());
 
         } else {
             /* TODO, if failed we allow to recreate it */
@@ -109,21 +101,15 @@ public class AdminState {
         if (entryPointOptional.isPresent()) {
 
             EntryPoint entryPoint = entryPointOptional.get();
-            if (entryPoint.getStatus().equals(EntryPointStatus.DEPLOYED)) {
 
-                EntryPoint pendingEntryPoint = getPendingEntryPoint(event.getApplication(), event.getPlatform())
-                        .map(ep -> ep.addServer(event.getBackendName(), event.getServer())) /* TODO Implement merging strategy, for now, we just replace the server, not working with context provided by user */
-                        .orElse(
-                                getCommitingEntryPoint(event.getApplication(), event.getPlatform())
-                                        .map(ep -> ep.addServer(event.getBackendName(), event.getServer()))
-                                        .orElse(entryPoint.addServer(event.getBackendName(), event.getServer()))
-                        );
-                this.putPendingEntryPoint(pendingEntryPoint);
-
-
-            } else {
-                LOGGER.error("AddNewServer - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is not deployed");
-            }
+            EntryPoint pendingEntryPoint = getPendingEntryPoint(event.getApplication(), event.getPlatform())
+                    .map(ep -> ep.addServer(event.getBackendName(), event.getServer())) /* TODO Implement merging strategy, for now, we just replace the server, not working with context provided by user */
+                    .orElse(
+                            getCommitingEntryPoint(event.getApplication(), event.getPlatform())
+                                    .map(ep -> ep.addServer(event.getBackendName(), event.getServer()))
+                                    .orElse(entryPoint.addServer(event.getBackendName(), event.getServer()))
+                    );
+            this.putPendingEntryPoint(pendingEntryPoint);
 
         } else {
             LOGGER.error("AddNewServer - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
@@ -133,12 +119,6 @@ public class AdminState {
 
     @Subscribe
     public void updateEntryPoint(UpdateEntryPointEvent event) throws IOException, NSQException, TimeoutException {
-
-        Optional<EntryPoint> entryPointOptional = this.getEntryPoint(event.getApplication(), event.getPlatform());
-        if (entryPointOptional.isPresent()) {
-
-            EntryPoint entryPoint = entryPointOptional.get();
-            if (entryPoint.getStatus().equals(EntryPointStatus.DEPLOYED)) {
 
                 Optional<EntryPoint> pendingEntryPoint = getPendingEntryPoint(event.getApplication(), event.getPlatform());
                 if (pendingEntryPoint.isPresent()) {
@@ -168,24 +148,10 @@ public class AdminState {
                     LOGGER.info("UpdateEntryPoint - INFO - Entrypoint for " + event.getApplication() + event.getPlatform() + " needs no deployment because nothing is pending");
                 }
 
-            } else {
-                LOGGER.error("UpdateEntryPoint - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is not deployed");
-            }
-
-        } else {
-            LOGGER.error("UpdateEntryPoint - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
-        }
-
     }
 
     @Subscribe
     public void commitedEntryPoint(CommitedEntryPointEvent event) {
-
-        Optional<EntryPoint> entryPointOptional = this.getEntryPoint(event.getApplication(), event.getPlatform());
-        if (entryPointOptional.isPresent()) {
-
-            EntryPoint entryPoint = entryPointOptional.get();
-            if (entryPoint.getStatus().equals(EntryPointStatus.DEPLOYED)) {
 
                 Optional<EntryPoint> commitingEntryPointOptional = getCommitingEntryPoint(event.getApplication(), event.getPlatform());
                 if (commitingEntryPointOptional.isPresent()) {
@@ -199,12 +165,6 @@ public class AdminState {
                 } else {
                     LOGGER.error("CommitedEntryPoint - ERROR - There was no commiting entrypoint for " + event.getApplication() + event.getPlatform());
                 }
-            } else {
-                LOGGER.error("CommitedEntryPoint - ERROR - Entrypoint for " + event.getApplication() + event.getPlatform() + " is not deployed");
-            }
-        } else {
-            LOGGER.error("CommitedEntryPoint - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
-        }
 
     }
 

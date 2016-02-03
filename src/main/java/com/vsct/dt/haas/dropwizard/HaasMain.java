@@ -99,7 +99,7 @@ public class HaasMain extends Application<HaasConfiguration> {
             message.finished();
         });
 
-        NSQConsumer consumer3 = new NSQConsumer(lookup, "updated_entrypoint_default-name", "admin", (message) -> {
+        NSQConsumer consumer3 = new NSQConsumer(lookup, "updated_default-name", "admin", (message) -> {
 
             CommitedEntryPointPayload payload = null;
             try {
@@ -126,7 +126,7 @@ public class HaasMain extends Application<HaasConfiguration> {
             public void run() {
                 for(;;){
                     try {
-                        Thread.sleep(30000);
+                        Thread.sleep(10000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         return;
