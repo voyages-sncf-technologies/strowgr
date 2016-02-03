@@ -38,6 +38,22 @@ public class Server {
         return name;
     }
 
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    public ImmutableMap<String, String> getContext() {
+        return context;
+    }
+
     public Map<String, Object> toMustacheScope(){
         HashMap<String, Object> scope = new HashMap<>();
 

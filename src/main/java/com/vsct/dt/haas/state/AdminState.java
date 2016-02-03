@@ -1,5 +1,6 @@
 package com.vsct.dt.haas.state;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQProducer;
@@ -14,10 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -51,6 +49,11 @@ public class AdminState {
 
         mustache.execute(writer, scope);
         return writer.toString();
+    }
+
+    @JsonIgnore
+    public Collection<EntryPoint> getAllEntryPoints() {
+        return this.entryPoints.values();
     }
 
     @Subscribe
@@ -110,7 +113,11 @@ public class AdminState {
 
                 EntryPoint pendingEntryPoint = getPendingEntryPoint(event.getApplication(), event.getPlatform())
                         .map(ep -> ep.addServer(event.getBackendName(), event.getServer())) /* TODO Implement merging strategy, for now, we just replace the server, not working with context provided by user */
-                        .orElse(entryPoint);
+                        .orElse(
+                                getCommitingEntryPoint(event.getApplication(), event.getPlatform())
+                                        .map(ep -> ep.addServer(event.getBackendName(), event.getServer()))
+                                        .orElse(entryPoint.addServer(event.getBackendName(), event.getServer()))
+                        );
                 this.putPendingEntryPoint(pendingEntryPoint);
 
 
@@ -138,7 +145,7 @@ public class AdminState {
 
                     Optional<EntryPoint> commitingEntryPointOptional = getCommitingEntryPoint(event.getApplication(), event.getPlatform());
                     if (commitingEntryPointOptional.isPresent()) {
-                        System.out.println("UpdateEntryPoint - INFO - Entrypoint for " + event.getApplication() + event.getPlatform() + " needs no deployment because it is already commiting");
+                        LOGGER.info("UpdateEntryPoint - INFO - Entrypoint for " + event.getApplication() + event.getPlatform() + " needs no deployment because it is already commiting");
                     } else {
 
                         EntryPoint commitingEntryPoint = pendingEntryPoint.get();
@@ -171,7 +178,8 @@ public class AdminState {
 
     }
 
-    @Subscribe public void commitedEntryPoint(CommitedEntryPointEvent event){
+    @Subscribe
+    public void commitedEntryPoint(CommitedEntryPointEvent event) {
 
         Optional<EntryPoint> entryPointOptional = this.getEntryPoint(event.getApplication(), event.getPlatform());
         if (entryPointOptional.isPresent()) {
@@ -180,7 +188,7 @@ public class AdminState {
             if (entryPoint.getStatus().equals(EntryPointStatus.DEPLOYED)) {
 
                 Optional<EntryPoint> commitingEntryPointOptional = getCommitingEntryPoint(event.getApplication(), event.getPlatform());
-                if(commitingEntryPointOptional.isPresent()){
+                if (commitingEntryPointOptional.isPresent()) {
 
                     EntryPoint commitingEntryPoint = commitingEntryPointOptional.get();
 

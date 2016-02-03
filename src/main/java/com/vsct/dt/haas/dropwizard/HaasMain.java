@@ -11,10 +11,12 @@ import com.vsct.dt.haas.dropwizard.resources.RestApiResources;
 import com.vsct.dt.haas.events.AddNewServerEvent;
 import com.vsct.dt.haas.events.CommitedEntryPointEvent;
 import com.vsct.dt.haas.events.EntryPointDeployedEvent;
+import com.vsct.dt.haas.events.UpdateEntryPointEvent;
 import com.vsct.dt.haas.nsq.CommitedEntryPointPayload;
 import com.vsct.dt.haas.nsq.EntryPointDeployedPayload;
 import com.vsct.dt.haas.nsq.NewServerPayload;
 import com.vsct.dt.haas.state.AdminState;
+import com.vsct.dt.haas.state.EntryPoint;
 import com.vsct.dt.haas.state.Server;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
@@ -70,10 +72,14 @@ public class HaasMain extends Application<HaasConfiguration> {
                 payload = objectMapper.readValue(message.getMessage(), EntryPointDeployedPayload.class);
             } catch (IOException e) {
                 e.printStackTrace();
+                //Avoid republishing message and stop processing
+                message.finished();
+                return;
             }
 
             EntryPointDeployedEvent event = new EntryPointDeployedEvent(payload.application, payload.platform);
             eventBus.post(event);
+            message.finished();
         });
 
         NSQConsumer consumer2 = new NSQConsumer(lookup, "new_server_default-name", "admin", (message) -> {
@@ -83,10 +89,14 @@ public class HaasMain extends Application<HaasConfiguration> {
                 payload = objectMapper.readValue(message.getMessage(), NewServerPayload.class);
             } catch (IOException e) {
                 e.printStackTrace();
+                //Avoid republishing message and stop processing
+                message.finished();
+                return;
             }
 
             AddNewServerEvent event = new AddNewServerEvent(payload.application, payload.platform, payload.backend, new Server(payload.instanceName, payload.name, payload.ip, payload.port));
             eventBus.post(event);
+            message.finished();
         });
 
         NSQConsumer consumer3 = new NSQConsumer(lookup, "updated_entrypoint_default-name", "admin", (message) -> {
@@ -96,15 +106,39 @@ public class HaasMain extends Application<HaasConfiguration> {
                 payload = objectMapper.readValue(message.getMessage(), CommitedEntryPointPayload.class);
             } catch (IOException e) {
                 e.printStackTrace();
+                //Avoid republishing message and stop processing
+                message.finished();
+                return;
             }
 
             CommitedEntryPointEvent event = new CommitedEntryPointEvent(payload.application, payload.platform);
             eventBus.post(event);
+            message.finished();
+
         });
 
         consumer1.start();
         consumer2.start();
         consumer3.start();
+
+        Thread autoUpdaterThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for(;;){
+                    try {
+                        Thread.sleep(30000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        return;
+                    }
+                    for(EntryPoint ep: adminState.getAllEntryPoints()) {
+                        eventBus.post(new UpdateEntryPointEvent(ep.getApplication(), ep.getPlatform()));
+                    }
+                }
+            }
+        });
+        autoUpdaterThread.setDaemon(true);
+        autoUpdaterThread.start();
 
     }
 

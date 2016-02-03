@@ -111,6 +111,22 @@ public class EntryPoint {
         return status;
     }
 
+    public String getHaproxy() {
+        return haproxy;
+    }
+
+    public ImmutableMap<String, String> getContext() {
+        return context;
+    }
+
+    public ImmutableSet<Frontend> getFrontends() {
+        return frontends;
+    }
+
+    public ImmutableSet<Backend> getBackends() {
+        return backends;
+    }
+
     public EntryPoint changeStatus(EntryPointStatus status) {
         return new EntryPoint(this.haproxy, this.application, this.platform, this.hapUser, this.syslogPort, status, this.frontends, this.backends, this.context);
     }

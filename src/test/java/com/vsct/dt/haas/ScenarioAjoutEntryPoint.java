@@ -30,10 +30,24 @@ public class ScenarioAjoutEntryPoint {
     }
 
     @Test
-    public void scenario_add_new_entry_point_when_not_existing(){
+    public void add_new_entry_point_when_not_existing(){
         AddNewEntryPointEvent addNewEntryPointEvent = new AddNewEntryPointEvent(new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", ImmutableSet.<Frontend>of(), ImmutableSet.<Backend>of()));
 
         assertThat(adminState.getEntryPoint("OCE", "REC1").isPresent()).isFalse();
+
+        eventBus.post(addNewEntryPointEvent);
+
+        Optional<EntryPoint> ep = adminState.getEntryPoint("OCE", "REC1");
+        assertThat(ep.isPresent()).isTrue();
+        assertThat(ep.get().getStatus().equals(EntryPointStatus.DEPLOYING));
+    }
+
+    @Test
+    public void add_new_entry_point_logs_when_existing(){
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
+        adminState.putEntryPoint(entryPoint);
+
+        AddNewEntryPointEvent addNewEntryPointEvent = new AddNewEntryPointEvent(new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", ImmutableSet.<Frontend>of(), ImmutableSet.<Backend>of()));
 
         eventBus.post(addNewEntryPointEvent);
 

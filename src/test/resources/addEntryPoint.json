@@ -6,13 +6,13 @@
     "syslogPort": "33333",
     "frontends": [
         {
-            "name": "OCERECWS",
-            "port": "22222"
+            "name":"OCEREC1WS",
+            "port":"22222"
         }
     ],
-    "backends": [
+    "backends":[
         {
-            "name": "OCERECWS"
+            "name":"OCEREC1WS"
         }
     ]
 

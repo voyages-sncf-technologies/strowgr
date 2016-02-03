@@ -3,4 +3,4 @@ server:
   rootPath: /api/
   applicationContextPath: /
 logging:
-  level: DEBUG
+  level: INFO

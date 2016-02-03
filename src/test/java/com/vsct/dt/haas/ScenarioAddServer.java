@@ -31,7 +31,7 @@ public class ScenarioAddServer {
     }
 
     @Test
-    public void scenario_add_new_server_should_add_pending_ep(){
+    public void scenario_add_new_server_should_add_pending_ep_when_ep_is_deployed(){
 
         EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYED);
         adminState.putEntryPoint(entryPoint);
@@ -44,6 +44,22 @@ public class ScenarioAddServer {
 
         Optional<EntryPoint> ep = adminState.getPendingEntryPoint("OCE", "REC1");
         assertThat(ep.isPresent()).isTrue();
+    }
+
+    @Test
+    public void scenario_add_new_server_should_do_nothing_when_ep_is_not_deployed(){
+
+        EntryPoint entryPoint = new EntryPoint("default-name", "OCE", "REC1", "hapocer1", "54250", EntryPointStatus.DEPLOYING);
+        adminState.putEntryPoint(entryPoint);
+
+        Server server = new Server("instance_name", "server_name", "ip", "port");
+
+        AddNewServerEvent addNewServerEvent = new AddNewServerEvent("OCE", "REC1", "BACKEND", server);
+
+        eventBus.post(addNewServerEvent);
+
+        Optional<EntryPoint> ep = adminState.getPendingEntryPoint("OCE", "REC1");
+        assertThat(ep.isPresent()).isFalse();
     }
 
     @Test

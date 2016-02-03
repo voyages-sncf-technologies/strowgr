@@ -35,6 +35,14 @@ public class Backend {
         return name;
     }
 
+    public ImmutableSet<Server> getServers() {
+        return servers;
+    }
+
+    public ImmutableMap<String, String> getContext() {
+        return context;
+    }
+
     public Backend addServer(Server server) {
         ImmutableSet<Server> servers = ImmutableSet.<Server>builder().add(server).addAll(this.servers).build();
         return new Backend(this.name, servers, context);

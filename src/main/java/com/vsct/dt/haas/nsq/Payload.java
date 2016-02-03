@@ -11,6 +11,6 @@ public class Payload {
     public long timestamp = System.currentTimeMillis();
 
     @JsonProperty
-    public long correlationid = System.currentTimeMillis();
+    public String correlationid = Long.toString(System.currentTimeMillis());
 
 }
