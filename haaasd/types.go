@@ -1,13 +1,14 @@
 package haaas
 
 type Config struct {
-	LookupdAddr string
-	ClusterId   string
-	Vip         string
-	Port        int32
-	HapHome     string
-	IpAddr      string
-	Status      string
+	LookupdAddr  string
+	ProducerAddr string
+	ClusterId    string
+	Vip          string
+	Port         int32
+	HapHome      string
+	IpAddr       string
+	Status       string
 }
 
 func (config *Config) NodeId() string {
