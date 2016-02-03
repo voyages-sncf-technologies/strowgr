@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.haas.events.AddNewEntryPointEvent;
-import com.vsct.dt.haas.events.EntryPointDeployedEvent;
 import com.vsct.dt.haas.state.*;
 import org.junit.Before;
 import org.junit.Test;

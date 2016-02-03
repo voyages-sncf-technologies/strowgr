@@ -9,7 +9,10 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.common.eventbus.Subscribe;
-import com.vsct.dt.haas.events.*;
+import com.vsct.dt.haas.events.AddNewEntryPointEvent;
+import com.vsct.dt.haas.events.AddNewServerEvent;
+import com.vsct.dt.haas.events.CommitedEntryPointEvent;
+import com.vsct.dt.haas.events.UpdateEntryPointEvent;
 import com.vsct.dt.haas.nsq.AddNewEntryPointPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,76 +72,73 @@ public class AdminState {
     }
 
     @Subscribe
-    public void addNewServer(AddNewServerEvent event) {
+    public void addNewServer(AddNewServerEvent event) throws Exception {
 
-        Optional<EntryPoint> entryPointOptional = this.getEntryPoint(event.getApplication(), event.getPlatform());
-        if (entryPointOptional.isPresent()) {
+            /* First look if there is a pending server, then a commiting, then an already deployed */
 
-            EntryPoint entryPoint = entryPointOptional.get();
+        EntryPoint pendingEntryPoint = getPendingEntryPoint(event.getApplication(), event.getPlatform())
+                .map(ep -> ep.addServer(event.getBackendName(), event.getServer())) /* TODO Implement merging strategy, for now, we just replace the server, not working with context provided by user */
+                .orElse(
+                        getCommitingEntryPoint(event.getApplication(), event.getPlatform())
+                                .map(ep -> ep.addServer(event.getBackendName(), event.getServer()))
+                                .orElse(getEntryPoint(event.getApplication(), event.getPlatform())
+                                        .map(ep -> ep.addServer(event.getBackendName(), event.getServer()))
+                                        .orElseThrow(() -> new Exception("Cannot add a server, no endpoint exists")))
+                );
 
-            EntryPoint pendingEntryPoint = getPendingEntryPoint(event.getApplication(), event.getPlatform())
-                    .map(ep -> ep.addServer(event.getBackendName(), event.getServer())) /* TODO Implement merging strategy, for now, we just replace the server, not working with context provided by user */
-                    .orElse(
-                            getCommitingEntryPoint(event.getApplication(), event.getPlatform())
-                                    .map(ep -> ep.addServer(event.getBackendName(), event.getServer()))
-                                    .orElse(entryPoint.addServer(event.getBackendName(), event.getServer()))
-                    );
-            this.putPendingEntryPoint(pendingEntryPoint);
+        this.putPendingEntryPoint(pendingEntryPoint);
 
-        } else {
-            LOGGER.error("AddNewServer - ERROR - There is no entrypoint for " + event.getApplication() + event.getPlatform());
-        }
 
     }
 
     @Subscribe
     public void updateEntryPoint(UpdateEntryPointEvent event) throws IOException, NSQException, TimeoutException {
 
-                Optional<EntryPoint> pendingEntryPoint = getPendingEntryPoint(event.getApplication(), event.getPlatform());
-                if (pendingEntryPoint.isPresent()) {
+        Optional<EntryPoint> pendingEntryPoint = getPendingEntryPoint(event.getApplication(), event.getPlatform());
+        if (pendingEntryPoint.isPresent()) {
 
-                    Optional<EntryPoint> commitingEntryPointOptional = getCommitingEntryPoint(event.getApplication(), event.getPlatform());
-                    if (commitingEntryPointOptional.isPresent()) {
-                        LOGGER.info("UpdateEntryPoint - INFO - Entrypoint for " + event.getApplication() + event.getPlatform() + " needs no deployment because it is already commiting");
-                    } else {
+            Optional<EntryPoint> commitingEntryPointOptional = getCommitingEntryPoint(event.getApplication(), event.getPlatform());
+            if (commitingEntryPointOptional.isPresent()) {
+                LOGGER.info("UpdateEntryPoint - INFO - Entrypoint for " + event.getApplication() + event.getPlatform() + " needs no deployment because it is already commiting");
+            } else {
 
-                        EntryPoint commitingEntryPoint = pendingEntryPoint.get();
-                        this.putCommitingEntryPoint(commitingEntryPoint);
+                EntryPoint commitingEntryPoint = pendingEntryPoint.get();
+                this.putCommitingEntryPoint(commitingEntryPoint);
 
-                        this.removePendingEntryPoint(event.getApplication(), event.getPlatform());
+                this.removePendingEntryPoint(event.getApplication(), event.getPlatform());
 
                         /* TODO generate HAP conf and send addNewEntryPointPayload to NSQ */
-                        String hapconf = generateTemplate(commitingEntryPoint);
-                        AddNewEntryPointPayload addNewEntryPointPayload = new AddNewEntryPointPayload();
-                        addNewEntryPointPayload.application = event.getApplication();
-                        addNewEntryPointPayload.platform = event.getPlatform();
-                        addNewEntryPointPayload.conf = new String(Base64.getEncoder().encode(hapconf.getBytes()));
+                String hapconf = generateTemplate(commitingEntryPoint);
+                AddNewEntryPointPayload addNewEntryPointPayload = new AddNewEntryPointPayload();
+                addNewEntryPointPayload.application = event.getApplication();
+                addNewEntryPointPayload.platform = event.getPlatform();
+                addNewEntryPointPayload.conf = new String(Base64.getEncoder().encode(hapconf.getBytes()));
 
-                        producer.produce("try_update_" + HAP_NAME, objectMapper.writeValueAsBytes(addNewEntryPointPayload));
+                producer.produce("try_update_" + HAP_NAME, objectMapper.writeValueAsBytes(addNewEntryPointPayload));
 
-                    }
+            }
 
-                } else {
-                    LOGGER.info("UpdateEntryPoint - INFO - Entrypoint for " + event.getApplication() + event.getPlatform() + " needs no deployment because nothing is pending");
-                }
+        } else {
+            LOGGER.info("UpdateEntryPoint - INFO - Entrypoint for " + event.getApplication() + event.getPlatform() + " needs no deployment because nothing is pending");
+        }
 
     }
 
     @Subscribe
     public void commitedEntryPoint(CommitedEntryPointEvent event) {
 
-                Optional<EntryPoint> commitingEntryPointOptional = getCommitingEntryPoint(event.getApplication(), event.getPlatform());
-                if (commitingEntryPointOptional.isPresent()) {
+        Optional<EntryPoint> commitingEntryPointOptional = getCommitingEntryPoint(event.getApplication(), event.getPlatform());
+        if (commitingEntryPointOptional.isPresent()) {
 
-                    EntryPoint commitingEntryPoint = commitingEntryPointOptional.get();
+            EntryPoint commitingEntryPoint = commitingEntryPointOptional.get();
 
-                    this.putEntryPoint(commitingEntryPoint);
+            this.putEntryPoint(commitingEntryPoint);
 
-                    this.removeCommitingEntryPoint(event.getApplication(), event.getPlatform());
+            this.removeCommitingEntryPoint(event.getApplication(), event.getPlatform());
 
-                } else {
-                    LOGGER.error("CommitedEntryPoint - ERROR - There was no commiting entrypoint for " + event.getApplication() + event.getPlatform());
-                }
+        } else {
+            LOGGER.error("CommitedEntryPoint - ERROR - There was no commiting entrypoint for " + event.getApplication() + event.getPlatform());
+        }
 
     }
 
