@@ -1,4 +1,5 @@
 LookupdAddr = 'floradora:50161'
+ProducerAddr = 'floradora:50150'
 ClusterId = 'default-name'
 Vip = '127.0.0.1'
 Port = 50001
