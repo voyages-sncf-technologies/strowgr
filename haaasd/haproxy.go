@@ -1,18 +1,18 @@
 package haaas
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"fmt"
 	"os/exec"
 )
 
 func NewHaproxy(properties *Config, application string, platform string) *Haproxy {
 	return &Haproxy{
 		Application: application,
-		Platform: platform,
-		properties: properties,
+		Platform:    platform,
+		properties:  properties,
 	}
 }
 
@@ -22,18 +22,18 @@ type Haproxy struct {
 	properties  *Config
 }
 
-func (hap *Haproxy) ApplyConfiguration(data EventMessage) (error) {
+func (hap *Haproxy) ApplyConfiguration(data EventMessage) error {
 	newConf := data.Conf
 	// /appl/hapadm/DTC/version-1/
 	path := hap.confPath()
 	archivePath := hap.confArchivePath()
 	os.Rename(path, archivePath)
-	log.Printf("Old configurqtion saved to %s",archivePath)
+	log.Printf("Old configurqtion saved to %s", archivePath)
 	err := ioutil.WriteFile(path, newConf, 0644)
 	if err != nil {
 		return err
 	}
-	log.Printf("New configuration written to %s" , path )
+	log.Printf("New configuration written to %s", path)
 	err = hap.reload(data)
 	if err != nil {
 		log.Fatal("can't apply reconfiguration of %+v. Error: %s", data, err)
@@ -55,7 +55,7 @@ func (hap *Haproxy) confArchivePath() string {
 	return baseDir + "/hap" + hap.Application + hap.Platform + ".conf"
 }
 
-func (hap *Haproxy) reload(data EventMessage) (error) {
+func (hap *Haproxy) reload(data EventMessage) error {
 
 	cmd, err := exec.Command("sh", fmt.Sprintf("%s/%s/RELOAD", hap.properties.HapHome, data.Application)).Output()
 	if err != nil {
@@ -65,6 +65,6 @@ func (hap *Haproxy) reload(data EventMessage) (error) {
 	return err
 }
 
-func (hap *Haproxy) rollback() (error) {
+func (hap *Haproxy) rollback() error {
 	return nil
 }
