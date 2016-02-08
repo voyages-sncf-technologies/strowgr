@@ -16,15 +16,22 @@ import (
 var (
 	ip = flag.String("ip", "4.3.2.1", "Node ip address")
 	configFile = flag.String("config", "haaas.conf", "Configuration file")
+	versionFlag = flag.Bool("version", false, "Print current version")
 	config = nsq.NewConfig()
 	properties haaas.Config
 	daemon *haaas.Daemon
 	producer *nsq.Producer
+
 )
 
 func main() {
 
 	flag.Parse()
+
+	if *versionFlag{
+		println(haaas.AppVersion)
+		os.Exit(0)
+	}
 
 	if _, err := toml.DecodeFile(*configFile, &properties); err != nil {
 		log.Fatal(err)
