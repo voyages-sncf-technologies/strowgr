@@ -2,7 +2,7 @@
 
 BUILDDIR=bin
 BINARY=haaasd
-IMAGE=haaasd
+IMAGE=haaas/haaasd
 
 VERSION=1.0.0
 
@@ -11,17 +11,29 @@ GOFLAGS ?= $(GOFLAGS:) -a -installsuffix cgo
 all: build
 
 build: cmd/main.go
-	CGO_ENABLED=0 GOOS=darwin go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-darwin ./cmd
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./cmd
-	CGO_ENABLED=0 GOOS=linux GOARCH=386 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux ./cmd
+#	CGO_ENABLED=0 GOOS=darwin go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-darwin ./cmd/main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./cmd/main.go
+#	CGO_ENABLED=0 GOOS=linux GOARCH=386 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux ./cmd/main.go
 
 docker-build:
 	docker build -t haaasd-builder -f build.Dockerfile .
 	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin haaasd-builder make
 
 docker-image: dist
-	cp Dockerfile dist
+	cp docker/* dist
 	docker build -t $(IMAGE) dist
+
+#webapp:
+#	CGO_ENABLED=0 GOOS=darwin go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-darwin ./cmd
+
+dcup:
+	docker-compose -f integration/docker-compose.yml up -d
+
+dcdown:
+	docker-compose -f integration/docker-compose.yml down
+
+dclogs:
+	docker-compose -f integration/docker-compose.yml logs
 
 #docker-push:
 #	docker push $(IMAGE)
@@ -38,9 +50,9 @@ docker-image: dist
 #logs:
 #	docker-compose -f test.docker-compose.yml  logs
 #
-dist: ${BUILDDIR}/${BINARY}-linux
+dist: ${BUILDDIR}/${BINARY}-linux_amd64
 	rm -fr dist && mkdir dist
-	cp ${BUILDDIR}/${BINARY}-linux dist
+	cp ${BUILDDIR}/${BINARY}-linux_amd64 dist
 
 clean:
 	rm -fr {dist,bin}
