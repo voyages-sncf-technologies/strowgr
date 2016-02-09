@@ -1,32 +1,17 @@
 version: '2'
 
 services:
-  ha-master:
-    image: haaasd
-    container_name: haaasd-master
-    dns_search: .
-    dns: 8.8.8.8
-    volumes:
-      - ./haaasd-master.toml:/haaas.conf
-    ports:
-      - 50000
 
-  ha-slave:
-    image: haaasd
-    container_name: haaasd-slave
-    dns_search: .
-    dns: 8.8.8.8
-    volumes:
-      - ./haaasd-slave.toml:/haaas.conf
+  consul:
+    container_name: consul
+    image: gliderlabs/consul-server
     ports:
-      - 50000
+      - 8500:8500
 
   nsqlookupd:
     image: nsqio/nsq
     container_name: nsqlookupd
-    command: /nsqlookupd -http-address=192.168.10.4:4161 -tcp-address=192.168.10.4:4160
-    dns_search: .
-    dns: 8.8.8.8
+    command: /nsqlookupd -http-address=192.168.10.2:4161 -tcp-address=192.168.10.2:4160
     ports:
       - "4160:4160"
       - "4161:4161"
@@ -34,21 +19,45 @@ services:
   nsqd:
     image: nsqio/nsq
     container_name: nsqd
-    command: /nsqd --lookupd-tcp-address=192.168.10.4:4160 --broadcast-address=192.168.10.3
-    dns: 8.8.8.8
-    dns_search: .
+    command: /nsqd --lookupd-tcp-address=192.168.10.2:4160 --broadcast-address=192.168.10.3
     ports:
       - "4150:4150"
       - "4151:4151"
+    depends_on:
+      - nsqlookupd
+
+  ha-master:
+    image: haaasd
+    container_name: haaasd-master
+    volumes:
+      - ./haaasd-master.toml:/haaas.conf
+    ports:
+      - 50000
+      - 50080
+    depends_on:
+      - nsqlookupd
+
+  ha-slave:
+    image: haaasd
+    container_name: haaasd-slave
+    volumes:
+      - ./haaasd-slave.toml:/haaas.conf
+    ports:
+      - 50000
+    depends_on:
+      - nsqlookupd
 
   nsq-admin:
     container_name: nsqadmin
     image: nsqio/nsq
     ports:
       - "4171:4171"
-    command: /nsqadmin -http-address="0.0.0.0:4171" --lookupd-http-address=192.168.10.4:4161
-    dns_search: .
-    dns: 8.8.8.8
+    command: /nsqadmin -http-address="0.0.0.0:4171" --lookupd-http-address=192.168.10.2:4161
+    depends_on:
+      - nsqlookupd
+      - nsqd
+
+
 
 networks:
   default:

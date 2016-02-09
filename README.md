@@ -1,5 +1,5 @@
 
 ```shell
-(cd webapp && make && make docker-image)
-(cd haaasd && make && make docker-image)
+(cd webapp && make docker-build && make docker-image)
+(cd haaasd && make docker-build && make docker-image)
 ```

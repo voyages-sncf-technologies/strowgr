@@ -1,7 +1,7 @@
-LookupdAddr = 'floradora:50161'
-ProducerAddr = 'floradora:50150'
+LookupdAddr = '192.168.10.2:4161'
+ProducerAddr = 'nsqd:50150'
 ClusterId = 'default-name'
 Vip = '127.0.0.1'
-Port = 50000
+Port = 5000
 HapHome = 'test/hapadm'
 Status = 'master'
