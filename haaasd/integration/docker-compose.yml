@@ -1,0 +1,60 @@
+version: '2'
+
+services:
+  ha-master:
+    image: haaasd
+    container_name: haaasd-master
+    dns_search: .
+    dns: 8.8.8.8
+    volumes:
+      - ./haaasd-master.toml:/haaas.conf
+    ports:
+      - 50000
+
+  ha-slave:
+    image: haaasd
+    container_name: haaasd-slave
+    dns_search: .
+    dns: 8.8.8.8
+    volumes:
+      - ./haaasd-slave.toml:/haaas.conf
+    ports:
+      - 50000
+
+  nsqlookupd:
+    image: nsqio/nsq
+    container_name: nsqlookupd
+    command: /nsqlookupd -http-address=192.168.10.4:4161 -tcp-address=192.168.10.4:4160
+    dns_search: .
+    dns: 8.8.8.8
+    ports:
+      - "4160:4160"
+      - "4161:4161"
+
+  nsqd:
+    image: nsqio/nsq
+    container_name: nsqd
+    command: /nsqd --lookupd-tcp-address=192.168.10.4:4160 --broadcast-address=192.168.10.3
+    dns: 8.8.8.8
+    dns_search: .
+    ports:
+      - "4150:4150"
+      - "4151:4151"
+
+  nsq-admin:
+    container_name: nsqadmin
+    image: nsqio/nsq
+    ports:
+      - "4171:4171"
+    command: /nsqadmin -http-address="0.0.0.0:4171" --lookupd-http-address=192.168.10.4:4161
+    dns_search: .
+    dns: 8.8.8.8
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+     driver: default
+     config:
+       - subnet: 192.168.10.0/24
+         gateway: 192.168.10.254
