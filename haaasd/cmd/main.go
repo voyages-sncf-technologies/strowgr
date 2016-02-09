@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"github.com/BurntSushi/toml"
 	"gitlab.socrate.vsct.fr/dt/haaas"
+	"net"
 )
 
 var (
@@ -150,18 +151,20 @@ func bodyToDatas(jsonStream []byte) (haaas.EventMessage, error) {
 // endpoints:
 //	/real-ip : get the haaasd ip address as given by the -ip command parameter
 func starRestAPI() {
-	http.HandleFunc("/real-ip", func(writer http.ResponseWriter, request *http.Request) {
+	sm := http.NewServeMux()
+	sm.HandleFunc("/real-ip", func(writer http.ResponseWriter, request *http.Request) {
 		log.Printf("GET /real-ip")
 		fmt.Fprintf(writer, "%s\n", *ip)
 	})
 	log.Printf("Start listening on port %d", properties.Port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", properties.Port), nil); err != nil {
-		log.Fatal("ListenAndServe:", err)
+	listener, err := net.Listen("tcp4", fmt.Sprintf(":%d", properties.Port))
+	if err != nil {
+		log.Fatal(err)
 	}
+	log.Fatal(http.Serve(listener, sm))
 }
 
 func publishMessage(topic_prefix string, data interface{}) error {
-//	producer, _ := nsq.NewProducer("floradora:50150", config)
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
 	log.Printf("Publish to %s : %s", topic, jsonMsg)
