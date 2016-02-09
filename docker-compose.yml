@@ -1,0 +1,98 @@
+# We encounter some issues with docker internal DNS using user networks
+# Fixed ip addresses are used as a workaround
+
+version: '2'
+
+services:
+
+  # Single instance of consul
+  consul:
+    container_name: consul
+    image: gliderlabs/consul-server
+    ports:
+      - 8500:8500
+
+  # Single instance of nsqlookupd
+  nsqlookupd:
+    image: nsqio/nsq
+    container_name: nsqlookupd
+    command: /nsqlookupd -http-address=192.168.10.2:4161 -tcp-address=192.168.10.2:4160
+    ports:
+      - "4160:4160"
+      - "4161:4161"
+
+  # Only one producer
+  nsqd:
+    image: nsqio/nsq
+    container_name: nsqd
+    command: /nsqd --lookupd-tcp-address=192.168.10.2:4160 --broadcast-address=192.168.10.3
+    ports:
+      - "4150:4150"
+      - "4151:4151"
+    depends_on:
+      - nsqlookupd
+
+  #  HA proxies
+  ha-master:
+    image: haaas/haaasd
+    container_name: haaasd-master
+    volumes:
+      - ./conf/haaasd-master.toml:/haaas.conf
+    ports:
+      - 52000:52000
+      - 50000
+      - 50080:50080
+    depends_on:
+      - nsqlookupd
+
+  ha-slave:
+    image: haaas/haaasd
+    container_name: haaasd-slave
+    volumes:
+      - ./conf/haaasd-slave.toml:/haaas.conf
+    ports:
+      - 50000
+      - 52001:52000
+    depends_on:
+      - nsqlookupd
+
+  # NSQ admin
+  nsq-admin:
+    container_name: nsqadmin
+    image: nsqio/nsq
+    ports:
+      - "4171:4171"
+    command: /nsqadmin -http-address="0.0.0.0:4171" --lookupd-http-address=192.168.10.2:4161
+    depends_on:
+      - nsqlookupd
+      - nsqd
+
+  # Webapp instances
+  webapp-1:
+    image: haaas/webapp:1.0.0
+    ports:
+     - 50180:50080
+    command: instance1
+
+  webapp-2:
+    image: haaas/webapp:1.0.0
+    ports:
+     - 50080
+    command: instance2
+
+  webpage:
+    image: nginx
+    ports:
+     - 80:80
+    volumes:
+     - ./static/:/usr/share/nginx/html
+     - ./static/nginx.conf:/etc/nginx/nginx.conf
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+     driver: default
+     config:
+       - subnet: 192.168.10.0/24
+         gateway: 192.168.10.254
