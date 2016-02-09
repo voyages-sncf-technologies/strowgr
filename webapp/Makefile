@@ -2,7 +2,7 @@
 
 BUILDDIR=bin
 BINARY=webapp
-IMAGE=haaas/webapp
+IMAGE=haaas/$(BINARY)
 
 VERSION=1.0.0
 
@@ -14,8 +14,8 @@ build: main.go
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 main.go
 
 docker-build:
-	docker build -t haaasd-builder -f build.Dockerfile .
-	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin haaasd-builder make
+	docker build -t $(IMAGE)-builder -f build.Dockerfile .
+	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaas/bin $(IMAGE)-builder make
 
 docker-image:
 	cp Dockerfile dist
