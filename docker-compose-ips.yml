@@ -16,7 +16,7 @@ services:
   nsqlookupd:
     image: nsqio/nsq
     container_name: nsqlookupd
-    command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160
+    command: /nsqlookupd -http-address=192.168.10.2:4161 -tcp-address=192.168.10.2:4160
     ports:
       - "4160:4160"
       - "4161:4161"
@@ -25,7 +25,7 @@ services:
   nsqd:
     image: nsqio/nsq
     container_name: nsqd
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd
+    command: /nsqd --lookupd-tcp-address=192.168.10.2:4160 --broadcast-address=192.168.10.3
     ports:
       - "4150:4150"
       - "4151:4151"
@@ -62,7 +62,7 @@ services:
     image: nsqio/nsq
     ports:
       - "4171:4171"
-    command: /nsqadmin -http-address="0.0.0.0:4171" --lookupd-http-address=nsqlookupd:4161
+    command: /nsqadmin -http-address="0.0.0.0:4171" --lookupd-http-address=192.168.10.2:4161
     depends_on:
       - nsqlookupd
       - nsqd

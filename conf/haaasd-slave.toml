@@ -1,4 +1,4 @@
-LookupdAddr = '192.168.10.2:4161'
+LookupdAddr = 'nsqlookupd:4161'
 ProducerAddr = 'nsqd:50150'
 ClusterId = 'default-name'
 Vip = '127.0.0.1'
