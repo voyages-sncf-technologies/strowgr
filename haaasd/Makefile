@@ -18,14 +18,17 @@ generate_version:
 build: src/haaasd.go
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./src/haaasd.go
 
-docker-build:
-	docker build -t $(IMAGE)-builder -f build.Dockerfile .
-	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaas/bin $(IMAGE)-builder make
+docker-builder:
+	docker build  -t $(IMAGE)-builder -f build.Dockerfile .
+
+docker-build: docker-builder
+	docker run --rm -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaas/bin $(IMAGE)-builder make
 
 docker-image: dist
 	cp docker/* dist
-	docker build -t $(IMAGE) dist
+	docker build -t $(IMAGE):$(VERSION) dist
 
+#Handle docker-compose
 dcup:
 	docker-compose -f integration/docker-compose.yml up -d
 
@@ -41,3 +44,11 @@ dist: ${BUILDDIR}/${BINARY}-linux_amd64
 
 clean:
 	rm -fr {dist,bin}
+
+# Execute in the docker network
+
+run: docker-builder
+	docker run --rm -ti --net haaas_default \
+		-v $(CURDIR)/../data/slave/haaasd.conf:/haaasd.conf \
+		-v $(CURDIR)/../data/slave/hapadm:/HOME/hapadm \
+		$(IMAGE)-builder go run ./src/haaasd.go -config /haaasd.conf -ip local
