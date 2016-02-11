@@ -1,11 +1,11 @@
 FROM golang:1.5
 
-RUN go get github.com/BurntSushi/toml/cmd/tomlv
-RUN go get -u -v github.com/bitly/go-nsq
+RUN go get -v github.com/BurntSushi/toml/cmd/tomlv
+RUN go get -v github.com/bitly/go-nsq
 
-ENV SRC /go/src/gitlab.socrate.vsct.fr/dt/haaas
+ENV SRC $GOPATH/src/gitlab.socrate.vsct.fr/dt/haaasd
 
 RUN mkdir -p $SRC
-WORKDIR $SRC
+WORKDIR /root
 
 COPY . ./
