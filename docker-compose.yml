@@ -1,14 +1,11 @@
-# We encounter some issues with docker internal DNS using user networks
-# Fixed ip addresses are used as a workaround
-
 version: '2'
 
 services:
 
   # Single instance of consul
   consul:
-    container_name: consul
     image: gliderlabs/consul-server
+    container_name: consul
     ports:
       - 8500:8500
 
@@ -98,5 +95,3 @@ networks:
      config:
        - subnet: 192.168.10.0/24
          gateway: 192.168.10.254
-         aux_addresses:
-          webpage: 192.168.10.20
