@@ -8,7 +8,9 @@ VERSION=1.0.0
 
 GOFLAGS ?= $(GOFLAGS:) -a -installsuffix cgo
 
-all: build
+default: build
+
+all: docker-build docker-image
 
 build: cmd/main.go
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./cmd/main.go

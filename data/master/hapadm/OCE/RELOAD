@@ -1,0 +1,8 @@
+#!/bin/sh
+/HOME/hapadm/OCE/scripts/hapctlOCEREC1 reload; sleep 2;
+
+#set -x
+#APP=OCE
+#PLT=REC1
+#PID=/var/run/haproxy$APP$PLT.pid
+#echo haproxy -f /home/hapadm/$APP/Config/hap$APP$PLT.conf -p $PID -sf $(cat $PID)

@@ -1,0 +1,9 @@
+#!/bin/sh
+set -x
+groupadd haproxy
+useradd hapocer1
+gpasswd -a hapocer1 haproxy
+APP=OCE
+PLT=REC1
+PID=/var/run/haproxy$APP$PLT.pid
+haproxy -f /home/hapadm/$APP/Config/hap$APP$PLT.conf -p $PID -sf $(cat $PID)

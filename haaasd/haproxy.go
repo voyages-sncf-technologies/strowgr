@@ -56,13 +56,14 @@ func (hap *Haproxy) confArchivePath() string {
 }
 
 func (hap *Haproxy) reload(data EventMessage) error {
-
-	cmd, err := exec.Command("sh", fmt.Sprintf("%s/%s/RELOAD", hap.properties.HapHome, data.Application)).Output()
+	str := fmt.Sprintf("%s/%s/RELOAD", hap.properties.HapHome, data.Application)
+	log.Println(str)
+	cmd, err := exec.Command("sh", str ).Output()
 	if err != nil {
 		log.Fatal("Error reloading :%s", err)
 	}
 	log.Printf("result of %s/%s/RELOAD: %s", hap.properties.HapHome, data.Application, cmd)
-	return err
+	return nil
 }
 
 func (hap *Haproxy) rollback() error {
