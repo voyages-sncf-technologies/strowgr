@@ -12,8 +12,11 @@ default: build
 
 all: docker-build docker-image
 
-build: cmd/main.go
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./cmd/main.go
+generate_version:
+	echo "package haaasd\nconst AppVersion = \"$(VERSION)\"" > $(CURDIR)/src/haaasd/version.go
+
+build: src/haaasd.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./src/haaasd.go
 
 docker-build:
 	docker build -t $(IMAGE)-builder -f build.Dockerfile .

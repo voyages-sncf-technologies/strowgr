@@ -1,4 +1,4 @@
-package haaas
+package haaasd
 
 type Config struct {
 	LookupdAddr  string

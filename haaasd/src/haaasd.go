@@ -10,7 +10,7 @@ import (
 	"os"
 	"bytes"
 	"github.com/BurntSushi/toml"
-	"gitlab.socrate.vsct.fr/dt/haaas"
+	"./haaasd"
 	"net"
 )
 
@@ -19,8 +19,8 @@ var (
 	configFile = flag.String("config", "haaas.conf", "Configuration file")
 	versionFlag = flag.Bool("version", false, "Print current version")
 	config = nsq.NewConfig()
-	properties haaas.Config
-	daemon *haaas.Daemon
+	properties haaasd.Config
+	daemon *haaasd.Daemon
 	producer *nsq.Producer
 
 )
@@ -30,7 +30,7 @@ func main() {
 	flag.Parse()
 
 	if *versionFlag{
-		println(haaas.AppVersion)
+		println(haaasd.AppVersion)
 		os.Exit(0)
 	}
 
@@ -44,7 +44,7 @@ func main() {
 		properties.HapHome = properties.HapHome[:len - 1 ]
 	}
 
-	daemon = haaas.NewDaemon(&properties)
+	daemon = haaasd.NewDaemon(&properties)
 
 	log.Printf("Starting haaasd (%s) with id %v", properties.Status, properties.NodeId())
 
@@ -78,7 +78,7 @@ func startTryUpdateConsumer() {
 			data, err := bodyToDatas(message.Body)
 			check(err)
 
-			hap := haaas.NewHaproxy(&properties, data.Application, data.Platform)
+			hap := haaasd.NewHaproxy(&properties, data.Application, data.Platform)
 			err = hap.ApplyConfiguration(data)
 			if err == nil {
 				commitTryUpdate(data)
@@ -96,7 +96,7 @@ func startTryUpdateConsumer() {
 	}
 }
 
-func commitTryUpdate(data haaas.EventMessage) {
+func commitTryUpdate(data haaasd.EventMessage) {
 	publishMessage("update_", data)
 }
 
@@ -116,7 +116,7 @@ func startUpdateConsumer() {
 			data, err := bodyToDatas(message.Body)
 			check(err)
 
-			hap := haaas.NewHaproxy(&properties, data.Application, data.Platform)
+			hap := haaasd.NewHaproxy(&properties, data.Application, data.Platform)
 			err = hap.ApplyConfiguration(data)
 
 			if err == nil {
@@ -135,14 +135,14 @@ func startUpdateConsumer() {
 	}
 }
 
-func commitUpdate(data haaas.EventMessage) {
+func commitUpdate(data haaasd.EventMessage) {
 	publishMessage("updated_", map[string]string{"application" : data.Application, "platform": data.Platform, "correlationid" : data.Correlationid})
 }
 
 // Unmarshal json to EventMessage
-func bodyToDatas(jsonStream []byte) (haaas.EventMessage, error) {
+func bodyToDatas(jsonStream []byte) (haaasd.EventMessage, error) {
 	dec := json.NewDecoder(bytes.NewReader(jsonStream))
-	var message haaas.EventMessage
+	var message haaasd.EventMessage
 	dec.Decode(&message)
 	return message, nil
 }
