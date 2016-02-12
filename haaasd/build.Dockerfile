@@ -6,6 +6,6 @@ RUN go get -v github.com/bitly/go-nsq
 ENV SRC $GOPATH/src/gitlab.socrate.vsct.fr/dt/haaasd
 
 RUN mkdir -p $SRC
-WORKDIR /root
+WORKDIR /$SRC
 
 COPY . ./

@@ -1,35 +1,34 @@
 package main
 
 import (
+	"./haaasd"
+	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/BurntSushi/toml"
 	"github.com/bitly/go-nsq"
 	"log"
-	"net/http"
-	"encoding/json"
-	"os"
-	"bytes"
-	"github.com/BurntSushi/toml"
-	"./haaasd"
 	"net"
+	"net/http"
+	"os"
 )
 
 var (
-	ip = flag.String("ip", "4.3.2.1", "Node ip address")
-	configFile = flag.String("config", "haaas.conf", "Configuration file")
+	ip          = flag.String("ip", "4.3.2.1", "Node ip address")
+	configFile  = flag.String("config", "haaas.conf", "Configuration file")
 	versionFlag = flag.Bool("version", false, "Print current version")
-	config = nsq.NewConfig()
-	properties haaasd.Config
-	daemon *haaasd.Daemon
-	producer *nsq.Producer
-
+	config      = nsq.NewConfig()
+	properties  haaasd.Config
+	daemon      *haaasd.Daemon
+	producer    *nsq.Producer
 )
 
 func main() {
 
 	flag.Parse()
 
-	if *versionFlag{
+	if *versionFlag {
 		println(haaasd.AppVersion)
 		os.Exit(0)
 	}
@@ -40,8 +39,8 @@ func main() {
 	}
 	properties.IpAddr = *ip
 	len := len(properties.HapHome)
-	if properties.HapHome[len - 1] == '/' {
-		properties.HapHome = properties.HapHome[:len - 1 ]
+	if properties.HapHome[len-1] == '/' {
+		properties.HapHome = properties.HapHome[:len-1]
 	}
 
 	daemon = haaasd.NewDaemon(&properties)
@@ -82,8 +81,8 @@ func startTryUpdateConsumer() {
 			err = hap.ApplyConfiguration(data)
 			if err == nil {
 				commitTryUpdate(data)
-			}else {
-				log.Fatal(err)
+			} else {
+				log.Print(err)
 			}
 		}
 
@@ -101,7 +100,7 @@ func commitTryUpdate(data haaasd.EventMessage) {
 }
 
 func startUpdateConsumer() {
-	updateConsumer, err := nsq.NewConsumer("update_" + properties.ClusterId, properties.NodeId(), config)
+	updateConsumer, err := nsq.NewConsumer("update_"+properties.ClusterId, properties.NodeId(), config)
 	check(err)
 
 	updateConsumer.AddHandler(nsq.HandlerFunc(func(message *nsq.Message) error {
@@ -121,7 +120,7 @@ func startUpdateConsumer() {
 
 			if err == nil {
 				commitUpdate(data)
-			}else {
+			} else {
 				log.Fatal(err)
 			}
 		}
@@ -136,7 +135,7 @@ func startUpdateConsumer() {
 }
 
 func commitUpdate(data haaasd.EventMessage) {
-	publishMessage("updated_", map[string]string{"application" : data.Application, "platform": data.Platform, "correlationid" : data.Correlationid})
+	publishMessage("updated_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 }
 
 // Unmarshal json to EventMessage
@@ -170,4 +169,3 @@ func publishMessage(topic_prefix string, data interface{}) error {
 	log.Printf("Publish to %s : %s", topic, jsonMsg)
 	return producer.Publish(topic, []byte(jsonMsg))
 }
-

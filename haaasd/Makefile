@@ -19,10 +19,10 @@ build: src/haaasd.go
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./src/haaasd.go
 
 docker-builder:
-	docker build  -t $(IMAGE)-builder -f build.Dockerfile .
+	docker build -q -t $(IMAGE)-builder -f build.Dockerfile .
 
 docker-build: docker-builder
-	docker run --rm -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaas/bin $(IMAGE)-builder make
+	docker run --rm -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder make
 
 docker-image: dist
 	cp docker/* dist

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 )
 
 func NewHaproxy(properties *Config, application string, platform string) *Haproxy {
@@ -36,8 +37,24 @@ func (hap *Haproxy) ApplyConfiguration(data EventMessage) error {
 	log.Printf("New configuration written to %s", path)
 	err = hap.reload(data)
 	if err != nil {
-		log.Fatal("can't apply reconfiguration of %+v. Error: %s", data, err)
-		err = hap.rollback()
+		log.Printf("can't apply reload of %s-%s. Error: %s", data.Application, data.Platform, err)
+		ioutil.WriteFile(path, newConf, 0644)
+
+		errorFilename := hap.NewErrorPath()
+		f, err := os.Create(errorFilename)
+		if err == nil {
+			f.WriteString("================================================================\n")
+			f.WriteString(fmt.Sprintf("application: %s\n", data.Application))
+			f.WriteString(fmt.Sprintf("platform: %s\n", data.Platform))
+			f.WriteString(fmt.Sprintf("correlationid: %s\n", data.Correlationid))
+			f.WriteString("================================================================\n")
+			f.Write(newConf)
+			f.Sync()
+			log.Printf("Invalid conf logged into %s", errorFilename)
+			return nil
+		}
+		defer f.Close()
+		//		err = hap.rollback()
 	}
 
 	return err
@@ -55,15 +72,21 @@ func (hap *Haproxy) confArchivePath() string {
 	return baseDir + "/hap" + hap.Application + hap.Platform + ".conf"
 }
 
+func (hap *Haproxy) NewErrorPath() string {
+	baseDir := hap.properties.HapHome + "/" + hap.Application + "/errors"
+	os.MkdirAll(baseDir, 0755)
+	prefix := time.Now().Format("20060102150405")
+	return baseDir + "/" + prefix + "_" + hap.Application + hap.Platform + ".log"
+}
+
 func (hap *Haproxy) reload(data EventMessage) error {
 	str := fmt.Sprintf("%s/%s/RELOAD", hap.properties.HapHome, data.Application)
-	log.Println(str)
-	cmd, err := exec.Command("sh", str ).Output()
+	cmd, err := exec.Command("sh", str).Output()
 	if err != nil {
-		log.Fatal("Error reloading :%s", err)
+		log.Printf("Error reloading %s", err)
 	}
 	log.Printf("result of %s/%s/RELOAD: %s", hap.properties.HapHome, data.Application, cmd)
-	return nil
+	return err
 }
 
 func (hap *Haproxy) rollback() error {
