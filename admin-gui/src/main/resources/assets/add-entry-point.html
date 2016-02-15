@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" ng-app="admin">
+<head>
+    <meta charset="utf-8">
+    <title>HAAS Admin</title>
+
+    <link rel="stylesheet" href="webjars/angular-material/1.0.4/angular-material.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet">
+
+    <script src="webjars/angularjs/1.4.9/angular.min.js"></script>
+
+    <script src="webjars/angularjs/1.4.9/angular-animate.min.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular-aria.min.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular-animate.min.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular-messages.min.js"></script>
+
+    <script src="webjars/angular-material/1.0.4/angular-material.js"></script>
+
+    <script src="webjars/jquery/3.0.0-alpha1/jquery.min.js"></script>
+
+    <script src="webjars/lodash/4.0.0/lodash.min.js"></script>
+
+    <style>
+        .layout-margin {
+            margin: 4px;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var admin = angular.module('admin', ['ngMaterial']);
+
+        admin.controller('AdminCtrl', function ($scope, $http) {
+
+            $scope.entrypoint = {
+                "haproxy": "default-hostname",
+                "application": "OCE",
+                "platform": "REC1",
+                "hapUser": "hapocer1",
+                "syslogPort": "33333",
+                "frontends": [
+                    {
+                        "hostname": "OCEREC1WS",
+                        "port": "52000"
+                    }
+                ],
+                "backends": [
+                    {
+                        "hostname": "OCEREC1WS"
+                    }
+                ]
+            };
+
+            $scope.post = function (entrypoint) {
+                $http.post('/api/entrypoint', entrypoint).then(function (response) {
+                    $scope.response = response.data.response;
+                }, function (response) {
+                    $scope.response = response.data.response;
+                });
+            };
+        });
+
+
+    </script>
+</head>
+<body ng-controller="AdminCtrl" layout-padding layout-align="start center" flex>
+<md-content>
+    {{response}}
+    <p class="md-body-2">INFOS</p>
+
+    <div flex layout>
+        <md-input-container flex>
+            <label>HAProxy Cible</label>
+            <input ng-model="entrypoint.haproxy">
+        </md-input-container>
+        <md-input-container flex>
+            <label>Application</label>
+            <input ng-model="entrypoint.application">
+        </md-input-container>
+        <md-input-container flex>
+            <label>Plateforme</label>
+            <input ng-model="entrypoint.platform">
+        </md-input-container>
+        <md-input-container flex>
+            <label>User HAProxy</label>
+            <input ng-model="entrypoint.hapUser">
+        </md-input-container>
+        <md-input-container flex>
+            <label>Port Syslog</label>
+            <input ng-model="entrypoint.syslogPort">
+        </md-input-container>
+    </div>
+    <p class="md-body-2">FRONTENDS<span><md-button class="md-fab md-mini md-primary">
+        <md-icon class="material-icons">add</md-icon>
+    </md-button></span></p>
+    <div ng-repeat="frontend in entrypoint.frontends">
+        <md-input-container flex>
+            <label>Nom</label>
+            <input ng-model="frontend.hostname">
+        </md-input-container>
+        <md-input-container flex>
+            <label>Port</label>
+            <input ng-model="frontend.port">
+        </md-input-container>
+    </div>
+    <p class="md-body-2">BACKENDS<span><md-button class="md-fab md-mini md-primary">
+        <md-icon class="material-icons">add</md-icon>
+    </md-button></span></p>
+    <div ng-repeat="backend in entrypoint.backends">
+        <md-input-container flex>
+            <label>Nom</label>
+            <input ng-model="backend.hostname">
+        </md-input-container>
+    </div>
+    <span><md-button class="md-primary md-raised" ng-click="post(entrypoint)">Valider</md-button></span>
+</md-content>
+
+</body>
+</html>

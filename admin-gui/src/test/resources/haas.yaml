@@ -1,0 +1,13 @@
+server:
+  type: simple
+  rootPath: /api/
+  applicationContextPath: /
+  requestLog:
+      appenders: []
+bus:
+  threads: 20
+repository:
+  host: localhost
+  port: 8500
+logging:
+  level: INFO
