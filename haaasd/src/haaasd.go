@@ -62,7 +62,7 @@ func check(err error) {
 }
 
 func startTryUpdateConsumer() {
-	tryUpdateConsumer, _ := nsq.NewConsumer(fmt.Sprintf("try_update_%s", properties.ClusterId), properties.NodeId(), config)
+	tryUpdateConsumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.NodeId(), config)
 
 	tryUpdateConsumer.AddHandler(nsq.HandlerFunc(func(message *nsq.Message) error {
 		defer message.Finish()
@@ -73,7 +73,7 @@ func startTryUpdateConsumer() {
 		}
 
 		if isSlave {
-			log.Printf("Receive try_update event %s", message.Body)
+			log.Printf("Receive commit_requested event %s", message.Body)
 			data, err := bodyToDatas(message.Body)
 			check(err)
 
@@ -96,11 +96,11 @@ func startTryUpdateConsumer() {
 }
 
 func commitTryUpdate(data haaasd.EventMessage) {
-	publishMessage("update_", data)
+	publishMessage("commit_slave_complete_", data)
 }
 
 func startUpdateConsumer() {
-	updateConsumer, err := nsq.NewConsumer("update_"+properties.ClusterId, properties.NodeId(), config)
+	updateConsumer, err := nsq.NewConsumer("commit_slave_complete_"+properties.ClusterId, properties.NodeId(), config)
 	check(err)
 
 	updateConsumer.AddHandler(nsq.HandlerFunc(func(message *nsq.Message) error {
@@ -111,7 +111,7 @@ func startUpdateConsumer() {
 		}
 
 		if isMaster {
-			log.Printf("Receive update event %s", message.Body)
+			log.Printf("Receive commit_slave_complete event %s", message.Body)
 			data, err := bodyToDatas(message.Body)
 			check(err)
 
@@ -135,7 +135,7 @@ func startUpdateConsumer() {
 }
 
 func commitUpdate(data haaasd.EventMessage) {
-	publishMessage("updated_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
+	publishMessage("commit_complete_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 }
 
 // Unmarshal json to EventMessage
