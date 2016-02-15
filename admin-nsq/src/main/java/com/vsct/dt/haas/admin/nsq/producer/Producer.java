@@ -22,7 +22,7 @@ public class Producer {
     public void sendCommitBegin(String correlationId, String haproxy, String application, String platform, String conf) throws JsonProcessingException, NSQException, TimeoutException {
         String confBase64 = new String(Base64.getEncoder().encode(conf.getBytes()));
         CommitBeginPayload payload = new CommitBeginPayload(correlationId, application, platform, confBase64);
-        producer.produce("commit_begin_" + haproxy, mapper.writeValueAsBytes(payload));
+        producer.produce("commit_requested_" + haproxy, mapper.writeValueAsBytes(payload));
     }
 
     public void start(){
