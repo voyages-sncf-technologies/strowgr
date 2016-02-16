@@ -85,7 +85,7 @@ public class HaasMain extends Application<HaasConfiguration> {
 
         /* Commit schedulers */
         PeriodicScheduler commitCurrentScheduler = configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
-        PeriodicScheduler commitPendingScheduler = configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
+        PeriodicScheduler commitPendingScheduler = configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
 
         /* REST Resource */
         RestApiResources restApiResource = new RestApiResources(eventBus, repository);
