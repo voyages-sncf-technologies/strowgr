@@ -13,13 +13,12 @@ import java.util.function.Consumer;
 public class RegisterServerMessageConsumer {
 
     private static final String CHANNEL = "admin";
-    private static final String TOPIC_PREFIX = "register_server";
     private final NSQConsumer registerServerConsumer;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public RegisterServerMessageConsumer(NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
+    public RegisterServerMessageConsumer(String topic, NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
 
-        registerServerConsumer = new NSQConsumer(lookup, TOPIC_PREFIX, CHANNEL, (message) -> {
+        registerServerConsumer = new NSQConsumer(lookup, topic, CHANNEL, (message) -> {
 
             RegisterServerPayload payload = null;
             try {

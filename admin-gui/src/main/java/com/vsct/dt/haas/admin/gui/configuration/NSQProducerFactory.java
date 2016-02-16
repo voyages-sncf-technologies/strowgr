@@ -25,6 +25,9 @@ public class NSQProducerFactory {
     @Max(65535)
     private int port;
 
+    @NotEmpty
+    private String topic;
+
     @JsonProperty
     public String getHost() {
         return host;
@@ -45,9 +48,18 @@ public class NSQProducerFactory {
         this.port = port;
     }
 
+    @JsonProperty
+    public String getTopic() {
+        return topic;
+    }
+
+    @JsonProperty
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
 
     public Producer build(Environment environment) {
-        Producer producer = new Producer(getHost(), getPort());
+        Producer producer = new Producer(getHost(), getPort(), getTopic());
         environment.lifecycle().manage(new Managed() {
             @Override
             public void start() throws Exception {

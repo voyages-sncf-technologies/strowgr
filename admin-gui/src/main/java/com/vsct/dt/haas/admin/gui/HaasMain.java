@@ -74,8 +74,8 @@ public class HaasMain extends Application<HaasConfiguration> {
 
         /* NSQ Consumers */
         NSQLookup lookup = configuration.getNsqLookupfactory().build(environment);
-        CommitMessageConsumer commitMessageConsumer = CommitMessageConsumerFactory.build(lookup, "haproxy", eventBus::post, environment);
-        RegisterServerMessageConsumer registerServerMessageConsumer = RegisterServerMessageConsumerFactory.build(lookup, eventBus::post, environment);
+        CommitMessageConsumer commitMessageConsumer = configuration.getCommitMessageConsumerFactory().build(lookup, "haproxy", eventBus::post, environment);
+        RegisterServerMessageConsumer registerServerMessageConsumer = configuration.getRegisterServerMessageConsumerFactory().build(lookup, eventBus::post, environment);
 
         /* NSQ Producers */
         Producer producer = configuration.getNsqProducerFactory().build(environment);

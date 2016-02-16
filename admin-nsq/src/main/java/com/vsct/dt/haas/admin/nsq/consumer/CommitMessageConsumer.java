@@ -11,12 +11,11 @@ import java.util.function.Consumer;
 public class CommitMessageConsumer {
 
     private static final String CHANNEL = "admin";
-    private static final String SUCCESS_TOPIC_PREFIX = "commit_complete_";
     private final NSQConsumer successCommitConsumer;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public CommitMessageConsumer(NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer) {
-        successCommitConsumer = new NSQConsumer(lookup, SUCCESS_TOPIC_PREFIX + haproxy, CHANNEL, (message) -> {
+    public CommitMessageConsumer(String topic, NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer) {
+        successCommitConsumer = new NSQConsumer(lookup, topic + haproxy, CHANNEL, (message) -> {
 
             CommitCompletePayload payload = null;
             try {

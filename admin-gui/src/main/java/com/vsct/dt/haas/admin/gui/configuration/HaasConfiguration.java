@@ -26,6 +26,14 @@ public class HaasConfiguration extends Configuration {
     @NotNull
     private PeriodicSchedulerFactory periodicSchedulerFactory;
 
+    @Valid
+    @NotNull
+    private CommitMessageConsumerFactory commitMessageConsumerFactory;
+
+    @Valid
+    @NotNull
+    private RegisterServerMessageConsumerFactory registerServerMessageConsumerFactory;
+
     @Min(1)
     private int threads;
 
@@ -65,8 +73,28 @@ public class HaasConfiguration extends Configuration {
     }
 
     @JsonProperty("periodicScheduler")
-    public void PeriodicSchedulerFactory(PeriodicSchedulerFactory periodicSchedulerFactory) {
+    public void setPeriodicSchedulerFactory(PeriodicSchedulerFactory periodicSchedulerFactory) {
         this.periodicSchedulerFactory = periodicSchedulerFactory;
+    }
+
+    @JsonProperty("commitMessageConsumer")
+    public CommitMessageConsumerFactory getCommitMessageConsumerFactory() {
+        return commitMessageConsumerFactory;
+    }
+
+    @JsonProperty("commitMessageConsumer")
+    public void setCommitMessageConsumerFactory(CommitMessageConsumerFactory commitMessageConsumerFactory) {
+        this.commitMessageConsumerFactory = commitMessageConsumerFactory;
+    }
+
+    @JsonProperty("registerServerMessageConsumer")
+    public RegisterServerMessageConsumerFactory getRegisterServerMessageConsumerFactory() {
+        return registerServerMessageConsumerFactory;
+    }
+
+    @JsonProperty("registerServerMessageConsumer")
+    public void setRegisterServerMessageConsumerFactory(RegisterServerMessageConsumerFactory registerServerMessageConsumerFactory) {
+        this.registerServerMessageConsumerFactory = registerServerMessageConsumerFactory;
     }
 
     @JsonProperty("threads")
