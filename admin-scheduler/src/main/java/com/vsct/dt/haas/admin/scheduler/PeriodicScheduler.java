@@ -12,7 +12,7 @@ import java.util.function.Function;
 /**
  * Created by william_montaz on 11/02/2016.
  */
-public class RecurrentScheduler<T> {
+public class PeriodicScheduler<T> {
 
     private final EntryPointRepository repository;
     private final Consumer<T> consumer;
@@ -37,23 +37,11 @@ public class RecurrentScheduler<T> {
         }
     });
 
-    public RecurrentScheduler(EntryPointRepository repository, Function<String, T> provider, Consumer<T> consumer, long periodMilli) {
+    public PeriodicScheduler(EntryPointRepository repository, Function<String, T> provider, Consumer<T> consumer, long periodMilli) {
         this.repository = repository;
         this.consumer = consumer;
         this.provider = provider;
         this.periodMilli = periodMilli;
-    }
-
-    public static RecurrentScheduler<TryCommitPendingConfigurationEvent> newRecurrentCommitPendingScheduler(EntryPointRepository repository, Consumer<TryCommitPendingConfigurationEvent> consumer, long period) {
-        return new RecurrentScheduler<>(repository, ep -> {
-            return new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep));
-        }, consumer, period);
-    }
-
-    public static RecurrentScheduler<TryCommitCurrentConfigurationEvent> newRecurrentCommitCurrentScheduler(EntryPointRepository repository, Consumer<TryCommitCurrentConfigurationEvent> consumer, long period) {
-        return new RecurrentScheduler<>(repository, ep -> {
-            return new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep));
-        }, consumer, period);
     }
 
     public void start() {
@@ -63,6 +51,18 @@ public class RecurrentScheduler<T> {
 
     public void stop() {
         stop = true;
+    }
+
+    public static PeriodicScheduler<TryCommitPendingConfigurationEvent> newPeriodicCommitPendingScheduler(EntryPointRepository repository, Consumer<TryCommitPendingConfigurationEvent> consumer, long period) {
+        return new PeriodicScheduler<>(repository, ep -> {
+            return new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep));
+        }, consumer, period);
+    }
+
+    public static PeriodicScheduler<TryCommitCurrentConfigurationEvent> newPeriodicCommitCurrentScheduler(EntryPointRepository repository, Consumer<TryCommitCurrentConfigurationEvent> consumer, long period) {
+        return new PeriodicScheduler<>(repository, ep -> {
+            return new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep));
+        }, consumer, period);
     }
 
 }
