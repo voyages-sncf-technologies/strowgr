@@ -7,9 +7,7 @@ import com.google.common.eventbus.EventBus;
 import com.vsct.dt.haas.admin.core.EntryPointEventHandler;
 import com.vsct.dt.haas.admin.core.TemplateGenerator;
 import com.vsct.dt.haas.admin.core.TemplateLocator;
-import com.vsct.dt.haas.admin.gui.configuration.CommitMessageConsumerFactory;
 import com.vsct.dt.haas.admin.gui.configuration.HaasConfiguration;
-import com.vsct.dt.haas.admin.gui.configuration.RegisterServerMessageConsumerFactory;
 import com.vsct.dt.haas.admin.gui.resource.RestApiResources;
 import com.vsct.dt.haas.admin.nsq.consumer.CommitMessageConsumer;
 import com.vsct.dt.haas.admin.nsq.consumer.RegisterServerMessageConsumer;
@@ -74,7 +72,7 @@ public class HaasMain extends Application<HaasConfiguration> {
 
         /* NSQ Consumers */
         NSQLookup lookup = configuration.getNsqLookupfactory().build(environment);
-        CommitMessageConsumer commitMessageConsumer = configuration.getCommitMessageConsumerFactory().build(lookup, "haproxy", eventBus::post, environment);
+        CommitMessageConsumer commitMessageConsumer = configuration.getCommitMessageConsumerFactory().build(lookup, configuration.getDefaultHAPName(), eventBus::post, environment);
         RegisterServerMessageConsumer registerServerMessageConsumer = configuration.getRegisterServerMessageConsumerFactory().build(lookup, eventBus::post, environment);
 
         /* NSQ Producers */

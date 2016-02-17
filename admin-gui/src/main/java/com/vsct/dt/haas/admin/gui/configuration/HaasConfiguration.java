@@ -1,8 +1,8 @@
 package com.vsct.dt.haas.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.vsct.dt.haas.admin.gui.configuration.ConsulRepositoryFactory;
 import io.dropwizard.Configuration;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -21,7 +21,7 @@ public class HaasConfiguration extends Configuration {
     @Valid
     @NotNull
     private NSQProducerFactory nsqProducerFactory;
-    
+
     @Valid
     @NotNull
     private PeriodicSchedulerFactory periodicSchedulerFactory;
@@ -33,6 +33,9 @@ public class HaasConfiguration extends Configuration {
     @Valid
     @NotNull
     private RegisterServerMessageConsumerFactory registerServerMessageConsumerFactory;
+
+    @NotEmpty
+    private String defaultHAPName;
 
     @Min(1)
     private int threads;
@@ -95,6 +98,16 @@ public class HaasConfiguration extends Configuration {
     @JsonProperty("registerServerMessageConsumer")
     public void setRegisterServerMessageConsumerFactory(RegisterServerMessageConsumerFactory registerServerMessageConsumerFactory) {
         this.registerServerMessageConsumerFactory = registerServerMessageConsumerFactory;
+    }
+
+    @JsonProperty("haproxyName")
+    public String getDefaultHAPName() {
+        return defaultHAPName;
+    }
+
+    @JsonProperty("haproxyName")
+    public void setDefaultHAPName(String defaultHAPName) {
+        this.defaultHAPName = defaultHAPName;
     }
 
     @JsonProperty("threads")
