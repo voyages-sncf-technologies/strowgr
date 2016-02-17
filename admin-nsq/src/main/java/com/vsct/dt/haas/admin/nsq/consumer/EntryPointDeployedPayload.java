@@ -13,7 +13,7 @@ public class EntryPointDeployedPayload extends Payload {
     private final String platform;
 
     @JsonCreator
-    public EntryPointDeployedPayload(@JsonProperty("correlationID") String correlationId,
+    public EntryPointDeployedPayload(@JsonProperty("correlationid") String correlationId,
                                      @JsonProperty("application") String application,
                                      @JsonProperty("platform") String platform) {
         super(correlationId);

@@ -14,7 +14,7 @@ public class CommitRequestedPayload extends Payload {
     private final String confBase64;
 
     @JsonCreator
-    public CommitRequestedPayload(@JsonProperty("correlationID") String correlationId,
+    public CommitRequestedPayload(@JsonProperty("correlationid") String correlationId,
                                   @JsonProperty("application") String application,
                                   @JsonProperty("platform") String platform,
                                   @JsonProperty("conf") String confBase64) {

@@ -13,7 +13,7 @@ public class CommitCompletePayload extends Payload {
     private final String platform;
 
     @JsonCreator
-    public CommitCompletePayload(@JsonProperty("correlationID") String correlationId,
+    public CommitCompletePayload(@JsonProperty("correlationid") String correlationId,
                                  @JsonProperty("application") String application,
                                  @JsonProperty("platform") String platform) {
         super(correlationId);
