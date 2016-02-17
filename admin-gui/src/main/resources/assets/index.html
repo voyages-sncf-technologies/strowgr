@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" ng-app="admin">
+<html lang="en" ng-app="adminApp">
 <head>
     <meta charset="utf-8">
     <title>HAAS Admin</title>
@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="webjars/angular-material/1.0.4/angular-material.min.css">
 
     <script src="webjars/angularjs/1.4.9/angular.min.js"></script>
+
+    <script src="webjars/angularjs/1.4.9/angular-route.min.js"></script>
 
     <script src="webjars/angularjs/1.4.9/angular-animate.min.js"></script>
     <script src="webjars/angularjs/1.4.9/angular-aria.min.js"></script>
@@ -26,12 +28,24 @@
     </style>
 
     <script type="text/javascript">
-        var admin = angular.module('admin', ['ngMaterial']);
+        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute']);
 
-        admin.controller('AdminCtrl', function ($scope, $http) {
+        adminApp.config(['$routeProvider', function ($routeProvider) {
+            $routeProvider.
+                    when('/entrypoints', {
+                        templateUrl: 'partials/entrypoints.html',
+                        controller: 'EntryPointsCtrl'
+                    }).
+                    otherwise({
+                        redirectTo: '/entrypoints'
+                    })
+        }]);
+
+        adminApp.controller('EntryPointsCtrl', function ($scope, $http) {
+
             $http({
                 method: 'GET',
-                url: '/api/infos'
+                url: '/api/entrypoints'
             }).then(function (response) {
                 $scope.entrypoints = response.data;
             });
@@ -40,7 +54,7 @@
 
     </script>
 </head>
-<body ng-controller="AdminCtrl">
+<body>
 <md-content>
     <md-toolbar>
         <div class="md-toolbar-tools">
@@ -50,6 +64,8 @@
         </div>
     </md-toolbar>
 </md-content>
+
+<div ng-view></div>
 
 </body>
 </html>
