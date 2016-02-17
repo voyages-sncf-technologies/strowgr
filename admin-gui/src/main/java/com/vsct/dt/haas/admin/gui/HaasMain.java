@@ -1,34 +1,31 @@
 package com.vsct.dt.haas.admin.gui;
 
 import com.codahale.metrics.MetricRegistry;
-import com.github.brainlag.nsq.lookup.DefaultNSQLookup;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.haas.admin.core.EntryPointEventHandler;
-import com.vsct.dt.haas.admin.core.EntryPointRepository;
 import com.vsct.dt.haas.admin.core.TemplateGenerator;
 import com.vsct.dt.haas.admin.core.TemplateLocator;
-import com.vsct.dt.haas.admin.core.event.out.CommitBeginEvent;
+import com.vsct.dt.haas.admin.gui.configuration.CommitMessageConsumerFactory;
+import com.vsct.dt.haas.admin.gui.configuration.HaasConfiguration;
+import com.vsct.dt.haas.admin.gui.configuration.RegisterServerMessageConsumerFactory;
 import com.vsct.dt.haas.admin.gui.resource.RestApiResources;
 import com.vsct.dt.haas.admin.nsq.consumer.CommitMessageConsumer;
 import com.vsct.dt.haas.admin.nsq.consumer.RegisterServerMessageConsumer;
 import com.vsct.dt.haas.admin.nsq.producer.Producer;
 import com.vsct.dt.haas.admin.repository.consul.ConsulRepository;
-import com.vsct.dt.haas.admin.scheduler.RecurrentScheduler;
+import com.vsct.dt.haas.admin.scheduler.PeriodicScheduler;
 import com.vsct.dt.haas.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.haas.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class HaasMain extends Application<HaasConfiguration> {
 
@@ -56,7 +53,7 @@ public class HaasMain extends Application<HaasConfiguration> {
         MetricRegistry metricRegistry = environment.metrics();
 
         /* Main EventBus */
-        ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").minThreads(50).maxThreads(50).build();
+        ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
         EventBus eventBus = new AsyncEventBus(executor);
 
         /* Templates */
@@ -76,89 +73,19 @@ public class HaasMain extends Application<HaasConfiguration> {
         eventBus.register(eventHandler);
 
         /* NSQ Consumers */
-        NSQLookup lookup = new DefaultNSQLookup();
-        lookup.addLookupAddress("localhost", 50161);
-
-        CommitMessageConsumer commitMessageConsumer = new CommitMessageConsumer(lookup, "haproxy", eventBus::post);
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                LOGGER.info("Starting CommitMessageConsumer");
-                commitMessageConsumer.start();
-            }
-
-            @Override
-            public void stop() throws Exception {
-                LOGGER.info("Stopping CommitMessageConsumer");
-                commitMessageConsumer.stop();
-            }
-        });
-
-
-        RegisterServerMessageConsumer registerServerMessageConsumer = new RegisterServerMessageConsumer(lookup, eventBus::post);
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                LOGGER.info("Starting RegisterServerMessageConsumer");
-                registerServerMessageConsumer.start();
-            }
-
-            @Override
-            public void stop() throws Exception {
-                LOGGER.info("Stopping RegisterServerMessageConsumer");
-                registerServerMessageConsumer.stop();
-            }
-        });
+        NSQLookup lookup = configuration.getNsqLookupfactory().build(environment);
+        CommitMessageConsumer commitMessageConsumer = configuration.getCommitMessageConsumerFactory().build(lookup, "haproxy", eventBus::post, environment);
+        RegisterServerMessageConsumer registerServerMessageConsumer = configuration.getRegisterServerMessageConsumerFactory().build(lookup, eventBus::post, environment);
 
         /* NSQ Producers */
-        Producer producer = new Producer("localhost", 50161);
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                LOGGER.info("Starting NSQProducer");
-                registerServerMessageConsumer.start();
-            }
-
-            @Override
-            public void stop() throws Exception {
-                LOGGER.info("Stopping NSQProducer");
-                registerServerMessageConsumer.stop();
-            }
-        });
+        Producer producer = configuration.getNsqProducerFactory().build(environment);
 
         CommitBeginEventListener commitBeginEventListener = new CommitBeginEventListener(producer);
         eventBus.register(commitBeginEventListener);
 
         /* Commit schedulers */
-        RecurrentScheduler commitCurrentScheduler = RecurrentScheduler.newRecurrentCommitCurrentScheduler(repository, eventBus::post, 10000);
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                LOGGER.info("Starting CommitCurrentScheduler");
-                commitCurrentScheduler.start();
-            }
-
-            @Override
-            public void stop() throws Exception {
-                LOGGER.info("Stopping CommitCurrentScheduler");
-                commitCurrentScheduler.stop();
-            }
-        });
-
-        RecurrentScheduler commitPendingScheduler = RecurrentScheduler.newRecurrentCommitPendingScheduler(repository, eventBus::post, 10000);
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                LOGGER.info("Starting CommitPendingScheduler");
-                commitPendingScheduler.start();
-            }
-
-            @Override
-            public void stop() throws Exception {
-                LOGGER.info("Stopping CommitPendingScheduler");
-                commitPendingScheduler.stop();
-            }
-        });
+        PeriodicScheduler commitCurrentScheduler = configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
+        PeriodicScheduler commitPendingScheduler = configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
 
         /* REST Resource */
         RestApiResources restApiResource = new RestApiResources(eventBus, repository);

@@ -28,6 +28,6 @@ public class CommitBeginEventListener {
         String application = context.get("application");
         String platform = context.get("platform");
         /* TODO test application and platform nullity */
-        this.producer.sendCommitBegin(event.getCorrelationId(), configuration.getHaproxy(), application, platform, event.getConf());
+        this.producer.sendCommitRequested(event.getCorrelationId(), configuration.getHaproxy(), application, platform, event.getConf());
     }
 }
