@@ -21,9 +21,18 @@
 
     <script src="webjars/lodash/4.0.0/lodash.min.js"></script>
 
-    <style>
+    <style type="text/css">
         .layout-margin {
             margin: 4px;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        #wrapper {
+            min-height: 100%;
         }
     </style>
 
@@ -55,17 +64,28 @@
     </script>
 </head>
 <body>
-<md-content>
-    <md-toolbar>
-        <div class="md-toolbar-tools">
-            <h2>
-                <span>HAProxy As A Service</span>
-            </h2>
-        </div>
-    </md-toolbar>
-</md-content>
-
-<div ng-view></div>
-
+<div id="wrapper" layout="column">
+    <div>
+        <md-content>
+            <md-toolbar>
+                <div class="md-toolbar-tools">
+                    <h2>
+                        <span>HAProxy As A Service</span>
+                    </h2>
+                </div>
+            </md-toolbar>
+        </md-content>
+    </div>
+    <div ng-view layout flex>
+    </div>
+    <div>
+        <md-content>
+            <md-toolbar>
+                <div class="md-toolbar-tools">
+                </div>
+            </md-toolbar>
+        </md-content>
+    </div>
+</div>
 </body>
 </html>
