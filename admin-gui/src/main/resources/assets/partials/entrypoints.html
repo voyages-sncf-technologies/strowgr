@@ -1,1 +1,31 @@
-{{entrypoints}}
+<style>
+    .left-menu .button{
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .left-menu {
+        border-right-color: black;
+        border-right: solid;
+    }
+</style>
+
+<div layout="row">
+    <div flex="20" class="left-menu">
+        <md-content>
+            <div flex>
+                <md-input-container class="md-block" flex>
+                    <label>Filtrer</label>
+                    <input ng-model="searchTerm">
+                </md-input-container>
+            </div>
+            <div ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout layout-align="end center">
+                <md-button class="button">{{entrypointId}}</md-button>
+            </div>
+        </md-content>
+    </div>
+    <div flex>
+
+    </div>
+</div>
