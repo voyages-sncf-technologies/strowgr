@@ -7,6 +7,7 @@ import com.vsct.dt.haas.admin.core.TemplateGenerator;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 
@@ -15,9 +16,9 @@ public class MustacheTemplateGenerator implements TemplateGenerator {
     private final MustacheFactory mf = new DefaultMustacheFactory();
 
     @Override
-    public String generate(Reader template, EntryPointConfiguration configuration) {
+    public String generate(String template, EntryPointConfiguration configuration) {
         Writer writer = new StringWriter();
-        Mustache mustache = mf.compile(template, "no_cache");
+        Mustache mustache = mf.compile(new StringReader(template), "no_cache");
         mustache.execute(writer, new HaasMustacheScope(configuration));
         return writer.toString();
     }

@@ -38,7 +38,7 @@ public class MustacheTemplateTest {
         File file = new File(classLoader.getResource("template.without.context.mustache").getFile());
         FileReader reader = new FileReader(file);
 
-        String result = templateGenerator.generate(reader, configuration);
+        String result = templateGenerator.generate(CharStreams.toString(reader), configuration);
 
         File expectedF = new File(classLoader.getResource("template.without.context.mustache.expected").getFile());
         reader = new FileReader(expectedF);

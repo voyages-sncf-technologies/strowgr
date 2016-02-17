@@ -7,6 +7,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -22,14 +23,14 @@ public class UriTemplateLocator implements TemplateLocator {
     }
 
     @Override
-    public Reader readTemplate(EntryPointConfiguration configuration) {
+    public String readTemplate(EntryPointConfiguration configuration) {
         try {
             HttpGet getTemplate = new HttpGet(configuration.getContext().get(uriField));
             return client.execute(getTemplate, (response) -> {
                 int status = response.getStatusLine().getStatusCode();
                 if (status >= 200 && status < 300) {
                     HttpEntity entity = response.getEntity();
-                    return new InputStreamReader(entity.getContent());
+                    return EntityUtils.toString(entity);
                 } else {
                     throw new ClientProtocolException("Unexpected response status: " + status);
                 }

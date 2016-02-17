@@ -5,5 +5,5 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import java.io.Reader;
 
 public interface TemplateLocator {
-    Reader readTemplate(EntryPointConfiguration configuration);
+    String readTemplate(EntryPointConfiguration configuration);
 }

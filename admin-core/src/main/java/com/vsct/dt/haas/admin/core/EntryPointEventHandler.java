@@ -98,8 +98,8 @@ public class EntryPointEventHandler {
             this.stateManager.lock(key);
             Optional<EntryPointConfiguration> committingConfiguration = stateManager.tryCommitCurrent(key);
             if (committingConfiguration.isPresent()) {
-                Reader reader = templateLocator.readTemplate(committingConfiguration.get());
-                String conf = templateGenerator.generate(reader, committingConfiguration.get());
+                String template = templateLocator.readTemplate(committingConfiguration.get());
+                String conf = templateGenerator.generate(template, committingConfiguration.get());
                 outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf));
             }
         } finally {
@@ -114,8 +114,8 @@ public class EntryPointEventHandler {
             this.stateManager.lock(key);
             Optional<EntryPointConfiguration> committingConfiguration = stateManager.tryCommitPending(key);
             if (committingConfiguration.isPresent()) {
-                Reader reader = templateLocator.readTemplate(committingConfiguration.get());
-                String conf = templateGenerator.generate(reader, committingConfiguration.get());
+                String template = templateLocator.readTemplate(committingConfiguration.get());
+                String conf = templateGenerator.generate(template, committingConfiguration.get());
                 outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf));
             }
         } finally {
