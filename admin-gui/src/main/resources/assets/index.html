@@ -65,8 +65,8 @@
 
         });
 
-        adminApp.directive('entrypointView', ['$interval', '$timeout', '$http',
-            function ($interval, $timeout, $http) {
+        adminApp.directive('entrypointView', ['$interval', '$timeout', '$http', '$q',
+            function ($interval, $timeout, $http, $q) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/entrypoint-view.html',
@@ -76,75 +76,80 @@
                     link: function (scope, element, attrs) {
                         reloadDelay = 3000;
                         blinkingDelay = 3000;
+                        autoRefresh = false;
+                        blinking = false;
 
-                        refreshCurrent = $interval(function () {
-                            if (scope.id) {
-                                $http({
-                                    method: 'GET',
-                                    url: '/api/entrypoint/' + scope.id + '/current'
-                                }).then(function (response) {
-                                    scope.current = response.data;
-                                }, function (error) {
-                                    //TODO Check for 404
-                                    scope.current = undefined
-                                })
-                            }
-                        }, reloadDelay);
+                        refreshAllStates = function () {
+                            return $q.all([
+                                $http.get('/api/entrypoint/' + scope.id + '/current')
+                                        .then(function (response) {
+                                            scope.current = response.data;
+                                        }, function (error) {
+                                            //TODO Check for 404
+                                            scope.current = undefined
+                                        }),
+                                $http.get('/api/entrypoint/' + scope.id + '/pending')
+                                        .then(function (response) {
+                                            scope.pending = response.data;
+                                        }, function (error) {
+                                            //TODO Check for 404
+                                            scope.pending = undefined
+                                        }),
+                                $http.get('/api/entrypoint/' + scope.id + '/committing')
+                                        .then(function (response) {
+                                            scope.committing = response.data;
+                                        }, function (error) {
+                                            //TODO Check for 404
+                                            scope.committing = undefined
+                                        })
+                            ])
+                        };
 
-                        refreshPending = $interval(function () {
-                            if (scope.id) {
-                                $http({
-                                    method: 'GET',
-                                    url: '/api/entrypoint/' + scope.id + '/pending'
-                                }).then(function (response) {
-                                    scope.pending = response.data;
-                                }, function (error) {
-                                    //TODO Check for 404
-                                    scope.pending = undefined
-                                })
-                            }
-                        }, reloadDelay);
+                        /* When id is changed, we must reload the data */
+                        scope.$watch('id', function (newValue, oldValue) {
+                            autoRefresh = false;
+                            blinking = false;
+                            refreshAllStates().then(function () {
+                                autoRefresh = true;
+                                blinking = true;
+                            });
+                        });
 
-                        refreshCommitting = $interval(function () {
-                            if (scope.id) {
-                                $http({
-                                    method: 'GET',
-                                    url: '/api/entrypoint/' + scope.id + '/committing'
-                                }).then(function (response) {
-                                    scope.committing = response.data;
-                                }, function (error) {
-                                    //TODO Check for 404
-                                    scope.committing = undefined
-                                })
+                        refreshAuto = $interval(function () {
+                            if (scope.id && autoRefresh) {
+                                refreshAllStates();
                             }
                         }, reloadDelay);
 
                         /* Make tab blink while something is committing */
                         scope.$watch('committing', function (newValue, oldValue) {
-                            scope.commitBlink = (newValue != undefined);
+                            if (blinking) {
+                                scope.commitBlink = (newValue != undefined);
+                            }
                         }, true);
 
                         /* Make tab blink several seconds when new pending */
                         scope.$watch('pending', function (newValue, oldValue) {
-                            scope.pendingBlink = true;
-                            $timeout(function () {
-                                scope.pendingBlink = false;
-                            }, blinkingDelay);
+                            if (blinking) {
+                                scope.pendingBlink = true;
+                                $timeout(function () {
+                                    scope.pendingBlink = false;
+                                }, blinkingDelay);
+                            }
                         }, true);
 
                         /* Make tab blink several seconds when new current */
                         scope.$watch('current', function (newValue, oldValue) {
-                            scope.currentBlink = true;
-                            $timeout(function () {
-                                scope.currentBlink = false;
-                            }, blinkingDelay);
-                        }, false);
+                            if (blinking) {
+                                scope.currentBlink = true;
+                                $timeout(function () {
+                                    scope.currentBlink = false;
+                                }, blinkingDelay);
+                            }
+                        }, true);
 
                         scope.$on('$destroy', function () {
-                            alert('Stopping intervals');
-                            $interval.cancel(refreshCurrent);
-                            $interval.cancel(refreshPending);
-                            $interval.cancel(refreshCommitting);
+                            $interval.cancel(refreshAuto);
                         });
                     }
                 }
