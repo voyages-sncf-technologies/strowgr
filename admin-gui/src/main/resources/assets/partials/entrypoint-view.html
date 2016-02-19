@@ -1,0 +1,31 @@
+<style>
+    .blink {
+        font-weight: bold;
+        animation: blinker 1s linear infinite;
+    }
+
+    @keyframes blinker {
+        50% { opacity: 0.0; }
+    }
+</style>
+
+<md-tabs>
+    <md-tab>
+        <md-tab-label><span ng-class="{blink: currentBlink}">Configuration courante</span></md-tab-label>
+        <md-tab-body>
+            {{current}}
+        </md-tab-body>
+    </md-tab>
+    <md-tab>
+        <md-tab-label><span  ng-class="{blink: pendingBlink}">En attente</span></md-tab-label>
+        <md-tab-body>
+            {{pending}}
+        </md-tab-body>
+    </md-tab>
+    <md-tab>
+        <md-tab-label><span ng-class="{blink: commitBlink}">Commit en cours</span></md-tab-label>
+        <md-tab-body>
+            {{committing}}
+        </md-tab-body>
+    </md-tab>
+</md-tabs>

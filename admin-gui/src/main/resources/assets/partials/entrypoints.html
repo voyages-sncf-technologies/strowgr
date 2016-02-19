@@ -1,31 +1,58 @@
 <style>
-    .left-menu .button{
-        width: 100%;
-        margin: 0;
-        padding: 0;
+    .left-menu {
+        color: white;
+        background-color: #C5CAE9;
     }
 
-    .left-menu {
-        border-right-color: black;
-        border-right: solid;
+    .left-menu div {
+        background-color: #C5CAE9;
+    }
+
+    .left-menu .btn {
+        width: 250px;
+        margin: 0;
+        padding: 0;
+        color: white;
+        background-color: #C5CAE9;
+        border-radius: 0 20px 20px 0;
+        box-shadow: 0 0px 0px 0 rgba(0, 0, 0, .26);
+    }
+
+    .left-menu .btn:not([disabled]):hover {
+        font-weight: bold;
+        background-color: #3F51B5;
+        box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .26);
+    }
+
+    .left-menu .btn.selected {
+        font-weight: bold;
+        background-color: #3F51B5;
+        box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .26);
+    }
+
+    .left-menu #entrypointFilter {
+        width: 200px;
+        padding-left: 10px;
+        background-color: #C5CAE9;
     }
 </style>
 
 <div layout="row" flex="100">
-    <div flex="20" class="left-menu">
-        <md-content>
-            <div flex>
-                <md-input-container class="md-block" flex>
-                    <label>Filtrer</label>
-                    <input ng-model="searchTerm">
-                </md-input-container>
-            </div>
-            <div ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout layout-align="end center">
-                <md-button class="button">{{entrypointId}}</md-button>
-            </div>
-        </md-content>
+    <div class="left-menu">
+        <div flex layout-align="start start" id="entrypointFilter">
+            <md-input-container class="md-block" flex="90">
+                <label>Filtrer</label>
+                <input ng-model="searchTerm">
+            </md-input-container>
+        </div>
+        <div ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout layout-align="start center">
+            <md-button id="{{entrypointId}}-select-btn"
+                       md-ink-ripple="false"
+                       ng-class="{selected: selectedEntrypoint == entrypointId}"
+                       class="btn" ng-click="loadEntrypoint(entrypointId)">{{entrypointId}}</md-button>
+        </div>
     </div>
     <div flex>
-
+        <entrypoint-view id="selectedEntrypoint"></entrypoint-view>
     </div>
 </div>

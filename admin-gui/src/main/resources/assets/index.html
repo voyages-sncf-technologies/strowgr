@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>HAAS Admin</title>
 
-    <link rel="stylesheet" href="webjars/angular-material/1.0.4/angular-material.min.css">
+    <link rel="stylesheet" href="webjars/angular-material/1.0.5/angular-material.min.css">
 
     <script src="webjars/angularjs/1.4.9/angular.min.js"></script>
 
@@ -15,7 +15,7 @@
     <script src="webjars/angularjs/1.4.9/angular-animate.min.js"></script>
     <script src="webjars/angularjs/1.4.9/angular-messages.min.js"></script>
 
-    <script src="webjars/angular-material/1.0.4/angular-material.js"></script>
+    <script src="webjars/angular-material/1.0.5/angular-material.js"></script>
 
     <script src="webjars/jquery/3.0.0-alpha1/jquery.min.js"></script>
 
@@ -43,14 +43,14 @@
             $routeProvider.
                     when('/entrypoints', {
                         templateUrl: 'partials/entrypoints.html',
-                        controller: 'EntryPointsCtrl'
+                        controller: 'EntrypointsCtrl'
                     }).
                     otherwise({
                         redirectTo: '/entrypoints'
                     })
         }]);
 
-        adminApp.controller('EntryPointsCtrl', function ($scope, $http) {
+        adminApp.controller('EntrypointsCtrl', function ($scope, $http, $interval) {
 
             $http({
                 method: 'GET',
@@ -58,8 +58,98 @@
             }).then(function (response) {
                 $scope.entrypoints = response.data;
             });
+
+            $scope.loadEntrypoint = function (id) {
+                $scope.selectedEntrypoint = id;
+            }
+
         });
 
+        adminApp.directive('entrypointView', ['$interval', '$timeout', '$http',
+            function ($interval, $timeout, $http) {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/entrypoint-view.html',
+                    scope: {
+                        id: '=id'
+                    },
+                    link: function (scope, element, attrs) {
+                        reloadDelay = 3000;
+                        blinkingDelay = 3000;
+
+                        refreshCurrent = $interval(function () {
+                            if (scope.id) {
+                                $http({
+                                    method: 'GET',
+                                    url: '/api/entrypoint/' + scope.id + '/current'
+                                }).then(function (response) {
+                                    scope.current = response.data;
+                                }, function (error) {
+                                    //TODO Check for 404
+                                    scope.current = undefined
+                                })
+                            }
+                        }, reloadDelay);
+
+                        refreshPending = $interval(function () {
+                            if (scope.id) {
+                                $http({
+                                    method: 'GET',
+                                    url: '/api/entrypoint/' + scope.id + '/pending'
+                                }).then(function (response) {
+                                    scope.pending = response.data;
+                                }, function (error) {
+                                    //TODO Check for 404
+                                    scope.pending = undefined
+                                })
+                            }
+                        }, reloadDelay);
+
+                        refreshCommitting = $interval(function () {
+                            if (scope.id) {
+                                $http({
+                                    method: 'GET',
+                                    url: '/api/entrypoint/' + scope.id + '/committing'
+                                }).then(function (response) {
+                                    scope.committing = response.data;
+                                }, function (error) {
+                                    //TODO Check for 404
+                                    scope.committing = undefined
+                                })
+                            }
+                        }, reloadDelay);
+
+                        /* Make tab blink while something is committing */
+                        scope.$watch('committing', function (newValue, oldValue) {
+                            scope.commitBlink = (newValue != undefined);
+                        }, true);
+
+                        /* Make tab blink several seconds when new pending */
+                        scope.$watch('pending', function (newValue, oldValue) {
+                            scope.pendingBlink = true;
+                            $timeout(function () {
+                                scope.pendingBlink = false;
+                            }, blinkingDelay);
+                        }, true);
+
+                        /* Make tab blink several seconds when new current */
+                        scope.$watch('current', function (newValue, oldValue) {
+                            scope.currentBlink = true;
+                            $timeout(function () {
+                                scope.currentBlink = false;
+                            }, blinkingDelay);
+                        }, false);
+
+                        scope.$on('$destroy', function () {
+                            alert('Stopping intervals');
+                            $interval.cancel(refreshCurrent);
+                            $interval.cancel(refreshPending);
+                            $interval.cancel(refreshCommitting);
+                        });
+                    }
+                }
+            }])
+        ;
 
     </script>
 </head>
