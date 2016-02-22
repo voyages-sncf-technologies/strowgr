@@ -41,8 +41,8 @@ func (hap *Haproxy) ApplyConfiguration(data EventMessage) error {
 		ioutil.WriteFile(path, newConf, 0644)
 
 		errorFilename := hap.NewErrorPath()
-		f, err := os.Create(errorFilename)
-		if err == nil {
+		f, err2 := os.Create(errorFilename)
+		if err2 == nil {
 			f.WriteString("================================================================\n")
 			f.WriteString(fmt.Sprintf("application: %s\n", data.Application))
 			f.WriteString(fmt.Sprintf("platform: %s\n", data.Platform))
@@ -51,7 +51,7 @@ func (hap *Haproxy) ApplyConfiguration(data EventMessage) error {
 			f.Write(newConf)
 			f.Sync()
 			log.Printf("Invalid conf logged into %s", errorFilename)
-			return nil
+			return err
 		}
 		defer f.Close()
 		//		err = hap.rollback()

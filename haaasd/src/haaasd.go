@@ -9,9 +9,10 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/bitly/go-nsq"
 	"log"
-	"net"
-	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 )
 
 var (
@@ -47,18 +48,45 @@ func main() {
 
 	log.Printf("Starting haaasd (%s) with id %v", properties.Status, properties.NodeId())
 
-	startTryUpdateConsumer()
-	startUpdateConsumer()
-
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
 
-	starRestAPI()
-}
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 
-func check(err error) {
+	var wg sync.WaitGroup
+	restApi, err := haaasd.NewRestApi(&properties)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Cannot start api")
 	}
+	// Start API
+	go func() {
+		defer wg.Done()
+		wg.Add(1)
+		restApi.Start()
+	}()
+
+	//	 Start slave consumer
+	go func() {
+		defer wg.Done()
+		wg.Add(1)
+		startTryUpdateConsumer()
+	}()
+
+	//	 Start master consumer
+	go func() {
+		defer wg.Done()
+		wg.Add(1)
+		startUpdateConsumer()
+	}()
+
+	select {
+	case signal := <-sigChan:
+		fmt.Printf("Got signal: %v\n", signal)
+	}
+	restApi.Stop()
+
+	fmt.Printf("Waiting on server\n")
+	wg.Wait()
 }
 
 func startTryUpdateConsumer() {
@@ -74,15 +102,20 @@ func startTryUpdateConsumer() {
 
 		if isSlave {
 			log.Printf("Receive commit_requested event %s", message.Body)
-			data, err := bodyToDatas(message.Body)
-			check(err)
+			data, err := bodyToData(message.Body)
+			if err != nil {
+				log.Print("Unable to read data\n%s", string(message.Body))
+				return err
+			}
 
+			log.Printf("Receive commit_requested event %-v", data)
 			hap := haaasd.NewHaproxy(&properties, data.Application, data.Platform)
 			err = hap.ApplyConfiguration(data)
 			if err == nil {
-				commitTryUpdate(data)
+				publishMessage("commit_slave_completed_", data)
 			} else {
 				log.Print(err)
+				publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 			}
 		}
 
@@ -95,13 +128,8 @@ func startTryUpdateConsumer() {
 	}
 }
 
-func commitTryUpdate(data haaasd.EventMessage) {
-	publishMessage("commit_slave_complete_", data)
-}
-
 func startUpdateConsumer() {
-	updateConsumer, err := nsq.NewConsumer("commit_slave_complete_"+properties.ClusterId, properties.NodeId(), config)
-	check(err)
+	updateConsumer, _ := nsq.NewConsumer("commit_slave_completed_"+properties.ClusterId, properties.NodeId(), config)
 
 	updateConsumer.AddHandler(nsq.HandlerFunc(func(message *nsq.Message) error {
 		defer message.Finish()
@@ -111,16 +139,20 @@ func startUpdateConsumer() {
 		}
 
 		if isMaster {
-			log.Printf("Receive commit_slave_complete event %s", message.Body)
-			data, err := bodyToDatas(message.Body)
-			check(err)
+			log.Printf("Receive commit_slave_completed event %s", message.Body)
+			data, err := bodyToData(message.Body)
+			if err != nil {
+				log.Print("Unable to read data\n%s", string(message.Body))
+				return err
+			}
 
 			hap := haaasd.NewHaproxy(&properties, data.Application, data.Platform)
 			err = hap.ApplyConfiguration(data)
 
 			if err == nil {
-				commitUpdate(data)
+				publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 			} else {
+				publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 				log.Fatal(err)
 			}
 		}
@@ -128,39 +160,18 @@ func startUpdateConsumer() {
 		return nil
 	}))
 
-	err = updateConsumer.ConnectToNSQLookupd(properties.LookupdAddr)
+	err := updateConsumer.ConnectToNSQLookupd(properties.LookupdAddr)
 	if err != nil {
 		log.Panic("Could not connect")
 	}
 }
 
-func commitUpdate(data haaasd.EventMessage) {
-	publishMessage("commit_complete_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
-}
-
 // Unmarshal json to EventMessage
-func bodyToDatas(jsonStream []byte) (haaasd.EventMessage, error) {
+func bodyToData(jsonStream []byte) (haaasd.EventMessage, error) {
 	dec := json.NewDecoder(bytes.NewReader(jsonStream))
 	var message haaasd.EventMessage
-	dec.Decode(&message)
-	return message, nil
-}
-
-// Start web server
-// endpoints:
-//	/real-ip : get the haaasd ip address as given by the -ip command parameter
-func starRestAPI() {
-	sm := http.NewServeMux()
-	sm.HandleFunc("/real-ip", func(writer http.ResponseWriter, request *http.Request) {
-		log.Printf("GET /real-ip")
-		fmt.Fprintf(writer, "%s\n", *ip)
-	})
-	log.Printf("Start listening on port %d", properties.Port)
-	listener, err := net.Listen("tcp4", fmt.Sprintf(":%d", properties.Port))
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Fatal(http.Serve(listener, sm))
+	err := dec.Decode(&message)
+	return message, err
 }
 
 func publishMessage(topic_prefix string, data interface{}) error {
