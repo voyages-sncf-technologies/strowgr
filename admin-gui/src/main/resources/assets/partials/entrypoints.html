@@ -1,39 +1,45 @@
 <style>
     .left-menu {
-        color: white;
-        background-color: #C5CAE9;
+        color: rgb(63,81,181);
+        background-color: #FFFFFF;
     }
 
     .left-menu div {
-        background-color: #C5CAE9;
+        background-color: #FFFFFF;
     }
 
     .left-menu .btn {
         width: 250px;
         margin: 0;
         padding: 0;
-        color: white;
-        background-color: #C5CAE9;
+        color: rgb(63,81,181);
+        background-color: #FFFFFF;
         border-radius: 0 20px 20px 0;
-        box-shadow: 0 0px 0px 0 rgba(0, 0, 0, .26);
+        box-shadow: 0 0px 0px 0 rgba(0, 0, 0, 0);
     }
 
     .left-menu .btn:not([disabled]):hover {
         font-weight: bold;
+        position: relative;
+        z-index: 10;
+        color: #FFFFFF;
         background-color: #3F51B5;
-        box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .26);
+        box-shadow: 0 5px 7px 0 rgba(0, 0, 0, .26);
     }
 
     .left-menu .btn.selected {
         font-weight: bold;
+        position: relative;
+        z-index: 10;
+        color: #FFFFFF;
         background-color: #3F51B5;
-        box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .26);
+        box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .50);
     }
 
     .left-menu #entrypointFilter {
         width: 200px;
         padding-left: 10px;
-        background-color: #C5CAE9;
+        background-color: #FFFFFF;
     }
 </style>
 
@@ -45,7 +51,7 @@
                 <input ng-model="searchTerm">
             </md-input-container>
         </div>
-        <div ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout layout-align="start center">
+        <div ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout layout-align="start center" ng-cloack>
             <md-button id="{{entrypointId}}-select-btn"
                        md-ink-ripple="false"
                        ng-class="{selected: selectedEntrypoint == entrypointId}"

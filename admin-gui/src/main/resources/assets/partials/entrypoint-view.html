@@ -8,23 +8,28 @@
     }
 </style>
 
-<md-tabs>
+<script type="text/ng-template">
+
+</script>
+
+<md-tabs md-dynamic-height>
     <md-tab>
         <md-tab-label><span ng-class="{blink: currentBlink}">Configuration courante</span></md-tab-label>
         <md-tab-body>
-            {{current}}
+            <entrypoint-configuration-view conf="current"></entrypoint-configuration-view>
         </md-tab-body>
     </md-tab>
     <md-tab>
         <md-tab-label><span  ng-class="{blink: pendingBlink}">En attente</span></md-tab-label>
         <md-tab-body>
-            {{pending}}
+            <entrypoint-configuration-view conf="pending"></entrypoint-configuration-view>
         </md-tab-body>
     </md-tab>
     <md-tab>
         <md-tab-label><span ng-class="{blink: commitBlink}">Commit en cours</span></md-tab-label>
         <md-tab-body>
-            {{committing}}
+            <entrypoint-configuration-view conf="committing"></entrypoint-configuration-view>
         </md-tab-body>
     </md-tab>
 </md-tabs>
+

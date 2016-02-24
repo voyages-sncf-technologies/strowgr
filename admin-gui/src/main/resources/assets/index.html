@@ -5,6 +5,7 @@
     <title>HAAS Admin</title>
 
     <link rel="stylesheet" href="webjars/angular-material/1.0.5/angular-material.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <script src="webjars/angularjs/1.4.9/angular.min.js"></script>
 
@@ -64,6 +65,53 @@
             }
 
         });
+
+        adminApp.directive('entrypointConfigurationView', [
+            function () {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/entrypoint-configuration-view.html',
+                    scope: {
+                        conf: '=conf'
+                    },
+                    link: function(scope, element, attrs){
+                        scope.globalContextFilter = function(entry, index, array){
+                            //if(entry.$key == 'application' || entry.$key == 'plateforme' || entry.$key == 'templateUri'){
+                            //    return false;
+                            //}
+                            return true;
+                        };
+                    }
+                }
+            }
+        ]);
+
+        adminApp.directive('contextMap', [ '$mdDialog',
+           function($mdDialog) {
+               return {
+                   restrict: 'E',
+                   templateUrl: 'partials/context-map.html',
+                   scope: {
+                       context: '=context',
+                       title: '@'
+                   },
+                   link: function(scope, element, attrs){
+                       scope.showContext = function(){
+                           $mdDialog.show({
+                               templateUrl: 'context-map/popup.html',
+                               clickOutsideToClose: true,
+                               scope: scope,
+                               autoWrap: false,
+                               openFrom: element,
+                               closeTo: element,
+                               preserveScope: true,
+                               fullscreen: false
+                           });
+                       }
+                   }
+               }
+           }
+        ]);
 
         adminApp.directive('entrypointView', ['$interval', '$timeout', '$http', '$q',
             function ($interval, $timeout, $http, $q) {
@@ -153,8 +201,7 @@
                         });
                     }
                 }
-            }])
-        ;
+            }]);
 
     </script>
 </head>

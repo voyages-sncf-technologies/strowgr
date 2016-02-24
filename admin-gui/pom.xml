@@ -89,7 +89,6 @@
             <version>1.0.5</version>
         </dependency>
 
-
         <!-- Test dependencies -->
         <dependency>
             <groupId>io.dropwizard</groupId>
