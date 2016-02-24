@@ -23,9 +23,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -163,6 +161,27 @@ public class RestApiResources {
         CommitFailureEvent event = new CommitFailureEvent(correlationId, new EntryPointKeyDefaultImpl(id));
         eventBus.post(event);
         return "Request posted, look info to follow actions";
+    }
+
+    @GET
+    @Path("/entrypoint/{id : .+}/port")
+    public String getPort(@PathParam("id") String id) {
+        Optional<Integer> port = repository.getPort(id);
+        if (port.isPresent())
+            return String.valueOf(port.get());
+        else return "port not found for entry point " + id;
+    }
+
+    @GET
+    @Path("/ports")
+    public Map<String, Integer> getPorts() {
+        return repository.getPorts().orElseGet(HashMap::new);
+    }
+
+    @PUT
+    @Path("/entrypoint/{id : .+}/newport")
+    public String setPort(@PathParam("id") String id) {
+        return String.valueOf(repository.newPort(id));
     }
 
     private <T> WaiterBuilder waitEventWithId(String eventId) {
