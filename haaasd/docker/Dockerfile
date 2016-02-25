@@ -12,6 +12,7 @@ COPY entrypoint.sh /entrypoint.sh
 COPY haproxy.cfg /conf/haproxy.cfg
 COPY hapctl_unif /HOME/uxwadm/scripts/hapctl_unif
 COPY HAP_KILL /HOME/hapadm/sudo/HAP_KILL
+RUN chmod +x /HOME/hapadm/sudo/HAP_KILL
 RUN chmod +x /entrypoint.sh
 
 CMD /entrypoint.sh
