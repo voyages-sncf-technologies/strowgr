@@ -2,7 +2,6 @@ FROM dockerregistry.socrate.vsct.fr:5000/vsct/centos:6
 RUN yum install -y \
     vsc_sudoers \
     vsc_haproxy_1.4.26 \
-    vsc_haproxy_1.4.26 \
     vsc_haproxy_1.5.11 \
     vsc_haproxy_ssl1.4.22 \
     vsc_haproxy_ssl1.5.11 \
