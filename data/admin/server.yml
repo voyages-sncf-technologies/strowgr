@@ -1,0 +1,27 @@
+server:
+  type: simple
+  rootPath: /api/
+  applicationContextPath: /
+threads: 20
+haproxyName: default-name
+repository:
+  host: consul
+  port: 8500
+nsqLookup:
+  host: nslookupd
+  port: 4161
+nsqProducer:
+  host: nsqd
+  port: 4150
+  topic: commit_requested_
+commitMessageConsumer:
+  successTopic: commit_completed_
+registerServerMessageConsumer:
+  topic: register_server
+periodicScheduler:
+  current:
+    periodMilli: 10000
+  pending:
+    periodMilli: 10000
+logging:
+  level: INFO
