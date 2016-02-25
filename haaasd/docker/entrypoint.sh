@@ -1,6 +1,11 @@
-#!/usr/bin/env sh
-#haproxy -f /conf/haproxy.cfg &
+#!/bin/sh
 
-#mkdir /HOME/hapadm/OCE/logs/OCEREC1 -p
+# Create users
+for APP in OCE ECE MPD PAO;do
+    for PLT in r u e p h;do
+        for N in $(seq 1 2);do
+            useradd $(echo hap$APP$PLT$N | tr '[:upper:]' '[:lower:]')
+        done
+    done
+done
 /haaasd --config /haaasd.conf -ip $(hostname -i)
-#/haaasd --config /haaas.conf -ip $(ip addr show dev eth0|grep -o -e "[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*")

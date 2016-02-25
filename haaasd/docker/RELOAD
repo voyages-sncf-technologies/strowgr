@@ -1,2 +1,2 @@
 #!/bin/sh
-echo Yeah!
+/HOME/hapadm/OCE/scripts/hapctlOCEREC1 reload; sleep 2;
