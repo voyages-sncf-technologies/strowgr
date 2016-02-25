@@ -13,7 +13,8 @@ cat <<-EOF
     "timestamp":$TS,
     "correlationid":"$UUID",
     "application":"OCE",
-    "platform":"REC1"
+    "platform":"REC1",
+    "hapversion": "1.4.22"
 }
 EOF
 )
