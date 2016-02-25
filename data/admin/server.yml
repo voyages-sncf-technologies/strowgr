@@ -8,7 +8,7 @@ repository:
   host: consul
   port: 8500
 nsqLookup:
-  host: nslookupd
+  host: nsqlookupd
   port: 4161
 nsqProducer:
   host: nsqd
