@@ -1,0 +1,33 @@
+@startuml
+skinparam state {
+  BackgroundColor YellowGreen
+  BorderColor Green
+  ArrowColor Black
+
+  BackgroundColor<<Error>> Orange
+  BorderColor<<Error>> Tomato
+
+  BackgroundColor<<Fatal>> Red
+}
+
+idle --> reloading_XXX : commit_requested
+state reloading_XXX{
+
+  [*] --> init
+  init --> reloaded_slave_wait_commit : slave_reloaded
+  reloaded_slave_wait_commit --> reloading_master : completed
+  reloading_slave --> rollback_slave <<Error>> : failed
+
+  reloading_master --> [*] : commit_completed
+  reloading_master --> rollback_master <<Error>> : failed
+
+  rollback_slave --> [*] : commit_failed
+  rollback_slave --> error : failed
+
+  rollback_master --> error<<Error>> : failed
+  rollback_master --> rollback_slave : completed
+
+  error --> [*] : Action manuelle
+}
+reloading_XXX --> idle
+@enduml

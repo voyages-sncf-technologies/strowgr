@@ -1,0 +1,62 @@
+@startuml
+skinparam state {
+  BackgroundColor YellowGreen
+  BorderColor Green
+  ArrowColor Black
+
+  BackgroundColor<<Error>> Orange
+  BorderColor<<Error>> Tomato
+
+  BackgroundColor<<Fatal>> Red
+}
+[*] --> idle_XXX
+idle_XXX --> new_conf : commit_requested_XXX
+new_conf --> init_XXX : HA not exists
+new_conf --> reloading_XXX : HA exists
+
+state init_XXX{
+
+  [*] --> absent_XXX
+  absent_XXX: vide
+  absent_XXX --> create_XXX : init
+
+  create_XXX: Config/hap.conf
+  create_XXX --> absent_XXX: failed
+  create_XXX --> created_XXX: structure_created
+
+  created_XXX --> [*]
+}
+init_XXX --> reloading_XXX
+
+'present_A --> loading_B: commit_requested
+'loading_B --> rollingback_B:ack_not_received
+'loading_B --> waiting_ack_B : reloaded_ok
+'
+'waiting_ack_B --> present_B : ack_ok
+'rollingback_B --> present_A: rollback_ok
+
+state reloading_XXX{
+
+  [*] --> reloading_slave_XXX
+
+  reloading_slave_XXX --> waiting_commit_XXX : commit
+  reloading_slave_XXX --> slave_running_XXX : rollback
+
+  waiting_commit_XXX --> reloading_master_XXX
+
+  reloading_slave_XXX --> rollback_slave_XXX<<Erro>> : failed
+
+  reloading_master_XXX --> [*] : commit_completed
+  reloading_master_XXX --> rollback_master_XXX <<Error>> : failed
+
+  rollback_slave_XXX --> slave_running_XXX : commit_failed_XXX
+  rollback_slave_XXX --> error : failed
+
+  rollback_master_XXX --> master_running_XXX
+  rollback_master_XXX --> error<<Error>> : failed
+  master_running_XXX --> rollback_slave_XXX : completed
+
+  error --> [*] : Action manuelle
+}
+reloading_XXX --> idle_XXX
+@enduml
