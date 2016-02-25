@@ -9,21 +9,26 @@ import (
 	"time"
 )
 
-func NewHaproxy(properties *Config, application string, platform string) *Haproxy {
+func NewHaproxy(properties *Config, application string, platform string,version string) *Haproxy {
 	return &Haproxy{
 		Application: application,
 		Platform:    platform,
 		properties:  properties,
+		Version: version,
 	}
 }
 
 type Haproxy struct {
 	Application string
 	Platform    string
+	Version     string
 	properties  *Config
+	State       int
 }
 
-func (hap *Haproxy) ApplyConfiguration(data EventMessage) error {
+func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
+	hap.createSkeleton()
+
 	newConf := data.Conf
 	// /appl/hapadm/DTC/version-1/
 	path := hap.confPath()
@@ -79,16 +84,64 @@ func (hap *Haproxy) NewErrorPath() string {
 	return baseDir + "/" + prefix + "_" + hap.Application + hap.Platform + ".log"
 }
 
-func (hap *Haproxy) reload(data EventMessage) error {
-	str := fmt.Sprintf("%s/%s/RELOAD", hap.properties.HapHome, data.Application)
-	cmd, err := exec.Command("sh", str).Output()
+func (hap *Haproxy) reload(data *EventMessage) error {
+
+	reloadScript := hap.getReloadScript()
+	cmd, err := exec.Command("sh", reloadScript, "reload").Output()
 	if err != nil {
 		log.Printf("Error reloading %s", err)
 	}
-	log.Printf("result of %s/%s/RELOAD: %s", hap.properties.HapHome, data.Application, cmd)
+	log.Printf("result %s: %s", reloadScript, cmd)
 	return err
 }
 
 func (hap *Haproxy) rollback() error {
 	return nil
 }
+
+func (hap *Haproxy) createSkeleton() error {
+	baseDir := hap.properties.HapHome + "/" + hap.Application
+	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
+
+		createDirectory(baseDir + "/Config")
+		createDirectory(baseDir + "/logs/" + hap.Application + hap.Platform)
+		createDirectory(baseDir + "/scripts")
+		createDirectory(baseDir + "/version-1")
+
+		err := os.Symlink(hap.getHapctlFilename(), hap.getReloadScript())
+		if err != nil {
+			log.Println("Failed to create symlink")
+		}
+		log.Printf("%s created", baseDir)
+	}
+
+	//	Always refresh haproxy symlink
+	err := os.Symlink(hap.getHapBinary(), baseDir + "/Config/haproxy")
+	if err != nil {
+		log.Println("Failed to create symlink")
+	}
+
+	return nil
+}
+
+func createDirectory(dir string) {
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		log.Print("Failed to create", dir, err)
+	}else {
+		log.Println(dir, " created")
+	}
+}
+
+func (hap *Haproxy) getHapctlFilename() string {
+	return "/HOME/uxwadm/scripts/hapctl_unif"
+}
+
+func (hap *Haproxy) getReloadScript() string {
+	return fmt.Sprintf("/%s/%s/scripts/hapctl%s%s", hap.properties.HapHome, hap.Application, hap.Application, hap.Platform)
+}
+
+func (hap *Haproxy) getHapBinary() string {
+	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", hap.Version)
+}
+

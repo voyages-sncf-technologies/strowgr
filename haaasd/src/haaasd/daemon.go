@@ -30,6 +30,10 @@ func (daemon *Daemon) IsSlave() (bool, error) {
 	//	return !isMaster, err
 }
 
+func (daemon *Daemon) Is(target string) (bool, error) {
+	return (daemon.Properties.Status == target), nil
+}
+
 func NewDaemon(properties *Config) *Daemon {
 	return &Daemon{
 		Properties: properties,

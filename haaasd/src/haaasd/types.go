@@ -21,4 +21,24 @@ type EventMessage struct {
 	Timestamp     int64
 	Application   string
 	Platform      string
+	HapVersion	  string
 }
+
+const (
+	STATE_IDLE = iota
+	STATE_RELOADING_SLAVE = iota
+	STATE_ROLLBACK_SLAVE = iota
+	STATE_RELOADING_MASTER = iota
+	STATE_ROLLBACK_MASTER = iota
+	STATE_ERROR = iota
+)
+
+type EventHandler interface {
+	HandleMessage(data *EventMessage) error
+}
+type HandlerFunc func(data *EventMessage) error
+
+func (h HandlerFunc) HandleMessage(m *EventMessage) error {
+	return h(m)
+}
+

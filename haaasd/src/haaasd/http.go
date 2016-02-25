@@ -11,12 +11,11 @@ type RestApi struct {
 	listener   *StoppableListener
 }
 
-func NewRestApi(properties *Config) (*RestApi, error) {
+func NewRestApi(properties *Config) *RestApi {
 	api := &RestApi{
 		properties: properties,
 	}
-
-	return api, nil
+	return api
 }
 
 func (api *RestApi)Start() (error) {
