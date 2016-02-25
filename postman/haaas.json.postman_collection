@@ -1,0 +1,35 @@
+{
+	"id": "f21c9176-274f-eec4-270d-b40ff4cbd45f",
+	"name": "haaas",
+	"description": "",
+	"order": [
+		"e731bf7a-0466-fc81-d2a8-480cdcb3838a"
+	],
+	"folders": [],
+	"timestamp": 1456417690787,
+	"owner": 0,
+	"remoteLink": "",
+	"public": false,
+	"requests": [
+		{
+			"id": "e731bf7a-0466-fc81-d2a8-480cdcb3838a",
+			"headers": "Content-Type: application/json\n",
+			"url": "192.168.99.100:8080/api/entrypoint/OCE/REC1",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [],
+			"dataMode": "raw",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1456418724288,
+			"name": "Add entrypoint",
+			"description": "",
+			"collectionId": "f21c9176-274f-eec4-270d-b40ff4cbd45f",
+			"responses": [],
+			"rawModeData": "{\r\n  \"haproxy\": \"default-name\",\r\n  \"hapUser\": \"hapocer1\",\r\n  \"syslogPort\": \"12345\",\r\n  \"frontends\": [\r\n    {\r\n      \"id\": \"OCEREC1WS\",\r\n      \"port\": \"22222\",\r\n      \"context\": {\r\n        \"key1\": \"value\",\r\n        \"key2\": \"value\"\r\n      }\r\n    }\r\n  ],\r\n  \"backends\": [\r\n    {\r\n      \"id\": \"OCEREC1WS\",\r\n      \"servers\": [],\r\n      \"context\": {\r\n        \"key1\": \"value\",\r\n        \"key2\": \"value\"\r\n      }\r\n    }\r\n  ],\r\n  \"context\": {\r\n    \"application\": \"OCE\",\r\n    \"platform\": \"REC1\",\r\n    \"templateUri\": \"http://192.168.99.100/template_haproxy.conf\",\r\n    \"key1\": \"value\"\r\n  }\r\n}"
+		}
+	]
+}
