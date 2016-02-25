@@ -36,7 +36,6 @@ services:
     container_name: haaasd-master
     volumes:
       - ./data/master/haaasd.conf:/haaasd.conf
-      - ./data/master/hapadm:/HOME/hapadm
     ports:
       - 52000:52000
       - 50000
@@ -49,7 +48,6 @@ services:
     container_name: haaasd-slave
     volumes:
       - ./data/slave/haaasd.conf:/haaasd.conf
-      - ./data/slave/hapadm:/HOME/hapadm
     ports:
       - 50000
       - 52001:52000
@@ -80,6 +78,16 @@ services:
      - 50080
     command: instance2
 
+  admin:
+    image: haaas/admin:1.0.0
+    ports:
+      - 8080:8080
+    command: server /server.yml
+    volumes:
+      - ./data/admin/server.yml:/server.yml
+
+  # FANCY STUFF
+
   webpage:
     image: nginx
     ports:
@@ -87,17 +95,6 @@ services:
     volumes:
      - ./static/:/usr/share/nginx/html
      - ./static/nginx.conf:/etc/nginx/nginx.conf
-
-  gitlab:
-    image: gitlab/gitlab-ce
-    ports:
-      - 50280:80
-    volumes:
-      - /etc/gitlab
-      - /var/log/gitlab
-      - /var/opt/gitlab
-    environment:
-      - GITLAB_ROOT_PASSWORD=password
 
 networks:
   default:

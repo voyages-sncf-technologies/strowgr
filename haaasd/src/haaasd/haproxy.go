@@ -10,6 +10,9 @@ import (
 )
 
 func NewHaproxy(properties *Config, application string, platform string,version string) *Haproxy {
+	if version == ""{
+		version = "1.4.22"
+	}
 	return &Haproxy{
 		Application: application,
 		Platform:    platform,
