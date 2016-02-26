@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func NewHaproxy(properties *Config, application string, platform string,version string) *Haproxy {
-	if version == ""{
+func NewHaproxy(properties *Config, application string, platform string, version string) *Haproxy {
+	if version == "" {
 		version = "1.4.22"
 	}
 	return &Haproxy{
@@ -104,35 +104,38 @@ func (hap *Haproxy) rollback() error {
 
 func (hap *Haproxy) createSkeleton() error {
 	baseDir := hap.properties.HapHome + "/" + hap.Application
-	if _, err := os.Stat(baseDir); os.IsNotExist(err) {
 
-		createDirectory(baseDir + "/Config")
-		createDirectory(baseDir + "/logs/" + hap.Application + hap.Platform)
-		createDirectory(baseDir + "/scripts")
-		createDirectory(baseDir + "/version-1")
+	createDirectory(baseDir + "/Config")
+	createDirectory(baseDir + "/logs/" + hap.Application + hap.Platform)
+	createDirectory(baseDir + "/scripts")
+	createDirectory(baseDir + "/version-1")
 
-		err := os.Symlink(hap.getHapctlFilename(), hap.getReloadScript())
-		if err != nil {
-			log.Println("Failed to create symlink")
-		}
-		log.Printf("%s created", baseDir)
-	}
+	updateSymlink(hap.getHapctlFilename(), hap.getReloadScript())
+	updateSymlink(hap.getHapBinary(), baseDir + "/Config/haproxy")
 
-	//	Always refresh haproxy symlink
-	err := os.Symlink(hap.getHapBinary(), baseDir + "/Config/haproxy")
-	if err != nil {
-		log.Println("Failed to create symlink")
-	}
+	log.Printf("%s created", baseDir)
 
 	return nil
 }
 
-func createDirectory(dir string) {
-	err := os.MkdirAll(dir, 0755)
+func updateSymlink(oldname string, newname string) {
+	if _, err := os.Stat(newname); err == nil {
+		os.Remove(newname)
+	}
+	err := os.Symlink(oldname, newname)
 	if err != nil {
-		log.Print("Failed to create", dir, err)
-	}else {
-		log.Println(dir, " created")
+		log.Println("Failed to create symlink ", newname, err)
+	}
+}
+
+func createDirectory(dir string) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			log.Print("Failed to create", dir, err)
+		}else {
+			log.Println(dir, " created")
+		}
 	}
 }
 

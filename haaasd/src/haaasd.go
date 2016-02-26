@@ -105,7 +105,6 @@ func loadProperties() {
 }
 
 func filteredHandler(event string, message *nsq.Message, target string, f haaasd.HandlerFunc) error {
-	log.Printf("Receive %s event:\n%s", event, message.Body)
 	defer message.Finish()
 	match, err := daemon.Is(target)
 	if err != nil {
@@ -113,7 +112,7 @@ func filteredHandler(event string, message *nsq.Message, target string, f haaasd
 	}
 
 	if match {
-		log.Printf("Handle event %s", event)
+		log.Printf("Handle %s event:\n%s", event, message.Body)
 		data, err := bodyToData(message.Body)
 		if err != nil {
 			log.Print("Unable to read data\n%s", err)
@@ -169,6 +168,6 @@ func bodyToData(jsonStream []byte) (*haaasd.EventMessage, error) {
 func publishMessage(topic_prefix string, data interface{}) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
-	log.Printf("Publish to %s : %s", topic, jsonMsg)
+	log.Printf("Publish to %s : %s ", topic, jsonMsg)
 	return producer.Publish(topic, []byte(jsonMsg))
 }
