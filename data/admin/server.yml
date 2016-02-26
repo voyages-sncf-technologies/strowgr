@@ -20,8 +20,8 @@ registerServerMessageConsumer:
   topic: register_server
 periodicScheduler:
   current:
-    periodMilli: 10000
+    periodMilli: 11000
   pending:
-    periodMilli: 10000
+    periodMilli: 7000
 logging:
   level: INFO
