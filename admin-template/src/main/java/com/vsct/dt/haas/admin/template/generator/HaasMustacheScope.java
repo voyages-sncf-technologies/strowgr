@@ -21,7 +21,7 @@ public class HaasMustacheScope extends HashMap<String, Object> {
         /* Put all context first which guaranties essential properties of a configuration are not overridden */
         this.putAll(configuration.getContext());
         this.put("hap_user", configuration.getHapUser());
-        this.put("syslog_port", getPort(configuration.getSyslogPortId()));
+        this.put("syslog_port", getPort(configuration.syslogPortId()));
 
         Map<String, Object> frontend = configuration.getFrontends().stream().collect(Collectors.toMap(EntryPointFrontend::getId, this::toMustacheScope));
         this.put("frontend", frontend);
@@ -35,7 +35,7 @@ public class HaasMustacheScope extends HashMap<String, Object> {
         /* Put all context first which guaranties essential properties of a frontend are not overridden */
         scope.putAll(frontend.getContext());
         scope.put("id", frontend.getId());
-        scope.put("port", getPort(frontend.getPortId()));
+        scope.put("port", getPort(frontend.portId()));
 
         return scope;
     }

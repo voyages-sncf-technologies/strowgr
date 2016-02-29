@@ -13,7 +13,6 @@ import com.vsct.dt.haas.admin.core.event.out.ServerRegisteredEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -158,12 +157,12 @@ public class EntryPointEventHandler {
         Map<String, Integer> portsMapping = new HashMap<>();
         String prefix = key.getID() + '-';
 
-        int syslogPort = portProvider.getPort(prefix + configuration.getSyslogPortId()).orElseGet(() -> portProvider.newPort(prefix + configuration.getSyslogPortId()));
-        portsMapping.put(configuration.getSyslogPortId(), syslogPort);
+        int syslogPort = portProvider.getPort(prefix + configuration.syslogPortId()).orElseGet(() -> portProvider.newPort(prefix + configuration.syslogPortId()));
+        portsMapping.put(configuration.syslogPortId(), syslogPort);
 
         for(EntryPointFrontend frontend : configuration.getFrontends()){
-            int frontendPort = portProvider.getPort(prefix + frontend.getPortId()).orElseGet(() -> portProvider.newPort(prefix + frontend.getPortId()));
-            portsMapping.put(frontend.getPortId(), frontendPort);
+            int frontendPort = portProvider.getPort(prefix + frontend.portId()).orElseGet(() -> portProvider.newPort(prefix + frontend.portId()));
+            portsMapping.put(frontend.portId(), frontendPort);
         }
 
         return portsMapping;

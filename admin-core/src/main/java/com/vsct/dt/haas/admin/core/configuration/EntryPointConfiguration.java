@@ -141,6 +141,10 @@ public class EntryPointConfiguration {
         return new HashSet<>(backends.values());
     }
 
+    public String syslogPortId() {
+        return SYSLOG_PORT_ID;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -165,10 +169,6 @@ public class EntryPointConfiguration {
         result = 31 * result + (frontends != null ? frontends.hashCode() : 0);
         result = 31 * result + (backends != null ? backends.hashCode() : 0);
         return result;
-    }
-
-    public String getSyslogPortId() {
-        return SYSLOG_PORT_ID;
     }
 
     public interface IHapUSer {

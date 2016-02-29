@@ -39,7 +39,7 @@ public class MustacheTemplateTest {
         FileReader reader = new FileReader(file);
 
         Map<String, Integer> portsMapping = new HashMap<>();
-        portsMapping.put(configuration.getSyslogPortId(), 54250);
+        portsMapping.put(configuration.syslogPortId(), 54250);
         portsMapping.put("OCEREC1WS", 50200);
 
         String result = templateGenerator.generate(CharStreams.toString(reader), configuration, portsMapping);

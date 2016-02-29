@@ -27,7 +27,7 @@ public class EntryPointFrontend {
         return new HashMap<>(context);
     }
 
-    public String getPortId() {
+    public String portId() {
         return this.id;
     }
 
