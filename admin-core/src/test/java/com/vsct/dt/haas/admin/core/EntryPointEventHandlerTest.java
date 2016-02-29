@@ -30,13 +30,15 @@ public class EntryPointEventHandlerTest {
     EntryPointEventHandler handler;
     TemplateLocator templateLocator;
     TemplateGenerator templateGenerator;
+    PortProvider portProvider;
 
     @Before
     public void setUp() {
         stateManager = mock(EntryPointStateManager.class);
         templateLocator = mock(TemplateLocator.class);
         templateGenerator = mock(TemplateGenerator.class);
-        handler = new EntryPointEventHandler(stateManager, templateLocator, templateGenerator, new EventBus());
+        portProvider = mock(PortProvider.class);
+        handler = new EntryPointEventHandler(stateManager, portProvider, templateLocator, templateGenerator, new EventBus());
     }
 
     @Test
