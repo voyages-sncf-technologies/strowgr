@@ -3,6 +3,7 @@ package haaasd
 type Config struct {
 	LookupdAddr  string
 	ProducerAddr string
+	ProducerRestAddr string
 	ClusterId    string
 	Vip          string
 	Port         int32

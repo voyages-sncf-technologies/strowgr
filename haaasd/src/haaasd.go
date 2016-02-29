@@ -13,14 +13,16 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"net/http"
+	"time"
 )
 
 var (
-	ip          = flag.String("ip", "4.3.2.1", "Node ip address")
-	configFile  = flag.String("config", "haaas.conf", "Configuration file")
+	ip = flag.String("ip", "4.3.2.1", "Node ip address")
+	configFile = flag.String("config", "haaas.conf", "Configuration file")
 	versionFlag = flag.Bool("version", false, "Print current version")
-	config      = nsq.NewConfig()
-	properties  haaasd.Config
+	config = nsq.NewConfig()
+	properties haaasd.Config
 	daemon      *haaasd.Daemon
 	producer    *nsq.Producer
 )
@@ -42,8 +44,10 @@ func main() {
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
 
-	var wg sync.WaitGroup
+	initProducer()
+	time.Sleep(1000 * time.Millisecond)
 
+	var wg sync.WaitGroup
 	// Start http API
 	restApi := haaasd.NewRestApi(&properties)
 	go func() {
@@ -91,6 +95,28 @@ func main() {
 	wg.Wait()
 }
 
+func initProducer() {
+	// Create required topics
+	topics := []string{"commit_requested", "commit_slave_completed", "commit_completed", "commit_failed"}
+
+	topicChan := make(chan string, len(topics))
+	for i := range topics {
+		topicChan <- topics[i]
+	}
+	left := len(topics)
+	for left > 0 {
+		topic := <-topicChan
+		log.Printf("Creating %s", topic)
+		resp, err := http.PostForm(properties.ProducerRestAddr + "/topic/create?topic=" + topic + "_" + properties.ClusterId, nil)
+		if err != nil || resp.StatusCode != 200 {
+			topicChan <- topic
+		}else {
+			left--
+			log.Printf("Topic %s created", topic)
+		}
+	}
+}
+
 // Load properties from file
 func loadProperties() {
 	if _, err := toml.DecodeFile(*configFile, &properties); err != nil {
@@ -99,8 +125,8 @@ func loadProperties() {
 	}
 	properties.IpAddr = *ip
 	len := len(properties.HapHome)
-	if properties.HapHome[len-1] == '/' {
-		properties.HapHome = properties.HapHome[:len-1]
+	if properties.HapHome[len - 1] == '/' {
+		properties.HapHome = properties.HapHome[:len - 1]
 	}
 }
 
