@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.vsct.dt.haas.admin.core.EntryPointKey;
 import com.vsct.dt.haas.admin.core.EntryPointRepository;
+import com.vsct.dt.haas.admin.core.PortProvider;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
@@ -23,9 +24,11 @@ import org.apache.http.util.EntityUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public class ConsulRepository implements EntryPointRepository {
+public class ConsulRepository implements EntryPointRepository, PortProvider {
 
     private final String host;
     private final int port;
@@ -347,7 +350,6 @@ public class ConsulRepository implements EntryPointRepository {
                 HttpGet getPortById = new HttpGet("http://" + host + ":" + port + "/v1/kv/ports");
                 Optional<ConsulItem<Map<String, Integer>>> portsByEntrypoint = client.execute(getPortById, getPortsByHaproxyResponseHandler);
                 HttpPut putPortById;
-
                 if (portsByEntrypoint.isPresent()) {
                     // Ports map has been already initialized
                     Map<String, Integer> rawPortsByEntrypoint = portsByEntrypoint.get().value(mapper);
@@ -363,7 +365,7 @@ public class ConsulRepository implements EntryPointRepository {
 
                     rawPortsByEntrypoint.put(key, newPort);
 
-                    putPortById = new HttpPut("http://" + host + ":" + port + "/v1/kv/ports?cas=" + portsByEntrypoint.get().modifyIndex);
+                    putPortById = new HttpPut("http://" + host + ":" + port + "/v1/kv/ports?cas=" + portsByEntrypoint.get().getModifyIndex());
                     String encodedJson = encodeJson(rawPortsByEntrypoint);
                     putPortById.setEntity(new StringEntity(encodedJson));
                 } else {

@@ -7,6 +7,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.haas.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.haas.admin.core.EntryPointRepository;
+import com.vsct.dt.haas.admin.core.PortProvider;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import com.vsct.dt.haas.admin.core.event.CorrelationId;
@@ -38,12 +39,14 @@ public class RestApiResources {
 
     private final EventBus eventBus;
     private final EntryPointRepository repository;
+    private final PortProvider portProvider;
     private Map<String, Waiter> callbacks = new ConcurrentHashMap<>();
     private ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
-    public RestApiResources(EventBus eventBus, EntryPointRepository repository) {
+    public RestApiResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider) {
         this.eventBus = eventBus;
         this.repository = repository;
+        this.portProvider = portProvider;
     }
 
     @POST
@@ -166,7 +169,7 @@ public class RestApiResources {
     @GET
     @Path("/entrypoint/{id : .+}/port")
     public String getPort(@PathParam("id") String id) {
-        Optional<Integer> port = repository.getPort(id);
+        Optional<Integer> port = portProvider.getPort(id);
         if (port.isPresent())
             return String.valueOf(port.get());
         else return "port not found for entry point " + id;
@@ -175,13 +178,13 @@ public class RestApiResources {
     @GET
     @Path("/ports")
     public Map<String, Integer> getPorts() {
-        return repository.getPorts().orElseGet(HashMap::new);
+        return portProvider.getPorts().orElseGet(HashMap::new);
     }
 
     @PUT
     @Path("/entrypoint/{id : .+}/newport")
     public String setPort(@PathParam("id") String id) {
-        return String.valueOf(repository.newPort(id));
+        return String.valueOf(portProvider.newPort(id));
     }
 
     private <T> WaiterBuilder waitEventWithId(String eventId) {

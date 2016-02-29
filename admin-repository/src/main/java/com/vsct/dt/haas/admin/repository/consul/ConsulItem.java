@@ -1,28 +1,29 @@
 package com.vsct.dt.haas.admin.repository.consul;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Base64;
 
 public class ConsulItem<T> {
 
-    @JsonProperty("LockIndex") Integer lockIndex;
-    @JsonProperty("Key") String key;
-    @JsonProperty("Flags") Integer flags;
-    @JsonProperty("Value") String value;
-    @JsonProperty("CreateIndex") Integer createIndex;
-    @JsonProperty("ModifyIndex") Integer modifyIndex;
+    private final int lockIndex;
+    private final String key;
+    private final int flags;
+    private final String value;
+    private final int createIndex;
+    private final int modifyIndex;
 
-    public ConsulItem() {
-    }
-
-    public ConsulItem(Integer lockIndex, String key, Integer flags, String value, Integer createIndex, Integer modifyIndex) {
+    @JsonCreator
+    public ConsulItem(@JsonProperty("LockIndex") int lockIndex,
+                      @JsonProperty("Key") String key,
+                      @JsonProperty("Flags") Integer flags,
+                      @JsonProperty("Value") String value,
+                      @JsonProperty("CreateIndex") Integer createIndex,
+                      @JsonProperty("ModifyIndex") Integer modifyIndex) {
         this.lockIndex = lockIndex;
         this.key = key;
         this.flags = flags;
@@ -36,51 +37,28 @@ public class ConsulItem<T> {
         });
     }
 
-    public Integer getLockIndex() {
+    public int getLockIndex() {
         return lockIndex;
-    }
-
-    public void setLockIndex(Integer lockIndex) {
-        this.lockIndex = lockIndex;
     }
 
     public String getKey() {
         return key;
     }
 
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public Integer getFlags() {
+    public int getFlags() {
         return flags;
-    }
-
-    public void setFlags(Integer flags) {
-        this.flags = flags;
     }
 
     public String getValue() {
         return value;
     }
 
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public Integer getCreateIndex() {
+    public int getCreateIndex() {
         return createIndex;
     }
 
-    public void setCreateIndex(Integer createIndex) {
-        this.createIndex = createIndex;
-    }
-
-    public Integer getModifyIndex() {
+    public int getModifyIndex() {
         return modifyIndex;
     }
 
-    public void setModifyIndex(Integer modifyIndex) {
-        this.modifyIndex = modifyIndex;
-    }
 }

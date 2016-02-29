@@ -33,9 +33,4 @@ public interface EntryPointRepository {
 
     public void release(EntryPointKey key);
 
-    Optional<Map<String, Integer>> getPorts();
-
-    public Optional<Integer> getPort(String key);
-
-    Integer newPort(String key);
 }
