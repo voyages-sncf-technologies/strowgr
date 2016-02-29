@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"time"
+	"bytes"
 )
 
 func NewHaproxy(properties *Config, application string, platform string, version string) *Haproxy {
@@ -35,10 +36,20 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
 	newConf := data.Conf
 	// /appl/hapadm/DTC/version-1/
 	path := hap.confPath()
+
+	//	Check conf diff
+	oldConf, err := ioutil.ReadFile(path)
+	if err == nil {
+		if bytes.Equal(oldConf,newConf){
+			log.Printf("Ignore unchanged configuration");
+			return nil;
+		}
+	}
+
 	archivePath := hap.confArchivePath()
 	os.Rename(path, archivePath)
 	log.Printf("Old configurqtion saved to %s", archivePath)
-	err := ioutil.WriteFile(path, newConf, 0644)
+	err = ioutil.WriteFile(path, newConf, 0644)
 	if err != nil {
 		return err
 	}
