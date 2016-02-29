@@ -64,6 +64,7 @@ public class HaasMain extends Application<HaasConfiguration> {
         /* EntryPoint State Machine */
         EntryPointEventHandler eventHandler = EntryPointEventHandler
                 .backedBy(repository)
+                .getPortsWith(repository)
                 .findTemplatesWith(templateLocator)
                 .generatesTemplatesWith(templateGenerator)
                 .outputMessagesTo(eventBus);

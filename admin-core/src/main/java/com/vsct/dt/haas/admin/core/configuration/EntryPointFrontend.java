@@ -10,16 +10,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class EntryPointFrontend {
 
     private final String id;
-    private final String port;
-
     private final HashMap<String, String> context;
 
-    public EntryPointFrontend(String id, String port, Map<String, String> context) {
+    public EntryPointFrontend(String id, Map<String, String> context) {
         Preconditions.checkStringNotEmpty(id, "Frontend should have an id");
-        Preconditions.checkStringNotEmpty(port, "Frontend should have a port");
         checkNotNull(context);
         this.id = id;
-        this.port = port;
         this.context = new HashMap<>(context);
     }
 
@@ -27,12 +23,12 @@ public class EntryPointFrontend {
         return id;
     }
 
-    public String getPort() {
-        return port;
-    }
-
     public Map<String, String> getContext() {
         return new HashMap<>(context);
+    }
+
+    public String getPortId() {
+        return this.id;
     }
 
     @Override
@@ -44,7 +40,6 @@ public class EntryPointFrontend {
 
         if (context != null ? !context.equals(that.context) : that.context != null) return false;
         if (id != null ? !id.equals(that.id) : that.id != null) return false;
-        if (port != null ? !port.equals(that.port) : that.port != null) return false;
 
         return true;
     }
@@ -52,8 +47,8 @@ public class EntryPointFrontend {
     @Override
     public int hashCode() {
         int result = id != null ? id.hashCode() : 0;
-        result = 31 * result + (port != null ? port.hashCode() : 0);
         result = 31 * result + (context != null ? context.hashCode() : 0);
         return result;
     }
+
 }

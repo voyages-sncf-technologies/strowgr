@@ -20,13 +20,11 @@ public class EntryPointConfigurationJsonRepresentation extends EntryPointConfigu
                                                      @JsonProperty("application") String application,
                                                      @JsonProperty("platform") String platform,
                                                      @JsonProperty("hapUser") String hapUser,
-                                                     @JsonProperty("syslogPort") String syslogPort,
                                                      @JsonProperty("frontends") Set<EntryPointFrontendJsonRepresentation> frontends,
                                                      @JsonProperty("backends") Set<EntryPointBackendJsonRepresentation> backends,
                                                      @JsonProperty("context") Map<String, String> context) {
         super(haproxy,
                 hapUser,
-                syslogPort,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
                 backends.stream().map(identity()).collect(Collectors.toSet()),
                 context);
