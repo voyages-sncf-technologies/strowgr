@@ -11,7 +11,7 @@ nsqLookup:
   host: nsqlookupd
   port: 4161
 nsqProducer:
-  host: nsqd
+  host: nsqd-admin
   port: 4150
   topic: commit_requested_
 commitMessageConsumer:

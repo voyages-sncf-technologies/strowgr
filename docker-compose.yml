@@ -20,13 +20,21 @@ services:
       - "4161:4161"
 
   # Only one producer
-  nsqd:
+  nsqd-slave:
     image: nsqio/nsq
-    container_name: nsqd
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-slave
     ports:
-      - "4150:4150"
-      - "4151:4151"
+      - "14150:4150"
+      - "14151:4151"
+    depends_on:
+      - nsqlookupd
+
+  nsqd-master:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-master
+    ports:
+      - "24150:4150"
+      - "24151:4151"
     depends_on:
       - nsqlookupd
 
@@ -56,14 +64,14 @@ services:
 
   # NSQ admin
   nsq-admin:
-    container_name: nsqadmin
     image: nsqio/nsq
     ports:
       - "4171:4171"
     command: /nsqadmin -http-address="0.0.0.0:4171" --lookupd-http-address=nsqlookupd:4161
     depends_on:
       - nsqlookupd
-      - nsqd
+      - nsqd-slave
+      - nsqd-master
 
   # Webapp instances
   webapp-1:
@@ -85,6 +93,15 @@ services:
     command: server /server.yml
     volumes:
       - ./data/admin/server.yml:/server.yml
+
+  nsqd-admin:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-admin
+    ports:
+      - "4150"
+      - "4151"
+    depends_on:
+      - nsqlookupd
 
   # FANCY STUFF
 

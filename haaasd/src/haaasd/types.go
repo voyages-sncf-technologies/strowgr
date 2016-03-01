@@ -13,7 +13,7 @@ type Config struct {
 }
 
 func (config *Config) NodeId() string {
-	return config.ClusterId + "-" + config.IpAddr
+	return config.ClusterId + "-" + config.Status
 }
 
 type EventMessage struct {
