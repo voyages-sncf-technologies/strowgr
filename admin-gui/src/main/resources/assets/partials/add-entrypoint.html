@@ -12,7 +12,7 @@
     }
 </style>
 
-<form id="add-entrypoint-form" name="newEntrypointForm" ng-submit="createEntrypoint()" flex>
+<form id="add-entrypoint-form" name="newEntrypointForm" ng-submit="createEntrypoint()" flex ng-keydown="$event.keyCode == 13 && $event.preventDefault();">
     <div layout="row">
         <md-input-container flex="10">
             <label>HAproxy cible</label>
@@ -119,7 +119,7 @@
     </div>
     <div layout="row">
         <md-input-container>
-            <input type="submit" value="Cr&eacute;er l'entrypoint"/>
+            <input type="submit" value="Cr&eacute;er l'entrypoint" />
         </md-input-container>
     </div>
 </form>
