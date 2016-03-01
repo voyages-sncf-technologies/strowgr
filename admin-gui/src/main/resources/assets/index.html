@@ -127,10 +127,10 @@
                 }
             };
 
-            $scope.createEntrypoint = function(){
-                $http.post('/api/entrypoint/'+$scope.conf.context.application+'/'+$scope.conf.context.plateforme, $scope.conf).then(function(response){
+            $scope.createEntrypoint = function () {
+                $http.post('/api/entrypoint/' + $scope.conf.context.application + '/' + $scope.conf.context.plateforme, $scope.conf).then(function (response) {
                     $location.path('/');
-                }, function(error){
+                }, function (error) {
                     console.log(error);
                 });
             };
@@ -195,7 +195,7 @@
                     },
                     link: function (scope, element, attrs) {
 
-                        if(scope.forbidden == undefined) scope.forbidden = [];
+                        if (scope.forbidden == undefined) scope.forbidden = [];
                         scope.chips = [];
 
                         scope.$watch('context', function (newContext, oldContext) {
@@ -209,10 +209,12 @@
                         }, true);
 
                         var chipsToContext = function () {
-                            scope.context = scope.chips.reduce(function (context, chip) {
+                            /* keys provided by some other components should not be disturbed by thoose created by context map input
+                             this is why we use angular.extend */
+                            scope.context = angular.extend({}, scope.chips.reduce(function (context, chip) {
                                 context[chip.key] = chip.value;
                                 return context;
-                            }, {});
+                            }, {}), scope.context);
                         };
 
                         scope.validateContextInput = function (chip) {
@@ -294,7 +296,9 @@
                             promises.push(PortProvider.getPort(id + '-syslog').then(function (port) {
                                 conf.syslogPort = port;
                             }));
-                            return $q.all(promises).then(function(){ return conf;});
+                            return $q.all(promises).then(function () {
+                                return conf;
+                            });
                         };
 
 
