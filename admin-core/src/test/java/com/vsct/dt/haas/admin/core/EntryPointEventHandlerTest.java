@@ -31,6 +31,7 @@ public class EntryPointEventHandlerTest {
     EntryPointEventHandler handler;
     TemplateLocator templateLocator;
     TemplateGenerator templateGenerator;
+    PortProvider portProvider;
 
     public class EntryPointStateManagerMock extends EntryPointStateManager {
 
@@ -50,7 +51,8 @@ public class EntryPointEventHandlerTest {
 
         templateLocator = mock(TemplateLocator.class);
         templateGenerator = mock(TemplateGenerator.class);
-        handler = new EntryPointEventHandler(stateManager, templateLocator, templateGenerator, new EventBus());
+        portProvider = mock(PortProvider.class);
+        handler = new EntryPointEventHandler(stateManager, portProvider, templateLocator, templateGenerator, new EventBus());
     }
 
     @Test
@@ -60,7 +62,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration config = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("51000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -83,7 +84,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration config = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("51000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -92,7 +92,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration current = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -115,7 +114,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration config = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("51000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -124,7 +122,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration committing = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -199,7 +196,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration commmittingConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("50000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -208,7 +204,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration pendingConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("51000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -217,7 +212,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration currentConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -233,7 +227,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("51000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -253,7 +246,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration commmittingConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("50000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -262,7 +254,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration currentConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -278,7 +269,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("50000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -298,7 +288,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration currentConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -314,7 +303,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -332,7 +320,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration currentConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -348,7 +335,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -372,7 +358,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration currentConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -388,7 +373,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -409,7 +393,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration currentConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -425,7 +408,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -451,7 +433,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration currentConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -462,7 +443,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -497,7 +477,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration currentConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -516,7 +495,6 @@ public class EntryPointEventHandlerTest {
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
-                .withSyslogPort("52000")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend1, expectedBackend2))
                 .withGlobalContext(ImmutableMap.<String, String>of())

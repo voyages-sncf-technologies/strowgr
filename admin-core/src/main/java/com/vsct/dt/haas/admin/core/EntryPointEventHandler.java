@@ -4,6 +4,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
+import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.haas.admin.core.event.in.*;
 import com.vsct.dt.haas.admin.core.event.out.CommitBeginEvent;
 import com.vsct.dt.haas.admin.core.event.out.CommitCompleteEvent;
@@ -12,7 +13,8 @@ import com.vsct.dt.haas.admin.core.event.out.ServerRegisteredEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Reader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class EntryPointEventHandler {
@@ -23,10 +25,13 @@ public class EntryPointEventHandler {
     private final EventBus outputBus;
     private final TemplateGenerator templateGenerator;
     private final TemplateLocator templateLocator;
+    private final PortProvider portProvider;
 
-    EntryPointEventHandler(EntryPointStateManager stateManager, TemplateLocator templateLocator, TemplateGenerator templateGenerator, EventBus outputBus) {
+
+    EntryPointEventHandler(EntryPointStateManager stateManager, PortProvider portProvider, TemplateLocator templateLocator, TemplateGenerator templateGenerator, EventBus outputBus) {
         this.stateManager = stateManager;
         this.outputBus = outputBus;
+        this.portProvider = portProvider;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;
     }
@@ -99,7 +104,8 @@ public class EntryPointEventHandler {
             Optional<EntryPointConfiguration> committingConfiguration = stateManager.tryCommitCurrent(key);
             if (committingConfiguration.isPresent()) {
                 String template = templateLocator.readTemplate(committingConfiguration.get());
-                String conf = templateGenerator.generate(template, committingConfiguration.get());
+                Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration.get());
+                String conf = templateGenerator.generate(template, committingConfiguration.get(), portsMapping);
                 outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf));
             }
         } finally {
@@ -115,7 +121,8 @@ public class EntryPointEventHandler {
             Optional<EntryPointConfiguration> committingConfiguration = stateManager.tryCommitPending(key);
             if (committingConfiguration.isPresent()) {
                 String template = templateLocator.readTemplate(committingConfiguration.get());
-                String conf = templateGenerator.generate(template, committingConfiguration.get());
+                Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration.get());
+                String conf = templateGenerator.generate(template, committingConfiguration.get(), portsMapping);
                 outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf));
             }
         } finally {
@@ -146,17 +153,33 @@ public class EntryPointEventHandler {
         /* TODO DEFINE */
     }
 
+    private Map<String, Integer> getOrCreatePortsMapping(EntryPointKey key, EntryPointConfiguration configuration) {
+        Map<String, Integer> portsMapping = new HashMap<>();
+        String prefix = key.getID() + '-';
+
+        int syslogPort = portProvider.getPort(prefix + configuration.syslogPortId()).orElseGet(() -> portProvider.newPort(prefix + configuration.syslogPortId()));
+        portsMapping.put(configuration.syslogPortId(), syslogPort);
+
+        for(EntryPointFrontend frontend : configuration.getFrontends()){
+            int frontendPort = portProvider.getPort(prefix + frontend.portId()).orElseGet(() -> portProvider.newPort(prefix + frontend.portId()));
+            portsMapping.put(frontend.portId(), frontendPort);
+        }
+
+        return portsMapping;
+    }
+
     public static class EntryPointEventHandlerBuilder {
         private EntryPointStateManager stateManager;
         private TemplateGenerator templateGenerator;
         private TemplateLocator templateLocator;
+        private PortProvider portProvider;
 
         private EntryPointEventHandlerBuilder(EntryPointStateManager stateManager) {
             this.stateManager = stateManager;
         }
 
         public EntryPointEventHandler outputMessagesTo(EventBus eventBus) {
-            return new EntryPointEventHandler(stateManager, templateLocator, templateGenerator, eventBus);
+            return new EntryPointEventHandler(stateManager, portProvider, templateLocator, templateGenerator, eventBus);
         }
 
         public EntryPointEventHandlerBuilder findTemplatesWith(TemplateLocator templateLocator) {
@@ -166,6 +189,11 @@ public class EntryPointEventHandler {
 
         public EntryPointEventHandlerBuilder generatesTemplatesWith(TemplateGenerator templateGenerator) {
             this.templateGenerator = templateGenerator;
+            return this;
+        }
+
+        public EntryPointEventHandlerBuilder getPortsWith(PortProvider portProvider){
+            this.portProvider = portProvider;
             return this;
         }
     }

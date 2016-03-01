@@ -10,16 +10,17 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Map;
 
 public class MustacheTemplateGenerator implements TemplateGenerator {
 
     private final MustacheFactory mf = new DefaultMustacheFactory();
 
     @Override
-    public String generate(String template, EntryPointConfiguration configuration) {
+    public String generate(String template, EntryPointConfiguration configuration, Map<String, Integer> portsMapping) {
         Writer writer = new StringWriter();
         Mustache mustache = mf.compile(new StringReader(template), "no_cache");
-        mustache.execute(writer, new HaasMustacheScope(configuration));
+        mustache.execute(writer, new HaasMustacheScope(configuration, portsMapping));
         return writer.toString();
     }
 }

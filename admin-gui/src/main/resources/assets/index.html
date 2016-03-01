@@ -55,6 +55,16 @@
                     })
         }]);
 
+        adminApp.factory('PortProvider', ['$http', function ($http) {
+            return {
+                getPort: function (id) {
+                    return $http.get('/api/ports/' + id).then(function (response) {
+                        return response.data;
+                    });
+                }
+            }
+        }]);
+
         adminApp.controller('EntrypointsCtrl', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
 
             $http({
@@ -126,8 +136,8 @@
 
         }]);
 
-        adminApp.directive('entrypointConfigurationView', [
-            function () {
+        adminApp.directive('entrypointConfigurationView', ['PortProvider',
+            function (PortProvider) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/entrypoint-configuration-view.html',
@@ -230,8 +240,8 @@
             }
         ]);
 
-        adminApp.directive('entrypointView', ['$interval', '$timeout', '$http', '$q',
-            function ($interval, $timeout, $http, $q) {
+        adminApp.directive('entrypointView', ['$interval', '$timeout', '$http', '$q', 'PortProvider',
+            function ($interval, $timeout, $http, $q, PortProvider) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/entrypoint-view.html',
@@ -245,30 +255,47 @@
                         var blinking = false;
 
                         refreshAllStates = function () {
-                            return $q.all([
-                                $http.get('/api/entrypoint/' + scope.id + '/current')
+                            return $q.all({
+                                current: $http.get('/api/entrypoint/' + scope.id + '/current')
                                         .then(function (response) {
-                                            scope.current = response.data;
+                                            return portPromises(scope.id, response.data);
                                         }, function (error) {
                                             //TODO Check for 404
                                             scope.current = undefined
                                         }),
-                                $http.get('/api/entrypoint/' + scope.id + '/pending')
+                                pending: $http.get('/api/entrypoint/' + scope.id + '/pending')
                                         .then(function (response) {
-                                            scope.pending = response.data;
+                                            return portPromises(scope.id, response.data);
                                         }, function (error) {
                                             //TODO Check for 404
                                             scope.pending = undefined
                                         }),
-                                $http.get('/api/entrypoint/' + scope.id + '/committing')
+                                committing: $http.get('/api/entrypoint/' + scope.id + '/committing')
                                         .then(function (response) {
-                                            scope.committing = response.data;
+                                            return portPromises(scope.id, response.data);
                                         }, function (error) {
                                             //TODO Check for 404
                                             scope.committing = undefined
                                         })
-                            ])
+                            }).then(function (values) {
+                                scope.current = values.current;
+                                scope.pending = values.pending;
+                                scope.committing = values.committing;
+                            });
                         };
+
+                        var portPromises = function (id, conf) {
+                            var promises = [].concat(conf.frontends.map(function (frontend) {
+                                return PortProvider.getPort(id + '-' + frontend.id).then(function (port) {
+                                    frontend.port = port;
+                                });
+                            }));
+                            promises.push(PortProvider.getPort(id + '-syslog').then(function (port) {
+                                conf.syslogPort = port;
+                            }));
+                            return $q.all(promises).then(function(){ return conf;});
+                        };
+
 
                         /* When id is changed, we must reload the data */
                         scope.$watch('id', function (newValue, oldValue) {

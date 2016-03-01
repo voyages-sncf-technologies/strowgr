@@ -11,28 +11,27 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class EntryPointConfiguration {
 
+    public static final String SYSLOG_PORT_ID = "syslog";
+
     private final String haproxy;
 
     private final String hapUser;
-    private final String syslogPort;
 
     private final HashMap<String, String> context;
 
     private final HashMap<String, EntryPointFrontend> frontends;
     private final HashMap<String, EntryPointBackend> backends;
 
-    public EntryPointConfiguration(String haproxy, String hapUser, String syslogPort,
+    public EntryPointConfiguration(String haproxy, String hapUser,
                                    Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
         Preconditions.checkStringNotEmpty(haproxy, "EntryPointConfiguration should have an haproxy id");
         Preconditions.checkStringNotEmpty(hapUser, "EntryPointConfiguration should have a user for haproxy");
-        Preconditions.checkStringNotEmpty(syslogPort, "EntryPointConfiguration should have a port for syslog");
         checkNotNull(frontends);
         checkNotNull(backends);
         checkNotNull(context);
 
         this.haproxy = haproxy;
         this.hapUser = hapUser;
-        this.syslogPort = syslogPort;
 
         this.frontends = new HashMap<>();
         for (EntryPointFrontend f : frontends) {
@@ -47,11 +46,10 @@ public class EntryPointConfiguration {
         this.context = new HashMap<>(context);
     }
 
-    private EntryPointConfiguration(String haproxy, String hapUser, String syslogPort,
+    private EntryPointConfiguration(String haproxy, String hapUser,
                                     HashMap<String, EntryPointFrontend> frontends, HashMap<String, EntryPointBackend> backends, HashMap<String, String> context) {
         this.haproxy = haproxy;
         this.hapUser = hapUser;
-        this.syslogPort = syslogPort;
         this.frontends = frontends;
         this.backends = backends;
         this.context = context;
@@ -65,7 +63,7 @@ public class EntryPointConfiguration {
         checkNotNull(backend);
         HashMap<String, EntryPointBackend> newBackends = new HashMap<>(backends);
         newBackends.put(backend.getId(), backend);
-        return new EntryPointConfiguration(this.haproxy, this.hapUser, this.syslogPort, this.frontends, newBackends, this.context);
+        return new EntryPointConfiguration(this.haproxy, this.hapUser, this.frontends, newBackends, this.context);
     }
 
     public Optional<EntryPointBackend> getBackend(String id) {
@@ -127,10 +125,6 @@ public class EntryPointConfiguration {
         return hapUser;
     }
 
-    public String getSyslogPort() {
-        return syslogPort;
-    }
-
     public String getHaproxy() {
         return haproxy;
     }
@@ -147,6 +141,10 @@ public class EntryPointConfiguration {
         return new HashSet<>(backends.values());
     }
 
+    public String syslogPortId() {
+        return SYSLOG_PORT_ID;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -159,7 +157,6 @@ public class EntryPointConfiguration {
         if (frontends != null ? !frontends.equals(that.frontends) : that.frontends != null) return false;
         if (hapUser != null ? !hapUser.equals(that.hapUser) : that.hapUser != null) return false;
         if (haproxy != null ? !haproxy.equals(that.haproxy) : that.haproxy != null) return false;
-        if (syslogPort != null ? !syslogPort.equals(that.syslogPort) : that.syslogPort != null) return false;
 
         return true;
     }
@@ -168,7 +165,6 @@ public class EntryPointConfiguration {
     public int hashCode() {
         int result = haproxy != null ? haproxy.hashCode() : 0;
         result = 31 * result + (hapUser != null ? hapUser.hashCode() : 0);
-        result = 31 * result + (syslogPort != null ? syslogPort.hashCode() : 0);
         result = 31 * result + (context != null ? context.hashCode() : 0);
         result = 31 * result + (frontends != null ? frontends.hashCode() : 0);
         result = 31 * result + (backends != null ? backends.hashCode() : 0);
@@ -176,11 +172,7 @@ public class EntryPointConfiguration {
     }
 
     public interface IHapUSer {
-        public ISyslogPort withUser(String user);
-    }
-
-    public interface ISyslogPort {
-        public IFrontends withSyslogPort(String syslogPort);
+        public IFrontends withUser(String user);
     }
 
     public interface IFrontends {
@@ -199,7 +191,7 @@ public class EntryPointConfiguration {
         public EntryPointConfiguration build();
     }
 
-    public static class Builder implements IHapUSer, ISyslogPort, IFrontends, IBackends, IContext, IBuild {
+    public static class Builder implements IHapUSer, IFrontends, IBackends, IContext, IBuild {
 
         private ImmutableSet<EntryPointBackend> backends;
         private ImmutableSet<EntryPointFrontend> frontends;
@@ -225,14 +217,8 @@ public class EntryPointConfiguration {
         }
 
         @Override
-        public ISyslogPort withUser(String user) {
+        public IFrontends withUser(String user) {
             this.user = user;
-            return this;
-        }
-
-        @Override
-        public IFrontends withSyslogPort(String syslogPort) {
-            this.syslogPort = syslogPort;
             return this;
         }
 
@@ -244,7 +230,7 @@ public class EntryPointConfiguration {
 
         @Override
         public EntryPointConfiguration build() {
-            return new EntryPointConfiguration(haproxy, user, syslogPort, frontends, backends, context);
+            return new EntryPointConfiguration(haproxy, user, frontends, backends, context);
         }
 
     }

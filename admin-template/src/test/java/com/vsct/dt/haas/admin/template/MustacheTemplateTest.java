@@ -25,20 +25,24 @@ public class MustacheTemplateTest {
     @Test
     public void testTemplate1() throws IOException {
 
-        EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", "50200", Maps.newHashMap());
+        EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
         EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090");
         EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPointConfiguration configuration = new EntryPointConfiguration("default-name", "hapocer1", "54250", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPointConfiguration configuration = new EntryPointConfiguration("default-name", "hapocer1", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.without.context.mustache").getFile());
         FileReader reader = new FileReader(file);
 
-        String result = templateGenerator.generate(CharStreams.toString(reader), configuration);
+        Map<String, Integer> portsMapping = new HashMap<>();
+        portsMapping.put(configuration.syslogPortId(), 54250);
+        portsMapping.put("OCEREC1WS", 50200);
+
+        String result = templateGenerator.generate(CharStreams.toString(reader), configuration, portsMapping);
 
         File expectedF = new File(classLoader.getResource("template.without.context.mustache.expected").getFile());
         reader = new FileReader(expectedF);
