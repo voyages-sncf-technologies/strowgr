@@ -167,12 +167,12 @@ public class RestApiResources {
     }
 
     @GET
-    @Path("/entrypoint/{id : .+}/port")
+    @Path("/ports/{id : .+}")
     public String getPort(@PathParam("id") String id) {
         Optional<Integer> port = portProvider.getPort(id);
         if (port.isPresent())
             return String.valueOf(port.get());
-        else return "port not found for entry point " + id;
+        else return "port not found for id " + id;
     }
 
     @GET
