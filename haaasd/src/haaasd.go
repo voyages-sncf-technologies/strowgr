@@ -98,7 +98,7 @@ func main() {
 func initProducer() {
 	// Create required topics
 	topics := []string{"commit_requested", "commit_slave_completed", "commit_completed", "commit_failed"}
-
+	channels := []string{"slave", "master"}
 	topicChan := make(chan string, len(topics))
 	for i := range topics {
 		topicChan <- topics[i]
@@ -107,13 +107,25 @@ func initProducer() {
 	for left > 0 {
 		topic := <-topicChan
 		log.Printf("Creating %s", topic)
-		resp, err := http.PostForm(properties.ProducerRestAddr + "/topic/create?topic=" + topic + "_" + properties.ClusterId, nil)
+		url := fmt.Sprintf("%s/topic/create?topic=%s_%s", properties.ProducerRestAddr, topic, properties.ClusterId)
+		resp, err := http.PostForm(url, nil)
 		if err != nil || resp.StatusCode != 200 {
 			topicChan <- topic
-		}else {
-			left--
-			log.Printf("Topic %s created", topic)
+			continue
 		}
+		for channel := range channels {
+			log.Printf("Creating channel %s:%s", topic,channels[channel])
+			url := fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s-%s", properties.ProducerRestAddr, topic, properties.ClusterId,properties.ClusterId, channels[channel])
+			resp, err := http.PostForm(url, nil)
+			if err != nil || resp.StatusCode != 200 {
+				topicChan <- topic
+				continue
+			}
+		}
+
+		log.Printf("Topic %s created", topic)
+		left--
+
 	}
 }
 
