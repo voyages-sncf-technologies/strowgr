@@ -38,7 +38,7 @@
     </style>
 
     <script type="text/javascript">
-        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute']);
+        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages']);
 
         adminApp.config(['$routeProvider', function ($routeProvider) {
             $routeProvider.
@@ -46,12 +46,16 @@
                         templateUrl: 'partials/entrypoints.html',
                         controller: 'EntrypointsCtrl'
                     }).
+                    when('/add-entrypoint', {
+                        templateUrl: 'partials/add-entrypoint.html',
+                        controller: 'AddEntrypointCtrl'
+                    }).
                     otherwise({
                         redirectTo: '/entrypoints'
                     })
         }]);
 
-        adminApp.controller('EntrypointsCtrl', function ($scope, $http, $interval) {
+        adminApp.controller('EntrypointsCtrl', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
 
             $http({
                 method: 'GET',
@@ -64,7 +68,63 @@
                 $scope.selectedEntrypoint = id;
             }
 
-        });
+        }]);
+
+        adminApp.controller('AddEntrypointCtrl', ['$scope', '$http', '$location', function ($scope, $http, $location) {
+            /* Init conf object, avoid undefined inner objects and show expected fields */
+            $scope.conf = {
+                haproxy: "",
+                hapUser: "",
+                context: {
+                    templateUri: ""
+                },
+                frontends: [],
+                backends: []
+            };
+
+            $scope.availableHaproxy = ['default-name'];
+
+            $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'plateforme', 'templateUri'];
+            $scope.forbiddenFrontendKeys = ['id', 'port'];
+            $scope.forbiddenBackendKeys = ['id'];
+
+            $scope.addFrontend = function () {
+                $scope.conf.frontends.push({
+                    id: "",
+                    context: {}
+                });
+            };
+
+            $scope.removeFrontend = function (frontend) {
+                var index = $scope.conf.frontends.indexOf(frontend);
+                if (index > -1) {
+                    $scope.conf.frontends.splice(index, 1);
+                }
+            };
+
+            $scope.addBackend = function () {
+                $scope.conf.backends.push({
+                    id: "",
+                    context: {}
+                });
+            };
+
+            $scope.removeBackend = function (backend) {
+                var index = $scope.conf.backends.indexOf(backend);
+                if (index > -1) {
+                    $scope.conf.backends.splice(index, 1);
+                }
+            };
+
+            $scope.createEntrypoint = function(){
+                $http.post('/api/entrypoint/'+$scope.conf.context.application+'/'+$scope.conf.context.plateforme, $scope.conf).then(function(response){
+                    $location.path('/');
+                }, function(error){
+                    console.log(error);
+                });
+            };
+
+        }]);
 
         adminApp.directive('entrypointConfigurationView', [
             function () {
@@ -74,8 +134,8 @@
                     scope: {
                         conf: '=conf'
                     },
-                    link: function(scope, element, attrs){
-                        scope.globalContextFilter = function(entry, index, array){
+                    link: function (scope, element, attrs) {
+                        scope.globalContextFilter = function (entry, index, array) {
                             //if(entry.$key == 'application' || entry.$key == 'plateforme' || entry.$key == 'templateUri'){
                             //    return false;
                             //}
@@ -86,31 +146,88 @@
             }
         ]);
 
-        adminApp.directive('contextMap', [ '$mdDialog',
-           function($mdDialog) {
-               return {
-                   restrict: 'E',
-                   templateUrl: 'partials/context-map.html',
-                   scope: {
-                       context: '=context',
-                       title: '@'
-                   },
-                   link: function(scope, element, attrs){
-                       scope.showContext = function(){
-                           $mdDialog.show({
-                               templateUrl: 'context-map/popup.html',
-                               clickOutsideToClose: true,
-                               scope: scope,
-                               autoWrap: false,
-                               openFrom: element,
-                               closeTo: element,
-                               preserveScope: true,
-                               fullscreen: false
-                           });
-                       }
-                   }
-               }
-           }
+        adminApp.directive('contextMap', ['$mdDialog',
+            function ($mdDialog) {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/context-map.html',
+                    scope: {
+                        context: '=context',
+                        title: '@'
+                    },
+                    link: function (scope, element, attrs) {
+                        scope.showContext = function () {
+                            $mdDialog.show({
+                                templateUrl: 'context-map/popup.html',
+                                clickOutsideToClose: true,
+                                scope: scope,
+                                autoWrap: false,
+                                openFrom: element,
+                                closeTo: element,
+                                preserveScope: true,
+                                fullscreen: false
+                            });
+                        }
+                    }
+                }
+            }
+        ]);
+
+        adminApp.directive('contextMapInput', [
+            function () {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/context-map-input.html',
+                    scope: {
+                        context: '=context',
+                        forbidden: '=?forbidden'
+                    },
+                    link: function (scope, element, attrs) {
+
+                        if(scope.forbidden == undefined) scope.forbidden = [];
+                        scope.chips = [];
+
+                        scope.$watch('context', function (newContext, oldContext) {
+                            if (newContext != undefined) {
+                                scope.chips = Object.keys(newContext).filter(function (key) {
+                                    return scope.forbidden.indexOf(key) == -1;
+                                }).sort().map(function (key) {
+                                    return {key: key, value: scope.context[key]};
+                                });
+                            }
+                        }, true);
+
+                        var chipsToContext = function () {
+                            scope.context = scope.chips.reduce(function (context, chip) {
+                                context[chip.key] = chip.value;
+                                return context;
+                            }, {});
+                        };
+
+                        scope.validateContextInput = function (chip) {
+                            var keyValue = chip.split(":");
+                            if (keyValue.length != 2) return null;
+                            var key = keyValue[0];
+                            var value = keyValue[1];
+                            if (scope.forbidden.indexOf(key) > -1) return null;
+                            if (value == '') return null;
+                            return {
+                                key: key,
+                                value: value.trim()
+                            }
+                        };
+
+                        scope.add = function (item) {
+                            chipsToContext();
+                        };
+
+                        scope.remove = function (item) {
+                            chipsToContext();
+                        }
+
+                    }
+                }
+            }
         ]);
 
         adminApp.directive('entrypointView', ['$interval', '$timeout', '$http', '$q',
@@ -122,10 +239,10 @@
                         id: '=id'
                     },
                     link: function (scope, element, attrs) {
-                        reloadDelay = 3000;
-                        blinkingDelay = 3000;
-                        autoRefresh = false;
-                        blinking = false;
+                        var reloadDelay = 3000;
+                        var blinkingDelay = 3000;
+                        var autoRefresh = false;
+                        var blinking = false;
 
                         refreshAllStates = function () {
                             return $q.all([
@@ -163,7 +280,7 @@
                             });
                         });
 
-                        refreshAuto = $interval(function () {
+                        var refreshAuto = $interval(function () {
                             if (scope.id && autoRefresh) {
                                 refreshAllStates();
                             }
@@ -214,6 +331,9 @@
                     <h2>
                         <span>HAProxy As A Service</span>
                     </h2>
+                    <md-button class="md-raised md-warn md-hue-2" ng-href="/#/add-entrypoint">
+                        Ajouter un entrypoint
+                    </md-button>
                 </div>
             </md-toolbar>
         </md-content>

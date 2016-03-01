@@ -12,6 +12,7 @@ import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,9 +32,22 @@ public class EntryPointEventHandlerTest {
     TemplateLocator templateLocator;
     TemplateGenerator templateGenerator;
 
+    public class EntryPointStateManagerMock extends EntryPointStateManager {
+
+        EntryPointStateManagerMock(EntryPointRepository repository) {
+            super(repository);
+        }
+
+        @Override
+        Optional<EntryPointConfiguration> prepare(EntryPointKey key, EntryPointConfiguration configuration) {
+            return Optional.of(configuration);
+        }
+    }
+
     @Before
     public void setUp() {
-        stateManager = mock(EntryPointStateManager.class);
+        stateManager = spy(new EntryPointStateManagerMock(mock(EntryPointRepository.class)));
+
         templateLocator = mock(TemplateLocator.class);
         templateGenerator = mock(TemplateGenerator.class);
         handler = new EntryPointEventHandler(stateManager, templateLocator, templateGenerator, new EventBus());
@@ -443,12 +457,6 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
-
-        handler.handle(event);
-
         EntryPointBackendServer expectedServer = new EntryPointBackendServer("ijklm", "hostname2", "10.98.71.2", "9092", serverContext);
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(expectedServer), new HashMap<>());
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
@@ -459,6 +467,12 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
+
+        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
+
+        handler.handle(event);
 
         verify(stateManager).prepare(eq(key), eq(expectedConfig));
     }
