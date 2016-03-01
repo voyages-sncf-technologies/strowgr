@@ -15,7 +15,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @State(Scope.Benchmark)
 public class ConsulRepositoryBenchmark {
 
-    ConsulRepository repository = new ConsulRepository("localhost", 8500);
+    ConsulRepository repository = new ConsulRepository("localhost", 8500, 32000, 64000);
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()

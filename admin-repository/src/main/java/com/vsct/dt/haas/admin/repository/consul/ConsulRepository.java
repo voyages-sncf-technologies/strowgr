@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.vsct.dt.haas.admin.core.EntryPointKey;
 import com.vsct.dt.haas.admin.core.EntryPointRepository;
+import com.vsct.dt.haas.admin.core.PortProvider;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
@@ -14,30 +16,37 @@ import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-public class ConsulRepository implements EntryPointRepository {
+public class ConsulRepository implements EntryPointRepository, PortProvider {
 
     private final String host;
     private final int port;
+    private int minGeneratedPort;
+    private int maxGeneratedPort;
 
     private final CloseableHttpClient client;
     private final ObjectMapper mapper = new ObjectMapper();
 
     private ThreadLocal<String> sessionLocal = new ThreadLocal<>();
 
-    public ConsulRepository(String host, int port) {
+    private Random random = new Random(System.nanoTime());
+
+    public ConsulRepository(String host, int port, int minGeneratedPort, int maxGeneratedPort) {
         this.host = host;
         this.port = port;
+        this.minGeneratedPort = minGeneratedPort;
+        this.maxGeneratedPort = maxGeneratedPort;
         this.client = HttpClients.createDefault();
     }
 
@@ -111,6 +120,34 @@ public class ConsulRepository implements EntryPointRepository {
             HttpEntity entity = response.getEntity();
             return mapper.readValue(entity.getContent(), new TypeReference<Set<String>>() {
             });
+        } else {
+//            throw new ClientProtocolException("Unexpected response status: " + status);
+            return new HashSet<>();
+        }
+    };
+
+    ResponseHandler<Optional<ConsulItem<Map<String, Integer>>>> getPortsByHaproxyResponseHandler = response -> {
+        int status = response.getStatusLine().getStatusCode();
+        if (status >= 200 && status < 300) {
+            HttpEntity entity = response.getEntity();
+            List<ConsulItem<Map<String, Integer>>> consulItems = mapper.readValue(entity.getContent(), new TypeReference<List<ConsulItem<Map<String, Integer>>>>() {
+            });
+            if (consulItems.size() > 1) throw new IllegalStateException("get too many ports mapping");
+            return Optional.of(consulItems.get(0));
+        } else if (status == 404) {
+            return Optional.empty();
+        } else {
+            throw new ClientProtocolException("Unexpected response status: " + status);
+        }
+    };
+
+    ResponseHandler<Boolean> putNewPortResponseHandler = response -> {
+        int status = response.getStatusLine().getStatusCode();
+        if (status >= 200 && status < 300) {
+            HttpEntity entity = response.getEntity();
+            String entityResponse = EntityUtils.toString(entity);
+            System.out.println("put response: " + entityResponse);
+            return Boolean.parseBoolean(entityResponse);
         } else {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
@@ -271,7 +308,89 @@ public class ConsulRepository implements EntryPointRepository {
         }
     }
 
-    public void shutdown(){
+    @Override
+    public Optional<Map<String, Integer>> getPorts() {
+        try {
+            HttpGet getPortsById = new HttpGet("http://" + host + ":" + port + "/v1/kv/ports");
+            Optional<ConsulItem<Map<String, Integer>>> result = client.execute(getPortsById, getPortsByHaproxyResponseHandler);
+            if (result.isPresent()) {
+                return Optional.of(result.get().value(mapper));
+            } else {
+                return Optional.empty();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Optional<Integer> getPort(String key) {
+        try {
+            // TODO should use ?raw with a different handler
+            HttpGet getPortsById = new HttpGet("http://" + host + ":" + port + "/v1/kv/ports");
+            Optional<ConsulItem<Map<String, Integer>>> portsByEntrypoint = client.execute(getPortsById, getPortsByHaproxyResponseHandler);
+            if (portsByEntrypoint.isPresent()) {
+                Map<String, Integer> portsByEntrypointRaw = portsByEntrypoint.get().value(mapper);
+                if (portsByEntrypointRaw.containsKey(key)) {
+                    return Optional.of(portsByEntrypointRaw.get(key));
+                }
+            }
+            return Optional.empty();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Integer newPort(String key) {
+        int newPort = -1;
+        try {
+            boolean failToPutNewPort = true;
+            while (failToPutNewPort) {
+                HttpGet getPortById = new HttpGet("http://" + host + ":" + port + "/v1/kv/ports");
+                Optional<ConsulItem<Map<String, Integer>>> portsByEntrypoint = client.execute(getPortById, getPortsByHaproxyResponseHandler);
+                HttpPut putPortById;
+                if (portsByEntrypoint.isPresent()) {
+                    // Ports map has been already initialized
+                    Map<String, Integer> rawPortsByEntrypoint = portsByEntrypoint.get().value(mapper);
+                    if (rawPortsByEntrypoint.containsKey(key)) {
+                        throw new IllegalStateException("Port for key " + key + " is already setted. It's port " + rawPortsByEntrypoint.get(key));
+                    }
+
+                    boolean portAlreadyUsed = true;
+                    while (portAlreadyUsed) {
+                        newPort = random.nextInt(maxGeneratedPort - minGeneratedPort) + minGeneratedPort;
+                        portAlreadyUsed = rawPortsByEntrypoint.values().contains(newPort);
+                    }
+
+                    rawPortsByEntrypoint.put(key, newPort);
+
+                    putPortById = new HttpPut("http://" + host + ":" + port + "/v1/kv/ports?cas=" + portsByEntrypoint.get().getModifyIndex());
+                    String encodedJson = encodeJson(rawPortsByEntrypoint);
+                    putPortById.setEntity(new StringEntity(encodedJson));
+                } else {
+                    // First initialization
+                    newPort = random.nextInt(maxGeneratedPort - minGeneratedPort) + minGeneratedPort;
+                    Map<String, Integer> rawPortsByEntrypoint = new HashMap<>();
+                    rawPortsByEntrypoint.put(key, newPort);
+                    putPortById = new HttpPut("http://" + host + ":" + port + "/v1/kv/ports?cas=0");
+                    String encodedJson = encodeJson(rawPortsByEntrypoint);
+                    putPortById.setEntity(new StringEntity(encodedJson));
+                }
+                failToPutNewPort = !client.execute(putPortById, putNewPortResponseHandler);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return newPort;
+    }
+
+    public String encodeJson(Map<String, Integer> portsByEntrypoint) throws IOException {
+        ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
+        return ow.writeValueAsString(portsByEntrypoint);
+    }
+
+    public void shutdown() {
         try {
             this.client.close();
         } catch (IOException e) {

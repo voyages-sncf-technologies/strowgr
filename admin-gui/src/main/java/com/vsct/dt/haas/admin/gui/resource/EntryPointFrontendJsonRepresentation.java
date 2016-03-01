@@ -13,12 +13,11 @@ public class EntryPointFrontendJsonRepresentation extends EntryPointFrontend {
 
     @JsonCreator
     public EntryPointFrontendJsonRepresentation(@JsonProperty("id") String id,
-                                                @JsonProperty("port") String port,
                                                 @JsonProperty("context") Map<String, String> context) {
-        super(id, port, context);
+        super(id, context);
     }
 
     public EntryPointFrontendJsonRepresentation(EntryPointFrontend f) {
-        this(f.getId(), f.getPort(), f.getContext());
+        this(f.getId(), f.getContext());
     }
 }

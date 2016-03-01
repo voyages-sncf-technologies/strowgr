@@ -25,6 +25,12 @@ public class ConsulRepositoryFactory {
     @Max(65535)
     private int port;
 
+    @JsonProperty(value = "minGeneratedPort")
+    private int minGeneratedPort = 32000;
+
+    @JsonProperty("maxGeneratedPort")
+    private int maxGeneratedPort = 64000;
+
     @JsonProperty
     public String getHost() {
         return host;
@@ -45,8 +51,28 @@ public class ConsulRepositoryFactory {
         this.port = port;
     }
 
-    public ConsulRepository build(Environment environment){
-        ConsulRepository repository = new ConsulRepository(getHost(), getPort());
+    @JsonProperty
+    public int getMinGeneratedPort() {
+        return minGeneratedPort;
+    }
+
+    @JsonProperty
+    public void setMinGeneratedPort(int minGeneratedPort) {
+        this.minGeneratedPort = minGeneratedPort;
+    }
+
+    @JsonProperty
+    public int getMaxGeneratedPort() {
+        return maxGeneratedPort;
+    }
+
+    @JsonProperty
+    public void setMaxGeneratedPort(int maxGeneratedPort) {
+        this.maxGeneratedPort = maxGeneratedPort;
+    }
+
+    public ConsulRepository build(Environment environment) {
+        ConsulRepository repository = new ConsulRepository(getHost(), getPort(), getMinGeneratedPort(), getMaxGeneratedPort());
         environment.lifecycle().manage(new Managed() {
             @Override
             public void start() throws Exception {

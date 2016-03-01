@@ -2,6 +2,7 @@ package com.vsct.dt.haas.admin.core;
 
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,4 +32,5 @@ public interface EntryPointRepository {
     void lock(EntryPointKey key);
 
     public void release(EntryPointKey key);
+
 }
