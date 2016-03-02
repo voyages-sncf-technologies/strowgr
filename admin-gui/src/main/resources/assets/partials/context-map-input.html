@@ -1,0 +1,11 @@
+<md-content>
+    <md-chips ng-model="chips"
+              placeholder="Ajouter (cl&eacute;:valeur)"
+              md-on-add="add()"
+              md-on-remove="remove()"
+              md-transform-chip="validateContextInput($chip)">
+        <md-chip-template>
+            <span><strong>{{$chip.key}}</strong> {{$chip.value}}</span>
+        </md-chip-template>
+    </md-chips>
+</md-content>

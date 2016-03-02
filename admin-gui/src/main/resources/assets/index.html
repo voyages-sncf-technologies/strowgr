@@ -38,13 +38,17 @@
     </style>
 
     <script type="text/javascript">
-        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute']);
+        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages']);
 
         adminApp.config(['$routeProvider', function ($routeProvider) {
             $routeProvider.
                     when('/entrypoints', {
                         templateUrl: 'partials/entrypoints.html',
                         controller: 'EntrypointsCtrl'
+                    }).
+                    when('/add-entrypoint', {
+                        templateUrl: 'partials/add-entrypoint.html',
+                        controller: 'AddEntrypointCtrl'
                     }).
                     otherwise({
                         redirectTo: '/entrypoints'
@@ -61,7 +65,7 @@
             }
         }]);
 
-        adminApp.controller('EntrypointsCtrl', function ($scope, $http, $interval) {
+        adminApp.controller('EntrypointsCtrl', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
 
             $http({
                 method: 'GET',
@@ -74,7 +78,64 @@
                 $scope.selectedEntrypoint = id;
             }
 
-        });
+        }]);
+
+        adminApp.controller('AddEntrypointCtrl', ['$scope', '$http', '$location', function ($scope, $http, $location) {
+            /* Init conf object, avoid undefined inner objects and show expected fields */
+            $scope.conf = {
+                haproxy: "",
+                hapUser: "",
+                context: {
+                    templateUri: ""
+                },
+                frontends: [],
+                backends: []
+            };
+
+            $scope.availableHaproxy = ['default-name'];
+
+            $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'plateforme', 'templateUri'];
+            $scope.forbiddenFrontendKeys = ['id', 'port'];
+            $scope.forbiddenBackendKeys = ['id'];
+
+            $scope.addFrontend = function () {
+                $scope.conf.frontends.push({
+                    id: "",
+                    context: {}
+                });
+            };
+
+            $scope.removeFrontend = function (frontend) {
+                var index = $scope.conf.frontends.indexOf(frontend);
+                if (index > -1) {
+                    $scope.conf.frontends.splice(index, 1);
+                }
+            };
+
+            $scope.addBackend = function () {
+                $scope.conf.backends.push({
+                    id: "",
+                    servers: [],
+                    context: {}
+                });
+            };
+
+            $scope.removeBackend = function (backend) {
+                var index = $scope.conf.backends.indexOf(backend);
+                if (index > -1) {
+                    $scope.conf.backends.splice(index, 1);
+                }
+            };
+
+            $scope.createEntrypoint = function () {
+                $http.post('/api/entrypoint/' + $scope.conf.context.application + '/' + $scope.conf.context.plateforme, $scope.conf).then(function (response) {
+                    $location.path('/');
+                }, function (error) {
+                    console.log(error);
+                });
+            };
+
+        }]);
 
         adminApp.directive('entrypointConfigurationView', ['PortProvider',
             function (PortProvider) {
@@ -123,6 +184,65 @@
             }
         ]);
 
+        adminApp.directive('contextMapInput', [
+            function () {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/context-map-input.html',
+                    scope: {
+                        context: '=context',
+                        forbidden: '=?forbidden'
+                    },
+                    link: function (scope, element, attrs) {
+
+                        if (scope.forbidden == undefined) scope.forbidden = [];
+                        scope.chips = [];
+
+                        scope.$watch('context', function (newContext, oldContext) {
+                            if (newContext != undefined) {
+                                scope.chips = Object.keys(newContext).filter(function (key) {
+                                    return scope.forbidden.indexOf(key) == -1;
+                                }).sort().map(function (key) {
+                                    return {key: key, value: scope.context[key]};
+                                });
+                            }
+                        }, true);
+
+                        var chipsToContext = function () {
+                            /* keys provided by some other components should not be disturbed by thoose created by context map input
+                             this is why we use angular.extend */
+                            scope.context = angular.extend({}, scope.chips.reduce(function (context, chip) {
+                                context[chip.key] = chip.value;
+                                return context;
+                            }, {}), scope.context);
+                        };
+
+                        scope.validateContextInput = function (chip) {
+                            var keyValue = chip.split(":");
+                            if (keyValue.length != 2) return null;
+                            var key = keyValue[0];
+                            var value = keyValue[1];
+                            if (scope.forbidden.indexOf(key) > -1) return null;
+                            if (value == '') return null;
+                            return {
+                                key: key,
+                                value: value.trim()
+                            }
+                        };
+
+                        scope.add = function (item) {
+                            chipsToContext();
+                        };
+
+                        scope.remove = function (item) {
+                            chipsToContext();
+                        }
+
+                    }
+                }
+            }
+        ]);
+
         adminApp.directive('entrypointView', ['$interval', '$timeout', '$http', '$q', 'PortProvider',
             function ($interval, $timeout, $http, $q, PortProvider) {
                 return {
@@ -132,10 +252,10 @@
                         id: '=id'
                     },
                     link: function (scope, element, attrs) {
-                        reloadDelay = 3000;
-                        blinkingDelay = 3000;
-                        autoRefresh = false;
-                        blinking = false;
+                        var reloadDelay = 3000;
+                        var blinkingDelay = 3000;
+                        var autoRefresh = false;
+                        var blinking = false;
 
                         refreshAllStates = function () {
                             return $q.all({
@@ -167,7 +287,7 @@
                             });
                         };
 
-                        portPromises = function (id, conf) {
+                        var portPromises = function (id, conf) {
                             var promises = [].concat(conf.frontends.map(function (frontend) {
                                 return PortProvider.getPort(id + '-' + frontend.id).then(function (port) {
                                     frontend.port = port;
@@ -176,7 +296,9 @@
                             promises.push(PortProvider.getPort(id + '-syslog').then(function (port) {
                                 conf.syslogPort = port;
                             }));
-                            return $q.all(promises).then(function(){ return conf;});
+                            return $q.all(promises).then(function () {
+                                return conf;
+                            });
                         };
 
 
@@ -190,7 +312,7 @@
                             });
                         });
 
-                        refreshAuto = $interval(function () {
+                        var refreshAuto = $interval(function () {
                             if (scope.id && autoRefresh) {
                                 refreshAllStates();
                             }
@@ -241,6 +363,9 @@
                     <h2>
                         <span>HAProxy As A Service</span>
                     </h2>
+                    <md-button class="md-raised md-warn md-hue-2" ng-href="/#/add-entrypoint">
+                        Ajouter un entrypoint
+                    </md-button>
                 </div>
             </md-toolbar>
         </md-content>
