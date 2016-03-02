@@ -98,7 +98,7 @@
 
             $scope.availableHaproxy = ['default-name'];
 
-            $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'plateforme', 'templateUri'];
+            $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
             $scope.forbiddenFrontendKeys = ['id', 'port'];
             $scope.forbiddenBackendKeys = ['id'];
 
@@ -132,7 +132,7 @@
             };
 
             $scope.createEntrypoint = function () {
-                $http.post('/api/entrypoint/' + $scope.conf.context.application + '/' + $scope.conf.context.plateforme, $scope.conf).then(function (response) {
+                $http.post('/api/entrypoint/' + $scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf).then(function (response) {
                     $location.path('/');
                 }, function (error) {
                     console.log(error);
