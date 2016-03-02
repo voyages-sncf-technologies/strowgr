@@ -41,7 +41,7 @@ public class EntryPointStateManagerTest {
 
         EntryPointConfiguration committingConfiguration = EntryPointConfiguration
                 .onHaproxy("haproxy")
-                .withUser("hapuser")
+                .withUser("hapuser2")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -101,7 +101,7 @@ public class EntryPointStateManagerTest {
 
         EntryPointConfiguration currentConfiguration = EntryPointConfiguration
                 .onHaproxy("haproxy")
-                .withUser("hapuser")
+                .withUser("hapuser2")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
