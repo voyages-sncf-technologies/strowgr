@@ -60,6 +60,10 @@
                 getPort: function (id) {
                     return $http.get('/api/ports/' + id).then(function (response) {
                         return response.data;
+                    }, function(error){
+                        if(error.status = 404){
+                            return "Port not fixed yet";
+                        }
                     });
                 }
             }

@@ -130,6 +130,21 @@ public class RestApiResources {
         eventBus.post(event);
     }
 
+    @GET
+    @Path("/ports/{id : .+}")
+    public String getPort(@PathParam("id") String id) {
+        Optional<Integer> port = portProvider.getPort(id);
+        if (port.isPresent())
+            return String.valueOf(port.get());
+        else throw new NotFoundException();
+    }
+
+    @GET
+    @Path("/ports")
+    public Map<String, Integer> getPorts() {
+        return portProvider.getPorts().orElseGet(HashMap::new);
+    }
+
     /* DEBUGGING METHODS */
     @POST
     @Path("/entrypoint/{id : .+}/try-commit-current")
@@ -164,21 +179,6 @@ public class RestApiResources {
         CommitFailureEvent event = new CommitFailureEvent(correlationId, new EntryPointKeyDefaultImpl(id));
         eventBus.post(event);
         return "Request posted, look info to follow actions";
-    }
-
-    @GET
-    @Path("/ports/{id : .+}")
-    public String getPort(@PathParam("id") String id) {
-        Optional<Integer> port = portProvider.getPort(id);
-        if (port.isPresent())
-            return String.valueOf(port.get());
-        else return "port not found for id " + id;
-    }
-
-    @GET
-    @Path("/ports")
-    public Map<String, Integer> getPorts() {
-        return portProvider.getPorts().orElseGet(HashMap::new);
     }
 
     @PUT
