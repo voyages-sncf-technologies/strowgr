@@ -126,6 +126,12 @@ else
 fi
 
 CheckDiff() {
+
+if [ "$HAP_INTERACTIVE" = "0" ];then
+    echo "Pas de verification manuelle de la conf"
+    return
+fi
+
 if [ -e $VERSION_1/hap$APP$PLATEFORM.conf ]; then
  _DIFF=`diff $VERSION_1/hap$APP$PLATEFORM.conf $HAP_CONF`
  if [ ! -z "$_DIFF" ]; then

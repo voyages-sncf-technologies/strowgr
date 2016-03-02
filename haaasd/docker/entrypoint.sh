@@ -8,4 +8,7 @@ for APP in OCE ECE MPD PAO;do
         done
     done
 done
+
+export HAP_INTERACTIVE=0
+
 /haaasd --config /haaasd.conf -ip $(hostname -i)
