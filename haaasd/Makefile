@@ -28,6 +28,9 @@ docker-image: dist
 	cp docker/* dist
 	docker build -t $(IMAGE):$(VERSION) dist
 
+test:
+	cd src && go test -v ./haaasd
+
 #Handle docker-compose
 dcup:
 	docker-compose -f integration/docker-compose.yml up -d
