@@ -15,10 +15,11 @@ build: main.go
 
 docker-build:
 	docker build -t $(IMAGE)-builder -f build.Dockerfile .
-	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaas/bin $(IMAGE)-builder make
+	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder make
 
 docker-image: dist
 	cp Dockerfile dist
+	cp BOOT dist
 	docker build -t $(IMAGE):$(VERSION) dist
 
 dist: ${BUILDDIR}/${BINARY}-linux_amd64

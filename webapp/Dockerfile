@@ -1,5 +1,6 @@
-FROM busybox
-
-#COPY main.go
+FROM alpine
+RUN apk -U add curl
 COPY webapp-linux_amd64 /app
-ENTRYPOINT [ "/app" , "-instance" ]
+COPY BOOT /BOOT
+RUN chmod +x /BOOT
+ENTRYPOINT [ "/BOOT" ]
