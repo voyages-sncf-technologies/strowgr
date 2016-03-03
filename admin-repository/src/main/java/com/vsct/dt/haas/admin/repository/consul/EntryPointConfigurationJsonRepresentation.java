@@ -17,8 +17,6 @@ public class EntryPointConfigurationJsonRepresentation extends EntryPointConfigu
 
     @JsonCreator
     public EntryPointConfigurationJsonRepresentation(@JsonProperty("haproxy") String haproxy,
-                                                     @JsonProperty("application") String application,
-                                                     @JsonProperty("platform") String platform,
                                                      @JsonProperty("hapUser") String hapUser,
                                                      @JsonProperty("frontends") Set<EntryPointFrontendJsonRepresentation> frontends,
                                                      @JsonProperty("backends") Set<EntryPointBackendJsonRepresentation> backends,

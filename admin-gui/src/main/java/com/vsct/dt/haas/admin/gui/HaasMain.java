@@ -67,6 +67,7 @@ public class HaasMain extends Application<HaasConfiguration> {
                 .getPortsWith(repository)
                 .findTemplatesWith(templateLocator)
                 .generatesTemplatesWith(templateGenerator)
+                .commitTimeoutIn(configuration.getCommitTimeout())
                 .outputMessagesTo(eventBus);
 
         eventBus.register(eventHandler);
@@ -87,7 +88,7 @@ public class HaasMain extends Application<HaasConfiguration> {
         PeriodicScheduler commitPendingScheduler = configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
 
         /* REST Resource */
-        RestApiResources restApiResource = new RestApiResources(eventBus, repository, repository);
+        RestApiResources restApiResource = new RestApiResources(eventBus, repository, repository, configuration.getCommitTimeout());
         environment.jersey().register(restApiResource);
 
         eventBus.register(restApiResource);

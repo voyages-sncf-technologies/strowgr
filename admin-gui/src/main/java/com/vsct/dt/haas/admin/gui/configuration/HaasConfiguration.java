@@ -40,6 +40,9 @@ public class HaasConfiguration extends Configuration {
     @Min(1)
     private int threads;
 
+    @Min(1)
+    private int commitTimeout;
+
     @JsonProperty("repository")
     public ConsulRepositoryFactory getConsulRepositoryFactory() {
         return consulRepositoryFactory;
@@ -118,5 +121,15 @@ public class HaasConfiguration extends Configuration {
     @JsonProperty("threads")
     public void setThreads(int threads) {
         this.threads = threads;
+    }
+
+    @JsonProperty("commitTimeout")
+    public int getCommitTimeout() {
+        return commitTimeout;
+    }
+
+    @JsonProperty("commitTimeout")
+    public void setCommitTimeout(int commitTimeout) {
+        this.commitTimeout = commitTimeout;
     }
 }

@@ -15,7 +15,13 @@ public interface EntryPointRepository {
 
     Optional<EntryPointConfiguration> getPendingConfiguration(EntryPointKey key);
 
-    Optional<EntryPointConfiguration> getCommittingConfiguration(EntryPointKey key);
+    /**
+     * Should return Optional.empty() if ttl is expired
+     * @param ttl ttl in seconds
+     * @param key
+     * @return
+     */
+    Optional<EntryPointConfiguration> getCommittingConfiguration(int ttl, EntryPointKey key);
 
     void setPendingConfiguration(EntryPointKey key, EntryPointConfiguration configuration);
 

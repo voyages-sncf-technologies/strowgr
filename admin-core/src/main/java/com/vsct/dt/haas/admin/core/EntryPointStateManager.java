@@ -12,11 +12,13 @@ import java.util.Set;
  */
 public class EntryPointStateManager {
 
-    private EntryPointRepository repository;
+    private final int                 commitTimeout;
+    private final EntryPointRepository repository;
 
-    EntryPointStateManager(EntryPointRepository repository) {
+    EntryPointStateManager(int commitTimeout, EntryPointRepository repository) {
         Preconditions.checkNotNull(repository);
         this.repository = repository;
+        this.commitTimeout = commitTimeout;
     }
 
     /**
@@ -50,7 +52,7 @@ public class EntryPointStateManager {
     }
 
     Optional<EntryPointConfiguration> getCommittingConfiguration(EntryPointKey key) {
-        return repository.getCommittingConfiguration(key);
+        return repository.getCommittingConfiguration(commitTimeout, key);
     }
 
     /**
@@ -63,21 +65,23 @@ public class EntryPointStateManager {
      * @return the new pending configuration (optional)
      */
     Optional<EntryPointConfiguration> prepare(EntryPointKey key, EntryPointConfiguration configuration) {
-        Optional<EntryPointConfiguration> committingConfiguration = repository.getCommittingConfiguration(key);
+        Optional<EntryPointConfiguration> committingConfiguration = repository.getCommittingConfiguration(commitTimeout, key);
 
         if (committingConfiguration.isPresent()) {
             if (!committingConfiguration.get().equals(configuration)) {
                 repository.setPendingConfiguration(key, configuration);
                 return Optional.of(configuration);
             }
-        } else {
+        }
+        else {
             Optional<EntryPointConfiguration> currentConfiguration = repository.getCurrentConfiguration(key);
             if (currentConfiguration.isPresent()) {
                 if (!currentConfiguration.get().equals(configuration)) {
                     repository.setPendingConfiguration(key, configuration);
                     return Optional.of(configuration);
                 }
-            } else {
+            }
+            else {
                 repository.setPendingConfiguration(key, configuration);
                 return Optional.of(configuration);
             }
@@ -96,7 +100,7 @@ public class EntryPointStateManager {
         Optional<EntryPointConfiguration> pendingConfiguration = repository.getPendingConfiguration(key);
 
         if (pendingConfiguration.isPresent()) {
-            if (!repository.getCommittingConfiguration(key).isPresent()) {
+            if (!repository.getCommittingConfiguration(commitTimeout, key).isPresent()) {
                 repository.setCommittingConfiguration(key, pendingConfiguration.get());
                 repository.removePendingConfiguration(key);
                 return pendingConfiguration;
@@ -115,7 +119,7 @@ public class EntryPointStateManager {
         Optional<EntryPointConfiguration> currentConfiguration = repository.getCurrentConfiguration(key);
 
         if (currentConfiguration.isPresent()) {
-            if (!repository.getCommittingConfiguration(key).isPresent()) {
+            if (!repository.getCommittingConfiguration(commitTimeout, key).isPresent()) {
                 repository.setCommittingConfiguration(key, currentConfiguration.get());
                 return currentConfiguration;
             }
@@ -130,7 +134,7 @@ public class EntryPointStateManager {
      * @return the new current configuration (optional)
      */
     Optional<EntryPointConfiguration> commit(EntryPointKey key) {
-        Optional<EntryPointConfiguration> committingConfiguration = repository.getCommittingConfiguration(key);
+        Optional<EntryPointConfiguration> committingConfiguration = repository.getCommittingConfiguration(commitTimeout, key);
 
         if (committingConfiguration.isPresent()) {
             repository.setCurrentConfiguration(key, committingConfiguration.get());
