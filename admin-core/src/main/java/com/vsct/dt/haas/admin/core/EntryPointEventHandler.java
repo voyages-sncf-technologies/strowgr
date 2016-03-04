@@ -35,15 +35,6 @@ public class EntryPointEventHandler {
         this.templateGenerator = templateGenerator;
     }
 
-    /*
-       TODO Refactor to avoid getter on stateManager
-       New design, move methods to state manager, event handler goes in the gui
-       out events should use the observer pattern
-     */
-    public EntryPointStateManager getStateManager() {
-        return stateManager;
-    }
-
     public static EntryPointEventHandlerBuilder backedBy(EntryPointRepository repository) {
         return new EntryPointEventHandlerBuilder(repository);
     }

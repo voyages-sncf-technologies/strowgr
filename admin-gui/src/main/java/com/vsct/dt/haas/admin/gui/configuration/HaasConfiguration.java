@@ -40,7 +40,7 @@ public class HaasConfiguration extends Configuration {
     @Min(1)
     private int threads;
 
-    @Min(1)
+    @Min(10)
     private int commitTimeout;
 
     @JsonProperty("repository")

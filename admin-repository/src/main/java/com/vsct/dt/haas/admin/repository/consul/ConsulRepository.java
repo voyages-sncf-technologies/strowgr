@@ -24,14 +24,16 @@ import org.apache.http.util.EntityUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public class ConsulRepository implements EntryPointRepository, PortProvider {
 
     private final String host;
-    private final int    port;
-    private       int    minGeneratedPort;
-    private       int    maxGeneratedPort;
+    private final int port;
+    private int minGeneratedPort;
+    private int maxGeneratedPort;
 
     private final CloseableHttpClient client;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -39,6 +41,21 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     private ThreadLocal<String> sessionLocal = new ThreadLocal<>();
 
     private Random random = new Random(System.nanoTime());
+
+    private enum Behavior {
+        RELEASE("release"),DELETE("delete");
+
+        private final String value;
+
+        Behavior(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
 
     public ConsulRepository(String host, int port, int minGeneratedPort, int maxGeneratedPort) {
         this.host = host;
@@ -48,7 +65,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         this.client = HttpClients.createDefault();
     }
 
-    ResponseHandler<Session>                                                         createSessionResponseHandler       = response -> {
+    ResponseHandler<Session>                           createSessionResponseHandler       = response -> {
         int status = response.getStatusLine().getStatusCode();
         if (status >= 200 && status < 300) {
             HttpEntity entity = response.getEntity();
@@ -58,7 +75,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
     };
-    ResponseHandler<Boolean>                                                         destroySessionResponseHandler      = response -> {
+    ResponseHandler<Boolean>                           destroySessionResponseHandler      = response -> {
         int status = response.getStatusLine().getStatusCode();
         if (status >= 200 && status < 300) {
             HttpEntity entity = response.getEntity();
@@ -68,7 +85,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
     };
-    ResponseHandler<Boolean>                                                         acquireEntryPointResponseHandler   = response -> {
+    ResponseHandler<Boolean>                           acquireEntryPointResponseHandler   = response -> {
         int status = response.getStatusLine().getStatusCode();
         if (status >= 200 && status < 300) {
             HttpEntity entity = response.getEntity();
@@ -78,7 +95,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
     };
-    ResponseHandler<Boolean>                                                         releaseEntryPointResponseHandler   = response -> {
+    ResponseHandler<Boolean>                           releaseEntryPointResponseHandler   = response -> {
         int status = response.getStatusLine().getStatusCode();
         if (status >= 200 && status < 300) {
             HttpEntity entity = response.getEntity();
@@ -88,22 +105,18 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
     };
-    ResponseHandler<Optional<ConsulItem<EntryPointConfigurationJsonRepresentation>>> getConfigurationResponseHandler    = response -> {
+    ResponseHandler<Optional<EntryPointConfiguration>> getConfigurationResponseHandler    = response -> {
         int status = response.getStatusLine().getStatusCode();
         if (status == 404) return Optional.empty();
         if (status >= 200 && status < 300) {
             HttpEntity entity = response.getEntity();
-            List<ConsulItem<EntryPointConfigurationJsonRepresentation>> consulItems = mapper.readValue(entity.getContent(), new TypeReference<List<ConsulItem<EntryPointConfigurationJsonRepresentation>>>() {
-            });
-            if (consulItems.size() > 1)
-                throw new IllegalStateException("Got too many object when looking for configuration of one entrypoint. URL Should not use ?recurse option");
-            return Optional.of(consulItems.get(0));
+            return Optional.of(mapper.readValue(entity.getContent(), EntryPointConfigurationJsonRepresentation.class));
         }
         else {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
     };
-    ResponseHandler<Boolean>                                                         setConfigurationResponseHandler    = response -> {
+    ResponseHandler<Boolean>                           setConfigurationResponseHandler    = response -> {
         int status = response.getStatusLine().getStatusCode();
         if (status >= 200 && status < 300) {
             HttpEntity entity = response.getEntity();
@@ -113,7 +126,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
     };
-    ResponseHandler<Boolean>                                                         deleteConfigurationResponseHandler = response -> {
+    ResponseHandler<Boolean>                           deleteConfigurationResponseHandler = response -> {
         int status = response.getStatusLine().getStatusCode();
         if (status >= 200 && status < 300) {
             HttpEntity entity = response.getEntity();
@@ -123,7 +136,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
     };
-    ResponseHandler<Set<String>>                                                     listKeysResponseHandler            = response -> {
+    ResponseHandler<Set<String>>                       listKeysResponseHandler            = response -> {
         int status = response.getStatusLine().getStatusCode();
         if (status >= 200 && status < 300) {
             HttpEntity entity = response.getEntity();
@@ -142,8 +155,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             HttpEntity entity = response.getEntity();
             List<ConsulItem<Map<String, Integer>>> consulItems = mapper.readValue(entity.getContent(), new TypeReference<List<ConsulItem<Map<String, Integer>>>>() {
             });
-            if (consulItems.size() > 1)
-                throw new IllegalStateException("Get too many values for ports mapping. URL Should not use ?recurse option");
+            if (consulItems.size() > 1) throw new IllegalStateException("get too many ports mapping");
             return Optional.of(consulItems.get(0));
         }
         else if (status == 404) {
@@ -169,8 +181,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     @Override
     public void lock(EntryPointKey key) {
         try {
-            HttpPut createSessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/create");
-            Session session = client.execute(createSessionURI, createSessionResponseHandler);
+            Session session = createSession();
             sessionLocal.set(session.ID);
 
             HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/lock?acquire=" + sessionLocal.get());
@@ -179,11 +190,31 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             boolean locked = false;
             while (!locked) {
                 locked = client.execute(acquireEntryPointKeyURI, acquireEntryPointResponseHandler);
+                if (!locked) {
+                    /* Avoid crazy spinning */
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private Session createSession() throws IOException {
+        return createSession(null, null);
+    }
+
+    private Session createSession(Integer ttl, Behavior behavior) throws IOException {
+        HttpPut createSessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/create");
+        if (ttl != null) {
+            createSessionURI.setEntity(new StringEntity("{\"Behavior\":\""+behavior+"\",\"TTL\":\"" + ttl + "s\"}"));
+        }
+        return client.execute(createSessionURI, createSessionResponseHandler);
     }
 
     @Override
@@ -202,19 +233,9 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     @Override
     public Optional<EntryPointConfiguration> getCurrentConfiguration(EntryPointKey key) {
         try {
-            HttpGet getCurrentURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/current");
-            return client.execute(getCurrentURI, getConfigurationResponseHandler).map(consulItem -> {
-                try {
-                    return mapper.readValue(Base64.getDecoder().decode(consulItem.getValue()), new TypeReference<EntryPointConfigurationJsonRepresentation>() {
-                    });
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            HttpGet getCurrentURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/current?raw");
+            return client.execute(getCurrentURI, getConfigurationResponseHandler);
         } catch (IOException e) {
-            e.printStackTrace();
-            return Optional.empty();
-        } catch (ClassCastException e) {
             e.printStackTrace();
             return Optional.empty();
         }
@@ -244,15 +265,8 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     @Override
     public Optional<EntryPointConfiguration> getPendingConfiguration(EntryPointKey key) {
         try {
-            HttpGet getPendingURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/pending");
-            return client.execute(getPendingURI, getConfigurationResponseHandler).map(consulItem -> {
-                try {
-                    return mapper.readValue(Base64.getDecoder().decode(consulItem.getValue()), new TypeReference<EntryPointConfigurationJsonRepresentation>() {
-                    });
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            HttpGet getPendingURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/pending?raw");
+            return client.execute(getPendingURI, getConfigurationResponseHandler);
         } catch (IOException e) {
             e.printStackTrace();
             return Optional.empty();
@@ -260,21 +274,10 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public Optional<EntryPointConfiguration> getCommittingConfiguration(int ttl, EntryPointKey key) {
+    public Optional<EntryPointConfiguration> getCommittingConfiguration(EntryPointKey key) {
         try {
-            HttpGet getCommittingURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/committing");
-            return client.execute(getCommittingURI, getConfigurationResponseHandler).flatMap(consulItem -> {
-                /* TTL is in second, flags are in millis */
-                if (System.currentTimeMillis() - consulItem.getFlags() < ttl * 1000L) {
-                    try {
-                        return Optional.of(mapper.readValue(Base64.getDecoder().decode(consulItem.getValue()), new TypeReference<EntryPointConfigurationJsonRepresentation>() {
-                        }));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                else return Optional.empty();
-            });
+            HttpGet getCommittingURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/committing?raw");
+            return client.execute(getCommittingURI, getConfigurationResponseHandler);
         } catch (IOException e) {
             e.printStackTrace();
             return Optional.empty();
@@ -308,9 +311,16 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public void setCommittingConfiguration(EntryPointKey key, EntryPointConfiguration configuration) {
+    public void setCommittingConfiguration(EntryPointKey key, EntryPointConfiguration configuration, int ttl) {
         try {
-            HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/committing?flags=" + System.currentTimeMillis());
+            /* Use Consul session to use TTL feature
+               This implies that when the consul node holding the session is lost,
+               the session and thus the committing config will also be lost,
+               TTL cannot be honored in that corner case.
+             */
+            Session session = createSession(ttl, Behavior.DELETE);
+
+            HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/committing?acquire="+session.ID);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             mapper.writeValue(out, configuration);
@@ -356,8 +366,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             Optional<ConsulItem<Map<String, Integer>>> result = client.execute(getPortsById, getPortsByHaproxyResponseHandler);
             if (result.isPresent()) {
                 return Optional.of(result.get().value(mapper));
-            }
-            else {
+            } else {
                 return Optional.empty();
             }
         } catch (IOException e) {
@@ -410,8 +419,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                     putPortById = new HttpPut("http://" + host + ":" + port + "/v1/kv/ports?cas=" + portsByEntrypoint.get().getModifyIndex());
                     String encodedJson = encodeJson(rawPortsByEntrypoint);
                     putPortById.setEntity(new StringEntity(encodedJson));
-                }
-                else {
+                } else {
                     // First initialization
                     newPort = random.nextInt(maxGeneratedPort - minGeneratedPort) + minGeneratedPort;
                     Map<String, Integer> rawPortsByEntrypoint = new HashMap<>();

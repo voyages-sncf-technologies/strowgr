@@ -48,7 +48,7 @@ public class EntryPointStateManagerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.of(committingConfiguration)
         );
 
@@ -78,7 +78,7 @@ public class EntryPointStateManagerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.of(committingConfiguration)
         );
 
@@ -108,7 +108,7 @@ public class EntryPointStateManagerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.empty()
         );
         when(repositoryMock.getCurrentConfiguration(key)).thenReturn(
@@ -141,7 +141,7 @@ public class EntryPointStateManagerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.empty()
         );
         when(repositoryMock.getCurrentConfiguration(key)).thenReturn(
@@ -166,7 +166,7 @@ public class EntryPointStateManagerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.empty()
         );
         when(repositoryMock.getCurrentConfiguration(key)).thenReturn(
@@ -193,13 +193,13 @@ public class EntryPointStateManagerTest {
         when(repositoryMock.getPendingConfiguration(key)).thenReturn(
                 Optional.of(pendingConfiguration)
         );
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.empty()
         );
 
         entryPointStateManager.tryCommitPending(key);
 
-        verify(repositoryMock).setCommittingConfiguration(key, pendingConfiguration);
+        verify(repositoryMock).setCommittingConfiguration(key, pendingConfiguration, 10);
         verify(repositoryMock).removePendingConfiguration(key);
     }
 
@@ -226,13 +226,13 @@ public class EntryPointStateManagerTest {
         when(repositoryMock.getPendingConfiguration(key)).thenReturn(
                 Optional.of(pendingConfiguration)
         );
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.of(existingCommittingConfiguration)
         );
 
         entryPointStateManager.tryCommitPending(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
         verify(repositoryMock, never()).removePendingConfiguration(any());
     }
 
@@ -246,7 +246,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.tryCommitPending(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
         verify(repositoryMock, never()).removePendingConfiguration(any());
     }
 
@@ -265,13 +265,13 @@ public class EntryPointStateManagerTest {
         when(repositoryMock.getCurrentConfiguration(key)).thenReturn(
                 Optional.of(currentConfiguration)
         );
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.empty()
         );
 
         entryPointStateManager.tryCommitCurrent(key);
 
-        verify(repositoryMock).setCommittingConfiguration(eq(key), eq(currentConfiguration));
+        verify(repositoryMock).setCommittingConfiguration(eq(key), eq(currentConfiguration), eq(10));
     }
 
     @Test
@@ -297,13 +297,13 @@ public class EntryPointStateManagerTest {
         when(repositoryMock.getCurrentConfiguration(key)).thenReturn(
                 Optional.of(currentConfiguration)
         );
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.of(existingCommittingConfiguration)
         );
 
         entryPointStateManager.tryCommitCurrent(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
     }
 
     @Test
@@ -316,20 +316,20 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.tryCommitCurrent(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
     }
 
     @Test
     public void commit_configuration__without_committing_should_do_nothing() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.empty()
         );
 
         entryPointStateManager.commit(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
         verify(repositoryMock, never()).removePendingConfiguration(any());
     }
 
@@ -345,7 +345,7 @@ public class EntryPointStateManagerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(repositoryMock.getCommittingConfiguration(10, key)).thenReturn(
+        when(repositoryMock.getCommittingConfiguration(key)).thenReturn(
                 Optional.of(committingConfiguration)
         );
 

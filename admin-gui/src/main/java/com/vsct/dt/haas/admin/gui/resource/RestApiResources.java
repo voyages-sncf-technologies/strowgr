@@ -40,15 +40,13 @@ public class RestApiResources {
     private final EventBus             eventBus;
     private final EntryPointRepository repository;
     private final PortProvider         portProvider;
-    private final int                  commitTimeout;
     private Map<String, Waiter>      callbacks       = new ConcurrentHashMap<>();
     private ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
-    public RestApiResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider, int commitTimeout) {
+    public RestApiResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.portProvider = portProvider;
-        this.commitTimeout = commitTimeout;
     }
 
     @POST
@@ -97,7 +95,7 @@ public class RestApiResources {
     @GET
     @Path("/entrypoint/{id : .+}/committing")
     public EntryPointConfigurationJsonRepresentation getCommitting(@PathParam("id") String id) throws JsonProcessingException {
-        Optional<EntryPointConfiguration> configuration = repository.getCommittingConfiguration(commitTimeout, new EntryPointKeyDefaultImpl(id));
+        Optional<EntryPointConfiguration> configuration = repository.getCommittingConfiguration(new EntryPointKeyDefaultImpl(id));
 
         EntryPointConfigurationJsonRepresentation restEntity = new EntryPointConfigurationJsonRepresentation(configuration.orElseThrow(() -> new NotFoundException()));
 
