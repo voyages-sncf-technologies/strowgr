@@ -22,11 +22,10 @@ public class EntryPointEventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(EntryPointEventHandler.class);
 
     private final EntryPointStateManager stateManager;
-    private final EventBus outputBus;
-    private final TemplateGenerator templateGenerator;
-    private final TemplateLocator templateLocator;
-    private final PortProvider portProvider;
-
+    private final EventBus               outputBus;
+    private final TemplateGenerator      templateGenerator;
+    private final TemplateLocator        templateLocator;
+    private final PortProvider           portProvider;
 
     EntryPointEventHandler(EntryPointStateManager stateManager, PortProvider portProvider, TemplateLocator templateLocator, TemplateGenerator templateGenerator, EventBus outputBus) {
         this.stateManager = stateManager;
@@ -37,8 +36,7 @@ public class EntryPointEventHandler {
     }
 
     public static EntryPointEventHandlerBuilder backedBy(EntryPointRepository repository) {
-        EntryPointStateManager stateManager = new EntryPointStateManager(repository);
-        return new EntryPointEventHandlerBuilder(stateManager);
+        return new EntryPointEventHandlerBuilder(repository);
     }
 
     @Subscribe
@@ -160,7 +158,7 @@ public class EntryPointEventHandler {
         int syslogPort = portProvider.getPort(prefix + configuration.syslogPortId()).orElseGet(() -> portProvider.newPort(prefix + configuration.syslogPortId()));
         portsMapping.put(configuration.syslogPortId(), syslogPort);
 
-        for(EntryPointFrontend frontend : configuration.getFrontends()){
+        for (EntryPointFrontend frontend : configuration.getFrontends()) {
             int frontendPort = portProvider.getPort(prefix + frontend.portId()).orElseGet(() -> portProvider.newPort(prefix + frontend.portId()));
             portsMapping.put(frontend.portId(), frontendPort);
         }
@@ -169,16 +167,18 @@ public class EntryPointEventHandler {
     }
 
     public static class EntryPointEventHandlerBuilder {
-        private EntryPointStateManager stateManager;
-        private TemplateGenerator templateGenerator;
-        private TemplateLocator templateLocator;
-        private PortProvider portProvider;
+        private EntryPointRepository   repository;
+        private TemplateGenerator      templateGenerator;
+        private TemplateLocator        templateLocator;
+        private PortProvider           portProvider;
+        private int                    commitTimeout;
 
-        private EntryPointEventHandlerBuilder(EntryPointStateManager stateManager) {
-            this.stateManager = stateManager;
+        private EntryPointEventHandlerBuilder(EntryPointRepository repository) {
+            this.repository = repository;
         }
 
         public EntryPointEventHandler outputMessagesTo(EventBus eventBus) {
+            EntryPointStateManager stateManager = new EntryPointStateManager(commitTimeout, repository);
             return new EntryPointEventHandler(stateManager, portProvider, templateLocator, templateGenerator, eventBus);
         }
 
@@ -192,8 +192,13 @@ public class EntryPointEventHandler {
             return this;
         }
 
-        public EntryPointEventHandlerBuilder getPortsWith(PortProvider portProvider){
+        public EntryPointEventHandlerBuilder getPortsWith(PortProvider portProvider) {
             this.portProvider = portProvider;
+            return this;
+        }
+
+        public EntryPointEventHandlerBuilder commitTimeoutIn(int commitTimeout) {
+            this.commitTimeout = commitTimeout;
             return this;
         }
     }

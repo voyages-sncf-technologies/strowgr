@@ -12,11 +12,13 @@ import java.util.Set;
  */
 public class EntryPointStateManager {
 
-    private EntryPointRepository repository;
+    private final int                 commitTimeout;
+    private final EntryPointRepository repository;
 
-    EntryPointStateManager(EntryPointRepository repository) {
+    EntryPointStateManager(int commitTimeout, EntryPointRepository repository) {
         Preconditions.checkNotNull(repository);
         this.repository = repository;
+        this.commitTimeout = commitTimeout;
     }
 
     /**
@@ -70,14 +72,16 @@ public class EntryPointStateManager {
                 repository.setPendingConfiguration(key, configuration);
                 return Optional.of(configuration);
             }
-        } else {
+        }
+        else {
             Optional<EntryPointConfiguration> currentConfiguration = repository.getCurrentConfiguration(key);
             if (currentConfiguration.isPresent()) {
                 if (!currentConfiguration.get().equals(configuration)) {
                     repository.setPendingConfiguration(key, configuration);
                     return Optional.of(configuration);
                 }
-            } else {
+            }
+            else {
                 repository.setPendingConfiguration(key, configuration);
                 return Optional.of(configuration);
             }
@@ -97,7 +101,7 @@ public class EntryPointStateManager {
 
         if (pendingConfiguration.isPresent()) {
             if (!repository.getCommittingConfiguration(key).isPresent()) {
-                repository.setCommittingConfiguration(key, pendingConfiguration.get());
+                repository.setCommittingConfiguration(key, pendingConfiguration.get(), commitTimeout);
                 repository.removePendingConfiguration(key);
                 return pendingConfiguration;
             }
@@ -116,7 +120,7 @@ public class EntryPointStateManager {
 
         if (currentConfiguration.isPresent()) {
             if (!repository.getCommittingConfiguration(key).isPresent()) {
-                repository.setCommittingConfiguration(key, currentConfiguration.get());
+                repository.setCommittingConfiguration(key, currentConfiguration.get(), commitTimeout);
                 return currentConfiguration;
             }
         }

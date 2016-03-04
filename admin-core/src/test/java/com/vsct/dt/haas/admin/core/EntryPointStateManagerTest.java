@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import java.util.Optional;
 
+import static org.fest.assertions.Fail.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -23,7 +24,7 @@ public class EntryPointStateManagerTest {
     @Before
     public void setUp() {
         repositoryMock = mock(EntryPointRepository.class);
-        entryPointStateManager = new EntryPointStateManager(repositoryMock);
+        entryPointStateManager = new EntryPointStateManager(10, repositoryMock);
     }
 
     /* This test relies on equals method based on state of the object rather than entity */
@@ -41,7 +42,7 @@ public class EntryPointStateManagerTest {
 
         EntryPointConfiguration committingConfiguration = EntryPointConfiguration
                 .onHaproxy("haproxy")
-                .withUser("hapuser")
+                .withUser("hapuser2")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -101,7 +102,7 @@ public class EntryPointStateManagerTest {
 
         EntryPointConfiguration currentConfiguration = EntryPointConfiguration
                 .onHaproxy("haproxy")
-                .withUser("hapuser")
+                .withUser("hapuser2")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -198,7 +199,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.tryCommitPending(key);
 
-        verify(repositoryMock).setCommittingConfiguration(key, pendingConfiguration);
+        verify(repositoryMock).setCommittingConfiguration(key, pendingConfiguration, 10);
         verify(repositoryMock).removePendingConfiguration(key);
     }
 
@@ -231,7 +232,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.tryCommitPending(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
         verify(repositoryMock, never()).removePendingConfiguration(any());
     }
 
@@ -245,7 +246,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.tryCommitPending(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
         verify(repositoryMock, never()).removePendingConfiguration(any());
     }
 
@@ -270,7 +271,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.tryCommitCurrent(key);
 
-        verify(repositoryMock).setCommittingConfiguration(eq(key), eq(currentConfiguration));
+        verify(repositoryMock).setCommittingConfiguration(eq(key), eq(currentConfiguration), eq(10));
     }
 
     @Test
@@ -302,7 +303,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.tryCommitCurrent(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
     }
 
     @Test
@@ -315,7 +316,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.tryCommitCurrent(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
     }
 
     @Test
@@ -328,7 +329,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.commit(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
         verify(repositoryMock, never()).removePendingConfiguration(any());
     }
 

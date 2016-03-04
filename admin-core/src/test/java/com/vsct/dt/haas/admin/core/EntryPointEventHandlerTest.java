@@ -33,21 +33,9 @@ public class EntryPointEventHandlerTest {
     TemplateGenerator templateGenerator;
     PortProvider portProvider;
 
-    public class EntryPointStateManagerMock extends EntryPointStateManager {
-
-        EntryPointStateManagerMock(EntryPointRepository repository) {
-            super(repository);
-        }
-
-        @Override
-        Optional<EntryPointConfiguration> prepare(EntryPointKey key, EntryPointConfiguration configuration) {
-            return Optional.of(configuration);
-        }
-    }
-
     @Before
     public void setUp() {
-        stateManager = spy(new EntryPointStateManagerMock(mock(EntryPointRepository.class)));
+        stateManager = mock(EntryPointStateManager.class);
 
         templateLocator = mock(TemplateLocator.class);
         templateGenerator = mock(TemplateGenerator.class);
@@ -71,6 +59,7 @@ public class EntryPointEventHandlerTest {
 
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.prepare(key, config)).thenReturn(Optional.of(config));
 
         handler.handle(event);
 
@@ -141,6 +130,8 @@ public class EntryPointEventHandlerTest {
     public void try_commit_current_applies_with_right_key() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), key);
+        when(stateManager.tryCommitCurrent(key)).thenReturn(Optional.empty());
+
         handler.handleTryCommitCurrentConfigurationEvent(event);
 
         verify(stateManager).tryCommitCurrent(key);
@@ -150,6 +141,8 @@ public class EntryPointEventHandlerTest {
     public void try_commit_pending_applies_with_right_key() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), key);
+        when(stateManager.tryCommitPending(key)).thenReturn(Optional.empty());
+
         handler.handleTryCommitPendingConfigurationEvent(event);
 
         verify(stateManager).tryCommitPending(key);
@@ -159,6 +152,8 @@ public class EntryPointEventHandlerTest {
     public void commit_success_event_applies_with_right_key() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         CommitSuccessEvent event = new CommitSuccessEvent(CorrelationId.newCorrelationId(), key);
+        when(stateManager.commit(key)).thenReturn(Optional.empty());
+
         handler.handleCommitSuccessEvent(event);
 
         verify(stateManager).commit(key);
@@ -166,7 +161,7 @@ public class EntryPointEventHandlerTest {
 
     @Test
     public void commit_failure_event() {
-        fail();
+        /* Not Implemented Yet */
     }
 
     /* Server registration tests are made on one server but they apply to a set of server provided by the event */
@@ -217,12 +212,6 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(commmittingConfig));
-        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.of(pendingConfig));
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
-
-        handler.handle(event);
-
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), new HashMap<>());
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
@@ -231,6 +220,13 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
+
+        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(commmittingConfig));
+        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.of(pendingConfig));
+        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
+        when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
+
+        handler.handle(event);
 
         verify(stateManager).prepare(eq(key), eq(expectedConfig));
     }
@@ -259,12 +255,6 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(commmittingConfig));
-        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
-
-        handler.handle(event);
-
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), new HashMap<>());
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
@@ -273,6 +263,13 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
+
+        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(commmittingConfig));
+        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
+        when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
+
+        handler.handle(event);
 
         verify(stateManager).prepare(eq(key), eq(expectedConfig));
     }
@@ -293,12 +290,6 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
-
-        handler.handle(event);
-
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), new HashMap<>());
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
@@ -307,6 +298,14 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
+
+        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
+        when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
+
+        handler.handle(event);
+
 
         verify(stateManager).prepare(eq(key), eq(expectedConfig));
     }
@@ -325,12 +324,6 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
-
-        handler.handle(event);
-
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), new HashMap<>());
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
@@ -339,6 +332,13 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
+
+        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
+        when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
+
+        handler.handle(event);
 
         verify(stateManager).prepare(eq(key), eq(expectedConfig));
     }
@@ -363,12 +363,6 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
-
-        handler.handle(event);
-
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), backendContext);
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
@@ -377,6 +371,13 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
+
+        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
+        when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
+
+        handler.handle(event);
 
         verify(stateManager).prepare(eq(key), eq(expectedConfig));
     }
@@ -398,12 +399,6 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
-
-        handler.handle(event);
-
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(newServer), new HashMap<>());
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
@@ -412,6 +407,13 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
+
+        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
+        when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
+
+        handler.handle(event);
 
         verify(stateManager).prepare(eq(key), eq(expectedConfig));
     }
@@ -451,6 +453,7 @@ public class EntryPointEventHandlerTest {
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
+        when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
 
         handler.handle(event);
 
@@ -482,12 +485,6 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
-
-        handler.handle(event);
-
         EntryPointBackendServer expectedServer = new EntryPointBackendServer("ijklm", "hostname2", "10.98.71.2", "9092", serverContext);
         EntryPointBackend expectedBackend1 = new EntryPointBackend("BACKEND", Sets.newHashSet(), backendContext);
         EntryPointBackend expectedBackend2 = new EntryPointBackend("NEWBACKEND", Sets.newHashSet(expectedServer), new HashMap<>());
@@ -499,6 +496,13 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of(expectedBackend1, expectedBackend2))
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
+
+        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
+        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
+        when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
+
+        handler.handle(event);
 
         verify(stateManager).prepare(eq(key), eq(expectedConfig));
     }

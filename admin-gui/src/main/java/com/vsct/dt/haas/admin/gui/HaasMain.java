@@ -67,6 +67,7 @@ public class HaasMain extends Application<HaasConfiguration> {
                 .getPortsWith(repository)
                 .findTemplatesWith(templateLocator)
                 .generatesTemplatesWith(templateGenerator)
+                .commitTimeoutIn(configuration.getCommitTimeout())
                 .outputMessagesTo(eventBus);
 
         eventBus.register(eventHandler);

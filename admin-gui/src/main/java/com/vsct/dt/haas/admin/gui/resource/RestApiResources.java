@@ -37,10 +37,10 @@ public class RestApiResources {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestApiResources.class);
 
-    private final EventBus eventBus;
+    private final EventBus             eventBus;
     private final EntryPointRepository repository;
-    private final PortProvider portProvider;
-    private Map<String, Waiter> callbacks = new ConcurrentHashMap<>();
+    private final PortProvider         portProvider;
+    private Map<String, Waiter>      callbacks       = new ConcurrentHashMap<>();
     private ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
     public RestApiResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider) {

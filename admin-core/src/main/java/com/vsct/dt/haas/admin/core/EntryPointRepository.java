@@ -21,7 +21,13 @@ public interface EntryPointRepository {
 
     void removePendingConfiguration(EntryPointKey key);
 
-    void setCommittingConfiguration(EntryPointKey key, EntryPointConfiguration configuration);
+    /**
+     * Sets the committing configuration with a TTL
+     * @param key
+     * @param configuration
+     * @param ttl the ttl in seconds
+     */
+    void setCommittingConfiguration(EntryPointKey key, EntryPointConfiguration configuration, int ttl);
 
     void removeCommittingConfiguration(EntryPointKey key);
 

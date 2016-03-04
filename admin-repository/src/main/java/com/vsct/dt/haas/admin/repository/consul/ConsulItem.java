@@ -12,7 +12,7 @@ public class ConsulItem<T> {
 
     private final int lockIndex;
     private final String key;
-    private final int flags;
+    private final long flags;
     private final String value;
     private final int createIndex;
     private final int modifyIndex;
@@ -20,7 +20,7 @@ public class ConsulItem<T> {
     @JsonCreator
     public ConsulItem(@JsonProperty("LockIndex") int lockIndex,
                       @JsonProperty("Key") String key,
-                      @JsonProperty("Flags") Integer flags,
+                      @JsonProperty("Flags") Long flags,
                       @JsonProperty("Value") String value,
                       @JsonProperty("CreateIndex") Integer createIndex,
                       @JsonProperty("ModifyIndex") Integer modifyIndex) {
@@ -32,9 +32,13 @@ public class ConsulItem<T> {
         this.modifyIndex = modifyIndex;
     }
 
-    T value(ObjectMapper mapper) throws IOException {
-        return mapper.readValue(Base64.getDecoder().decode(value), new TypeReference<T>() {
-        });
+    T value(ObjectMapper mapper) {
+        try {
+            return mapper.readValue(Base64.getDecoder().decode(value), new TypeReference<T>() {
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public int getLockIndex() {
@@ -45,7 +49,7 @@ public class ConsulItem<T> {
         return key;
     }
 
-    public int getFlags() {
+    public long getFlags() {
         return flags;
     }
 
