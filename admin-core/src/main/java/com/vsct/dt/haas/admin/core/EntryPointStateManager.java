@@ -6,6 +6,8 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.*;
+
 /**
  * This class helps to manage the EntryPoint repository
  * and provides an abstraction of the state of an EntryPoint
@@ -16,8 +18,7 @@ public class EntryPointStateManager {
     private final EntryPointRepository repository;
 
     EntryPointStateManager(int commitTimeout, EntryPointRepository repository) {
-        Preconditions.checkNotNull(repository);
-        this.repository = repository;
+        this.repository = checkNotNull(repository);
         this.commitTimeout = commitTimeout;
     }
 
