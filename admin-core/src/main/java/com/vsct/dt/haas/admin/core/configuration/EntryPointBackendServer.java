@@ -28,9 +28,9 @@ public class EntryPointBackendServer {
 
     public EntryPointBackendServer(String id, String hostname, String ip, String port, Map<String, String> context, Map<String, String> userProvidedContext) {
         this.id = checkStringNotEmpty(id, "Backend should have an id");
-        this.hostname = checkStringNotEmpty(id, "Backend should have a hostname");
-        this.port = checkStringNotEmpty(id, "Backend should have an ip");
-        this.ip = checkStringNotEmpty(id, "Backend should have a port");
+        this.hostname = checkStringNotEmpty(hostname, "Backend should have a hostname");
+        this.ip = checkStringNotEmpty(ip, "Backend should have an ip");
+        this.port = checkStringNotEmpty(port, "Backend should have a port");
         this.context = new HashMap<>(checkNotNull(context));
         this.userProvidedContext = new HashMap<>(checkNotNull(userProvidedContext));
     }

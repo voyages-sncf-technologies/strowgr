@@ -5,11 +5,17 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 
+import java.security.Provider;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/* Transform an haproxy configuration into a mustache scope
+* Look at test to see examples
+* frontends, backends and servers are ordered by id when available as list */
 public class HaasMustacheScope extends HashMap<String, Object> {
 
     private final Map<String, Integer> portsMapping;
@@ -23,10 +29,10 @@ public class HaasMustacheScope extends HashMap<String, Object> {
         this.put("hap_user", configuration.getHapUser());
         this.put("syslog_port", getPort(configuration.syslogPortId()));
 
-        Map<String, Object> frontend = configuration.getFrontends().stream().collect(Collectors.toMap(EntryPointFrontend::getId, this::toMustacheScope));
+        Map<String, Object> frontend = configuration.getFrontends().stream().sorted((f1, f2) -> f1.getId().compareTo(f2.getId())).collect(Collectors.toMap(EntryPointFrontend::getId, this::toMustacheScope));
         this.put("frontend", frontend);
 
-        Map<String, Object> backend = configuration.getBackends().stream().collect(Collectors.toMap(EntryPointBackend::getId, this::toMustacheScope));
+        Map<String, Object> backend = configuration.getBackends().stream().sorted((b1, b2) -> b1.getId().compareTo(b2.getId())).collect(Collectors.toMap(EntryPointBackend::getId, this::toMustacheScope));
         this.put("backend", backend);
     }
 
@@ -48,7 +54,7 @@ public class HaasMustacheScope extends HashMap<String, Object> {
 
         scope.put("id", backend.getId());
 
-        Set<Object> servers = backend.getServers().stream().map(this::toMustacheScope).collect(Collectors.toSet());
+        Set<Object> servers = backend.getServers().stream().sorted((s1, s2) -> s1.getId().compareTo(s2.getId())).map(this::toMustacheScope).collect(Collectors.toSet());
         scope.put("servers", servers);
 
         return scope;
@@ -59,6 +65,8 @@ public class HaasMustacheScope extends HashMap<String, Object> {
 
         /* Put all context first which guaranties essential properties of a server are not overridden */
         scope.putAll(server.getContext());
+        /* Put all user provided context, ensuring overrides of the user provided values */
+        scope.putAll(server.getUserProvidedContext());
 
         scope.put("id", server.getId());
         scope.put("hostname", server.getHostname());
