@@ -3,11 +3,11 @@ package com.vsct.dt.haas.admin.core.configuration;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.vsct.dt.haas.admin.Preconditions;
 
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.vsct.dt.haas.admin.Preconditions.*;
 
 public class EntryPointConfiguration {
 
@@ -24,26 +24,22 @@ public class EntryPointConfiguration {
 
     public EntryPointConfiguration(String haproxy, String hapUser,
                                    Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
-        Preconditions.checkStringNotEmpty(haproxy, "EntryPointConfiguration should have an haproxy id");
-        Preconditions.checkStringNotEmpty(hapUser, "EntryPointConfiguration should have a user for haproxy");
+        this.haproxy = checkStringNotEmpty(haproxy, "EntryPointConfiguration should have an haproxy id");
+        this.hapUser = checkStringNotEmpty(hapUser, "EntryPointConfiguration should have a user for haproxy");
+
         checkNotNull(frontends);
-        checkNotNull(backends);
-        checkNotNull(context);
-
-        this.haproxy = haproxy;
-        this.hapUser = hapUser;
-
         this.frontends = new HashMap<>();
         for (EntryPointFrontend f : frontends) {
             this.frontends.put(f.getId(), f);
         }
 
+        checkNotNull(backends);
         this.backends = new HashMap<>();
         for (EntryPointBackend b : backends) {
             this.backends.put(b.getId(), b);
         }
 
-        this.context = new HashMap<>(context);
+        this.context = new HashMap<>(checkNotNull(context));
     }
 
     private EntryPointConfiguration(String haproxy, String hapUser,
@@ -74,7 +70,7 @@ public class EntryPointConfiguration {
         checkNotNull(server);
         Optional<EntryPointBackendServer> existingServer = findServer(server.getId());
         EntryPointBackendServer newServer = existingServer
-                .map(es -> new EntryPointBackendServer(server.getId(), server.getHostname(), server.getIp(), server.getPort(), es.getContext()))
+                .map(es -> new EntryPointBackendServer(server.getId(), server.getHostname(), server.getIp(), server.getPort(), server.getContext(), es.getContextOverride()))
                 .orElse(server);
 
         EntryPointConfiguration configuration = this.removeServer(server.getId());

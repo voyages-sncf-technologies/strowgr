@@ -76,7 +76,7 @@
         <div class="backend" ng-repeat="backend in conf.backends  | orderBy:'id' track by backend.id" layout="column">
             <div id="backendTitle" layout="row" layout-margin layout-align="start center">
                 <h3>{{backend.id}}</h3>
-                <context-map title="Backend {{backend.id}}"context="backend.context"></context-map>
+                <context-map title="Backend {{backend.id}}" context="backend.context"></context-map>
             </div>
 
             <div class="servers">
@@ -86,7 +86,8 @@
                     <span>Host: <strong>{{server.hostname}}</strong></span>
                     <span>IP: <strong>{{server.ip}}</strong></span>
                     <span>Port: <strong>{{server.port}}</strong></span>
-                    <context-map title="Serveur {{server.id}}"context="server.context"></context-map>
+                    <context-map title="Serveur {{server.id}}" context="server.context"></context-map>
+                    <context-map title="Surcharge {{server.id}}" context="server.contextOverride"></context-map>
                 </div>
             </div>
         </div>

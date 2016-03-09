@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.vsct.dt.haas.admin.Preconditions.*;
 
 public class EntryPointFrontend {
 
@@ -13,10 +14,8 @@ public class EntryPointFrontend {
     private final HashMap<String, String> context;
 
     public EntryPointFrontend(String id, Map<String, String> context) {
-        Preconditions.checkStringNotEmpty(id, "Frontend should have an id");
-        checkNotNull(context);
-        this.id = id;
-        this.context = new HashMap<>(context);
+        this.id = checkStringNotEmpty(id, "Frontend should have an id");
+        this.context = new HashMap<>(checkNotNull(context));
     }
 
     public String getId() {

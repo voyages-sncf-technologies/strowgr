@@ -5,6 +5,7 @@ import com.vsct.dt.haas.admin.Preconditions;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.vsct.dt.haas.admin.Preconditions.*;
 
 public class EntryPointBackend {
 
@@ -17,18 +18,15 @@ public class EntryPointBackend {
     }
 
     public EntryPointBackend(String id, Set<EntryPointBackendServer> servers, Map<String, String> context) {
-        Preconditions.checkStringNotEmpty(id, "Backend should have an id");
+        this.id = checkStringNotEmpty(id, "Backend should have an id");
+
         checkNotNull(servers);
-        checkNotNull(context);
-
-        this.id = id;
-
         this.servers = new HashMap<>();
         for (EntryPointBackendServer s : servers) {
             this.servers.put(s.getId(), s);
         }
 
-        this.context = new HashMap<>(context);
+        this.context = new HashMap<>(checkNotNull(context));
     }
 
     /* PRIVATE so no check on null, no defensive copy, it should be handled by the calling code */

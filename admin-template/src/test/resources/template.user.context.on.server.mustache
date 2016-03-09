@@ -1,11 +1,11 @@
 global
         maxconn 30000   # Doit etre coherent avec les valeurs suivantes
-        log     127.0.0.1:54250 local0
+        log     127.0.0.1:{{syslog_port}} local0
         daemon
-        user    hapocer1
+        user    {{hap_user}}
         group   haproxy
         #chroot
-        stats socket /HOME/hapadm/OCE/logs/OCEREC1/haproxy.stat mode 666
+        stats socket /HOME/hapadm/{{application}}/logs/{{application}}{{platform}}/haproxy.stat mode 666
 
 defaults
         mode http       # Parametre a figer des le depart (default:tcp)
@@ -33,7 +33,7 @@ defaults
 ####################### CUR1 ###############################
 # WEBSERVICES
 frontend OCEREC1WS
-        bind    :50200  # Port d'ecoute toutes IP confondues
+        bind    :{{frontend.OCEREC1WS.port}}  # Port d'ecoute toutes IP confondues
         default_backend OCEREC1WS
 
 backend OCEREC1WS # serveurs de gestion
@@ -43,4 +43,6 @@ backend OCEREC1WS # serveurs de gestion
         #http-check disable-on-404
         cookie OCEREC1WS insert indirect nocache
 
-        server server_name 10.98.81.74:9090 cookie server_name check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
+{{#backend.OCEREC1WS.servers}}
+        server {{id}} {{ip}}:{{port}} key1 {{key1}} key2 {{key2}} cookie {{hostname}} check inter 5s fall 3 rise 2 maxconn {{maxconn}}{{^maxconn}}70{{/maxconn}} slowstart 30s
+{{/backend.OCEREC1WS.servers}}
