@@ -3,6 +3,7 @@ package com.vsct.dt.haas.admin.core.event.in;
 import com.google.common.collect.ImmutableSet;
 import com.vsct.dt.haas.admin.core.EntryPointKey;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
+import com.vsct.dt.haas.admin.core.configuration.IncomingEntryPointBackendServer;
 
 import java.util.Set;
 
@@ -11,10 +12,10 @@ import java.util.Set;
  */
 public class RegisterServerEvent extends EntryPointEvent {
 
-    private final String backend;
-    private final ImmutableSet<EntryPointBackendServer> servers;
+    private final String                                        backend;
+    private final ImmutableSet<IncomingEntryPointBackendServer> servers;
 
-    public RegisterServerEvent(String correlationId, EntryPointKey key, String backend, Set<EntryPointBackendServer> servers) {
+    public RegisterServerEvent(String correlationId, EntryPointKey key, String backend, Set<IncomingEntryPointBackendServer> servers) {
         super(correlationId, key);
         this.backend = backend;
         this.servers = ImmutableSet.copyOf(servers);
@@ -24,7 +25,7 @@ public class RegisterServerEvent extends EntryPointEvent {
         return backend;
     }
 
-    public Set<EntryPointBackendServer> getServers() {
+    public Set<IncomingEntryPointBackendServer> getServers() {
         return servers;
     }
 

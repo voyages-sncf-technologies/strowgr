@@ -5,6 +5,7 @@ import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
+import com.vsct.dt.haas.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.event.in.*;
 import com.vsct.dt.haas.admin.core.event.out.CommitBeginEvent;
 import com.vsct.dt.haas.admin.core.event.out.CommitCompleteEvent;
@@ -80,7 +81,7 @@ public class EntryPointEventHandler {
                         if (preparedConfiguration.isPresent()) {
                             LOGGER.info("new servers registered for EntryPoint {}", event.getKey().getID());
                             if (LOGGER.isDebugEnabled()) {
-                                for (EntryPointBackendServer server : event.getServers()) {
+                                for (IncomingEntryPointBackendServer server : event.getServers()) {
                                     LOGGER.debug("- registered server {}", server);
                                 }
                             }

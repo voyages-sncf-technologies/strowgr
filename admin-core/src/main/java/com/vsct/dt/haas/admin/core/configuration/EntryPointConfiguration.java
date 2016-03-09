@@ -66,12 +66,12 @@ public class EntryPointConfiguration {
         return Optional.ofNullable(backends.get(id));
     }
 
-    public EntryPointConfiguration addServer(String backendId, EntryPointBackendServer server) {
+    public EntryPointConfiguration addServer(String backendId, IncomingEntryPointBackendServer server) {
         checkNotNull(server);
         Optional<EntryPointBackendServer> existingServer = findServer(server.getId());
         EntryPointBackendServer newServer = existingServer
                 .map(es -> new EntryPointBackendServer(server.getId(), server.getHostname(), server.getIp(), server.getPort(), server.getContext(), es.getContextOverride()))
-                .orElse(server);
+                .orElseGet(() -> new EntryPointBackendServer(server.getId(), server.getHostname(), server.getIp(), server.getPort(), server.getContext(), new HashMap<String, String>()));
 
         EntryPointConfiguration configuration = this.removeServer(server.getId());
 
@@ -103,18 +103,12 @@ public class EntryPointConfiguration {
         return Optional.empty();
     }
 
-    public EntryPointConfiguration registerServers(String backendId, Collection<EntryPointBackendServer> servers) {
+    public EntryPointConfiguration registerServers(String backendId, Collection<IncomingEntryPointBackendServer> servers) {
         EntryPointConfiguration configuration = this;
-        for (EntryPointBackendServer server : servers) {
+        for (IncomingEntryPointBackendServer server : servers) {
             configuration = configuration.addServer(backendId, server);
         }
         return configuration;
-    }
-
-    public EntryPointConfiguration addServerContext(String backendName, String serverName, String key, String value) {
-        EntryPointBackendServer server = getBackend(backendName).flatMap(b -> b.getServer(serverName))
-                .map(s -> s.put(key, value)).get();
-        return this.addServer(backendName, server);
     }
 
     public String getHapUser() {
