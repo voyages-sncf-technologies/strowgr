@@ -8,6 +8,7 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.event.in.RegisterServerEvent;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.function.Consumer;
 
 public class RegisterServerMessageConsumer {
@@ -34,7 +35,7 @@ public class RegisterServerMessageConsumer {
             RegisterServerEvent event = new RegisterServerEvent(payload.getCorrelationId(),
                     new EntryPointKeyVsctImpl(payload.getApplication(), payload.getPlatform()),
                     payload.getBackend(),
-                    Sets.newHashSet(new EntryPointBackendServer(payload.getId(), payload.getHostname(), payload.getIp(), payload.getPort())));
+                    Sets.newHashSet(new EntryPointBackendServer(payload.getId(), payload.getHostname(), payload.getIp(), payload.getPort(), payload.getContext(), new HashMap<String, String>())));
 
             consumer.accept(event);
 

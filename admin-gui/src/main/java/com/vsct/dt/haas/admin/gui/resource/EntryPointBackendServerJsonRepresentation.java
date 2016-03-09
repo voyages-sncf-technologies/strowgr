@@ -16,11 +16,12 @@ public class EntryPointBackendServerJsonRepresentation extends EntryPointBackend
                                                      @JsonProperty("hostname") String hostname,
                                                      @JsonProperty("ip") String ip,
                                                      @JsonProperty("port") String port,
-                                                     @JsonProperty("context") Map<String, String> context) {
-        super(id, hostname, ip, port, context);
+                                                     @JsonProperty("context") Map<String, String> context,
+                                                     @JsonProperty("contextOverride") Map<String, String> contextOverride) {
+        super(id, hostname, ip, port, context, contextOverride);
     }
 
     public EntryPointBackendServerJsonRepresentation(EntryPointBackendServer s) {
-        this(s.getId(), s.getHostname(), s.getIp(), s.getPort(), s.getContext());
+        this(s.getId(), s.getHostname(), s.getIp(), s.getPort(), s.getContext(), s.getContextOverride());
     }
 }

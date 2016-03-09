@@ -5,12 +5,9 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 
-import java.security.Provider;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /* Transform an haproxy configuration into a mustache scope
@@ -66,7 +63,7 @@ public class HaasMustacheScope extends HashMap<String, Object> {
         /* Put all context first which guaranties essential properties of a server are not overridden */
         scope.putAll(server.getContext());
         /* Put all user provided context, ensuring overrides of the user provided values */
-        scope.putAll(server.getUserProvidedContext());
+        scope.putAll(server.getContextOverride());
 
         scope.put("id", server.getId());
         scope.put("hostname", server.getHostname());

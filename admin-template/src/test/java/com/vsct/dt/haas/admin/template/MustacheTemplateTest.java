@@ -28,7 +28,7 @@ public class MustacheTemplateTest {
 
         EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
-        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090");
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
         EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");

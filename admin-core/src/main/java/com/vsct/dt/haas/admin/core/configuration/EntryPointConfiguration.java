@@ -3,7 +3,6 @@ package com.vsct.dt.haas.admin.core.configuration;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.vsct.dt.haas.admin.Preconditions;
 
 import java.util.*;
 
@@ -71,7 +70,7 @@ public class EntryPointConfiguration {
         checkNotNull(server);
         Optional<EntryPointBackendServer> existingServer = findServer(server.getId());
         EntryPointBackendServer newServer = existingServer
-                .map(es -> new EntryPointBackendServer(server.getId(), server.getHostname(), server.getIp(), server.getPort(), server.getContext(), es.getUserProvidedContext()))
+                .map(es -> new EntryPointBackendServer(server.getId(), server.getHostname(), server.getIp(), server.getPort(), server.getContext(), es.getContextOverride()))
                 .orElse(server);
 
         EntryPointConfiguration configuration = this.removeServer(server.getId());

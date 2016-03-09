@@ -16,23 +16,15 @@ public class EntryPointBackendServer {
     private final String port;
 
     private final HashMap<String, String> context;
-    private final HashMap<String, String> userProvidedContext;
+    private final HashMap<String, String> contextOverride;
 
-    public EntryPointBackendServer(String id, String hostname, String ip, String port) {
-        this(id, hostname, ip, port, new HashMap<>(), new HashMap<>());
-    }
-
-    public EntryPointBackendServer(String id, String hostname, String ip, String port, Map<String, String> context) {
-        this(id, hostname, ip, port, context, new HashMap<>());
-    }
-
-    public EntryPointBackendServer(String id, String hostname, String ip, String port, Map<String, String> context, Map<String, String> userProvidedContext) {
+    public EntryPointBackendServer(String id, String hostname, String ip, String port, Map<String, String> context, Map<String, String> contextOverride) {
         this.id = checkStringNotEmpty(id, "Backend should have an id");
         this.hostname = checkStringNotEmpty(hostname, "Backend should have a hostname");
         this.ip = checkStringNotEmpty(ip, "Backend should have an ip");
         this.port = checkStringNotEmpty(port, "Backend should have a port");
         this.context = new HashMap<>(checkNotNull(context));
-        this.userProvidedContext = new HashMap<>(checkNotNull(userProvidedContext));
+        this.contextOverride = new HashMap<>(checkNotNull(contextOverride));
     }
 
     public String getHostname() {
@@ -55,13 +47,13 @@ public class EntryPointBackendServer {
         return new HashMap<>(context);
     }
 
-    public HashMap<String, String> getUserProvidedContext() {
-        return userProvidedContext;
+    public HashMap<String, String> getContextOverride() {
+        return contextOverride;
     }
 
     public EntryPointBackendServer put(String key, String value) {
         ImmutableMap<String, String> context = ImmutableMap.<String, String>builder().put(key, value).putAll(this.context).build();
-        return new EntryPointBackendServer(this.id, this.hostname, this.ip, this.port, context);
+        return new EntryPointBackendServer(this.id, this.hostname, this.ip, this.port, context, contextOverride);
     }
 
     @Override
@@ -76,7 +68,7 @@ public class EntryPointBackendServer {
         if (ip != null ? !ip.equals(that.ip) : that.ip != null) return false;
         if (port != null ? !port.equals(that.port) : that.port != null) return false;
         if (context != null ? !context.equals(that.context) : that.context != null) return false;
-        if (userProvidedContext != null ? !userProvidedContext.equals(that.userProvidedContext) : that.userProvidedContext != null)
+        if (contextOverride != null ? !contextOverride.equals(that.contextOverride) : that.contextOverride != null)
             return false;
 
         return true;
@@ -89,7 +81,7 @@ public class EntryPointBackendServer {
         result = 31 * result + (ip != null ? ip.hashCode() : 0);
         result = 31 * result + (port != null ? port.hashCode() : 0);
         result = 31 * result + (context != null ? context.hashCode() : 0);
-        result = 31 * result + (userProvidedContext != null ? userProvidedContext.hashCode() : 0);
+        result = 31 * result + (contextOverride != null ? contextOverride.hashCode() : 0);
         return result;
     }
 
