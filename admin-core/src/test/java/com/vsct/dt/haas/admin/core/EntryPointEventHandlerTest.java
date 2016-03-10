@@ -9,14 +9,9 @@ import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -26,9 +21,9 @@ public class EntryPointEventHandlerTest {
 
     EntryPointStateManager stateManager;
     EntryPointEventHandler handler;
-    TemplateLocator templateLocator;
-    TemplateGenerator templateGenerator;
-    PortProvider portProvider;
+    TemplateLocator        templateLocator;
+    TemplateGenerator      templateGenerator;
+    PortProvider           portProvider;
 
     @Before
     public void setUp() {
@@ -124,6 +119,145 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
+    public void update_entry_point_should_do_nothing_if_there_is_no_configuration_at_all() {
+        EntryPointKey key = new EntryPointKeyDefaultImpl("key");
+        UpdateEntryPointEvent event = new UpdateEntryPointEvent("correlation_id", key,
+                new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashSet<>(), new HashSet<>(), new HashSet<>());
+
+        handler.handle(event);
+
+        verify(stateManager, never()).prepare(any(), any());
+    }
+
+    @Test
+    public void update_entry_point_should_change_configuration_based_on_pending_one() {
+        EntryPointKey key = new EntryPointKeyDefaultImpl("key");
+
+        /* Create an existing pending configuration */
+        Map<String, String> existingGlobalContext = new HashMap<>();
+        existingGlobalContext.put("key", "existing");
+        existingGlobalContext.put("not_touched", "not_touched");
+
+        /* There are 4 frontends, 2 with contexts, 2 that will be deleted */
+        Set<EntryPointFrontend> frontends = new HashSet<>();
+        Map<String, String> existingF1Context = new HashMap<>();
+        existingF1Context.put("key", "existing");
+        existingF1Context.put("not_touched", "not_touched");
+        EntryPointFrontend f1 = new EntryPointFrontend("f1", existingF1Context);
+        frontends.add(f1);
+
+        Map<String, String> existingF2Context = new HashMap<>();
+        existingF2Context.put("key", "existing");
+        existingF2Context.put("not_touched", "not_touched");
+        EntryPointFrontend f2 = new EntryPointFrontend("f2", existingF2Context);
+        frontends.add(f2);
+
+        frontends.add(new EntryPointFrontend("f4", new HashMap<String, String>()));
+        frontends.add(new EntryPointFrontend("f5", new HashMap<String, String>()));
+
+        /* There are 4 backends, 2 with contexts, 2 that will be deleted */
+        /* We add all servers in the same backend TODO Fix servers and backends Jira HAAAS-32 */
+        Map<String, String> existingS1Context = new HashMap<>();
+        existingS1Context.put("key", "existing");
+        existingS1Context.put("not_touched", "not_touched");
+        EntryPointBackendServer s1 = new EntryPointBackendServer("s1", "host", "ip", "port", existingS1Context, new HashMap<>());
+        Map<String, String> existingS2Context = new HashMap<>();
+        existingS2Context.put("key", "existing");
+        existingS2Context.put("not_touched", "not_touched");
+        EntryPointBackendServer s2 = new EntryPointBackendServer("s2", "host", "ip", "port", existingS2Context, new HashMap<>());
+        EntryPointBackendServer s4 = new EntryPointBackendServer("s4", "host", "ip", "port", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer s5 = new EntryPointBackendServer("s5", "host", "ip", "port", new HashMap<>(), new HashMap<>());
+
+        Set<EntryPointBackend> backends = new HashSet<>();
+        Map<String, String> existingB1Context = new HashMap<>();
+        existingB1Context.put("key", "existing");
+        existingB1Context.put("not_touched", "not_touched");
+        EntryPointBackend b1 = new EntryPointBackend("f1", Sets.newHashSet(s1, s2, s4, s5), existingB1Context);
+        backends.add(b1);
+
+        Map<String, String> existingB2Context = new HashMap<>();
+        existingB2Context.put("key", "existing");
+        existingB2Context.put("not_touched", "not_touched");
+        EntryPointBackend b2 = new EntryPointBackend("f2", Sets.newHashSet(), existingB2Context);
+        backends.add(b2);
+
+        backends.add(new EntryPointBackend("b4", new HashSet<EntryPointBackendServer>(), new HashMap<String, String>()));
+        backends.add(new EntryPointBackend("b5", new HashSet<EntryPointBackendServer>(), new HashMap<String, String>()));
+
+        /* Put everything in a configuration */
+        EntryPointConfiguration existingConfiguration = new EntryPointConfiguration("haproxy", "user", frontends, backends, existingGlobalContext);
+
+        /* Create an update event that does a lot of things */
+        Map<String, String> globalContext = new HashMap<>();
+        globalContext.put("key", "global");
+        globalContext.put("new", "new");
+
+        /* Add 2 frontend contexts + one not existing (should do nothing) */
+        Map<String, String> f1Context = new HashMap<>();
+        f1Context.put("key", "f1");
+        Map<String, String> f2Context = new HashMap<>();
+        f2Context.put("key", "f2");
+        Map<String, Map<String, String>> frontendContexts = new HashMap<>();
+        frontendContexts.put("f1", f1Context);
+        frontendContexts.put("f2", f2Context);
+        frontendContexts.put("f3", new HashMap<>());
+
+        /* Add 2 backend contexts + one not existing (should do nothing) */
+        Map<String, String> b1Context = new HashMap<>();
+        b1Context.put("key", "b1");
+        Map<String, String> b2Context = new HashMap<>();
+        b2Context.put("key", "b2");
+        Map<String, Map<String, String>> backendContexts = new HashMap<>();
+        backendContexts.put("b1", b1Context);
+        backendContexts.put("b2", b2Context);
+        backendContexts.put("b3", new HashMap<>());
+
+        /* Add 2 server contexts + one not existing (should do nothing) */
+        Map<String, String> s1Context = new HashMap<>();
+        s1Context.put("key", "s1");
+        Map<String, String> s2Context = new HashMap<>();
+        s2Context.put("key", "s2");
+        Map<String, Map<String, String>> serverContexts = new HashMap<>();
+        serverContexts.put("s1", s1Context);
+        serverContexts.put("s2", s2Context);
+
+        /* Remove 2 frontends + one not existing (should do nothing) */
+        Set<String> frontendsToRemove = Sets.newHashSet("f4", "f5", "f6");
+        /* Remove 2 frontends + one not existing (should do nothing) */
+        Set<String> backendsToRemove = Sets.newHashSet("b4", "b5", "b6");
+        /* Remove 2 servers + one not existing (should do nothing) */
+        Set<String> serverToRemove = Sets.newHashSet("s4", "s5", "s6");
+
+        UpdateEntryPointEvent event = new UpdateEntryPointEvent("correlation_id", key,
+                globalContext, frontendContexts, backendContexts, serverContexts, frontendsToRemove, backendsToRemove, serverToRemove);
+
+
+        handler.handle(event);
+
+        /* Create expected configuration */
+        Set<EntryPointFrontend> expectedFrontends = new HashSet<>();
+        Set<EntryPointBackend> expectedBackends = new HashSet<>();
+
+        Map<String, String> expectedContext =  new HashMap<>();
+        expectedContext.put("key", "global");
+        expectedContext.put("not_touched", "not_touched");
+        expectedContext.put("new", "new");
+        EntryPointConfiguration expectedConfiguration = new EntryPointConfiguration("haproxy", "user", expectedFrontends, expectedBackends, expectedContext);
+
+        verify(stateManager).prepare(key, expectedConfiguration);
+    }
+
+    @Test
+    public void otherwise_entry_point_update_should_create_pending_conf_based_on_committing_conf() {
+
+    }
+
+    @Test
+    public void otherwise_entry_point_update_should_create_pending_conf_based_on_current_conf() {
+
+    }
+
+    @Test
     public void try_commit_current_applies_with_right_key() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), key);
@@ -185,27 +319,11 @@ public class EntryPointEventHandlerTest {
 
         EntryPointBackend backend = new EntryPointBackend("BACKEND");
 
-        EntryPointConfiguration commmittingConfig = EntryPointConfiguration
-                .onHaproxy("haproxy")
-                .withUser("hapuser")
-                .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
-                .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withGlobalContext(ImmutableMap.<String, String>of())
-                .build();
-
         EntryPointConfiguration pendingConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
-                .withGlobalContext(ImmutableMap.<String, String>of())
-                .build();
-
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
-                .onHaproxy("haproxy")
-                .withUser("hapuser")
-                .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
-                .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -218,9 +336,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(commmittingConfig));
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.of(pendingConfig));
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
         when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
 
         handler.handle(event);
@@ -244,14 +360,6 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
-                .onHaproxy("haproxy")
-                .withUser("hapuser")
-                .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
-                .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withGlobalContext(ImmutableMap.<String, String>of())
-                .build();
-
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(new EntryPointBackendServer(server.getId(), server.getHostname(), server.getIp(), server.getPort(), server.getContext(), new HashMap<String, String>())), new HashMap<>());
         EntryPointConfiguration expectedConfig = EntryPointConfiguration
                 .onHaproxy("haproxy")
@@ -263,7 +371,6 @@ public class EntryPointEventHandlerTest {
 
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(commmittingConfig));
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
-        when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
         when(stateManager.prepare(key, expectedConfig)).thenReturn(Optional.of(expectedConfig));
 
         handler.handle(event);

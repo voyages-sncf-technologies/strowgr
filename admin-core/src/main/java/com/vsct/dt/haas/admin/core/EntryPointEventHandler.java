@@ -69,8 +69,8 @@ public class EntryPointEventHandler {
             this.stateManager.lock(key);
             Optional<EntryPointConfiguration> existingConfiguration = Optional.ofNullable(
                     stateManager.getPendingConfiguration(key)
-                            .orElse(stateManager.getCommittingConfiguration(key)
-                                    .orElse(stateManager.getCurrentConfiguration(key)
+                            .orElseGet(() -> stateManager.getCommittingConfiguration(key)
+                                    .orElseGet(() -> stateManager.getCurrentConfiguration(key)
                                             .orElse(null)))
             );
 
