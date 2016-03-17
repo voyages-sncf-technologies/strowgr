@@ -29,8 +29,8 @@ func TestCreateSkeleton(t *testing.T) {
 	AssertFileExists(t, tmpdir + "/TST/scripts")
 	AssertFileExists(t, tmpdir + "/TST/version-1")
 	if runtime.GOOS != "windows" {
-		AssertFileExists(t, tmpdir + "/TST/Config/haproxy")
-		AssertFileExists(t, tmpdir + "/TST/scripts/hapctlTSTDEV")
+		AssertIsSymlink(t, tmpdir + "/TST/Config/haproxy")
+		AssertIsSymlink(t, tmpdir + "/TST/scripts/hapctlTSTDEV")
 	}
 }
 
@@ -43,6 +43,14 @@ func TestArchivePath(t *testing.T) {
 
 func AssertFileExists(t *testing.T, file string) {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
+		t.Logf("File or directory '%s' does not exists", file)
+		t.Fail()
+	}
+}
+
+func AssertIsSymlink(t *testing.T, file string) {
+	fi, err := os.Lstat(file)
+	if(err != nil || (fi.Mode() & os.ModeSymlink != os.ModeSymlink)){
 		t.Logf("File or directory '%s' does not exists", file)
 		t.Fail()
 	}

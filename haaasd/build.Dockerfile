@@ -8,4 +8,4 @@ ENV SRC $GOPATH/src/gitlab.socrate.vsct.fr/dt/haaasd
 RUN mkdir -p $SRC
 WORKDIR /$SRC
 
-COPY . ./
+COPY src ./

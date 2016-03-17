@@ -16,20 +16,23 @@ generate_version:
 	echo "package haaasd\nconst AppVersion = \"$(VERSION)\"" > $(CURDIR)/src/haaasd/version.go
 
 build: src/haaasd.go
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./src/haaasd.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 cmd/haaasd.go
 
 docker-builder:
-	docker build -q -t $(IMAGE)-builder -f build.Dockerfile .
+	docker build -t $(IMAGE)-builder -f build.Dockerfile .
 
 docker-build: docker-builder
-	docker run --rm -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder make
+	docker run --rm -e "CGO_ENABLED=0" -e "GOOS=linux" -e "GOARCH=amd64" -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 cmd/haaasd.go
 
 docker-image: dist
 	cp docker/* dist
 	docker build -t $(IMAGE):$(VERSION) dist
 
+docker-test: docker-builder
+	docker run --rm $(IMAGE)-builder go test -v
+
 test:
-	cd src && go test -v ./haaasd
+	go test -v
 
 #Handle docker-compose
 dcup:

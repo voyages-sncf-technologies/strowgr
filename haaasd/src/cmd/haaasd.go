@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./haaasd"
+	".."
 	"bytes"
 	"encoding/json"
 	"flag"
@@ -9,20 +9,20 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/bitly/go-nsq"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"net/http"
 	"time"
 )
 
 var (
-	ip = flag.String("ip", "4.3.2.1", "Node ip address")
-	configFile = flag.String("config", "haaas.conf", "Configuration file")
+	ip          = flag.String("ip", "4.3.2.1", "Node ip address")
+	configFile  = flag.String("config", "haaas.conf", "Configuration file")
 	versionFlag = flag.Bool("version", false, "Print current version")
-	config = nsq.NewConfig()
-	properties haaasd.Config
+	config      = nsq.NewConfig()
+	properties  haaasd.Config
 	daemon      *haaasd.Daemon
 	producer    *nsq.Producer
 )
@@ -97,7 +97,7 @@ func main() {
 
 func initProducer() {
 	// Create required topics
-	topics := []string{"commit_requested", "commit_slave_completed", "commit_completed", "commit_failed"}
+	topics := []string{"commit_slave_completed", "commit_completed", "commit_failed"}
 	channels := []string{"slave", "master"}
 	topicChan := make(chan string, len(topics))
 	for i := range topics {
@@ -114,8 +114,8 @@ func initProducer() {
 			continue
 		}
 		for channel := range channels {
-			log.Printf("Creating channel %s:%s", topic,channels[channel])
-			url := fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s-%s", properties.ProducerRestAddr, topic, properties.ClusterId,properties.ClusterId, channels[channel])
+			log.Printf("Creating channel %s:%s", topic, channels[channel])
+			url := fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s-%s", properties.ProducerRestAddr, topic, properties.ClusterId, properties.ClusterId, channels[channel])
 			resp, err := http.PostForm(url, nil)
 			if err != nil || resp.StatusCode != 200 {
 				topicChan <- topic
@@ -129,7 +129,7 @@ func initProducer() {
 	}
 }
 
-// Load properties from file
+// loadProperties load properties file
 func loadProperties() {
 	if _, err := toml.DecodeFile(*configFile, &properties); err != nil {
 		log.Fatal(err)
@@ -137,8 +137,8 @@ func loadProperties() {
 	}
 	properties.IpAddr = *ip
 	len := len(properties.HapHome)
-	if properties.HapHome[len - 1] == '/' {
-		properties.HapHome = properties.HapHome[:len - 1]
+	if properties.HapHome[len-1] == '/' {
+		properties.HapHome = properties.HapHome[:len-1]
 	}
 }
 

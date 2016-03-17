@@ -1,7 +1,7 @@
 LookupdAddr = 'nsqlookupd:4161'
-ProducerAddr = 'nsq:4150'
+ProducerAddr = 'nsqd:4150'
 ClusterId = 'default-name'
 Vip = '127.0.0.1'
 Port = 5000
-HapHome = '/home/hapadm'
+HapHome = './'
 Status = 'slave'
