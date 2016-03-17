@@ -10,7 +10,8 @@ cat <<-EOF
     "hostname":"$INSTANCE",
     "ip":"$INSTANCE",
     "port":"50080",
-    "context" : {}
+    "context" : {},
+    "contextOverride" : {}
 }
 EOF
 )
