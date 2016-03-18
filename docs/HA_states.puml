@@ -1,4 +1,5 @@
 @startuml
+title Reload haproxy
 skinparam state {
   BackgroundColor YellowGreen
   BorderColor Green
