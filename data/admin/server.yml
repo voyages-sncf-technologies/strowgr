@@ -4,6 +4,7 @@ server:
   applicationContextPath: /
 threads: 20
 haproxyName: default-name
+commitTimeout: 60
 repository:
   host: consul
   port: 8500
