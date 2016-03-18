@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net"
 	"time"
-	"log"
+	log "github.com/Sirupsen/logrus"
 )
 
 type StoppableListener struct {

@@ -1,7 +1,7 @@
 package haaasd
 import (
 	"net/http"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"fmt"
 	"net"
 )
@@ -21,20 +21,20 @@ func NewRestApi(properties *Config) *RestApi {
 func (api *RestApi)Start() (error) {
 	sm := http.NewServeMux()
 	sm.HandleFunc("/uuid", func(writer http.ResponseWriter, request *http.Request) {
-		log.Printf("GET /uuid")
+		log.Debug("GET /uuid")
 		fmt.Fprintf(writer, "%s\n", api.properties.IpAddr)
 	})
 
 	listener, err := net.Listen("tcp4", fmt.Sprintf(":%d", api.properties.Port))
 	if err != nil {
-		log.Fatal(err)
+		log.WithError(err).Fatal(err)
 	}
 	api.listener, err = NewListener(listener)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Start listening on port %d", api.properties.Port)
+	log.WithField("port",api.properties.Port).Info("Start listening")
 	http.Serve(api.listener, sm)
 
 	return nil

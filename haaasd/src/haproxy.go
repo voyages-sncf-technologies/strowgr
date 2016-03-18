@@ -3,7 +3,7 @@ package haaasd
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"os"
 	"os/exec"
 	"time"
@@ -43,25 +43,28 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
 	//	Check conf diff
 	oldConf, err := ioutil.ReadFile(path)
 	if err == nil {
-		if bytes.Equal(oldConf,newConf){
-			log.Printf("Ignore unchanged configuration");
+		if bytes.Equal(oldConf, newConf) {
+			log.Info("Ignore unchanged configuration");
 			return nil;
 		}
 	}
 
 	archivePath := hap.confArchivePath()
 	os.Rename(path, archivePath)
-	log.Printf("Old configuration saved to %s", archivePath)
+	log.WithField("archivePath", archivePath).Printf("Old configuration saved")
 	err = ioutil.WriteFile(path, newConf, 0644)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("New configuration written to %s", path)
+	log.WithField("path", path).Printf("New configuration written to %s", path)
 	err = hap.reload()
 	if err != nil {
-		log.Printf("can't apply reload of %s-%s. Error: %s", data.Application, data.Platform, err)
-		hap.dumpConfiguration(newConf,data)
+		log.WithFields(log.Fields{
+			"application": data.Application,
+			"plateform" : data.Platform,
+		}).WithError(err).Error("Reload failed")
+		hap.dumpConfiguration(newConf, data)
 		err = hap.rollback()
 	}
 
@@ -69,7 +72,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
 }
 
 // dumpConfiguration dumps the new configuration file with context for debugging purpose
-func (hap *Haproxy) dumpConfiguration(newConf []byte,data *EventMessage,){
+func (hap *Haproxy) dumpConfiguration(newConf []byte, data *EventMessage, ) {
 	errorFilename := hap.NewErrorPath()
 	f, err2 := os.Create(errorFilename)
 	defer f.Close()
@@ -81,7 +84,8 @@ func (hap *Haproxy) dumpConfiguration(newConf []byte,data *EventMessage,){
 		f.WriteString("================================================================\n")
 		f.Write(newConf)
 		f.Sync()
-		log.Printf("Invalid conf logged into %s", errorFilename)
+
+		log.WithField("filename", errorFilename).Info("Invalid conf logged into %s")
 	}
 }
 
@@ -96,7 +100,7 @@ func (hap *Haproxy) confPath() string {
 // confPath give the path of the archived configuration file given an application context
 func (hap *Haproxy) confArchivePath() string {
 	baseDir := hap.properties.HapHome + "/" + hap.Application + "/version-1"
-// It returns the absolute path to the file
+	// It returns the absolute path to the file
 	os.MkdirAll(baseDir, 0755)
 	return baseDir + "/hap" + hap.Application + hap.Platform + ".conf"
 }
@@ -117,9 +121,9 @@ func (hap *Haproxy) reload() error {
 	reloadScript := hap.getReloadScript()
 	cmd, err := exec.Command("sh", reloadScript, "reload").Output()
 	if err != nil {
-		log.Printf("Error reloading %s", err)
+		log.WithError(err).Error("Error reloading")
 	}
-	log.Printf("result %s: %s", reloadScript, cmd)
+	log.WithField("reloadScript",reloadScript).WithField("cmd",cmd).Debug("Reload succeeded")
 	return err
 }
 
@@ -146,7 +150,7 @@ func (hap *Haproxy) createSkeleton() error {
 	updateSymlink(hap.getHapctlFilename(), hap.getReloadScript())
 	updateSymlink(hap.getHapBinary(), baseDir + "/Config/haproxy")
 
-	log.Printf("%s created", baseDir)
+	log.WithField("dir",baseDir).Info("Skeleton created")
 
 	return nil
 }
@@ -158,7 +162,7 @@ func updateSymlink(oldname string, newname string) {
 	}
 	err := os.Symlink(oldname, newname)
 	if err != nil {
-		log.Println("Failed to create symlink ", newname, err)
+		log.WithError(err).WithField("path",newname).Error("Failed to create symlink")
 	}
 }
 
@@ -167,9 +171,9 @@ func createDirectory(dir string) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
-			log.Print("Failed to create", dir, err)
+			log.WithError(err).WithField("dir",dir).Error("Failed to create")
 		}else {
-			log.Println(dir, " created")
+			log.WithField("dir",dir).Println("Directory created")
 		}
 	}
 }

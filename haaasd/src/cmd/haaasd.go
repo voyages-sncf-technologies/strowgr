@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/bitly/go-nsq"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,17 +18,17 @@ import (
 )
 
 var (
-	ip          = flag.String("ip", "4.3.2.1", "Node ip address")
-	configFile  = flag.String("config", "haaas.conf", "Configuration file")
+	ip = flag.String("ip", "4.3.2.1", "Node ip address")
+	configFile = flag.String("config", "haaas.conf", "Configuration file")
 	versionFlag = flag.Bool("version", false, "Print current version")
-	config      = nsq.NewConfig()
-	properties  haaasd.Config
+	config = nsq.NewConfig()
+	properties haaasd.Config
 	daemon      *haaasd.Daemon
 	producer    *nsq.Producer
 )
 
 func main() {
-
+	log.SetFormatter(&log.TextFormatter{})
 	flag.Parse()
 
 	if *versionFlag {
@@ -40,7 +40,10 @@ func main() {
 
 	daemon = haaasd.NewDaemon(&properties)
 
-	log.Printf("Starting haaasd (%s) with id %v", properties.Status, properties.NodeId())
+	log.WithFields(log.Fields{
+		"status": properties.Status,
+		"id":    properties.NodeId(),
+	}).Info("Starting haaasd")
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
 
@@ -106,7 +109,7 @@ func initProducer() {
 	left := len(topics)
 	for left > 0 {
 		topic := <-topicChan
-		log.Printf("Creating %s", topic)
+		log.WithField("topic", topic).Info("Creating topic")
 		url := fmt.Sprintf("%s/topic/create?topic=%s_%s", properties.ProducerRestAddr, topic, properties.ClusterId)
 		resp, err := http.PostForm(url, nil)
 		if err != nil || resp.StatusCode != 200 {
@@ -114,7 +117,7 @@ func initProducer() {
 			continue
 		}
 		for channel := range channels {
-			log.Printf("Creating channel %s:%s", topic, channels[channel])
+			log.WithField("channel", channels[channel]).Info("Creating channel")
 			url := fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s-%s", properties.ProducerRestAddr, topic, properties.ClusterId, properties.ClusterId, channels[channel])
 			resp, err := http.PostForm(url, nil)
 			if err != nil || resp.StatusCode != 200 {
@@ -123,7 +126,7 @@ func initProducer() {
 			}
 		}
 
-		log.Printf("Topic %s created", topic)
+		log.WithField("topic", topic).Info("Topic created")
 		left--
 
 	}
@@ -137,8 +140,8 @@ func loadProperties() {
 	}
 	properties.IpAddr = *ip
 	len := len(properties.HapHome)
-	if properties.HapHome[len-1] == '/' {
-		properties.HapHome = properties.HapHome[:len-1]
+	if properties.HapHome[len - 1] == '/' {
+		properties.HapHome = properties.HapHome[:len - 1]
 	}
 }
 
@@ -150,15 +153,15 @@ func filteredHandler(event string, message *nsq.Message, target string, f haaasd
 	}
 
 	if match {
-		log.Printf("Handle %s event:\n%s", event, message.Body)
+		log.WithField("event", event).WithField("payload", message.Body).Debug("Handle event")
 		data, err := bodyToData(message.Body)
 		if err != nil {
-			log.Print("Unable to read data\n%s", err)
+			log.WithError(err).Error("Unable to read data")
 			return err
 		}
 		f(data)
 	} else {
-		log.Printf("Ignore event %s", event)
+		log.WithField("event",event).Info("Ignore event")
 	}
 
 	return nil
@@ -177,7 +180,7 @@ func reloadSlave(data *haaasd.EventMessage) error {
 	if err == nil {
 		publishMessage("commit_slave_completed_", data)
 	} else {
-		log.Print(err)
+		log.WithError(err).Error("Commit failed")
 		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 	}
 	return nil
@@ -189,7 +192,7 @@ func reloadMaster(data *haaasd.EventMessage) error {
 	if err == nil {
 		publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 	} else {
-		log.Print(err)
+		log.WithError(err).Error("Commit failed")
 		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 	}
 	return nil
@@ -206,6 +209,6 @@ func bodyToData(jsonStream []byte) (*haaasd.EventMessage, error) {
 func publishMessage(topic_prefix string, data interface{}) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
-	log.Printf("Publish to %s : %s ", topic, jsonMsg)
+	log.WithField("topic",topic).WithField("payload",jsonMsg).Info("Publish")
 	return producer.Publish(topic, []byte(jsonMsg))
 }
