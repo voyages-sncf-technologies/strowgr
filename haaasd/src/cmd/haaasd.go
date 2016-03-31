@@ -25,6 +25,7 @@ var (
 	properties haaasd.Config
 	daemon      *haaasd.Daemon
 	producer    *nsq.Producer
+	syslog        *haaasd.Syslog
 )
 
 func main() {
@@ -39,7 +40,7 @@ func main() {
 	loadProperties()
 
 	daemon = haaasd.NewDaemon(&properties)
-
+	syslog = haaasd.NewSyslog(&properties)
 	log.WithFields(log.Fields{
 		"status": properties.Status,
 		"id":    properties.NodeId(),
@@ -48,7 +49,7 @@ func main() {
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
 
 	initProducer()
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	var wg sync.WaitGroup
 	// Start http API
@@ -62,7 +63,7 @@ func main() {
 		}
 	}()
 
-	//	 Start slave consumer
+	// Start slave consumer
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
@@ -74,7 +75,7 @@ func main() {
 		}
 	}()
 
-	//	 Start master consumer
+	// Start master consumer
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
@@ -134,6 +135,7 @@ func initProducer() {
 
 // loadProperties load properties file
 func loadProperties() {
+	properties = haaasd.DefaultConfig()
 	if _, err := toml.DecodeFile(*configFile, &properties); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
@@ -161,7 +163,7 @@ func filteredHandler(event string, message *nsq.Message, target string, f haaasd
 		}
 		f(data)
 	} else {
-		log.WithField("event",event).Info("Ignore event")
+		log.WithField("event", event).Info("Ignore event")
 	}
 
 	return nil
@@ -209,6 +211,7 @@ func bodyToData(jsonStream []byte) (*haaasd.EventMessage, error) {
 func publishMessage(topic_prefix string, data interface{}) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
-	log.WithField("topic",topic).WithField("payload",jsonMsg).Info("Publish")
+	log.WithField("topic", topic).WithField("payload", jsonMsg).Info("Publish")
 	return producer.Publish(topic, []byte(jsonMsg))
 }
+

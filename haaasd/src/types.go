@@ -1,15 +1,23 @@
 package haaasd
 
 type Config struct {
-	LookupdAddr  string
-	ProducerAddr string
+	LookupdAddr      string
+	ProducerAddr     string
 	ProducerRestAddr string
-	ClusterId    string
-	Vip          string
-	Port         int32
-	HapHome      string
-	IpAddr       string
-	Status       string
+	ClusterId        string
+	Vip              string
+	Port             int32
+	HapHome          string
+	IpAddr           string
+	Status           string
+}
+
+func DefaultConfig() (*Config) {
+	return &Config{
+		Port:5000,
+		HapHome:"/HOME/hapadm",
+		ClusterId: "default-name",
+	}
 }
 
 func (config *Config) NodeId() string {
@@ -17,12 +25,13 @@ func (config *Config) NodeId() string {
 }
 
 type EventMessage struct {
-	Correlationid string
-	Conf          []byte
-	Timestamp     int64
-	Application   string
-	Platform      string
-	HapVersion	  string
+	Correlationid  string
+	Conf           []byte
+	Timestamp      int64
+	Application    string
+	Platform       string
+	HapVersion     string
+	SyslogFragment []byte
 }
 
 const (
@@ -42,4 +51,3 @@ type HandlerFunc func(data *EventMessage) error
 func (h HandlerFunc) HandleMessage(m *EventMessage) error {
 	return h(m)
 }
-
