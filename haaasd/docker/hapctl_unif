@@ -18,6 +18,42 @@
 #
 #
 #
+self="$(basename "$0")"
+
+usage(){
+    cat <<-EOF
+
+Usage:
+ $self ACTION [options]
+
+This script allows an easy command line interface to control HAProxy.
+
+Actions:
+ start           Start haproxy
+ stop            Stop haproxy
+ restart         Restart haproxy if running by sending a SIGHUP or start if not running
+ fullstatus      Dump a full status screen; requires lynx and mod_status enabled
+ status          Dump a short status screen; requires lynx and mod_status enabled
+ reload          Do a reload restart by sending a SIGUSR1 or start if not running
+ configtest      Do a configuration syntax test
+ help            Print this screen
+ rotatelog       Rotation of ze access_log
+
+Options:
+ -y              Non interactive mode
+
+The exit codes returned are:
+ 0               operation completed successfully
+ 2               usage error
+ 3               haproxy could not be started
+ 4               haproxy could not be stopped
+ 5               haproxy could not be started during a restart
+ 6               haproxy could not be restarted during a restart
+ 7               haproxy could not be restarted during a reload restart
+ 8               configuration syntax error
+EOF
+
+}
 
 # Params APP=[VSC|ERS|OFA...] PLATEFORM=[INT1|REC1|PREP|PRD...] MODE=[|SSL]
 inst=`basename $0|cut -c7-`
@@ -100,6 +136,7 @@ LYNX="/HOME/uxwadm/bin/links -dump"
 # --------------------                              --------------------
 # ||||||||||||||||||||   END CONFIGURATION SECTION  ||||||||||||||||||||
 
+
 ERROR=0
 ARGV="$@"
 if [ "x$ARGV" = "x" ] ; then
@@ -108,6 +145,23 @@ else
   ARG=$1
   shift
 fi
+
+#Default options value
+: ${HAP_INTERACTIVE:=1}
+
+while getopts y flag; do
+  case $flag in
+    y)
+      HAP_INTERACTIVE=0
+      ;;
+    help)
+      ARG=help;
+      ;;
+  esac
+done
+
+shift $(( OPTIND - 1 ));
+
 
 
 # check for pidfile
@@ -124,6 +178,7 @@ else
   STATUS="haproxy (no pid file) not running"
   RUNNING=0
 fi
+
 
 CheckDiff() {
 
@@ -270,7 +325,7 @@ case $ARG in
   restart)
     HapStop && HapStart ;;
   reload)
-        HapReload ;;
+    HapReload ;;
   status)
     $LYNX $STATUSURL | awk ' /process$/ { print; exit } { print } '
         ;;
@@ -312,22 +367,7 @@ case $ARG in
         logger -p local7.info -t "xidu DY-$APP" "$APP$PLATEFORM@$HOSTNAME_ rotatelog:   [  OK  ]"
         ;;
   *)
-        echo "usage: $0 (start|stop|restart|fullstatus|status|reload|configtest|help|rotatelog)"
-        cat <<EOF
-
-start      - start haproxy
-stop       - stop haproxy
-restart    - restart haproxy if running by sending a SIGHUP or start if
-             not running
-fullstatus - dump a full status screen; requires lynx and mod_status enabled
-status     - dump a short status screen; requires lynx and mod_status enabled
-reload   - do a reload restart by sending a SIGUSR1 or start if not running
-configtest - do a configuration syntax test
-help       - this screen
-rotatelog  - rotation of ze access_log
-
-EOF
+        echo "Illegal action: $ARG"
+        usage
         ERROR=2
-    ;;
-
-    esac
+esac

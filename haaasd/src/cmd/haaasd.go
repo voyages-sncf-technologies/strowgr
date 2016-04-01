@@ -22,7 +22,7 @@ var (
 	configFile = flag.String("config", "haaas.conf", "Configuration file")
 	versionFlag = flag.Bool("version", false, "Print current version")
 	config = nsq.NewConfig()
-	properties haaasd.Config
+	properties *haaasd.Config
 	daemon      *haaasd.Daemon
 	producer    *nsq.Producer
 	syslog        *haaasd.Syslog
@@ -39,8 +39,8 @@ func main() {
 
 	loadProperties()
 
-	daemon = haaasd.NewDaemon(&properties)
-	syslog = haaasd.NewSyslog(&properties)
+	daemon = haaasd.NewDaemon(properties)
+	syslog = haaasd.NewSyslog(properties)
 	log.WithFields(log.Fields{
 		"status": properties.Status,
 		"id":    properties.NodeId(),
@@ -53,7 +53,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	// Start http API
-	restApi := haaasd.NewRestApi(&properties)
+	restApi := haaasd.NewRestApi(properties)
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
@@ -136,7 +136,7 @@ func initProducer() {
 // loadProperties load properties file
 func loadProperties() {
 	properties = haaasd.DefaultConfig()
-	if _, err := toml.DecodeFile(*configFile, &properties); err != nil {
+	if _, err := toml.DecodeFile(*configFile, properties); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
@@ -177,7 +177,7 @@ func onCommitSlaveRequested(message *nsq.Message) error {
 }
 
 func reloadSlave(data *haaasd.EventMessage) error {
-	hap := haaasd.NewHaproxy(&properties, data.Application, data.Platform, data.HapVersion)
+	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
 	err := hap.ApplyConfiguration(data)
 	if err == nil {
 		publishMessage("commit_slave_completed_", data)
@@ -189,7 +189,7 @@ func reloadSlave(data *haaasd.EventMessage) error {
 }
 
 func reloadMaster(data *haaasd.EventMessage) error {
-	hap := haaasd.NewHaproxy(&properties, data.Application, data.Platform, data.HapVersion)
+	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
 	err := hap.ApplyConfiguration(data)
 	if err == nil {
 		publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
