@@ -8,14 +8,15 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 
 public class UriTemplateLocator implements TemplateLocator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UriTemplateLocator.class);
 
-    private static final String uriField = "templateUri";
+    public static final String URI_FIELD = "templateUri";
     private final CloseableHttpClient client;
 
     public UriTemplateLocator() {
@@ -25,18 +26,26 @@ public class UriTemplateLocator implements TemplateLocator {
     @Override
     public String readTemplate(EntryPointConfiguration configuration) {
         try {
-            HttpGet getTemplate = new HttpGet(configuration.getContext().get(uriField));
+            String uri = configuration.getContext().get(URI_FIELD);
+            HttpGet getTemplate = new HttpGet(uri);
+            LOGGER.debug("get template {}", uri);
             return client.execute(getTemplate, (response) -> {
                 int status = response.getStatusLine().getStatusCode();
                 if (status >= 200 && status < 300) {
                     HttpEntity entity = response.getEntity();
-                    return EntityUtils.toString(entity);
+                    String entitySer = EntityUtils.toString(entity);
+                    if (entitySer == null) {
+                        throw new IllegalStateException("template from " + uri + " has null content.");
+                    } else {
+                        LOGGER.info("template from " + uri + " starts with " + entitySer.substring(0, Math.max(20, entitySer.length())));
+                    }
+                    return entitySer;
                 } else {
                     throw new ClientProtocolException("Unexpected response status: " + status);
                 }
             });
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Can't retrieve template from ", e);
             return null;
         }
     }
