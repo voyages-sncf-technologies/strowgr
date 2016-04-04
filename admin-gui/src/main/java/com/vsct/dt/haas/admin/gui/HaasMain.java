@@ -1,6 +1,7 @@
 package com.vsct.dt.haas.admin.gui;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.health.HealthCheckRegistry;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -8,6 +9,8 @@ import com.vsct.dt.haas.admin.core.EntryPointEventHandler;
 import com.vsct.dt.haas.admin.core.TemplateGenerator;
 import com.vsct.dt.haas.admin.core.TemplateLocator;
 import com.vsct.dt.haas.admin.gui.configuration.HaasConfiguration;
+import com.vsct.dt.haas.admin.gui.healthcheck.ConsulHealthcheck;
+import com.vsct.dt.haas.admin.gui.healthcheck.NsqHealthcheck;
 import com.vsct.dt.haas.admin.gui.resource.RestApiResources;
 import com.vsct.dt.haas.admin.nsq.consumer.CommitMessageConsumer;
 import com.vsct.dt.haas.admin.nsq.consumer.RegisterServerMessageConsumer;
@@ -92,6 +95,12 @@ public class HaasMain extends Application<HaasConfiguration> {
         environment.jersey().register(restApiResource);
 
         eventBus.register(restApiResource);
+
+        /* Healthchecks */
+        environment.healthChecks().register("nsqlookup", new NsqHealthcheck(configuration.getNsqLookupfactory().getHost(), configuration.getNsqLookupfactory().getPort()));
+        // the healthcheck on producer is done on http port which is by convention tcp port + 1
+        environment.healthChecks().register("nsqproducer", new NsqHealthcheck(configuration.getNsqProducerFactory().getHost(), configuration.getNsqProducerFactory().getPort() + 1));
+        environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
     }
 
 }
