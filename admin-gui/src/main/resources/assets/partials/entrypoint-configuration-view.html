@@ -1,95 +1,133 @@
 <style>
 
     div.entrypoint-configuration-view {
-        margin-top: 20px;
-        margin-left: 20px;
-        margin-right: 20px;
-        margin-bottom: 0;
+    margin-top: 20px;
+    margin-left: 20px;
+    margin-right: 20px;
+    margin-bottom: 0;
     }
 
     div.entrypoint-configuration-view * {
-        margin-top: 0;
-        margin-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
     }
 
-    #globalTitle, #frontendsTitle, #backendsTitle  {
-         margin-top: 6px;
-         margin-bottom: 6px;
-     }
+    #globalTitle, #frontendsTitle, #backendsTitle {
+    margin-top: 6px;
+    margin-bottom: 6px;
+    }
 
     #global, #frontends, #backends {
-        margin-bottom: 16px;
+    margin-bottom: 16px;
     }
 
     .entrypoint-configuration-view #global-details {
-        padding-left: 30px;
+    padding-left: 30px;
     }
 
     .entrypoint-configuration-view #frontends .frontend {
-        padding-left: 30px;
+    padding-left: 30px;
     }
 
     .entrypoint-configuration-view #backends .backend {
-        padding-left: 30px;
+    padding-left: 30px;
     }
 
     .entrypoint-configuration-view #backends .server {
-        padding-left: 30px;
+    padding-left: 30px;
+    }
+
+    .entrypoint-component {
+    border: solid 1px lightblue;
+    }
+
+    .backend-item {
+    border-bottom: solid 1px lightblue;
+    padding: 10px 3px 5px 0px;
+    width: 100%;
     }
 
 </style>
 
-<div class="entrypoint-configuration-view" ng-show="conf" ng-cloak>
-    <div id="global" layout="column">
-        <div id="globalTitle" layout="row" layout-margin layout-align="start center">
-            <h2>Configuration globale</h2>
-            <context-map title="Global" context="conf.context"></context-map>
-        </div>
-        <div id="global-details" layout="column">
-            <div layout="row" layout-margin>
-                <span>D&eacute;ploy&eacute; sur <strong>{{conf.haproxy}}</strong></span>
-                <span>User HAProxy <strong>{{conf.hapUser}}</strong></span>
-                <span>Syslog <strong>{{conf.syslogPort}}</strong></span>
-            </div>
-            <div layout-margin>
-                <span>URL du la conf <strong>{{conf.context.templateUri}}</strong></span>
-            </div>
-        </div>
-
-    </div>
-    <div id="frontends">
-        <div id="frontendsTitle" layout-margin>
-            <h2>Frontends</h2>
-        </div>
-        <div class="frontend" ng-repeat="frontend in conf.frontends | orderBy:'id' track by frontend.id" layout="row"
-             layout-margin layout-align="start center">
-            <span><strong>{{frontend.id}}</strong></span>
-            <span><strong>{{frontend.port}}</strong></span>
-            <context-map title="Frontend {{frontend.id}}" context="frontend.context"></context-map>
-        </div>
-    </div>
-    <div id="backends">
-        <div id="backendsTitle" layout-margin>
-            <h2>Backends</h2>
-        </div>
-
-        <div class="backend" ng-repeat="backend in conf.backends  | orderBy:'id' track by backend.id" layout="column">
-            <div id="backendTitle" layout="row" layout-margin layout-align="start center">
-                <h3>{{backend.id}}</h3>
-                <context-map title="Backend {{backend.id}}" context="backend.context"></context-map>
-            </div>
-
-            <div class="servers">
-                <div class="server" ng-repeat="server in backend.servers  | orderBy:'id' track by server.id"
-                     layout="row" layout-margin layout-align="start center">
-                    <span><strong>{{server.id}}</strong></span>
-                    <span>Host: <strong>{{server.hostname}}</strong></span>
-                    <span>IP: <strong>{{server.ip}}</strong></span>
-                    <span>Port: <strong>{{server.port}}</strong></span>
-                    <context-map title="Serveur {{server.id}}" context="server.context"></context-map>
-                    <context-map title="Surcharge {{server.id}}" context="server.contextOverride"></context-map>
+<div layout="row">
+    <div class="entrypoint-configuration-view" ng-show="conf" layout="column" ng-cloak flex layout-xs>
+        <div flex="10" class="entrypoint-component">
+            <md-toolbar class="md-primary">
+                <div class="md-toolbar-tools">
+                    <h2 class="md-flex">Configuration globale</h2>
+                    <context-map title="Global" context="conf.context"></context-map>
                 </div>
-            </div>
+            </md-toolbar>
+            <md-content style="padding:20px;">
+                <div id="global-details" layout="column" style="padding:20px;">
+                    <div layout="row" layout-margin>
+                        <span>D&eacute;ploy&eacute; sur <strong>{{conf.haproxy}}</strong></span>
+                        <span>User HAProxy <strong>{{conf.hapUser}}</strong></span>
+                        <span>Syslog <strong>{{conf.syslogPort}}</strong></span>
+                    </div>
+                    <div layout-margin>
+                        <span>URL du la conf <strong><a
+                                href="{{conf.context.templateUri}}">{{conf.context.templateUri}}</a></strong></span>
+                    </div>
+                </div>
+            </md-content>
+        </div>
+        <div flex="90" class="entrypoint-component">
+            <md-toolbar class="md-primary">
+                <div class="md-toolbar-tools">
+                    <h2 class="md-flex">Frontends</h2>
+                </div>
+            </md-toolbar>
+            <md-content style="padding:20px;">
+                <div id="frontends">
+                    <div class="frontend" ng-repeat="frontend in conf.frontends | orderBy:'id' track by frontend.id"
+                         layout="row"
+                         layout-margin layout-align="start center">
+                        <span><strong>{{frontend.id}}</strong></span>
+                        <span><strong>{{frontend.port}}</strong></span>
+                        <context-map title="Frontend {{frontend.id}}" context="frontend.context"></context-map>
+                    </div>
+                </div>
+            </md-content>
+        </div>
+    </div>
+    <div layout="row" class="entrypoint-configuration-view" ng-show="conf" flex layout-xl>
+        <div flex class="entrypoint-component">
+            <md-toolbar class="md-primary">
+                <div class="md-toolbar-tools">
+                    <h2 class="md-flex">Backends</h2>
+                </div>
+            </md-toolbar>
+            <md-content style="padding:20px;">
+                <div ng-repeat="backend in conf.backends  | orderBy:'id' track by backend.id" layout="column">
+                    <div layout="row">
+                        <div flex="25" layout="row">
+                            <div flex><h3>{{backend.id}}<context-map title="Backend {{backend.id}}" context="backend.context"></context-map>
+                            </h3></div>
+                        </div>
+                        <div flex="75">
+                            <div layout="row"
+                                 ng-repeat="server in backend.servers  | orderBy:'id' track by server.id">
+                                <div class="backend-item" layout="row">
+                                    <div flex="40" layout="column">
+                                        <div flex>{{server.id}}</div>
+                                        <div flex>
+                                            <context-map title="Serveur {{server.id}}"
+                                                         context="server.context"></context-map>
+                                            <context-map title="Serveur {{server.id}}"
+                                                         context="server.context"></context-map>
+                                        </div>
+                                    </div>
+                                    <div flex="60" layout="column">
+                                        <div flex>Host: <strong>{{server.hostname}}</strong></div>
+                                        <div flex>IP: <strong>{{server.ip}}</strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </md-content>
         </div>
     </div>
 </div>

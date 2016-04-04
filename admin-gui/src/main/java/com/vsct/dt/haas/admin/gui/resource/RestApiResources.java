@@ -159,8 +159,7 @@ public class RestApiResources {
     public String registerServer(@PathParam("id") String id,
                                  @PathParam("backend") String backend,
                                  EntryPointBackendServerJsonRepresentation serverJson) {
-        EntryPointBackendServer server = (EntryPointBackendServer) serverJson;
-        RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), backend, Sets.newHashSet(server));
+        RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), backend, Sets.newHashSet(serverJson));
         eventBus.post(event);
         return "Request posted, look info to follow actions";
     }
