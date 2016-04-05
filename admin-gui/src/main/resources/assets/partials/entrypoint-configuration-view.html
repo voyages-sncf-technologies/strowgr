@@ -60,15 +60,18 @@
             </md-toolbar>
             <md-content style="padding:20px;">
                 <div id="global-details" layout="column" style="padding:20px;">
-                    <div layout="row" layout-margin>
-                        <span>D&eacute;ploy&eacute; sur <strong>{{conf.haproxy}}</strong></span>
-                        <span>User HAProxy <strong>{{conf.hapUser}}</strong></span>
-                        <span>Syslog <strong>{{conf.syslogPort}}</strong></span>
-                    </div>
-                    <div layout-margin>
-                        <span>URL du la conf <strong><a
-                                href="{{conf.context.templateUri}}">{{conf.context.templateUri}}</a></strong></span>
-                    </div>
+
+                    <md-list>
+                        <md-list-item class="md-1-line"><span style="margin-right:5px;">D&eacute;ploy&eacute; sur</span><strong>{{conf.haproxy}}</strong></md-list-item>
+                        <md-list-item class="md-1-line"><span style="margin-right:5px;">User HAProxy </span><strong>{{conf.hapUser}}</strong></md-list-item>
+                        <md-list-item class="md-1-line"><span style="margin-right:5px;">Syslog </span><strong>{{conf.syslogPort}}</strong></md-list-item>
+                        <md-list-item class="md-2-line" layout="column">
+                            <div layout="row">
+                                <span>URL du la conf</span><template-display context="conf.context"></template-display>
+                            </div>
+                            <div><a href="{{conf.context.templateUri}}">{{conf.context.templateUri}}</a></div>
+                        </md-list-item>
+                    </md-list>
                 </div>
             </md-content>
         </div>

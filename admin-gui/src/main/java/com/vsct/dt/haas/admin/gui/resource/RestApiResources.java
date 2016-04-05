@@ -8,7 +8,7 @@ import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.haas.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.haas.admin.core.EntryPointRepository;
 import com.vsct.dt.haas.admin.core.PortProvider;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
+import com.vsct.dt.haas.admin.core.TemplateLocator;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
@@ -24,7 +24,11 @@ import javax.ws.rs.*;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
-import java.util.*;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,16 +41,18 @@ public class RestApiResources {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestApiResources.class);
 
-    private final EventBus             eventBus;
+    private final EventBus eventBus;
     private final EntryPointRepository repository;
-    private final PortProvider         portProvider;
-    private Map<String, Waiter>      callbacks       = new ConcurrentHashMap<>();
+    private final PortProvider portProvider;
+    private Map<String, Waiter> callbacks = new ConcurrentHashMap<>();
     private ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final TemplateLocator templateLocator;
 
-    public RestApiResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider) {
+    public RestApiResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider, TemplateLocator templateLocator) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.portProvider = portProvider;
+        this.templateLocator = templateLocator;
     }
 
     @POST
@@ -77,9 +83,7 @@ public class RestApiResources {
     public EntryPointConfigurationJsonRepresentation getCurrent(@PathParam("id") String id) throws JsonProcessingException {
         Optional<EntryPointConfiguration> configuration = repository.getCurrentConfiguration(new EntryPointKeyDefaultImpl(id));
 
-        EntryPointConfigurationJsonRepresentation restEntity = new EntryPointConfigurationJsonRepresentation(configuration.orElseThrow(() -> new NotFoundException()));
-
-        return restEntity;
+        return new EntryPointConfigurationJsonRepresentation(configuration.orElseThrow(NotFoundException::new));
     }
 
     @GET
@@ -87,9 +91,7 @@ public class RestApiResources {
     public EntryPointConfigurationJsonRepresentation getPending(@PathParam("id") String id) throws JsonProcessingException {
         Optional<EntryPointConfiguration> configuration = repository.getPendingConfiguration(new EntryPointKeyDefaultImpl(id));
 
-        EntryPointConfigurationJsonRepresentation restEntity = new EntryPointConfigurationJsonRepresentation(configuration.orElseThrow(() -> new NotFoundException()));
-
-        return restEntity;
+        return new EntryPointConfigurationJsonRepresentation(configuration.orElseThrow(NotFoundException::new));
     }
 
     @GET
@@ -97,9 +99,7 @@ public class RestApiResources {
     public EntryPointConfigurationJsonRepresentation getCommitting(@PathParam("id") String id) throws JsonProcessingException {
         Optional<EntryPointConfiguration> configuration = repository.getCommittingConfiguration(new EntryPointKeyDefaultImpl(id));
 
-        EntryPointConfigurationJsonRepresentation restEntity = new EntryPointConfigurationJsonRepresentation(configuration.orElseThrow(() -> new NotFoundException()));
-
-        return restEntity;
+        return new EntryPointConfigurationJsonRepresentation(configuration.orElseThrow(NotFoundException::new));
     }
 
     @GET
@@ -186,8 +186,19 @@ public class RestApiResources {
         return String.valueOf(portProvider.newPort(id));
     }
 
-    private <T> WaiterBuilder waitEventWithId(String eventId) {
+    private WaiterBuilder waitEventWithId(String eventId) {
         return new WaiterBuilder(eventId);
+    }
+
+    @GET
+    @Path("/entrypoint/{id : .+}/current/template/haproxy")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getHaproxyTemplate(@PathParam("id") String id) throws IOException {
+        Optional<EntryPointConfiguration> currentConfiguration = repository.getCurrentConfiguration(new EntryPointKeyDefaultImpl(id));
+        if (currentConfiguration.isPresent()) {
+            return templateLocator.readTemplate(currentConfiguration.get());
+        }
+        return "can't find haproxy template uri for entrypoint " + id;
     }
 
     @Subscribe

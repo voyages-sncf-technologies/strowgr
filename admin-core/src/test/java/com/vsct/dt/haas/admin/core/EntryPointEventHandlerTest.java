@@ -12,19 +12,14 @@ import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
-/**
- * Created by william_montaz on 05/02/2016.
- */
 public class EntryPointEventHandlerTest {
 
     EntryPointStateManager stateManager;
