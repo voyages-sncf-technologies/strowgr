@@ -5,10 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.vsct.dt.haas.admin.core.EntryPointKeyDefaultImpl;
-import com.vsct.dt.haas.admin.core.EntryPointRepository;
-import com.vsct.dt.haas.admin.core.PortProvider;
-import com.vsct.dt.haas.admin.core.TemplateLocator;
+import com.vsct.dt.haas.admin.core.*;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
@@ -47,12 +44,14 @@ public class RestApiResources {
     private Map<String, Waiter> callbacks = new ConcurrentHashMap<>();
     private ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
     private final TemplateLocator templateLocator;
+    private final TemplateGenerator templateGenerator;
 
-    public RestApiResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider, TemplateLocator templateLocator) {
+    public RestApiResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider, TemplateLocator templateLocator, TemplateGenerator templateGenerator) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.portProvider = portProvider;
         this.templateLocator = templateLocator;
+        this.templateGenerator = templateGenerator;
     }
 
     @POST
@@ -201,6 +200,24 @@ public class RestApiResources {
         return "can't find haproxy template uri for entrypoint " + id;
     }
 
+    @GET
+    @Path("/entrypoint/{id : .+}/current/configuration/haproxy")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getHaproxyConfiguration(@PathParam("id") String id) throws IOException {
+        EntryPointKeyDefaultImpl key = new EntryPointKeyDefaultImpl(id);
+        return repository
+                .getCurrentConfiguration(key)
+                .orElseThrow(() -> new IllegalStateException("can't get configurtion for id " + id))
+                .generateHaproxyConfiguration(key, templateLocator, templateGenerator, portProvider);
+    }
+
+    @GET
+    @Path("/haproxy/uri/{haproxyName : .+}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getHaproxyURI(@PathParam("haproxyName") String haproxyName) throws IOException {
+        return repository.getHaproxy(haproxyName).orElseThrow(() -> new RuntimeException("can't get haproxy uri of " + haproxyName));
+    }
+
     @Subscribe
     public void handle(CommitBeginEvent event) {
         Waiter w = callbacks.get(event.getCorrelationId());
@@ -209,7 +226,7 @@ public class RestApiResources {
                 w.handle(event);
                 callbacks.remove(event.getCorrelationId());
             } catch (Exception e) {
-
+                LOGGER.error("can't handle CommitBeginEvent " + event, e);
             }
         }
     }
@@ -222,7 +239,7 @@ public class RestApiResources {
                 w.handle(event);
                 callbacks.remove(event.getCorrelationId());
             } catch (Exception e) {
-
+                LOGGER.error("can't handle CommitCompleteEvent " + event, e);
             }
         }
     }
@@ -235,7 +252,7 @@ public class RestApiResources {
                 w.handle(event);
                 callbacks.remove(event.getCorrelationId());
             } catch (Exception e) {
-
+                LOGGER.error("can't handle EntryPointAddedEvent " + event, e);
             }
         }
     }
@@ -248,7 +265,7 @@ public class RestApiResources {
                 w.handle(event);
                 callbacks.remove(event.getCorrelationId());
             } catch (Exception e) {
-
+                LOGGER.error("can't handle ServerRegisteredEvent " + event, e);
             }
         }
     }

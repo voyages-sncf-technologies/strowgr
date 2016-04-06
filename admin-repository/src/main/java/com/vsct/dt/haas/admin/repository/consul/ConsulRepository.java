@@ -26,8 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public class ConsulRepository implements EntryPointRepository, PortProvider {
@@ -47,7 +45,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     private Random random = new Random(System.nanoTime());
 
     private enum Behavior {
-        RELEASE("release"), DELETE("delete");
+        DELETE("delete");
 
         private final String value;
 
@@ -159,6 +157,18 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         }
     };
 
+    ResponseHandler<Optional<String>> getHaproxyURIHandler = response -> {
+        int status = response.getStatusLine().getStatusCode();
+        if (status >= 200 && status < 300) {
+            HttpEntity entity = response.getEntity();
+            return Optional.of(EntityUtils.toString(entity));
+        } else if (status == 404) {
+            return Optional.empty();
+        } else {
+            throw new ClientProtocolException("Unexpected response status: " + status);
+        }
+    };
+
     ResponseHandler<Boolean> putNewPortResponseHandler = response -> {
         int status = response.getStatusLine().getStatusCode();
         if (status >= 200 && status < 300) {
@@ -187,13 +197,13 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        LOGGER.error("error in consul repository",e);
+                        LOGGER.error("error in consul repository", e);
                     }
                 }
             }
 
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
         }
     }
 
@@ -218,7 +228,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             HttpPut destroySessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/destroy/" + sessionLocal.get());
             client.execute(destroySessionURI, destroySessionResponseHandler);
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
         }
     }
 
@@ -228,7 +238,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             HttpGet getCurrentURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/current?raw");
             return client.execute(getCurrentURI, getConfigurationResponseHandler);
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
             return Optional.empty();
         }
     }
@@ -249,7 +259,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                     .collect(Collectors.toSet());
 
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
             return new HashSet<>();
         }
     }
@@ -260,7 +270,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             HttpGet getPendingURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/pending?raw");
             return client.execute(getPendingURI, getConfigurationResponseHandler);
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
             return Optional.empty();
         }
     }
@@ -271,7 +281,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             HttpGet getCommittingURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/committing?raw");
             return client.execute(getCommittingURI, getConfigurationResponseHandler);
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
             return Optional.empty();
         }
     }
@@ -288,7 +298,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
             client.execute(setPendingURI, setConfigurationResponseHandler);
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
         }
     }
 
@@ -298,7 +308,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             HttpDelete deletePendingURI = new HttpDelete("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/pending");
             client.execute(deletePendingURI, deleteConfigurationResponseHandler);
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
         }
     }
 
@@ -321,7 +331,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
             client.execute(setCommittingURI, setConfigurationResponseHandler);
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
         }
     }
 
@@ -331,7 +341,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             HttpDelete deleteCommittingURI = new HttpDelete("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/committing");
             client.execute(deleteCommittingURI, deleteConfigurationResponseHandler);
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
         }
     }
 
@@ -347,7 +357,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
             client.execute(setCurrentURI, setConfigurationResponseHandler);
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
         }
     }
 
@@ -379,6 +389,16 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                 }
             }
             return Optional.empty();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Optional<String> getHaproxy(String haproxyName) {
+        try {
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName+"?raw");
+            return client.execute(getHaproxyURI, getHaproxyURIHandler);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -437,7 +457,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         try {
             this.client.close();
         } catch (IOException e) {
-            LOGGER.error("error in consul repository",e);
+            LOGGER.error("error in consul repository", e);
         }
     }
 

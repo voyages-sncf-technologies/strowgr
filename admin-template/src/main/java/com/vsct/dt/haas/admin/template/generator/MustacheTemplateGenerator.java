@@ -18,7 +18,8 @@ public class MustacheTemplateGenerator implements TemplateGenerator {
     private final MustacheFactory mf = new DefaultMustacheFactory();
 
     @Override
-    public String generate(String template, EntryPointConfiguration configuration, Map<String, Integer> portsMapping) {
+    public String
+    generate(String template, EntryPointConfiguration configuration, Map<String, Integer> portsMapping) {
         Preconditions.checkNotNull(template, "template should not be null. Check uriTemplate %s is correct.", configuration.getContext().get(UriTemplateLocator.URI_FIELD));
         Writer writer = new StringWriter();
         Mustache mustache = mf.compile(new StringReader(template), "no_cache");

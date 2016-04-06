@@ -3,6 +3,10 @@ package com.vsct.dt.haas.admin.core.configuration;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.vsct.dt.haas.admin.core.EntryPointKey;
+import com.vsct.dt.haas.admin.core.PortProvider;
+import com.vsct.dt.haas.admin.core.TemplateGenerator;
+import com.vsct.dt.haas.admin.core.TemplateLocator;
 
 import java.util.*;
 
@@ -117,6 +121,28 @@ public class EntryPointConfiguration {
         return this.addServer(backendName, server);
     }
 
+    public String generateHaproxyConfiguration(EntryPointKey entryPointKey, TemplateLocator templateLocator, TemplateGenerator templateGenerator, PortProvider portProvider) {
+        String template = templateLocator.readTemplate(this);
+        Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, portProvider, this);
+        return templateGenerator.generate(template, this, portsMapping);
+    }
+
+
+    private Map<String, Integer> getOrCreatePortsMapping(EntryPointKey key, PortProvider portProvider, EntryPointConfiguration entryPointConfiguration) {
+        Map<String, Integer> portsMapping = new HashMap<>();
+        String prefix = key.getID() + '-';
+
+        int syslogPort = portProvider.getPort(prefix + entryPointConfiguration.syslogPortId()).orElseGet(() -> portProvider.newPort(prefix + entryPointConfiguration.syslogPortId()));
+        portsMapping.put(entryPointConfiguration.syslogPortId(), syslogPort);
+
+        for (EntryPointFrontend frontend : entryPointConfiguration.getFrontends()) {
+            int frontendPort = portProvider.getPort(prefix + frontend.portId()).orElseGet(() -> portProvider.newPort(prefix + frontend.portId()));
+            portsMapping.put(frontend.portId(), frontendPort);
+        }
+
+        return portsMapping;
+    }
+
     public String getHapUser() {
         return hapUser;
     }
@@ -168,23 +194,23 @@ public class EntryPointConfiguration {
     }
 
     public interface IHapUSer {
-        public IFrontends withUser(String user);
+        IFrontends withUser(String user);
     }
 
     public interface IFrontends {
-        public IBackends definesFrontends(ImmutableSet<EntryPointFrontend> frontends);
+        IBackends definesFrontends(ImmutableSet<EntryPointFrontend> frontends);
     }
 
     public interface IBackends {
-        public IContext definesBackends(ImmutableSet<EntryPointBackend> backends);
+        IContext definesBackends(ImmutableSet<EntryPointBackend> backends);
     }
 
     public interface IContext {
-        public IBuild withGlobalContext(ImmutableMap<String, String> context);
+        IBuild withGlobalContext(ImmutableMap<String, String> context);
     }
 
     public interface IBuild {
-        public EntryPointConfiguration build();
+        EntryPointConfiguration build();
     }
 
     public static class Builder implements IHapUSer, IFrontends, IBackends, IContext, IBuild {

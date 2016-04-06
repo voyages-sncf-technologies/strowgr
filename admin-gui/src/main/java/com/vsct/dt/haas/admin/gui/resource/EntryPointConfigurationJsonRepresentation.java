@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 import static java.util.function.Function.identity;
 
 /**
+ * Json representation of EntryPointConfiguration.
+ *
  * Created by william_montaz on 09/02/2016.
  */
 public class EntryPointConfigurationJsonRepresentation extends EntryPointConfiguration {
@@ -30,8 +32,8 @@ public class EntryPointConfigurationJsonRepresentation extends EntryPointConfigu
 
     public EntryPointConfigurationJsonRepresentation(EntryPointConfiguration c) {
         this(c.getHaproxy(), c.getHapUser(),
-                c.getFrontends().stream().map(f -> new EntryPointFrontendJsonRepresentation(f)).collect(Collectors.toSet()),
-                c.getBackends().stream().map(b -> new EntryPointBackendJsonRepresentation(b)).collect(Collectors.toSet()),
+                c.getFrontends().stream().map(EntryPointFrontendJsonRepresentation::new).collect(Collectors.toSet()),
+                c.getBackends().stream().map(EntryPointBackendJsonRepresentation::new).collect(Collectors.toSet()),
                 c.getContext());
     }
 }

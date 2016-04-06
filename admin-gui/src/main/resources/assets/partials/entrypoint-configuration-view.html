@@ -48,7 +48,6 @@
     }
 
 </style>
-
 <div layout="row">
     <div class="entrypoint-configuration-view" ng-show="conf" layout="column" ng-cloak flex layout-xs>
         <div flex="10" class="entrypoint-component">
@@ -67,7 +66,7 @@
                         <md-list-item class="md-1-line"><span style="margin-right:5px;">Syslog </span><strong>{{conf.syslogPort}}</strong></md-list-item>
                         <md-list-item class="md-2-line" layout="column">
                             <div layout="row">
-                                <span>URL du la conf</span><template-display context="conf.context"></template-display>
+                                <span>URL du la conf</span><template-display context="conf.context"></template-display><haproxy-generated context="conf.context"></haproxy-generated>
                             </div>
                             <div><a href="{{conf.context.templateUri}}">{{conf.context.templateUri}}</a></div>
                         </md-list-item>
@@ -89,6 +88,9 @@
                         <span><strong>{{frontend.id}}</strong></span>
                         <span><strong>{{frontend.port}}</strong></span>
                         <context-map title="Frontend {{frontend.id}}" context="frontend.context"></context-map>
+                        <div flex id="test">
+                            <a href="http://{{$parent.$parent.$parent.$parent.haproxyUri}}:{{frontend.port}}/stats">stats</a>
+                        </div>
                     </div>
                 </div>
             </md-content>

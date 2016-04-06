@@ -25,16 +25,16 @@
 
     <style type="text/css">
         .layout-margin {
-            margin: 4px;
+        margin: 4px;
         }
 
         html, body {
-            height: 100%;
-            margin: 0;
+        height: 100%;
+        margin: 0;
         }
 
         #wrapper {
-            min-height: 100%;
+        min-height: 100%;
         }
     </style>
 
@@ -79,10 +79,25 @@
                 $scope.entrypoints = response.data;
             });
 
+
+            $http.get('/api/haproxy/uri/default-name').then(function (response) {
+                $scope.haproxyUri = response.data
+            }, function(error){
+                console.error("can't load haproxyName "+ haproxyName+". Response is "+response.data);
+            });
+
             $scope.loadEntrypoint = function (id) {
                 $scope.selectedEntrypoint = id;
             }
 
+            $scope.loadHaproxyStats = function(haproxyName,port){
+                console.log("load haproxy stats: "+haproxyName+","+port);
+                $http.get('/api/haproxy/uri/'+haproxyName).then(function (response) {
+                    window.location.href = response.data+':'+port+'/stats';
+                }, function(error){
+                    console.error("can't load haproxyName "+ haproxyName+". Response is "+response.data);
+                });
+            }
         }]);
 
         adminApp.controller('TemplateDisplay', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
@@ -95,7 +110,6 @@
                 console.info("result:"+response.data);
                 $scope.template = response.data;
             });
-
         }]);
 
         adminApp.directive('templateDisplay', ['$mdDialog',
@@ -112,6 +126,46 @@
                         scope.showContext = function () {
                             $mdDialog.show({
                                     templateUrl: 'template-display/popup.html',
+                                    clickOutsideToClose: true,
+                                    scope: scope,
+                                    autoWrap: false,
+                                    openFrom: element,
+                                    closeTo: element,
+                                    preserveScope: true,
+                                    fullscreen: false
+                                });
+                        }
+                    }
+                }
+            }
+        ]);
+
+        adminApp.controller('HaproxyGenerated', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
+            console.log('get haproxy configuration');
+            $http({
+                method: 'GET',
+                url: '/api/entrypoint/'+$scope.context.application+'/'+$scope.context.platform+'/current/configuration/haproxy',
+                responseType: 'text'
+            }).then(function (response) {
+                console.info("result:"+response.data);
+                $scope.haproxyGenerated = response.data;
+            });
+        }]);
+
+        adminApp.directive('haproxyGenerated', ['$mdDialog',
+            function ($mdDialog) {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/haproxy-generated.html',
+                    scope: {
+                        context: '=context',
+                        title: '@',
+                        haproxyGenerated: '=haproxyGenerated'
+                    },
+                    link: function (scope, element, attrs) {
+                        scope.showContext = function () {
+                            $mdDialog.show({
+                                    templateUrl: 'haproxy-generated/popup.html',
                                     clickOutsideToClose: true,
                                     scope: scope,
                                     autoWrap: false,
@@ -186,7 +240,7 @@
         adminApp.directive('entrypointConfigurationView', ['PortProvider',
             function (PortProvider) {
                 return {
-                    restrict: 'E',
+
                     templateUrl: 'partials/entrypoint-configuration-view.html',
                     scope: {
                         conf: '=conf'
@@ -398,6 +452,7 @@
                     }
                 }
             }]);
+
 
     </script>
 </head>

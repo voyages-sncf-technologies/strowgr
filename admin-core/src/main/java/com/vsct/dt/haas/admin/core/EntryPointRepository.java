@@ -23,8 +23,8 @@ public interface EntryPointRepository {
 
     /**
      * Sets the committing configuration with a TTL
-     * @param key
-     * @param configuration
+     * @param key of the entrypoint
+     * @param configuration conent of the entrypoint
      * @param ttl the ttl in seconds
      */
     void setCommittingConfiguration(EntryPointKey key, EntryPointConfiguration configuration, int ttl);
@@ -37,6 +37,7 @@ public interface EntryPointRepository {
 
     void lock(EntryPointKey key);
 
-    public void release(EntryPointKey key);
+    void release(EntryPointKey key);
 
+    Optional<String> getHaproxy(String haproxyName);
 }
