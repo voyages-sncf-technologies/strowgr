@@ -21,17 +21,18 @@ public class Producer {
         this.producer.addAddress(host, port);
     }
 
-    public void sendCommitRequested(String correlationId, String haproxy, String application, String platform, String conf) throws JsonProcessingException, NSQException, TimeoutException {
+    public void sendCommitRequested(String correlationId, String haproxy, String application, String platform, String conf, String syslogConf) throws JsonProcessingException, NSQException, TimeoutException {
         String confBase64 = new String(Base64.getEncoder().encode(conf.getBytes()));
-        CommitBeginPayload payload = new CommitBeginPayload(correlationId, application, platform, confBase64);
+        String syslogConfBase64 = new String(Base64.getEncoder().encode(syslogConf.getBytes()));
+        CommitBeginPayload payload = new CommitBeginPayload(correlationId, application, platform, confBase64, syslogConfBase64);
         producer.produce(commitRequestedTopicPrefix + haproxy, mapper.writeValueAsBytes(payload));
     }
 
-    public void start(){
+    public void start() {
         this.producer.start();
     }
 
-    public void stop(){
+    public void stop() {
         this.producer.shutdown();
     }
 

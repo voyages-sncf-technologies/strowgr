@@ -208,13 +208,15 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     private Session createSession() throws IOException {
-        return createSession(null, null);
+        return createSession(10, Behavior.DELETE);
     }
 
     private Session createSession(Integer ttl, Behavior behavior) throws IOException {
         HttpPut createSessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/create");
         if (ttl != null) {
-            createSessionURI.setEntity(new StringEntity("{\"Behavior\":\"" + behavior + "\",\"TTL\":\"" + ttl + "s\"}"));
+            String payload = "{\"Behavior\":\"" + behavior.value + "\",\"TTL\":\"" + ttl + "s\"}";
+            LOGGER.trace("create a consul session with theses options: {} ", payload);
+            createSessionURI.setEntity(new StringEntity(payload));
         }
         return client.execute(createSessionURI, createSessionResponseHandler);
     }
@@ -397,7 +399,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     @Override
     public Optional<String> getHaproxy(String haproxyName) {
         try {
-            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName+"?raw");
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName + "?raw");
             return client.execute(getHaproxyURI, getHaproxyURIHandler);
         } catch (IOException e) {
             throw new RuntimeException(e);

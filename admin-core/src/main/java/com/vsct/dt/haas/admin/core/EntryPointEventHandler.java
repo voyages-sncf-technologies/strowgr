@@ -22,10 +22,10 @@ public class EntryPointEventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(EntryPointEventHandler.class);
 
     private final EntryPointStateManager stateManager;
-    private final EventBus               outputBus;
-    private final TemplateGenerator      templateGenerator;
-    private final TemplateLocator        templateLocator;
-    private final PortProvider           portProvider;
+    private final EventBus outputBus;
+    private final TemplateGenerator templateGenerator;
+    private final TemplateLocator templateLocator;
+    private final PortProvider portProvider;
 
     EntryPointEventHandler(EntryPointStateManager stateManager, PortProvider portProvider, TemplateLocator templateLocator, TemplateGenerator templateGenerator, EventBus outputBus) {
         this.stateManager = stateManager;
@@ -99,13 +99,12 @@ public class EntryPointEventHandler {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPointConfiguration> committingConfiguration = stateManager.tryCommitCurrent(key);
-            if (committingConfiguration.isPresent()) {
-                String template = templateLocator.readTemplate(committingConfiguration.get());
-                Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration.get());
-                String conf = templateGenerator.generate(template, committingConfiguration.get(), portsMapping);
-                outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf));
-            }
+            EntryPointConfiguration committingConfiguration = stateManager.tryCommitCurrent(key).orElseThrow(() -> new IllegalStateException("can't commit entrypoint " + key));
+            String template = templateLocator.readTemplate(committingConfiguration);
+            Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration);
+            String conf = templateGenerator.generate(template, committingConfiguration, portsMapping);
+            String syslogConf = templateGenerator.generateSyslogFragment(committingConfiguration, portsMapping);
+            outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration, conf, syslogConf));
         } finally {
             this.stateManager.release(key);
         }
@@ -116,13 +115,12 @@ public class EntryPointEventHandler {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPointConfiguration> committingConfiguration = stateManager.tryCommitPending(key);
-            if (committingConfiguration.isPresent()) {
-                String template = templateLocator.readTemplate(committingConfiguration.get());
-                Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration.get());
-                String conf = templateGenerator.generate(template, committingConfiguration.get(), portsMapping);
-                outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf));
-            }
+            EntryPointConfiguration committingConfiguration = stateManager.tryCommitPending(key).orElseThrow(() -> new IllegalStateException("can't commit entrypoint " + key));
+            String template = templateLocator.readTemplate(committingConfiguration);
+            Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration);
+            String conf = templateGenerator.generate(template, committingConfiguration, portsMapping);
+            String syslogConf = templateGenerator.generateSyslogFragment(committingConfiguration, portsMapping);
+            outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration, conf, syslogConf));
         } finally {
             this.stateManager.release(key);
         }
@@ -167,11 +165,11 @@ public class EntryPointEventHandler {
     }
 
     public static class EntryPointEventHandlerBuilder {
-        private EntryPointRepository   repository;
-        private TemplateGenerator      templateGenerator;
-        private TemplateLocator        templateLocator;
-        private PortProvider           portProvider;
-        private int                    commitTimeout;
+        private EntryPointRepository repository;
+        private TemplateGenerator templateGenerator;
+        private TemplateLocator templateLocator;
+        private PortProvider portProvider;
+        private int commitTimeout;
 
         private EntryPointEventHandlerBuilder(EntryPointRepository repository) {
             this.repository = repository;

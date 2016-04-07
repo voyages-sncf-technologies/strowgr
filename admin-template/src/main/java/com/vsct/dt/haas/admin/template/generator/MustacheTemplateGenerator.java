@@ -13,16 +13,25 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
 
+import static com.vsct.dt.haas.admin.template.template.DefaultTemplates.SYSLOG_DEFAULT_TEMPLATE;
+
 public class MustacheTemplateGenerator implements TemplateGenerator {
 
     private final MustacheFactory mf = new DefaultMustacheFactory();
 
     @Override
-    public String
-    generate(String template, EntryPointConfiguration configuration, Map<String, Integer> portsMapping) {
+    public String generate(String template, EntryPointConfiguration configuration, Map<String, Integer> portsMapping) {
         Preconditions.checkNotNull(template, "template should not be null. Check uriTemplate %s is correct.", configuration.getContext().get(UriTemplateLocator.URI_FIELD));
         Writer writer = new StringWriter();
         Mustache mustache = mf.compile(new StringReader(template), "no_cache");
+        mustache.execute(writer, new HaasMustacheScope(configuration, portsMapping));
+        return writer.toString();
+    }
+
+    @Override
+    public String generateSyslogFragment(EntryPointConfiguration configuration, Map<String, Integer> portsMapping) {
+        Writer writer = new StringWriter();
+        Mustache mustache = mf.compile(new StringReader(SYSLOG_DEFAULT_TEMPLATE), "no_cache");
         mustache.execute(writer, new HaasMustacheScope(configuration, portsMapping));
         return writer.toString();
     }

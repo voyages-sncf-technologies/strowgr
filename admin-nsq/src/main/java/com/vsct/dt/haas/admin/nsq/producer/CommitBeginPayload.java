@@ -9,16 +9,19 @@ public class CommitBeginPayload extends Payload {
     private final String application;
     private final String platform;
     private final String conf;
+    private final String syslogConf;
 
     @JsonCreator
     public CommitBeginPayload(@JsonProperty("correlationId") String correlationId,
                               @JsonProperty("application") String application,
                               @JsonProperty("platform") String platform,
-                              @JsonProperty("conf") String conf) {
+                              @JsonProperty("conf") String conf,
+                              @JsonProperty("syslogConf") String syslogConf) {
         super(correlationId);
         this.application = application;
         this.platform = platform;
         this.conf = conf;
+        this.syslogConf = syslogConf;
     }
 
     public String getApplication() {
@@ -31,5 +34,9 @@ public class CommitBeginPayload extends Payload {
 
     public String getConf() {
         return conf;
+    }
+
+    public String getSyslogConf() {
+        return syslogConf;
     }
 }

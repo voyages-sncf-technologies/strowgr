@@ -7,4 +7,7 @@ import java.util.Map;
 
 public interface TemplateGenerator {
     String generate(String template, EntryPointConfiguration configuration, Map<String, Integer> portsMapping);
+
+    String generateSyslogFragment(EntryPointConfiguration configuration, Map<String, Integer> portsMapping);
+
 }
