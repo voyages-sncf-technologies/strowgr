@@ -1,6 +1,12 @@
 FROM alpine
+LABEL APPLICATION ABC
+LABEL SERVICE_50080_NAME WEBAPP
+
 RUN apk -U add curl
 COPY webapp-linux_amd64 /app
 COPY BOOT /BOOT
 RUN chmod +x /BOOT
 ENTRYPOINT [ "/BOOT" ]
+
+EXPOSE 50080
+

@@ -1,19 +1,20 @@
 #!/bin/sh
-set -x
-INSTANCE=$(hostname -i | awk '{print $1}')
-APP=$1
-PLATFORM=$2
-DATA=$(
-cat <<-EOF
-{
-    "id":"$INSTANCE",
-    "hostname":"$INSTANCE",
-    "ip":"$INSTANCE",
-    "port":"50080",
-    "context" : {},
-    "contextOverride" : {}
-}
-EOF
-)
-
-curl -v -X POST -H "Content-Type: application/json" -d "$DATA" http://admin:8080/api/entrypoint/$APP/$PLATFORM/backend/WS/register-server && /app -instance $INSTANCE
+#set -x
+#INSTANCE=$(hostname -i | awk '{print $1}')
+#APP=$1
+#PLATFORM=$2
+#DATA=$(
+#cat <<-EOF
+#{
+#    "id":"$INSTANCE",
+#    "hostname":"$INSTANCE",
+#    "ip":"$INSTANCE",
+#    "port":"50080",
+#    "context" : {},
+#    "contextOverride" : {}
+#}
+#EOF
+#)
+#
+#curl -v -X POST -H "Content-Type: application/json" -d "$DATA" http://admin:8080/api/entrypoint/$APP/$PLATFORM/backend/WS/register-server &
+/app -instance $INSTANCE
