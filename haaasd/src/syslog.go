@@ -20,16 +20,13 @@ options {
 filter f_local0 { facility(local0); };
 filter f_syslog { level(info..emerg); };
 
-# Conf pour la centralisation des logs HAP #
-//destination d_haproxy_centralisation_pao_log {udp(10.101.149.21 port(63403)); };
-//destination d_haproxy_centralisation_all_log {udp(10.101.149.21 port(55000)); };
+@include "{{.HapHome}}/SYSLOG/Config/syslog.conf.d/"
 
 # SYSLOG
 source s_syslog { internal(); };
 destination d_syslog { file("/HOME/hapadm/SYSLOG/logs/syslog.log"); };
 log { source(s_syslog); filter (f_syslog); destination(d_syslog); };
 
-@include "{{.HapHome}}/*/Config/syslog*.conf"
 `
 
 func NewSyslog(properties *Config) *Syslog {
@@ -49,7 +46,7 @@ func (syslog *Syslog) Restart() error {
 	syslogCtl := fmt.Sprintf("%s/SYSLOG/scripts/haplogctl", syslog.properties.HapHome)
 	cmd, err := exec.Command("sh", syslogCtl, "restart").Output()
 	if err != nil {
-		log.WithField("script", syslogCtl).WithField("cmd", cmd).WithError(err).Error("Error restarting syslog")
+		log.WithField("script", syslogCtl).WithField("output", string(cmd)).WithError(err).Error("Error restarting syslog")
 	}
 	log.Debug("Syslog restarted")
 	return err
@@ -57,7 +54,8 @@ func (syslog *Syslog) Restart() error {
 
 // Init write the frame configuration
 func (syslog *Syslog) Init() error {
-	configFile := fmt.Sprintf("%s/SYSLOG/Config/syslog.conf", syslog.properties.HapHome)
+	configDir := fmt.Sprintf("%s/SYSLOG/Config", syslog.properties.HapHome)
+	configFile := fmt.Sprintf("%s/syslog.conf", configDir)
 
 	t := template.New("Syslog template")
 	t, err := t.Parse(syslogBaseConf)
@@ -65,7 +63,10 @@ func (syslog *Syslog) Init() error {
 		log.Fatal(err)
 	}
 
-	f, err := os.OpenFile(configFile, os.O_WRONLY, 0644)
+	createDirectory(fmt.Sprintf("%s/SYSLOG/logs", syslog.properties.HapHome))
+	createDirectory(configDir)
+
+	f, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.WithError(err).Error("Fail to write base syslog file")
 		return err

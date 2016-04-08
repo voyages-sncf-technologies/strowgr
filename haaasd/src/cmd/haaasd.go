@@ -41,6 +41,7 @@ func main() {
 
 	daemon = haaasd.NewDaemon(properties)
 	syslog = haaasd.NewSyslog(properties)
+	syslog.Init()
 	log.WithFields(log.Fields{
 		"status": properties.Status,
 		"id":    properties.NodeId(),
@@ -180,6 +181,7 @@ func reloadSlave(data *haaasd.EventMessage) error {
 	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
 	err := hap.ApplyConfiguration(data)
 	if err == nil {
+		syslog.Restart()
 		publishMessage("commit_slave_completed_", data)
 	} else {
 		log.WithError(err).Error("Commit failed")
@@ -192,6 +194,7 @@ func reloadMaster(data *haaasd.EventMessage) error {
 	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
 	err := hap.ApplyConfiguration(data)
 	if err == nil {
+		syslog.Restart()
 		publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 	} else {
 		log.WithError(err).Error("Commit failed")
@@ -211,7 +214,8 @@ func bodyToData(jsonStream []byte) (*haaasd.EventMessage, error) {
 func publishMessage(topic_prefix string, data interface{}) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
-	log.WithField("topic", topic).WithField("payload", jsonMsg).Info("Publish")
+	log.WithField("topic", topic).WithField("payload", string(jsonMsg)).Debug("Publish")
 	return producer.Publish(topic, []byte(jsonMsg))
 }
+
 

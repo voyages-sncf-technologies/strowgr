@@ -171,7 +171,7 @@ func (hap *Haproxy) createSkeleton() error {
 // confPath give the path of the configuration file given an application context
 // It returns the absolute path to the file
 func (hap *Haproxy) syslogFragmentPath() string {
-	baseDir := hap.properties.HapHome + "/" + hap.Application + "/Config"
+	baseDir := hap.properties.HapHome + "/SYSLOG/Config/syslog.conf.d"
 	os.MkdirAll(baseDir, 0755)
 	return baseDir + "/syslog" + hap.Application + hap.Platform + ".conf"
 }
