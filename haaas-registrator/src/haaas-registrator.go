@@ -91,7 +91,7 @@ func main() {
 					public_port := public_ports[0].HostPort
 					log.WithField("port", private_port).Debug("Analyze container")
 
-					id := strings.Replace(address, ".", "_", -1) + "_" + public_port
+					id := strings.Replace(address, ".", "_", -1) +  strings.Replace(info.Name, "/", "_", -1)   + "_" + public_port
 					instance := NewInstance();
 					instance.Id =  id
 					instance.App = info.Config.Labels["APPLICATION"]
@@ -130,7 +130,7 @@ func main() {
 	errChan := events.MonitorWithHandler(context.Background(), cli, options, eventHandler)
 
 	if err := <-errChan; err != nil {
-		// Do something
+		log.WithError(err).Error("Error")
 	}
 }
 

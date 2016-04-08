@@ -2,7 +2,8 @@
 
 BUILDDIR=bin
 BINARY=haaas-registrator
-IMAGE=haaas/$(BINARY)
+REGISTRY=dockerregistrydev.socrate.vsct.fr
+IMAGE=$(REGISTRY)/haaas/$(BINARY)
 COMMIT_ID=$(shell git rev-parse --short HEAD)
 VERSION?=$(shell cat VERSION)
 
@@ -43,3 +44,6 @@ run:
 
 logs:
 	docker logs -f $(BINARY)
+
+push:
+	docker push $(IMAGE):$(VERSION)
