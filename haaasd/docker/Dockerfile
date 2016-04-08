@@ -8,21 +8,31 @@ RUN yum install --enablerepo=EPEL -y \
     vsc_haproxy_ssl1.5.11 \
     vsc_haproxy_ssl1.5.14 \
     vsc_syslog-ng-3.3.5 \
+    svn \
     && yum -y --nogpg -y clean all
+
+RUN cd /export && echo "p" | svn export --force https://castagneto.socrate.vsct.fr/exploit/uxwadm
+
+COPY hapctl_unif /HOME/uxwadm/scripts/hapctl_unif
+COPY syslog-ng.persist /appl/syslogng/var/lib/syslog-ng.persist
+RUN chmod +x /HOME/uxwadm/scripts/*
+
+
+
+COPY HAP_KILL /HOME/hapadm/sudo/HAP_KILL
+RUN chmod +x /HOME/hapadm/sudo/HAP_KILL
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Copy binary
 COPY haaasd-linux_amd64 /haaasd
 
+RUN mkdir -p /HOME/hapadm/SYSLOG/scripts && ln -s /HOME/uxwadm/scripts/haplogctl_unif /HOME/hapadm/SYSLOG/scripts/haplogctl
+
 # Haproxy master script
-COPY entrypoint.sh /entrypoint.sh
+
 COPY haproxy.cfg /conf/haproxy.cfg
-COPY hapctl_unif /HOME/uxwadm/scripts/hapctl_unif
-COPY HAP_KILL /HOME/hapadm/sudo/HAP_KILL
 
-# Default syslog frame
-COPY syslog-ng.conf /HOME/hapadm/SYSLOG/Config/syslog.conf
-
-RUN chmod +x /HOME/hapadm/sudo/HAP_KILL
-RUN chmod +x /entrypoint.sh
-
+RUN chown -R hapadm:haproxy /export/appl/hapadm
 CMD /entrypoint.sh
