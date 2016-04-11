@@ -4,9 +4,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
+import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 public class EntryPointEventHandlerTest {
@@ -42,11 +43,12 @@ public class EntryPointEventHandlerTest {
     public void add_entry_point_should_prepare_configuration_if_no_current_or_committing_exists() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration config = EntryPointConfiguration
+        EntryPoint config = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -65,19 +67,21 @@ public class EntryPointEventHandlerTest {
     public void add_entry_point_should_do_nothing_if_current_exists() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration config = EntryPointConfiguration
+        EntryPoint config = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration current = EntryPointConfiguration
+        EntryPoint current = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -95,19 +99,21 @@ public class EntryPointEventHandlerTest {
     public void add_entry_point_should_do_nothing_if_committing_exists() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration config = EntryPointConfiguration
+        EntryPoint config = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration committing = EntryPointConfiguration
+        EntryPoint committing = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -121,25 +127,60 @@ public class EntryPointEventHandlerTest {
         verify(stateManager, never()).prepare(any(), any());
     }
 
-    @Test
-    public void try_commit_current_applies_with_right_key() {
+    @Test(expected = IllegalStateException.class)
+    public void try_commit_current_applies_for_not_existing_entrypoint() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), key);
         when(stateManager.tryCommitCurrent(key)).thenReturn(Optional.empty());
 
         handler.handleTryCommitCurrentConfigurationEvent(event);
 
+        fail("should throw an IllegalStateException");
+    }
+
+    @Test
+    public void try_commit_current_applies_with_right_key() {
+        // Given
+        EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
+        TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), key);
+        EntryPoint entryPoint = EntryPoint
+                .onHaproxy("haproxy")
+                .withUser("hapuser")
+                .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
+                .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
+                .withGlobalContext(ImmutableMap.<String, String>of())
+                .build();
+        when(stateManager.tryCommitCurrent(key)).thenReturn(Optional.of(entryPoint));
+        when(portProvider.getPort(key.getID()+"-syslog")).thenReturn(Optional.of(666));
+
+        // Test
+        handler.handleTryCommitCurrentConfigurationEvent(event);
+
+        // Check
         verify(stateManager).tryCommitCurrent(key);
     }
 
     @Test
     public void try_commit_pending_applies_with_right_key() {
+        // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), key);
-        when(stateManager.tryCommitPending(key)).thenReturn(Optional.empty());
+        EntryPoint entryPoint = EntryPoint
+                .onHaproxy("haproxy")
+                .withUser("hapuser")
+                .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
+                .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
+                .withGlobalContext(ImmutableMap.<String, String>of())
+                .build();
+        when(stateManager.tryCommitPending(key)).thenReturn(Optional.of(entryPoint));
+        when(portProvider.getPort(key.getID()+"-syslog")).thenReturn(Optional.of(666));
 
+        // Test
         handler.handleTryCommitPendingConfigurationEvent(event);
 
+        // Check
         verify(stateManager).tryCommitPending(key);
     }
 
@@ -183,36 +224,40 @@ public class EntryPointEventHandlerTest {
 
         EntryPointBackend backend = new EntryPointBackend("BACKEND");
 
-        EntryPointConfiguration commmittingConfig = EntryPointConfiguration
+        EntryPoint commmittingConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration pendingConfig = EntryPointConfiguration
+        EntryPoint pendingConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
+        EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), new HashMap<>());
-        EntryPointConfiguration expectedConfig = EntryPointConfiguration
+        EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -234,28 +279,31 @@ public class EntryPointEventHandlerTest {
 
         EntryPointBackend backend = new EntryPointBackend("BACKEND");
 
-        EntryPointConfiguration commmittingConfig = EntryPointConfiguration
+        EntryPoint commmittingConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
+        EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), new HashMap<>());
-        EntryPointConfiguration expectedConfig = EntryPointConfiguration
+        EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -277,20 +325,22 @@ public class EntryPointEventHandlerTest {
 
         EntryPointBackend backend = new EntryPointBackend("BACKEND");
 
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
+        EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), new HashMap<>());
-        EntryPointConfiguration expectedConfig = EntryPointConfiguration
+        EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -311,20 +361,22 @@ public class EntryPointEventHandlerTest {
         EntryPointBackendServer server = new EntryPointBackendServer("ijklm", "hostname", "10.98.71.1", "9090", new HashMap<>(), new HashMap<>());
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "BACKEND", ImmutableSet.of(server));
 
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
+        EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), new HashMap<>());
-        EntryPointConfiguration expectedConfig = EntryPointConfiguration
+        EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -350,20 +402,22 @@ public class EntryPointEventHandlerTest {
 
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "BACKEND", ImmutableSet.of(server));
 
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
+        EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), backendContext);
-        EntryPointConfiguration expectedConfig = EntryPointConfiguration
+        EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -395,20 +449,22 @@ public class EntryPointEventHandlerTest {
 
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "BACKEND", ImmutableSet.of(newServer));
 
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
+        EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(newServer), new HashMap<>());
-        EntryPointConfiguration expectedConfig = EntryPointConfiguration
+        EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -442,21 +498,23 @@ public class EntryPointEventHandlerTest {
 
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "BACKEND", ImmutableSet.of(newServerInEvent));
 
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
+        EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPointBackendServer expectedServer = new EntryPointBackendServer("ijklm", "hostname2", "10.98.71.2", "9092", newServerContext, oldUserContext);
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(expectedServer), new HashMap<>());
-        EntryPointConfiguration expectedConfig = EntryPointConfiguration
+        EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -487,11 +545,12 @@ public class EntryPointEventHandlerTest {
         backendContext.put("key2", "value2");
         EntryPointBackend backend = new EntryPointBackend("BACKEND", Sets.newHashSet(server), backendContext);
 
-        EntryPointConfiguration currentConfig = EntryPointConfiguration
+        EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -502,11 +561,12 @@ public class EntryPointEventHandlerTest {
         EntryPointBackend expectedBackend1 = new EntryPointBackend("BACKEND", Sets.newHashSet(), backendContext);
         EntryPointBackend expectedBackend2 = new EntryPointBackend("NEWBACKEND", Sets.newHashSet(expectedServer), new HashMap<>());
 
-        EntryPointConfiguration expectedConfig = EntryPointConfiguration
+        EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend1, expectedBackend2))
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 

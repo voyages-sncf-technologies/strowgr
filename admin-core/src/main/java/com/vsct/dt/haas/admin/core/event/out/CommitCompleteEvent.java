@@ -1,18 +1,20 @@
 package com.vsct.dt.haas.admin.core.event.out;
 
 import com.vsct.dt.haas.admin.core.EntryPointKey;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
+import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.event.in.EntryPointEvent;
 
-public class CommitCompleteEvent extends EntryPointEvent {
-    private final EntryPointConfiguration configuration;
+import java.util.Optional;
 
-    public CommitCompleteEvent(String correlationId, EntryPointKey key, EntryPointConfiguration configuration) {
+public class CommitCompleteEvent extends EntryPointEvent {
+    private final EntryPoint configuration;
+
+    public CommitCompleteEvent(String correlationId, EntryPointKey key, EntryPoint configuration) {
         super(correlationId, key);
         this.configuration = configuration;
     }
 
-    public EntryPointConfiguration getConfiguration() {
-        return configuration;
+    public Optional<EntryPoint> getConfiguration() {
+        return Optional.ofNullable(configuration);
     }
 }

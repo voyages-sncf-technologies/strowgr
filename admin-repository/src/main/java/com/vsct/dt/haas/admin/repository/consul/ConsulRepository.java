@@ -8,7 +8,8 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.vsct.dt.haas.admin.core.EntryPointKey;
 import com.vsct.dt.haas.admin.core.EntryPointRepository;
 import com.vsct.dt.haas.admin.core.PortProvider;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
+import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
+import com.vsct.dt.haas.admin.repository.consul.mapping.json.EntryPointMappingJson;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
@@ -103,12 +104,15 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
     };
-    ResponseHandler<Optional<EntryPointConfiguration>> getConfigurationResponseHandler = response -> {
+    ResponseHandler<Optional<EntryPoint>> getConfigurationResponseHandler = response -> {
         int status = response.getStatusLine().getStatusCode();
-        if (status == 404) return Optional.empty();
+        if (status == 404) {
+            LOGGER.debug("configuration not found. Response is: " + EntityUtils.toString(response.getEntity()));
+            return Optional.empty();
+        }
         if (status >= 200 && status < 300) {
             HttpEntity entity = response.getEntity();
-            return Optional.of(mapper.readValue(entity.getContent(), EntryPointConfigurationJsonRepresentation.class));
+            return Optional.of(mapper.readValue(entity.getContent(), EntryPointMappingJson.class));
         } else {
             throw new ClientProtocolException("Unexpected response status: " + status);
         }
@@ -235,7 +239,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public Optional<EntryPointConfiguration> getCurrentConfiguration(EntryPointKey key) {
+    public Optional<EntryPoint> getCurrentConfiguration(EntryPointKey key) {
         try {
             HttpGet getCurrentURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/current?raw");
             return client.execute(getCurrentURI, getConfigurationResponseHandler);
@@ -267,7 +271,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public Optional<EntryPointConfiguration> getPendingConfiguration(EntryPointKey key) {
+    public Optional<EntryPoint> getPendingConfiguration(EntryPointKey key) {
         try {
             HttpGet getPendingURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/pending?raw");
             return client.execute(getPendingURI, getConfigurationResponseHandler);
@@ -278,7 +282,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public Optional<EntryPointConfiguration> getCommittingConfiguration(EntryPointKey key) {
+    public Optional<EntryPoint> getCommittingConfiguration(EntryPointKey key) {
         try {
             HttpGet getCommittingURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/committing?raw");
             return client.execute(getCommittingURI, getConfigurationResponseHandler);
@@ -289,7 +293,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public void setPendingConfiguration(EntryPointKey key, EntryPointConfiguration configuration) {
+    public void setPendingConfiguration(EntryPointKey key, EntryPoint configuration) {
         try {
             HttpPut setPendingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/pending");
 
@@ -315,7 +319,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public void setCommittingConfiguration(EntryPointKey key, EntryPointConfiguration configuration, int ttl) {
+    public void setCommittingConfiguration(EntryPointKey key, EntryPoint configuration, int ttl) {
         try {
             /* Use Consul session to use TTL feature
                This implies that when the consul node holding the session is lost,
@@ -348,7 +352,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public void setCurrentConfiguration(EntryPointKey key, EntryPointConfiguration configuration) {
+    public void setCurrentConfiguration(EntryPointKey key, EntryPoint configuration) {
         try {
             HttpPut setCurrentURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/current");
 
@@ -397,9 +401,9 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public Optional<String> getHaproxy(String haproxyName) {
+    public Optional<String> getHaproxyVip(String haproxyName) {
         try {
-            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName + "?raw");
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName + "/vip?raw");
             return client.execute(getHaproxyURI, getHaproxyURIHandler);
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -59,7 +59,7 @@
         adminApp.factory('PortProvider', ['$http', function ($http) {
             return {
                 getPort: function (id) {
-                    return $http.get('/api/ports/' + id).then(function (response) {
+                    return $http.get('/api/port/' + id).then(function (response) {
                         return response.data;
                     }, function(error){
                         if(error.status = 404){
@@ -74,7 +74,7 @@
 
             $http({
                 method: 'GET',
-                url: '/api/entrypoints'
+                url: '/api/entrypoint/list'
             }).then(function (response) {
                 $scope.entrypoints = response.data;
             });
@@ -90,14 +90,6 @@
                 $scope.selectedEntrypoint = id;
             }
 
-            $scope.loadHaproxyStats = function(haproxyName,port){
-                console.log("load haproxy stats: "+haproxyName+","+port);
-                $http.get('/api/haproxy/uri/'+haproxyName).then(function (response) {
-                    window.location.href = response.data+':'+port+'/stats';
-                }, function(error){
-                    console.error("can't load haproxyName "+ haproxyName+". Response is "+response.data);
-                });
-            }
         }]);
 
         adminApp.controller('TemplateDisplay', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {

@@ -2,7 +2,7 @@ package com.vsct.dt.haas.admin.template.generator;
 
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
+import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 
 import java.util.HashMap;
@@ -10,14 +10,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/* Transform an haproxy configuration into a mustache scope
-* Look at test to see examples
-* frontends, backends and servers are ordered by id when available as list */
+/**
+ * Transform an haproxy configuration into a mustache scope.
+ * Look at test to see examples.
+ * frontends, backends and servers are ordered by id when available as list.
+ */
 public class HaasMustacheScope extends HashMap<String, Object> {
 
     private final Map<String, Integer> portsMapping;
 
-    public HaasMustacheScope(EntryPointConfiguration configuration, Map<String, Integer> portsMapping) {
+    public HaasMustacheScope(EntryPoint configuration, Map<String, Integer> portsMapping) {
         super();
         this.portsMapping = portsMapping;
 

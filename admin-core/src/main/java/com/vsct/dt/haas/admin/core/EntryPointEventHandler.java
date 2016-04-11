@@ -3,7 +3,7 @@ package com.vsct.dt.haas.admin.core;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
+import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.haas.admin.core.event.in.*;
 import com.vsct.dt.haas.admin.core.event.out.CommitBeginEvent;
@@ -45,7 +45,7 @@ public class EntryPointEventHandler {
         try {
             this.stateManager.lock(key);
             if (!stateManager.getCommittingConfiguration(key).isPresent() && !stateManager.getCurrentConfiguration(key).isPresent()) {
-                Optional<EntryPointConfiguration> preparedConfiguration = stateManager.prepare(key, event.getConfiguration());
+                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, event.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event "+event)));
 
                 if (preparedConfiguration.isPresent()) {
                     LOGGER.info("new EntryPoint {} added", key.getID());
@@ -57,16 +57,12 @@ public class EntryPointEventHandler {
         }
     }
 
-    public void handle(UpdateEntryPointEvent event) {
-        /* TODO DEFINE */
-    }
-
     @Subscribe
     public void handle(RegisterServerEvent event) {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPointConfiguration> existingConfiguration = Optional.ofNullable(
+            Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
                     stateManager.getPendingConfiguration(key)
                             .orElse(stateManager.getCommittingConfiguration(key)
                                     .orElse(stateManager.getCurrentConfiguration(key)
@@ -75,7 +71,7 @@ public class EntryPointEventHandler {
 
             existingConfiguration.map(c -> c.registerServers(event.getBackend(), event.getServers()))
                     .ifPresent(c -> {
-                        Optional<EntryPointConfiguration> preparedConfiguration = stateManager.prepare(key, c);
+                        Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
 
                         if (preparedConfiguration.isPresent()) {
                             LOGGER.info("new servers registered for EntryPoint {}", event.getKey().getID());
@@ -99,7 +95,7 @@ public class EntryPointEventHandler {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            EntryPointConfiguration committingConfiguration = stateManager.tryCommitCurrent(key).orElseThrow(() -> new IllegalStateException("can't commit entrypoint " + key));
+            EntryPoint committingConfiguration = stateManager.tryCommitCurrent(key).orElseThrow(() -> new IllegalStateException("can't commit entrypoint " + key));
             String template = templateLocator.readTemplate(committingConfiguration);
             Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration);
             String conf = templateGenerator.generate(template, committingConfiguration, portsMapping);
@@ -115,12 +111,16 @@ public class EntryPointEventHandler {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            EntryPointConfiguration committingConfiguration = stateManager.tryCommitPending(key).orElseThrow(() -> new IllegalStateException("can't commit entrypoint " + key));
-            String template = templateLocator.readTemplate(committingConfiguration);
-            Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration);
-            String conf = templateGenerator.generate(template, committingConfiguration, portsMapping);
-            String syslogConf = templateGenerator.generateSyslogFragment(committingConfiguration, portsMapping);
-            outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration, conf, syslogConf));
+            Optional<EntryPoint> committingConfiguration = stateManager.tryCommitPending(key);
+            if (committingConfiguration.isPresent()) {
+                String template = templateLocator.readTemplate(committingConfiguration.get());
+                Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration.get());
+                String conf = templateGenerator.generate(template, committingConfiguration.get(), portsMapping);
+                String syslogConf = templateGenerator.generateSyslogFragment(committingConfiguration.get(), portsMapping);
+                outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf, syslogConf));
+            } else {
+                LOGGER.debug("no pending configuring is currently in commit phase");
+            }
         } finally {
             this.stateManager.release(key);
         }
@@ -131,7 +131,7 @@ public class EntryPointEventHandler {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPointConfiguration> currentConfiguration = stateManager.commit(key);
+            Optional<EntryPoint> currentConfiguration = stateManager.commit(key);
             if (currentConfiguration.isPresent()) {
                 LOGGER.info("Configuration for EntryPoint {} has been committed", event.getKey().getID());
                 outputBus.post(new CommitCompleteEvent(event.getCorrelationId(), key, currentConfiguration.get()));
@@ -141,22 +141,14 @@ public class EntryPointEventHandler {
         }
     }
 
-    public void handleCommitFailureEvent(CommitFailureEvent event) {
-        /* TODO DEFINE */
-    }
-
-    public void handleCommitTimeoutEvent() {
-        /* TODO DEFINE */
-    }
-
-    private Map<String, Integer> getOrCreatePortsMapping(EntryPointKey key, EntryPointConfiguration configuration) {
+    private Map<String, Integer> getOrCreatePortsMapping(EntryPointKey key, EntryPoint entryPoint) {
         Map<String, Integer> portsMapping = new HashMap<>();
         String prefix = key.getID() + '-';
 
-        int syslogPort = portProvider.getPort(prefix + configuration.syslogPortId()).orElseGet(() -> portProvider.newPort(prefix + configuration.syslogPortId()));
-        portsMapping.put(configuration.syslogPortId(), syslogPort);
+        int syslogPort = portProvider.getPort(prefix + entryPoint.syslogPortId()).orElseGet(() -> portProvider.newPort(prefix + entryPoint.syslogPortId()));
+        portsMapping.put(entryPoint.syslogPortId(), syslogPort);
 
-        for (EntryPointFrontend frontend : configuration.getFrontends()) {
+        for (EntryPointFrontend frontend : entryPoint.getFrontends()) {
             int frontendPort = portProvider.getPort(prefix + frontend.portId()).orElseGet(() -> portProvider.newPort(prefix + frontend.portId()));
             portsMapping.put(frontend.portId(), frontendPort);
         }

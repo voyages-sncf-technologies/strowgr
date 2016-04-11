@@ -1,7 +1,7 @@
 package com.vsct.dt.haas.admin.template.locator;
 
 import com.vsct.dt.haas.admin.core.TemplateLocator;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
+import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
@@ -24,7 +24,7 @@ public class UriTemplateLocator implements TemplateLocator {
     }
 
     @Override
-    public String readTemplate(EntryPointConfiguration configuration) {
+    public String readTemplate(EntryPoint configuration) {
         try {
             String uri = configuration.getContext().get(URI_FIELD);
             HttpGet getTemplate = new HttpGet(uri);

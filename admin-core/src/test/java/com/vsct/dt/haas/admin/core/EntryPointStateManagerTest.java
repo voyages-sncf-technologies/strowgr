@@ -2,20 +2,16 @@ package com.vsct.dt.haas.admin.core;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackend;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Optional;
 
-import static org.fest.assertions.Fail.fail;
 import static org.mockito.Mockito.*;
 
-/**
- * Created by william_montaz on 04/02/2016.
- */
 public class EntryPointStateManagerTest {
 
     EntryPointStateManager entryPointStateManager;
@@ -32,19 +28,21 @@ public class EntryPointStateManagerTest {
     public void prepare_configuration_when_committing_one__should_add_pending_configuration_if_it_is_different_than_committing() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration differentNewConfiguration = EntryPointConfiguration
+        EntryPoint differentNewConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration committingConfiguration = EntryPointConfiguration
+        EntryPoint committingConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser2")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -62,19 +60,21 @@ public class EntryPointStateManagerTest {
     public void prepare_configuration_when_committing_one__should_not_add_pending_configuration_if_it_is_same_as_committing() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration sameNewConfiguration = EntryPointConfiguration
+        EntryPoint sameNewConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration committingConfiguration = EntryPointConfiguration
+        EntryPoint committingConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -92,19 +92,21 @@ public class EntryPointStateManagerTest {
     public void prepare_configuration_when_nothing_is_committing__should_add_pending_configuration_if_it_is_different_than_current() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration differentNewConfiguration = EntryPointConfiguration
+        EntryPoint differentNewConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration currentConfiguration = EntryPointConfiguration
+        EntryPoint currentConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser2")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -125,19 +127,21 @@ public class EntryPointStateManagerTest {
     public void prepare_configuration_when_nothing_is_committing__should_not_add_pending_configuration_if_it_is_same_as_current() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration sameNewConfiguration = EntryPointConfiguration
+        EntryPoint sameNewConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration currentConfiguration = EntryPointConfiguration
+        EntryPoint currentConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -158,11 +162,12 @@ public class EntryPointStateManagerTest {
     public void prepare_configuration_when_nothing_is_committing_or_current__should_add_pending_configuration() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration newConfiguration = EntryPointConfiguration
+        EntryPoint newConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -182,11 +187,12 @@ public class EntryPointStateManagerTest {
     public void try_commit_pending_configuration__with_pending_without_committing_should_create_committing_from_pending() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration pendingConfiguration = EntryPointConfiguration
+        EntryPoint pendingConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -207,19 +213,21 @@ public class EntryPointStateManagerTest {
     public void try_commit_pending_configuration__with_pending_with_committing_should_do_nothing() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration pendingConfiguration = EntryPointConfiguration
+        EntryPoint pendingConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration existingCommittingConfiguration = EntryPointConfiguration
+        EntryPoint existingCommittingConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -254,11 +262,12 @@ public class EntryPointStateManagerTest {
     public void try_commit_current_configuration__with_current_without_committing_should_create_committing_from_current() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration currentConfiguration = EntryPointConfiguration
+        EntryPoint currentConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -278,19 +287,21 @@ public class EntryPointStateManagerTest {
     public void try_commit_current_configuration__with_current_with_committing_should_do_nothing() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration currentConfiguration = EntryPointConfiguration
+        EntryPoint currentConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
-        EntryPointConfiguration existingCommittingConfiguration = EntryPointConfiguration
+        EntryPoint existingCommittingConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -337,11 +348,12 @@ public class EntryPointStateManagerTest {
     public void commit_configuration__with_committing_should_replace_current_by_committing_and_leave_no_committing_and_no_pending() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
-        EntryPointConfiguration committingConfiguration = EntryPointConfiguration
+        EntryPoint committingConfiguration = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
+                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 

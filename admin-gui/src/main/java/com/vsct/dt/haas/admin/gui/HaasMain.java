@@ -8,7 +8,9 @@ import com.vsct.dt.haas.admin.core.TemplateGenerator;
 import com.vsct.dt.haas.admin.gui.configuration.HaasConfiguration;
 import com.vsct.dt.haas.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.haas.admin.gui.healthcheck.NsqHealthcheck;
-import com.vsct.dt.haas.admin.gui.resource.RestApiResources;
+import com.vsct.dt.haas.admin.gui.resource.api.HaproxyResources;
+import com.vsct.dt.haas.admin.gui.resource.api.EntrypointResources;
+import com.vsct.dt.haas.admin.gui.resource.api.PortResources;
 import com.vsct.dt.haas.admin.nsq.producer.Producer;
 import com.vsct.dt.haas.admin.repository.consul.ConsulRepository;
 import com.vsct.dt.haas.admin.template.generator.MustacheTemplateGenerator;
@@ -84,9 +86,15 @@ public class HaasMain extends Application<HaasConfiguration> {
         configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
         configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
 
-        /* REST Resource */
-        RestApiResources restApiResource = new RestApiResources(eventBus, repository, repository, templateLocator, templateGenerator);
+        /* REST Resources */
+        EntrypointResources restApiResource = new EntrypointResources(eventBus, repository, repository, templateLocator, templateGenerator);
         environment.jersey().register(restApiResource);
+
+        HaproxyResources haproxyResources = new HaproxyResources(repository);
+        environment.jersey().register(haproxyResources);
+
+        PortResources portResources = new PortResources(repository);
+        environment.jersey().register(portResources);
 
         eventBus.register(restApiResource);
 
