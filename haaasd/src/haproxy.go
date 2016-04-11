@@ -31,9 +31,17 @@ type Haproxy struct {
 	State       int
 }
 
+const (
+	SUCCESS int = iota
+	UNCHANGED int = iota
+	ERR_SYSLOG int = iota
+	ERR_CONF int = iota
+	ERR_RELOAD int = iota
+)
+
 // ApplyConfiguration write the new configuration and reload
 // A rollback is called on failure
-func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
+func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	hap.createSkeleton()
 
 	newConf := data.Conf
@@ -44,7 +52,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
 	if err == nil {
 		if bytes.Equal(oldConf, newConf) {
 			log.Info("Ignore unchanged configuration")
-			return nil
+			return UNCHANGED, nil
 		}
 	}
 
@@ -54,7 +62,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
 	log.WithField("archivePath", archivePath).Printf("Old configuration saved")
 	err = ioutil.WriteFile(path, newConf, 0644)
 	if err != nil {
-		return err
+		return ERR_CONF,err
 	}
 	log.WithField("path", path).Printf("New configuration written to %s", path)
 
@@ -67,7 +75,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
 		}).WithError(err).Error("Reload failed")
 		hap.dumpConfiguration(newConf, data)
 		err = hap.rollback()
-		return err
+		return ERR_RELOAD, err
 	}
 	// Write syslog fragment
 	fragmentPath := hap.syslogFragmentPath()
@@ -78,10 +86,10 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
 			"plateform":   data.Platform,
 		}).WithError(err).Error("Failed to write syslog fragment")
 		// TODO Should we rollback on syslog error ?
-		return err
+		return ERR_SYSLOG, err
 	}
 
-	return nil
+	return SUCCESS, nil
 }
 
 // dumpConfiguration dumps the new configuration file with context for debugging purpose
@@ -161,7 +169,7 @@ func (hap *Haproxy) createSkeleton() error {
 	createDirectory(baseDir + "/version-1")
 
 	updateSymlink(hap.getHapctlFilename(), hap.getReloadScript())
-	updateSymlink(hap.getHapBinary(), baseDir+"/Config/haproxy")
+	updateSymlink(hap.getHapBinary(), baseDir + "/Config/haproxy")
 
 	log.WithField("dir", baseDir).Info("Skeleton created")
 

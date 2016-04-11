@@ -179,9 +179,11 @@ func onCommitSlaveRequested(message *nsq.Message) error {
 
 func reloadSlave(data *haaasd.EventMessage) error {
 	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
-	err := hap.ApplyConfiguration(data)
+	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
-		syslog.Restart()
+		if status != haaasd.UNCHANGED {
+			syslog.Restart()
+		}
 		publishMessage("commit_slave_completed_", data)
 	} else {
 		log.WithError(err).Error("Commit failed")
@@ -192,9 +194,11 @@ func reloadSlave(data *haaasd.EventMessage) error {
 
 func reloadMaster(data *haaasd.EventMessage) error {
 	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
-	err := hap.ApplyConfiguration(data)
+	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
-		syslog.Restart()
+		if status != haaasd.UNCHANGED {
+			syslog.Restart()
+		}
 		publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 	} else {
 		log.WithError(err).Error("Commit failed")
@@ -217,5 +221,3 @@ func publishMessage(topic_prefix string, data interface{}) error {
 	log.WithField("topic", topic).WithField("payload", string(jsonMsg)).Debug("Publish")
 	return producer.Publish(topic, []byte(jsonMsg))
 }
-
-
