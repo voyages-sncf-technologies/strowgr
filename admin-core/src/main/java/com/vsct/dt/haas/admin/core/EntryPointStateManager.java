@@ -122,6 +122,8 @@ public class EntryPointStateManager {
                 repository.setCommittingConfiguration(key, currentConfiguration.get(), commitTimeout);
                 return currentConfiguration;
             }
+        } else {
+            LOGGER.debug("can't find current configuration for entrypoint with key {}",key);
         }
         return Optional.empty();
     }

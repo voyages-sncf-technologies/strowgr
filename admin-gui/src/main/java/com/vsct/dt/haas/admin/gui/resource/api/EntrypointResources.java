@@ -9,6 +9,9 @@ import com.vsct.dt.haas.admin.core.*;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
+import com.vsct.dt.haas.admin.core.event.out.CommitCompleteEvent;
+import com.vsct.dt.haas.admin.core.event.out.EntryPointAddedEvent;
+import com.vsct.dt.haas.admin.core.event.out.ServerRegisteredEvent;
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointBackendServerMappingJson;
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointMappingJson;
 import org.slf4j.Logger;
@@ -101,8 +104,9 @@ public class EntrypointResources {
     public void tryCommitPending(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id) {
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
 
-        new CallbackBuilder(event.getCorrelationId()).whenReceive(
-                new AsyncResponseCallback(asyncResponse)).timeoutAfter(10, TimeUnit.SECONDS);
+        new CallbackBuilder(event.getCorrelationId())
+                .whenReceive(new AsyncResponseCallback(asyncResponse))
+                .timeoutAfter(10, TimeUnit.SECONDS);
 
         eventBus.post(event);
     }
@@ -164,9 +168,9 @@ public class EntrypointResources {
                 .generateHaproxyConfiguration(key, templateLocator, templateGenerator, portProvider);
     }
 
-    @Subscribe
-    public void handle(EntryPointEvent event) {
+    public void handleWithCorrelationId(EntryPointEvent event) {
         try {
+            LOGGER.trace("remove entrypoint {}", event);
             AsyncResponseCallback asyncResponseCallback = callbacks.remove(event.getCorrelationId());
             if (asyncResponseCallback != null) {
                 asyncResponseCallback.handle(event);
@@ -177,6 +181,22 @@ public class EntrypointResources {
             LOGGER.error("can't handle EntryPointEvent " + event, e);
         }
     }
+
+    @Subscribe
+    public void handle(CommitCompleteEvent commitCompleteEvent){
+        handleWithCorrelationId(commitCompleteEvent);
+    }
+
+    @Subscribe
+    public void handle(EntryPointAddedEvent entryPointAddedEvent){
+        handleWithCorrelationId(entryPointAddedEvent);
+    }
+
+    @Subscribe
+    public void handle(ServerRegisteredEvent serverRegisteredEvent){
+        handleWithCorrelationId(serverRegisteredEvent);
+    }
+
 
     private class AsyncResponseCallback {
         private final AsyncResponse asyncResponse;

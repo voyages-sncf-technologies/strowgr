@@ -59,4 +59,9 @@ public class EntryPointKeyVsctImpl implements EntryPointKey {
         result = 31 * result + (platform != null ? platform.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return getID();
+    }
 }

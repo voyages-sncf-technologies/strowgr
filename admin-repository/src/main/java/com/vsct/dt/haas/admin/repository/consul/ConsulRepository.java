@@ -23,6 +23,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.nio.cs.ext.EUC_CN;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -70,11 +71,16 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
     ResponseHandler<Session> createSessionResponseHandler = response -> {
         int status = response.getStatusLine().getStatusCode();
+        HttpEntity entity = null;
         if (status >= 200 && status < 300) {
-            HttpEntity entity = response.getEntity();
+            entity = response.getEntity();
             return mapper.readValue(entity.getContent(), Session.class);
         } else {
-            throw new ClientProtocolException("Unexpected response status: " + status);
+            String content = "no content";
+            if (entity != null) {
+                content = EntityUtils.toString(entity);
+            }
+            throw new ClientProtocolException("Unexpected response status: " + status + ": " + response.getStatusLine().getReasonPhrase() + ", entity is " + content);
         }
     };
     ResponseHandler<Boolean> destroySessionResponseHandler = response -> {
@@ -185,12 +191,16 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     };
 
     @Override
-    public void lock(EntryPointKey key) {
+    public void lock(EntryPointKey entryPointKey) {
         try {
-            Session session = createSession();
-            sessionLocal.set(session.ID);
+            Session session;
+            if (sessionLocal.get() == null) {
+                session = createSession(entryPointKey);
+                sessionLocal.set(session.ID);
+            }
 
-            HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/lock?acquire=" + sessionLocal.get());
+            LOGGER.debug("attempt to acquire lock for key " + entryPointKey + "on session " + sessionLocal.get());
+            HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey + "/lock?acquire=" + sessionLocal.get());
 
             /* TODO, implement wait with a blocking query */
             boolean locked = false;
@@ -201,46 +211,56 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        LOGGER.error("error in consul repository", e);
+                        LOGGER.error("error in consul repository for session " + sessionLocal.get() + " and key " + entryPointKey, e);
                     }
+                } else {
+                    LOGGER.debug("lock acquired for key " + entryPointKey + "on session " + sessionLocal.get());
                 }
             }
 
         } catch (IOException e) {
-            LOGGER.error("error in consul repository", e);
+            LOGGER.error("error in consul repository for session " + sessionLocal.get() + " and key " + entryPointKey, e);
         }
     }
 
-    private Session createSession() throws IOException {
-        return createSession(10, Behavior.DELETE);
+    private Session createSession(EntryPointKey entryPointKey) throws IOException {
+        return createSession(entryPointKey, 600, Behavior.DELETE);
     }
 
-    private Session createSession(Integer ttl, Behavior behavior) throws IOException {
+    private Session createSession(EntryPointKey entryPointKey, Integer ttlInSec, Behavior behavior) throws IOException {
         HttpPut createSessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/create");
-        if (ttl != null) {
-            String payload = "{\"Behavior\":\"" + behavior.value + "\",\"TTL\":\"" + ttl + "s\"}";
+        if (ttlInSec != null) {
+            String payload = "{\"Behavior\":\"" + behavior.value + "\",\"TTL\":\"" + ttlInSec + "s\", \"Name\":\"" + entryPointKey.getID() + "\"}";
             LOGGER.trace("create a consul session with theses options: {} ", payload);
             createSessionURI.setEntity(new StringEntity(payload));
         }
-        return client.execute(createSessionURI, createSessionResponseHandler);
+        Session session = client.execute(createSessionURI, createSessionResponseHandler);
+        LOGGER.debug("get session " + session + " for key " + entryPointKey);
+        return session;
     }
 
     @Override
     public void release(EntryPointKey key) {
         try {
+            LOGGER.debug("attempt to release lock for key " + key + " on session " + sessionLocal.get());
             HttpPut releaseEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/lock?release=" + sessionLocal.get());
             client.execute(releaseEntryPointKeyURI, releaseEntryPointResponseHandler);
+            LOGGER.debug("lock released for key " + key + " on session " + sessionLocal.get());
 
             HttpPut destroySessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/destroy/" + sessionLocal.get());
             client.execute(destroySessionURI, destroySessionResponseHandler);
+            LOGGER.debug("session destroyed for key " + key + " on session " + sessionLocal.get());
         } catch (IOException e) {
             LOGGER.error("error in consul repository", e);
+        } finally {
+            sessionLocal.remove();
         }
     }
 
     @Override
     public Optional<EntryPoint> getCurrentConfiguration(EntryPointKey key) {
         try {
+            LOGGER.trace("attempt to get the current configuration for key " + key);
             HttpGet getCurrentURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/current?raw");
             return client.execute(getCurrentURI, getConfigurationResponseHandler);
         } catch (IOException e) {
@@ -319,16 +339,16 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public void setCommittingConfiguration(EntryPointKey key, EntryPoint configuration, int ttl) {
+    public void setCommittingConfiguration(EntryPointKey entryPointKey, EntryPoint configuration, int ttl) {
         try {
             /* Use Consul session to use TTL feature
                This implies that when the consul node holding the session is lost,
                the session and thus the committing config will also be lost,
                TTL cannot be honored in that corner case.
              */
-            Session session = createSession(ttl, Behavior.DELETE);
+            Session session = createSession(entryPointKey, ttl, Behavior.DELETE);
 
-            HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/committing?acquire=" + session.ID);
+            HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/committing?acquire=" + session.ID);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             mapper.writeValue(out, configuration);
