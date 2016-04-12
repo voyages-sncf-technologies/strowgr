@@ -7,8 +7,11 @@ import com.vsct.dt.haas.admin.core.EntryPointKey;
 import com.vsct.dt.haas.admin.core.PortProvider;
 import com.vsct.dt.haas.admin.core.TemplateGenerator;
 import com.vsct.dt.haas.admin.core.TemplateLocator;
+import com.vsct.dt.haas.admin.core.event.in.UpdatedEntryPoint;
+import com.vsct.dt.haas.admin.core.event.in.UpdatedEntryPointBackend;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.vsct.dt.haas.admin.Preconditions.*;
@@ -55,8 +58,8 @@ public class EntryPoint {
         this.context = context;
     }
 
-    public static IHapUSer onHaproxy(String application) {
-        return new EntryPoint.Builder(application);
+    public static IHapUSer onHaproxy(String haproxy) {
+        return new EntryPoint.Builder(haproxy);
     }
 
     public EntryPoint addOrReplaceBackend(EntryPointBackend backend) {
@@ -161,6 +164,42 @@ public class EntryPoint {
         return SYSLOG_PORT_ID;
     }
 
+    /**
+     * Merging rules :
+     *  - Updated global context replaces existing one
+     *  - Updated syslog user replaces existing one
+     *  - Updated frontends replace existing ones, without consideration for ports
+     *  - Updated backends replace existing ones
+     *  - Updated servers just replace overrideConfiguration for existing ones
+     * @param updatedEntryPoint
+     * @return A new EntryPoint, result of the merge of this entrypoint and the updatedconfiguration
+     */
+    public EntryPoint mergeWithUpdate(UpdatedEntryPoint updatedEntryPoint) {
+
+        Set<EntryPointBackend> newBackends = new HashSet<>();
+        for(UpdatedEntryPointBackend updatedBackend : updatedEntryPoint.getBackends()){
+            EntryPointBackend thisBackend = this.backends.get(updatedBackend.getId());
+            if(thisBackend != null){
+                Set<EntryPointBackendServer> newServers = new HashSet<>();
+                for(EntryPointBackendServer s : thisBackend.getServers()){
+                    Map<String, String> contextOverride = updatedBackend.getServer(s.getId()).map(updatedServer -> updatedServer.getContextOverride()).orElse(new HashMap<>());
+                    newServers.add(new EntryPointBackendServer(s.getId(), s.getHostname(), s.getIp(), s.getPort(), s.getContext(), contextOverride));
+                }
+                newBackends.add(new EntryPointBackend(updatedBackend.getId(), newServers, updatedBackend.getContext()));
+            } else {
+                newBackends.add(new EntryPointBackend(updatedBackend.getId(), new HashSet<EntryPointBackendServer>(), updatedBackend.getContext()));
+            }
+        }
+
+        return EntryPoint.onHaproxy(this.haproxy)
+                .withUser(updatedEntryPoint.getHapUser())
+                .definesFrontends(updatedEntryPoint.getFrontends().stream().map(f -> new EntryPointFrontend(f.getId(), f.getContext())).collect(Collectors.toSet()))
+                .definesBackends(newBackends)
+                .withSyslogPort("666") //TODO Dummy value should be removed
+                .withGlobalContext(updatedEntryPoint.getContext())
+                .build();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -192,15 +231,15 @@ public class EntryPoint {
     }
 
     public interface IFrontends {
-        IBackends definesFrontends(ImmutableSet<EntryPointFrontend> frontends);
+        IBackends definesFrontends(Set<EntryPointFrontend> frontends);
     }
 
     public interface IBackends {
-        ISyslogPort definesBackends(ImmutableSet<EntryPointBackend> backends);
+        ISyslogPort definesBackends(Set<EntryPointBackend> backends);
     }
 
     public interface IContext {
-        IBuild withGlobalContext(ImmutableMap<String, String> context);
+        IBuild withGlobalContext(Map<String, String> context);
     }
 
     public interface ISyslogPort {
@@ -213,17 +252,16 @@ public class EntryPoint {
 
     public static class Builder implements IHapUSer, IFrontends, IBackends, IContext, IBuild, ISyslogPort {
 
-        private ImmutableSet<EntryPointBackend> backends;
-        private ImmutableSet<EntryPointFrontend> frontends;
+        private Set<EntryPointBackend> backends;
+        private Set<EntryPointFrontend> frontends;
         private String haproxy;
         private String user;
         private String syslogPort;
-        private ImmutableMap<String, String> context;
+        private Map<String, String> context;
 
         private Builder(String haproxy) {
             this.haproxy = haproxy;
         }
-
 
         @Override
         public IContext withSyslogPort(String syslogPort) {
@@ -232,13 +270,13 @@ public class EntryPoint {
         }
 
         @Override
-        public ISyslogPort definesBackends(ImmutableSet<EntryPointBackend> backends) {
+        public ISyslogPort definesBackends(Set<EntryPointBackend> backends) {
             this.backends = backends;
             return this;
         }
 
         @Override
-        public IBackends definesFrontends(ImmutableSet<EntryPointFrontend> frontends) {
+        public IBackends definesFrontends(Set<EntryPointFrontend> frontends) {
             this.frontends = frontends;
             return this;
         }
@@ -250,7 +288,7 @@ public class EntryPoint {
         }
 
         @Override
-        public IBuild withGlobalContext(ImmutableMap<String, String> context) {
+        public IBuild withGlobalContext(Map<String, String> context) {
             this.context = context;
             return this;
         }

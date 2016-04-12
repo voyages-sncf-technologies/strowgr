@@ -7,10 +7,7 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.haas.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.event.in.*;
-import com.vsct.dt.haas.admin.core.event.out.CommitBeginEvent;
-import com.vsct.dt.haas.admin.core.event.out.CommitCompleteEvent;
-import com.vsct.dt.haas.admin.core.event.out.EntryPointAddedEvent;
-import com.vsct.dt.haas.admin.core.event.out.ServerRegisteredEvent;
+import com.vsct.dt.haas.admin.core.event.out.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +57,28 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(UpdateEntryPointEvent event){
+        EntryPointKey key = event.getKey();
+        try {
+            this.stateManager.lock(key);
 
+            Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
+                    stateManager.getPendingConfiguration(key)
+                            .orElseGet(() -> stateManager.getCommittingConfiguration(key)
+                                    .orElseGet(() -> stateManager.getCurrentConfiguration(key)
+                                            .orElse(null)))
+            );
+
+            existingConfiguration.map(c -> c.mergeWithUpdate(event.getUpdatedEntryPoint()))
+                    .ifPresent(c -> {
+                        Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
+                        if(preparedConfiguration.isPresent()){
+                            outputBus.post(new EntryPointUpdatedEvent(event.getCorrelationId(), key));
+                        }
+                    });
+
+        } finally {
+            this.stateManager.release(key);
+        }
     }
 
     @Subscribe
