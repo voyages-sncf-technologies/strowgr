@@ -6,6 +6,7 @@ server:
   applicationContextPath: /
 threads: 20
 haproxyName: default-name
+commitTimeout: 60
 repository:
   host: 192.168.99.100
   port: 8500

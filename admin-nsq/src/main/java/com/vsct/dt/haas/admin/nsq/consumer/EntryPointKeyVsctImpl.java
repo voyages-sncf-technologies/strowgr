@@ -42,10 +42,15 @@ public class EntryPointKeyVsctImpl implements EntryPointKey {
 
         EntryPointKeyVsctImpl that = (EntryPointKeyVsctImpl) o;
 
-        if (application != null ? !application.equals(that.application) : that.application != null) return false;
-        if (platform != null ? !platform.equals(that.platform) : that.platform != null) return false;
+        boolean applicationEq = (application != null ?
+                application.equals(that.application) :
+                that.application == null);
+        boolean platformEq = (platform != null ?
+                platform.equals(that.platform) :
+                that.platform == null);
 
-        return true;
+        return applicationEq && platformEq;
+
     }
 
     @Override

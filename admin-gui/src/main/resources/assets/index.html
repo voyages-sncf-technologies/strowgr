@@ -21,19 +21,20 @@
     <script src="webjars/jquery/3.0.0-alpha1/jquery.min.js"></script>
 
     <script src="webjars/lodash/4.0.0/lodash.min.js"></script>
+    <script src="webjars/angular-material-icons/0.6.0/angular-material-icons.min.js"></script>
 
     <style type="text/css">
         .layout-margin {
-            margin: 4px;
+        margin: 4px;
         }
 
         html, body {
-            height: 100%;
-            margin: 0;
+        height: 100%;
+        margin: 0;
         }
 
         #wrapper {
-            min-height: 100%;
+        min-height: 100%;
         }
     </style>
 
@@ -58,7 +59,7 @@
         adminApp.factory('PortProvider', ['$http', function ($http) {
             return {
                 getPort: function (id) {
-                    return $http.get('/api/ports/' + id).then(function (response) {
+                    return $http.get('/api/port/' + id).then(function (response) {
                         return response.data;
                     }, function(error){
                         if(error.status = 404){
@@ -73,9 +74,16 @@
 
             $http({
                 method: 'GET',
-                url: '/api/entrypoints'
+                url: '/api/entrypoint/list'
             }).then(function (response) {
                 $scope.entrypoints = response.data;
+            });
+
+
+            $http.get('/api/haproxy/uri/default-name').then(function (response) {
+                $scope.haproxyUri = response.data
+            }, function(error){
+                console.error("can't load haproxyName "+ haproxyName+". Response is "+response.data);
             });
 
             $scope.loadEntrypoint = function (id) {
@@ -83,6 +91,86 @@
             }
 
         }]);
+
+        adminApp.controller('TemplateDisplay', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
+
+            $http({
+                method: 'GET',
+                url: '/api/entrypoint/'+$scope.context.application+'/'+$scope.context.platform+'/current/template/haproxy',
+                responseType: 'text'
+            }).then(function (response) {
+                console.info("result:"+response.data);
+                $scope.template = response.data;
+            });
+        }]);
+
+        adminApp.directive('templateDisplay', ['$mdDialog',
+            function ($mdDialog) {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/template-display.html',
+                    scope: {
+                        context: '=context',
+                        title: '@',
+                        template: '=template'
+                    },
+                    link: function (scope, element, attrs) {
+                        scope.showContext = function () {
+                            $mdDialog.show({
+                                    templateUrl: 'template-display/popup.html',
+                                    clickOutsideToClose: true,
+                                    scope: scope,
+                                    autoWrap: false,
+                                    openFrom: element,
+                                    closeTo: element,
+                                    preserveScope: true,
+                                    fullscreen: false
+                                });
+                        }
+                    }
+                }
+            }
+        ]);
+
+        adminApp.controller('HaproxyGenerated', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
+            console.log('get haproxy configuration');
+            $http({
+                method: 'GET',
+                url: '/api/entrypoint/'+$scope.context.application+'/'+$scope.context.platform+'/current/configuration/haproxy',
+                responseType: 'text'
+            }).then(function (response) {
+                console.info("result:"+response.data);
+                $scope.haproxyGenerated = response.data;
+            });
+        }]);
+
+        adminApp.directive('haproxyGenerated', ['$mdDialog',
+            function ($mdDialog) {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/haproxy-generated.html',
+                    scope: {
+                        context: '=context',
+                        title: '@',
+                        haproxyGenerated: '=haproxyGenerated'
+                    },
+                    link: function (scope, element, attrs) {
+                        scope.showContext = function () {
+                            $mdDialog.show({
+                                    templateUrl: 'haproxy-generated/popup.html',
+                                    clickOutsideToClose: true,
+                                    scope: scope,
+                                    autoWrap: false,
+                                    openFrom: element,
+                                    closeTo: element,
+                                    preserveScope: true,
+                                    fullscreen: false
+                                });
+                        }
+                    }
+                }
+            }
+        ]);
 
         adminApp.controller('AddEntrypointCtrl', ['$scope', '$http', '$location', function ($scope, $http, $location) {
             /* Init conf object, avoid undefined inner objects and show expected fields */
@@ -135,7 +223,7 @@
                 $http.post('/api/entrypoint/' + $scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf).then(function (response) {
                     $location.path('/');
                 }, function (error) {
-                    console.log(error);
+                    console.info(error);
                 });
             };
 
@@ -144,7 +232,7 @@
         adminApp.directive('entrypointConfigurationView', ['PortProvider',
             function (PortProvider) {
                 return {
-                    restrict: 'E',
+
                     templateUrl: 'partials/entrypoint-configuration-view.html',
                     scope: {
                         conf: '=conf'
@@ -187,6 +275,7 @@
                 }
             }
         ]);
+
 
         adminApp.directive('contextMapInput', [
             function () {
@@ -355,6 +444,7 @@
                     }
                 }
             }]);
+
 
     </script>
 </head>

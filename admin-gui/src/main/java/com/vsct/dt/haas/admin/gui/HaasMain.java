@@ -1,19 +1,18 @@
 package com.vsct.dt.haas.admin.gui;
 
-import com.codahale.metrics.MetricRegistry;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.vsct.dt.haas.admin.core.EntryPointEventHandler;
 import com.vsct.dt.haas.admin.core.TemplateGenerator;
-import com.vsct.dt.haas.admin.core.TemplateLocator;
 import com.vsct.dt.haas.admin.gui.configuration.HaasConfiguration;
-import com.vsct.dt.haas.admin.gui.resource.RestApiResources;
-import com.vsct.dt.haas.admin.nsq.consumer.CommitMessageConsumer;
-import com.vsct.dt.haas.admin.nsq.consumer.RegisterServerMessageConsumer;
+import com.vsct.dt.haas.admin.gui.healthcheck.ConsulHealthcheck;
+import com.vsct.dt.haas.admin.gui.healthcheck.NsqHealthcheck;
+import com.vsct.dt.haas.admin.gui.resource.api.HaproxyResources;
+import com.vsct.dt.haas.admin.gui.resource.api.EntrypointResources;
+import com.vsct.dt.haas.admin.gui.resource.api.PortResources;
 import com.vsct.dt.haas.admin.nsq.producer.Producer;
 import com.vsct.dt.haas.admin.repository.consul.ConsulRepository;
-import com.vsct.dt.haas.admin.scheduler.PeriodicScheduler;
 import com.vsct.dt.haas.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.haas.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.Application;
@@ -48,7 +47,7 @@ public class HaasMain extends Application<HaasConfiguration> {
 
     @Override
     public void run(HaasConfiguration configuration, Environment environment) throws Exception {
-        MetricRegistry metricRegistry = environment.metrics();
+        LOGGER.info("start dropwizard configuration");
 
         /* Main EventBus */
         ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
@@ -56,7 +55,7 @@ public class HaasMain extends Application<HaasConfiguration> {
 
         /* Templates */
         TemplateGenerator templateGenerator = new MustacheTemplateGenerator();
-        TemplateLocator templateLocator = new UriTemplateLocator();
+        UriTemplateLocator templateLocator = new UriTemplateLocator();
 
         /* Repository */
         ConsulRepository repository = configuration.getConsulRepositoryFactory().build(environment);
@@ -74,8 +73,8 @@ public class HaasMain extends Application<HaasConfiguration> {
 
         /* NSQ Consumers */
         NSQLookup lookup = configuration.getNsqLookupfactory().build(environment);
-        CommitMessageConsumer commitMessageConsumer = configuration.getCommitMessageConsumerFactory().build(lookup, configuration.getDefaultHAPName(), eventBus::post, environment);
-        RegisterServerMessageConsumer registerServerMessageConsumer = configuration.getRegisterServerMessageConsumerFactory().build(lookup, eventBus::post, environment);
+        configuration.getCommitMessageConsumerFactory().build(lookup, configuration.getDefaultHAPName(), eventBus::post, environment);
+        configuration.getRegisterServerMessageConsumerFactory().build(lookup, eventBus::post, environment);
 
         /* NSQ Producers */
         Producer producer = configuration.getNsqProducerFactory().build(environment);
@@ -84,14 +83,26 @@ public class HaasMain extends Application<HaasConfiguration> {
         eventBus.register(commitBeginEventListener);
 
         /* Commit schedulers */
-        PeriodicScheduler commitCurrentScheduler = configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
-        PeriodicScheduler commitPendingScheduler = configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
+        configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
+        configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
 
-        /* REST Resource */
-        RestApiResources restApiResource = new RestApiResources(eventBus, repository, repository);
+        /* REST Resources */
+        EntrypointResources restApiResource = new EntrypointResources(eventBus, repository, repository, templateLocator, templateGenerator);
         environment.jersey().register(restApiResource);
 
+        HaproxyResources haproxyResources = new HaproxyResources(repository);
+        environment.jersey().register(haproxyResources);
+
+        PortResources portResources = new PortResources(repository);
+        environment.jersey().register(portResources);
+
         eventBus.register(restApiResource);
+
+        /* Healthchecks */
+        environment.healthChecks().register("nsqlookup", new NsqHealthcheck(configuration.getNsqLookupfactory().getHost(), configuration.getNsqLookupfactory().getPort()));
+        // the healthcheck on producer is done on http port which is by convention tcp port + 1
+        environment.healthChecks().register("nsqproducer", new NsqHealthcheck(configuration.getNsqProducerFactory().getHost(), configuration.getNsqProducerFactory().getPort() + 1));
+        environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
     }
 
 }

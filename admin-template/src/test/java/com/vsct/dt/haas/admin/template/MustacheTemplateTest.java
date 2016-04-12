@@ -5,13 +5,12 @@ import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointConfiguration;
+import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.haas.admin.template.generator.MustacheTemplateGenerator;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
@@ -33,7 +32,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPointConfiguration configuration = new EntryPointConfiguration("default-name", "hapocer1", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.standard.context.mustache").getFile());
@@ -69,7 +68,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPointConfiguration configuration = new EntryPointConfiguration("default-name", "hapocer1", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.user.context.on.server.mustache").getFile());

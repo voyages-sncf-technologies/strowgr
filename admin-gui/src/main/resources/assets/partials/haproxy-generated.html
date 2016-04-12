@@ -1,0 +1,13 @@
+<div flex>
+    <md-icon icon="build" style="font-size:16px;padding-left:3px;cursor:pointer;" ng-click="showContext()">build</md-icon>
+    <md-tooltip>G&eacute;n&eacute;re la configuration haproxy</md-tooltip>
+</div>
+<script type="text/ng-template" id="haproxy-generated/popup.html">
+    <md-dialog style="width: 800px;">
+        <md-dialog-content>
+            <div ng-controller="HaproxyGenerated">
+                <pre>{{haproxyGenerated}}</pre>
+            </div>
+        </md-dialog-content>
+    </md-dialog>
+</script>

@@ -1,9 +1,9 @@
-<md-button class="md-fab md-primary md-mini" ng-click="showContext()">
-    <md-icon class="material-icons" style="font-size: 22px">menu</md-icon>
+<span>
+    <md-icon icon="zoom_in"  ng-click="showContext()">zoom_in</md-icon>
     <md-tooltip>Voir le contexte associ&eacute;</md-tooltip>
-</md-button>
+</span>
 <script type="text/ng-template" id="context-map/popup.html">
-    <md-dialog>
+    <md-dialog style="width: 500px;">
         <md-dialog-content>
             <div layout-padding>
                 <h4>Contexte {{title}}</h4>

@@ -5,14 +5,19 @@ import com.vsct.dt.haas.admin.core.EntryPointRepository;
 import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.haas.admin.core.event.in.TryCommitPendingConfigurationEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
+ * Schedule entrypoint lifecycles.
+ *
  * Created by william_montaz on 11/02/2016.
  */
 public class PeriodicScheduler<T> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicScheduler.class);
 
     private final EntryPointRepository repository;
     private final Consumer<T> consumer;
@@ -27,7 +32,7 @@ public class PeriodicScheduler<T> {
                 try {
                     Thread.sleep(periodMilli);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    LOGGER.error("a sleep interruption", e);
                     return;
                 }
                 for (String ep : repository.getEntryPointsId()) {
@@ -54,15 +59,11 @@ public class PeriodicScheduler<T> {
     }
 
     public static PeriodicScheduler<TryCommitPendingConfigurationEvent> newPeriodicCommitPendingScheduler(EntryPointRepository repository, Consumer<TryCommitPendingConfigurationEvent> consumer, long period) {
-        return new PeriodicScheduler<>(repository, ep -> {
-            return new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep));
-        }, consumer, period);
+        return new PeriodicScheduler<>(repository, ep -> new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)), consumer, period);
     }
 
     public static PeriodicScheduler<TryCommitCurrentConfigurationEvent> newPeriodicCommitCurrentScheduler(EntryPointRepository repository, Consumer<TryCommitCurrentConfigurationEvent> consumer, long period) {
-        return new PeriodicScheduler<>(repository, ep -> {
-            return new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep));
-        }, consumer, period);
+        return new PeriodicScheduler<>(repository, ep -> new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)), consumer, period);
     }
 
 }

@@ -84,4 +84,13 @@
         </plugins>
 
     </build>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>dt-snapshots</id>
+            <name>DT Snapshots</name>
+            <url>http://nexus/content/repositories/dt-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
