@@ -11,6 +11,7 @@ import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointBackendServerMappingJson;
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointMappingJson;
+import com.vsct.dt.haas.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.haas.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,9 +57,20 @@ public class EntrypointResources {
     @Path("/{id : .+}")
     @Timed
     public void addEntryPoint(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id, @Valid EntryPointMappingJson configuration) {
-        LOGGER.info("Get all criteria");
-
         AddEntryPointEvent event = new AddEntryPointEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), configuration);
+
+        new CallbackBuilder(event.getCorrelationId())
+                .whenReceive(new AsyncResponseCallback(asyncResponse))
+                .timeoutAfter(10, TimeUnit.SECONDS);
+
+        eventBus.post(event);
+    }
+
+    @POST
+    @Path("/{id : .+}")
+    @Timed
+    public void updateEntryPoint(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id, @Valid UpdatedEntryPointMappingJson updatedConfiguration){
+        UpdateEntryPointEvent event = new UpdateEntryPointEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), updatedConfiguration);
 
         new CallbackBuilder(event.getCorrelationId())
                 .whenReceive(new AsyncResponseCallback(asyncResponse))
