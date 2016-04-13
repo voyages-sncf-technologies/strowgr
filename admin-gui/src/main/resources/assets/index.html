@@ -25,16 +25,16 @@
 
     <style type="text/css">
         .layout-margin {
-        margin: 4px;
+            margin: 4px;
         }
 
         html, body {
-        height: 100%;
-        margin: 0;
+            height: 100%;
+            margin: 0;
         }
 
         #wrapper {
-        min-height: 100%;
+            min-height: 100%;
         }
     </style>
 
@@ -117,15 +117,15 @@
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
                             $mdDialog.show({
-                                    templateUrl: 'template-display/popup.html',
-                                    clickOutsideToClose: true,
-                                    scope: scope,
-                                    autoWrap: false,
-                                    openFrom: element,
-                                    closeTo: element,
-                                    preserveScope: true,
-                                    fullscreen: false
-                                });
+                                templateUrl: 'template-display/popup.html',
+                                clickOutsideToClose: true,
+                                scope: scope,
+                                autoWrap: false,
+                                openFrom: element,
+                                closeTo: element,
+                                preserveScope: true,
+                                fullscreen: false
+                            });
                         }
                     }
                 }
@@ -157,15 +157,15 @@
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
                             $mdDialog.show({
-                                    templateUrl: 'haproxy-generated/popup.html',
-                                    clickOutsideToClose: true,
-                                    scope: scope,
-                                    autoWrap: false,
-                                    openFrom: element,
-                                    closeTo: element,
-                                    preserveScope: true,
-                                    fullscreen: false
-                                });
+                                templateUrl: 'haproxy-generated/popup.html',
+                                clickOutsideToClose: true,
+                                scope: scope,
+                                autoWrap: false,
+                                openFrom: element,
+                                closeTo: element,
+                                preserveScope: true,
+                                fullscreen: false
+                            });
                         }
                     }
                 }
@@ -229,6 +229,94 @@
 
         }]);
 
+        adminApp.directive('entrypointUpdate', ['$http', function($http){
+            return {
+                templateUrl: 'partials/update-entrypoint.html',
+                scope: {
+                    conf: '=conf'
+                },
+                link: function(scope, element, attrs){
+
+                    scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
+                    scope.forbiddenFrontendKeys = ['id', 'port'];
+                    scope.forbiddenBackendKeys = ['id'];
+                    scope.forbiddenServerKeys = ['id','hostname','ip','port'];
+
+                    scope.addFrontend = function () {
+                        $scope.conf.frontends.push({
+                            id: "",
+                            context: {}
+                        });
+                    };
+
+                    scope.removeFrontend = function (frontend) {
+                        var index = $scope.conf.frontends.indexOf(frontend);
+                        if (index > -1) {
+                            $scope.conf.frontends.splice(index, 1);
+                        }
+                    };
+
+                    scope.addBackend = function () {
+                        $scope.conf.backends.push({
+                            id: "",
+                            servers: [],
+                            context: {}
+                        });
+                    };
+
+                    scope.removeBackend = function (backend) {
+                        var index = $scope.conf.backends.indexOf(backend);
+                        if (index > -1) {
+                            $scope.conf.backends.splice(index, 1);
+                        }
+                    };
+
+                    scope.updateEntrypoint = function() {
+                        //Create the update model
+                        var frontends = [];
+                        for(var i = 0; i < scope.conf.backends.length; i++){
+                            var f = scope.conf.frontends[i];
+                            frontends.push({
+                                id: f.id,
+                                context: f.context
+                            })
+                        }
+
+                        var backends = [];
+                        for(var i = 0; i < scope.conf.backends.length; i++){
+                            var b = scope.conf.backends[i];
+                            var servers = [];
+                            for(var j = 0; j < b.servers.length; j++){
+                                servers.push({
+                                    id: b.servers[j].id,
+                                    contextOverride: b.servers[j].contextOverride
+                                });
+                            }
+                            backends.push({
+                                id: b.id,
+                                context: b.context,
+                                servers: servers
+                            })
+                        }
+
+                        var updateModel = {
+                            hapUser: scope.conf.hapUser,
+                            context: scope.conf.context,
+                            frontends: frontends,
+                            backends: backends
+                        };
+
+                        $http.patch('/api/entrypoints/' + scope.conf.context.application + '/' + scope.conf.context.platform, updateModel).then(function (response) {
+                            $location.path('/');
+                        }, function (error) {
+                            console.info(error);
+                        });
+                    };
+
+                }
+            }
+        }]);
+
         adminApp.directive('entrypointConfigurationView', ['PortProvider',
             function (PortProvider) {
                 return {
@@ -284,7 +372,8 @@
                     templateUrl: 'partials/context-map-input.html',
                     scope: {
                         context: '=context',
-                        forbidden: '=?forbidden'
+                        forbidden: '=?forbidden',
+                        readonly: '=readonly'
                     },
                     link: function (scope, element, attrs) {
 
@@ -441,6 +530,10 @@
                         scope.$on('$destroy', function () {
                             $interval.cancel(refreshAuto);
                         });
+
+                        scope.load_update_model = function(conf){
+                            scope.update_model = conf;
+                        };
                     }
                 }
             }]);
