@@ -220,7 +220,7 @@
             };
 
             $scope.createEntrypoint = function () {
-                $http.post('/api/entrypoints/' + $scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf).then(function (response) {
+                $http.put('/api/entrypoints/' + $scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf).then(function (response) {
                     $location.path('/');
                 }, function (error) {
                     console.info(error);

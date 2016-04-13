@@ -53,7 +53,7 @@ public class EntrypointResources {
         this.templateGenerator = templateGenerator;
     }
 
-    @POST
+    @PUT
     @Path("/{id : .+}")
     @Timed
     public void addEntryPoint(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id, @Valid EntryPointMappingJson configuration) {
