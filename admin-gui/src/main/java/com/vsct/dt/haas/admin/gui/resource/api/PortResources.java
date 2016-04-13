@@ -6,7 +6,7 @@ import javax.ws.rs.*;
 import java.util.HashMap;
 import java.util.Map;
 
-@Path("/port")
+@Path("/ports")
 public class PortResources {
 
     @POST
