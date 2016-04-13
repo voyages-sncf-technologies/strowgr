@@ -1,4 +1,4 @@
-FROM golang:1.5
+FROM dockerregistrydev.socrate.vsct.fr/golang:1.5
 
 ENV SRC /go/src/gitlab.socrate.vsct.fr/dt/haaasd
 
