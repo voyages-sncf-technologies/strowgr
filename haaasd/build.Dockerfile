@@ -1,4 +1,4 @@
-FROM golang:1.5
+FROM dockerregistrydev.socrate.vsct.fr/golang:1.5
 
 RUN go get -v github.com/Sirupsen/logrus
 RUN go get -v github.com/BurntSushi/toml/cmd/tomlv
