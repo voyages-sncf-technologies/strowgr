@@ -13,6 +13,7 @@ import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointBackendServerMappingJso
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.haas.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.haas.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
+import io.dropwizard.jersey.PATCH;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,7 @@ public class EntrypointResources {
         eventBus.post(event);
     }
 
-    @POST
+    @PATCH
     @Path("/{id : .+}")
     @Timed
     public void updateEntryPoint(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id, @Valid UpdatedEntryPointMappingJson updatedConfiguration){
