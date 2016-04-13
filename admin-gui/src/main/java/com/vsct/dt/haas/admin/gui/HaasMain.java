@@ -1,8 +1,7 @@
 package com.vsct.dt.haas.admin.gui;
 
 import com.github.brainlag.nsq.lookup.NSQLookup;
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.*;
 import com.vsct.dt.haas.admin.core.EntryPointEventHandler;
 import com.vsct.dt.haas.admin.core.TemplateGenerator;
 import com.vsct.dt.haas.admin.gui.configuration.HaasConfiguration;
@@ -45,13 +44,24 @@ public class HaasMain extends Application<HaasConfiguration> {
         haasConfiguration.addBundle(new AssetsBundle("/META-INF/resources/webjars", "/webjars", null, "webjars"));
     }
 
+    @Subscribe
+    public void handleDeadEvent(DeadEvent deadEvent) {
+        LOGGER.error("an event has no subscribers: {}", deadEvent);
+    }
+
     @Override
     public void run(HaasConfiguration configuration, Environment environment) throws Exception {
         LOGGER.info("start dropwizard configuration");
 
         /* Main EventBus */
         ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
-        EventBus eventBus = new AsyncEventBus(executor);
+        EventBus eventBus = new AsyncEventBus(executor, new SubscriberExceptionHandler() {
+            @Override
+            public void handleException(Throwable exception, SubscriberExceptionContext context) {
+                LOGGER.error("exception on main event bus. Context: " + context, environment);
+            }
+        });
+        eventBus.register(this); // for dead events
 
         /* Templates */
         TemplateGenerator templateGenerator = new MustacheTemplateGenerator();

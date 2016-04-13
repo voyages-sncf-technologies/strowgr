@@ -45,11 +45,12 @@ public class EntryPointEventHandler {
         try {
             this.stateManager.lock(key);
             if (!stateManager.getCommittingConfiguration(key).isPresent() && !stateManager.getCurrentConfiguration(key).isPresent()) {
-                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, event.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event "+event)));
+                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, event.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + event)));
 
                 if (preparedConfiguration.isPresent()) {
-                    LOGGER.info("new EntryPoint {} added", key.getID());
-                    outputBus.post(new EntryPointAddedEvent(event.getCorrelationId(), key, preparedConfiguration.get()));
+                    EntryPointAddedEvent entryPointAddedEvent = new EntryPointAddedEvent(event.getCorrelationId(), key, preparedConfiguration.get());
+                    LOGGER.info("from handle AddEntryPointEvent new EntryPoint {} added -> {}", key.getID(), entryPointAddedEvent);
+                    outputBus.post(entryPointAddedEvent);
                 }
             }
         } finally {
@@ -59,6 +60,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(RegisterServerEvent event) {
+        LOGGER.info("receive event {}", event);
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
@@ -80,10 +82,11 @@ public class EntryPointEventHandler {
                                     LOGGER.debug("- registered server {}", server);
                                 }
                             }
-                            outputBus.post(new ServerRegisteredEvent(event.getCorrelationId(), event.getKey(), event.getBackend(), event.getServers()));
+                            ServerRegisteredEvent serverRegisteredEvent = new ServerRegisteredEvent(event.getCorrelationId(), event.getKey(), event.getBackend(), event.getServers());
+                            LOGGER.debug("post to event bus event {}", serverRegisteredEvent);
+                            outputBus.post(serverRegisteredEvent);
                         }
                     });
-
 
         } finally {
             this.stateManager.release(key);
@@ -100,7 +103,9 @@ public class EntryPointEventHandler {
             Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration);
             String conf = templateGenerator.generate(template, committingConfiguration, portsMapping);
             String syslogConf = templateGenerator.generateSyslogFragment(committingConfiguration, portsMapping);
-            outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration, conf, syslogConf));
+            CommitBeginEvent commitBeginEvent = new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration, conf, syslogConf);
+            LOGGER.debug("from handleTryCommitCurrentConfigurationEvent -> post to event bus event {}", commitBeginEvent);
+            outputBus.post(commitBeginEvent);
         } finally {
             this.stateManager.release(key);
         }
@@ -117,7 +122,9 @@ public class EntryPointEventHandler {
                 Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration.get());
                 String conf = templateGenerator.generate(template, committingConfiguration.get(), portsMapping);
                 String syslogConf = templateGenerator.generateSyslogFragment(committingConfiguration.get(), portsMapping);
-                outputBus.post(new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf, syslogConf));
+                CommitBeginEvent commitBeginEvent = new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf, syslogConf);
+                LOGGER.debug("from handleTryCommitPendingConfigurationEvent -> post to event bus event {}", commitBeginEvent);
+                outputBus.post(commitBeginEvent);
             } else {
                 LOGGER.debug("no pending configuring is currently in commit phase");
             }

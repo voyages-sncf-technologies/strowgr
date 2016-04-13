@@ -126,6 +126,7 @@ public class EntrypointResources {
                                  @PathParam("backend") String backend,
                                  EntryPointBackendServerMappingJson serverJson) {
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), backend, Sets.newHashSet(serverJson));
+        LOGGER.debug("receive RegisterServerEvent {} for key {} and backend {}", event, id, backend);
         eventBus.post(event);
         return "Request posted, look info to follow actions";
     }
@@ -183,17 +184,17 @@ public class EntrypointResources {
     }
 
     @Subscribe
-    public void handle(CommitCompleteEvent commitCompleteEvent){
+    public void handle(CommitCompleteEvent commitCompleteEvent) {
         handleWithCorrelationId(commitCompleteEvent);
     }
 
     @Subscribe
-    public void handle(EntryPointAddedEvent entryPointAddedEvent){
+    public void handle(EntryPointAddedEvent entryPointAddedEvent) {
         handleWithCorrelationId(entryPointAddedEvent);
     }
 
     @Subscribe
-    public void handle(ServerRegisteredEvent serverRegisteredEvent){
+    public void handle(ServerRegisteredEvent serverRegisteredEvent) {
         handleWithCorrelationId(serverRegisteredEvent);
     }
 
@@ -232,6 +233,7 @@ public class EntrypointResources {
             timeoutExecutor.schedule(() -> {
                 callback.whenTimedOut();
                 callbacks.remove(eventId);
+                LOGGER.trace("timeout reached, remove event {} from callbacks", eventId);
             }, delay, unit);
 
             callbacks.put(eventId, callback);
