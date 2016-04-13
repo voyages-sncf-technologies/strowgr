@@ -2,7 +2,6 @@ package com.vsct.dt.haas.admin.core;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.haas.admin.core.configuration.IncomingEntryPointBackendServer;
@@ -72,7 +71,7 @@ public class EntryPointEventHandler {
                     .ifPresent(c -> {
                         Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
                         if(preparedConfiguration.isPresent()){
-                            outputBus.post(new EntryPointUpdatedEvent(event.getCorrelationId(), key));
+                            outputBus.post(new EntryPointUpdatedEvent(event.getCorrelationId(), key, preparedConfiguration.get()));
                         }
                     });
 

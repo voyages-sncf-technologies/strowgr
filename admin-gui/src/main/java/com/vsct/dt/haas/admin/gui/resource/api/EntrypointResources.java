@@ -9,7 +9,9 @@ import com.vsct.dt.haas.admin.core.*;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
-import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointBackendServerMappingJson;
+import com.vsct.dt.haas.admin.core.event.out.CommitBeginEvent;
+import com.vsct.dt.haas.admin.core.event.out.EntryPointAddedEvent;
+import com.vsct.dt.haas.admin.core.event.out.EntryPointUpdatedEvent;
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.haas.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.haas.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
@@ -22,6 +24,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -38,12 +41,12 @@ public class EntrypointResources {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntrypointResources.class);
 
-    private final EventBus eventBus;
+    private final EventBus             eventBus;
     private final EntryPointRepository repository;
-    private final PortProvider portProvider;
-    private Map<String, AsyncResponseCallback> callbacks = new ConcurrentHashMap<>();
-    private ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
-    private final TemplateLocator templateLocator;
+    private final PortProvider         portProvider;
+    private Map<String, AsyncResponseCallback> callbacks       = new ConcurrentHashMap<>();
+    private ScheduledExecutorService           timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final TemplateLocator   templateLocator;
     private final TemplateGenerator templateGenerator;
 
     public EntrypointResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider, TemplateLocator templateLocator, TemplateGenerator templateGenerator) {
@@ -54,6 +57,12 @@ public class EntrypointResources {
         this.templateGenerator = templateGenerator;
     }
 
+    @GET
+    @Timed
+    public Set<String> getEntryPoints() {
+        return repository.getEntryPointsId();
+    }
+
     @PUT
     @Path("/{id : .+}")
     @Timed
@@ -61,7 +70,12 @@ public class EntrypointResources {
         AddEntryPointEvent event = new AddEntryPointEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), configuration);
 
         new CallbackBuilder(event.getCorrelationId())
-                .whenReceive(new AsyncResponseCallback(asyncResponse))
+                .whenReceive(new AsyncResponseCallback<EntryPointAddedEvent>(asyncResponse) {
+                    @Override
+                    void handle(EntryPointAddedEvent event) throws Exception {
+                        asyncResponse.resume(Response.status(Response.Status.CREATED).entity(event.getConfiguration().get()).build());
+                    }
+                })
                 .timeoutAfter(10, TimeUnit.SECONDS);
 
         eventBus.post(event);
@@ -70,11 +84,16 @@ public class EntrypointResources {
     @PATCH
     @Path("/{id : .+}")
     @Timed
-    public void updateEntryPoint(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id, @Valid UpdatedEntryPointMappingJson updatedConfiguration){
+    public void updateEntryPoint(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id, @Valid UpdatedEntryPointMappingJson updatedConfiguration) {
         UpdateEntryPointEvent event = new UpdateEntryPointEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), updatedConfiguration);
 
         new CallbackBuilder(event.getCorrelationId())
-                .whenReceive(new AsyncResponseCallback(asyncResponse))
+                .whenReceive(new AsyncResponseCallback<EntryPointUpdatedEvent>(asyncResponse) {
+                    @Override
+                    void handle(EntryPointUpdatedEvent event) throws Exception {
+                        asyncResponse.resume(event.getConfiguration().get());
+                    }
+                })
                 .timeoutAfter(10, TimeUnit.SECONDS);
 
         eventBus.post(event);
@@ -82,6 +101,7 @@ public class EntrypointResources {
 
     @GET
     @Path("/{id : .+}/current")
+    @Timed
     public EntryPointMappingJson getCurrent(@PathParam("id") String id) throws JsonProcessingException {
         Optional<EntryPoint> configuration = repository.getCurrentConfiguration(new EntryPointKeyDefaultImpl(id));
 
@@ -90,6 +110,7 @@ public class EntrypointResources {
 
     @GET
     @Path("/{id : .+}/pending")
+    @Timed
     public EntryPointMappingJson getPending(@PathParam("id") String id) throws JsonProcessingException {
         Optional<EntryPoint> configuration = repository.getPendingConfiguration(new EntryPointKeyDefaultImpl(id));
 
@@ -98,62 +119,11 @@ public class EntrypointResources {
 
     @GET
     @Path("/{id : .+}/committing")
+    @Timed
     public EntryPointMappingJson getCommitting(@PathParam("id") String id) throws JsonProcessingException {
         Optional<EntryPoint> configuration = repository.getCommittingConfiguration(new EntryPointKeyDefaultImpl(id));
 
         return new EntryPointMappingJson(configuration.orElseThrow(NotFoundException::new));
-    }
-
-    @GET
-    @Path("/list")
-    public Set<String> getEntryPoints() {
-        return repository.getEntryPointsId();
-    }
-
-    @POST
-    @Path("/{id : .+}/try-commit-pending")
-    public void tryCommitPending(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id) {
-        TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
-
-        new CallbackBuilder(event.getCorrelationId()).whenReceive(
-                new AsyncResponseCallback(asyncResponse)).timeoutAfter(10, TimeUnit.SECONDS);
-
-        eventBus.post(event);
-    }
-
-    /* DEBUGGING METHODS */
-    @POST
-    @Path("/{id : .+}/try-commit-current")
-    public String tryCommitCurrent(@PathParam("id") String id) {
-        TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
-        eventBus.post(event);
-        return "Request posted, look info to follow actions";
-    }
-
-    @POST
-    @Path("/{id : .+}/backend/{backend}/register-server")
-    public String registerServer(@PathParam("id") String id,
-                                 @PathParam("backend") String backend,
-                                 IncomingEntryPointBackendServerJsonRepresentation serverJson) {
-        RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), backend, Sets.newHashSet(serverJson));
-        eventBus.post(event);
-        return "Request posted, look info to follow actions";
-    }
-
-    @POST
-    @Path("/{id : .+}/send-commit-success/{correlationId}")
-    public String sendCommitSuccess(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
-        CommitSuccessEvent event = new CommitSuccessEvent(correlationId, new EntryPointKeyDefaultImpl(id));
-        eventBus.post(event);
-        return "Request posted, look info to follow actions";
-    }
-
-    @POST
-    @Path("/{id : .+}/send-commit-failure/{correlationId}")
-    public String sendCommitFailure(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
-        CommitFailureEvent event = new CommitFailureEvent(correlationId, new EntryPointKeyDefaultImpl(id));
-        eventBus.post(event);
-        return "Request posted, look info to follow actions";
     }
 
     @GET
@@ -178,13 +148,75 @@ public class EntrypointResources {
                 .generateHaproxyConfiguration(key, templateLocator, templateGenerator, portProvider);
     }
 
+    /* DEBUGGING METHODS */
+    @POST
+    @Path("/{id : .+}/try-commit-current")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String tryCommitCurrent(@PathParam("id") String id) {
+        TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
+        eventBus.post(event);
+        return "Request posted, look info to follow actions";
+    }
+
+    @POST
+    @Path("/{id : .+}/try-commit-pending")
+    @Produces(MediaType.TEXT_PLAIN)
+    public void tryCommitPending(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id) {
+        TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
+
+        new CallbackBuilder(event.getCorrelationId()).whenReceive(
+                new AsyncResponseCallback<CommitBeginEvent>(asyncResponse) {
+                    @Override
+                    void handle(CommitBeginEvent event) throws Exception {
+                        asyncResponse.resume(event.getConfiguration());
+                    }
+                }).timeoutAfter(10, TimeUnit.SECONDS);
+
+        eventBus.post(event);
+    }
+
+    @POST
+    @Path("/{id : .+}/backend/{backend}/register-server")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String registerServer(@PathParam("id") String id,
+                                 @PathParam("backend") String backend,
+                                 IncomingEntryPointBackendServerJsonRepresentation serverJson) {
+        RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), backend, Sets.newHashSet(serverJson));
+        eventBus.post(event);
+        return "Request posted, look info to follow actions";
+    }
+
+    @POST
+    @Path("/{id : .+}/send-commit-success/{correlationId}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String sendCommitSuccess(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
+        CommitSuccessEvent event = new CommitSuccessEvent(correlationId, new EntryPointKeyDefaultImpl(id));
+        eventBus.post(event);
+        return "Request posted, look info to follow actions";
+    }
+
+    @POST
+    @Path("/{id : .+}/send-commit-failure/{correlationId}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String sendCommitFailure(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
+        CommitFailureEvent event = new CommitFailureEvent(correlationId, new EntryPointKeyDefaultImpl(id));
+        eventBus.post(event);
+        return "Request posted, look info to follow actions";
+    }
+
     @Subscribe
-    public void handle(EntryPointEvent event) {
+    public synchronized void handle(EntryPointEvent event) {
         try {
             AsyncResponseCallback asyncResponseCallback = callbacks.remove(event.getCorrelationId());
             if (asyncResponseCallback != null) {
-                asyncResponseCallback.handle(event);
-            } else {
+                try{
+                    asyncResponseCallback.handle(event);
+                } catch (ClassCastException e){
+                    //This means it was not the event type expected. Put the asyncResponseCallBack back
+                    callbacks.put(event.getCorrelationId(), asyncResponseCallback);
+                }
+            }
+            else {
                 LOGGER.warn("can't find callback for async response of the event {}", event);
             }
         } catch (Exception e) {
@@ -192,25 +224,23 @@ public class EntrypointResources {
         }
     }
 
-    private class AsyncResponseCallback {
+    private abstract class AsyncResponseCallback<T> {
         private final AsyncResponse asyncResponse;
 
         protected AsyncResponseCallback(AsyncResponse asyncResponse) {
             this.asyncResponse = asyncResponse;
         }
 
-        void handle(EntryPointEvent event) throws Exception {
-            asyncResponse.resume(event.getConfiguration());
-        }
+        abstract void handle(T event) throws Exception;
 
         public void whenTimedOut() {
-            asyncResponse.resume("Timeout");
+            asyncResponse.resume(Response.status(Response.Status.GATEWAY_TIMEOUT).build());
         }
     }
 
     private class CallbackBuilder {
 
-        String eventId;
+        String                eventId;
         AsyncResponseCallback callback;
 
         CallbackBuilder(String eventId) {
