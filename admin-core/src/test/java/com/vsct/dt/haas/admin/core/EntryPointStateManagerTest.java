@@ -33,7 +33,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -42,7 +41,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser2")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -65,7 +63,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -74,7 +71,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -97,7 +93,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -106,7 +101,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser2")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -132,7 +126,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -141,7 +134,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -167,7 +159,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -192,7 +183,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -218,7 +208,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -227,7 +216,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -267,7 +255,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -292,7 +279,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -301,7 +287,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -353,7 +338,6 @@ public class EntryPointStateManagerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 

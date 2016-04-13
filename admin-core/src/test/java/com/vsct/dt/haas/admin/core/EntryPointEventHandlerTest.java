@@ -43,7 +43,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -67,7 +66,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -76,7 +74,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -99,7 +96,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -108,7 +104,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -342,7 +337,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
         when(stateManager.tryCommitCurrent(key)).thenReturn(Optional.of(entryPoint));
@@ -365,7 +359,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
         when(stateManager.tryCommitPending(key)).thenReturn(Optional.of(entryPoint));
@@ -423,7 +416,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -432,7 +424,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -441,7 +432,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -452,7 +442,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -479,7 +468,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -488,7 +476,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -499,7 +486,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -526,7 +512,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -537,7 +522,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -563,7 +547,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -574,7 +557,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -605,7 +587,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -616,7 +597,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -653,7 +633,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -664,7 +643,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -703,7 +681,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -714,7 +691,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -750,7 +726,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(backend))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
@@ -766,7 +741,6 @@ public class EntryPointEventHandlerTest {
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.of(expectedBackend1, expectedBackend2))
-                .withSyslogPort("666")
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 

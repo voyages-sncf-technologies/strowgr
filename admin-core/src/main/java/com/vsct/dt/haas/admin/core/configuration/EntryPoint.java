@@ -195,7 +195,6 @@ public class EntryPoint {
                 .withUser(updatedEntryPoint.getHapUser())
                 .definesFrontends(updatedEntryPoint.getFrontends().stream().map(f -> new EntryPointFrontend(f.getId(), f.getContext())).collect(Collectors.toSet()))
                 .definesBackends(newBackends)
-                .withSyslogPort("666") //TODO Dummy value should be removed
                 .withGlobalContext(updatedEntryPoint.getContext())
                 .build();
     }
@@ -235,22 +234,18 @@ public class EntryPoint {
     }
 
     public interface IBackends {
-        ISyslogPort definesBackends(Set<EntryPointBackend> backends);
+        IContext definesBackends(Set<EntryPointBackend> backends);
     }
 
     public interface IContext {
         IBuild withGlobalContext(Map<String, String> context);
     }
 
-    public interface ISyslogPort {
-        IContext withSyslogPort(String syslogPort);
-    }
-
     public interface IBuild {
         EntryPoint build();
     }
 
-    public static class Builder implements IHapUSer, IFrontends, IBackends, IContext, IBuild, ISyslogPort {
+    public static class Builder implements IHapUSer, IFrontends, IBackends, IContext, IBuild {
 
         private Set<EntryPointBackend> backends;
         private Set<EntryPointFrontend> frontends;
@@ -264,13 +259,7 @@ public class EntryPoint {
         }
 
         @Override
-        public IContext withSyslogPort(String syslogPort) {
-            this.syslogPort = syslogPort;
-            return this;
-        }
-
-        @Override
-        public ISyslogPort definesBackends(Set<EntryPointBackend> backends) {
+        public IContext definesBackends(Set<EntryPointBackend> backends) {
             this.backends = backends;
             return this;
         }
