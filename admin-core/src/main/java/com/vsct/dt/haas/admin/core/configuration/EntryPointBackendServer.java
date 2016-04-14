@@ -48,7 +48,7 @@ public class EntryPointBackendServer {
     }
 
     public HashMap<String, String> getContextOverride() {
-        return contextOverride;
+        return new HashMap<>(contextOverride);
     }
 
     public EntryPointBackendServer put(String key, String value) {
