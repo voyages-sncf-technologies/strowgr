@@ -20,8 +20,8 @@ import (
 var (
 	ip = flag.String("ip", "4.3.2.1", "Node ip address")
 	configFile = flag.String("config", "haaas.conf", "Configuration file")
-	versionFlag = flag.Bool("version", false, "Print current version")
-	verboseFlag = flag.Bool("verbose", false, "Debug mode")
+	version = flag.Bool("version", false, "Print current version")
+	verbose = flag.Bool("verbose", false, "Log in verbose mode")
 	config = nsq.NewConfig()
 	properties *haaasd.Config
 	daemon      *haaasd.Daemon
@@ -33,12 +33,12 @@ func main() {
 	log.SetFormatter(&log.TextFormatter{})
 	flag.Parse()
 
-	if *versionFlag {
+	if *version {
 		println(haaasd.AppVersion)
 		os.Exit(0)
 	}
 
-	if *verboseFlag{
+	if *verbose {
 		log.SetLevel(log.DebugLevel)
 	}
 

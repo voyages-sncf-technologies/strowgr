@@ -15,8 +15,8 @@ all: docker-build docker-image
 generate_version:
 	echo "package haaasd\nconst AppVersion = \"$(VERSION)\"" > $(CURDIR)/src/haaasd/version.go
 
-build: src/haaasd.go
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 cmd/haaasd.go
+build: src/cmd/haaasd.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 src/cmd/haaasd.go
 
 docker-builder:
 	docker build -t $(IMAGE)-builder -f build.Dockerfile .
