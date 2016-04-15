@@ -69,7 +69,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 			"role": hap.Role,
 			"application": data.Application,
 			"plateform":   data.Platform,
-		}).Info("Unchanged configuration")
+		}).Debug("Unchanged configuration")
 		return UNCHANGED, nil
 	}
 
