@@ -57,7 +57,9 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 		}).Error("Cannot read old configuration")
 		return ERR_CONF, err
 	}
-
+	if log.GetLevel() == log.DebugLevel {
+		hap.dumpConfiguration(hap.NewDebugPath(), newConf, data)
+	}
 	if bytes.Equal(oldConf, newConf) {
 		log.WithFields(log.Fields{
 			"correlationId": data.Correlationid,
@@ -90,7 +92,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 			"application": data.Application,
 			"plateform":   data.Platform,
 		}).WithError(err).Error("Reload failed")
-		hap.dumpConfiguration(newConf, data)
+		hap.dumpConfiguration(hap.NewErrorPath(), newConf, data)
 		err = hap.rollback(data.Correlationid)
 		return ERR_RELOAD, err
 	}
@@ -110,9 +112,9 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 }
 
 // dumpConfiguration dumps the new configuration file with context for debugging purpose
-func (hap *Haproxy) dumpConfiguration(newConf []byte, data *EventMessage) {
-	errorFilename := hap.NewErrorPath()
-	f, err2 := os.Create(errorFilename)
+func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *EventMessage) {
+
+	f, err2 := os.Create(filename)
 	defer f.Close()
 	if err2 == nil {
 		f.WriteString("================================================================\n")
@@ -125,10 +127,10 @@ func (hap *Haproxy) dumpConfiguration(newConf []byte, data *EventMessage) {
 
 		log.WithFields(log.Fields{
 			"correlationId": data.Correlationid,
-			"filename": errorFilename,
+			"filename": filename,
 			"application": data.Application,
 			"platform": data.Platform,
-		}).Info("Invalid conf logged into %s")
+		}).Info("Dump configuration")
 	}
 }
 
@@ -152,6 +154,13 @@ func (hap *Haproxy) confArchivePath() string {
 // It returns the full path to the file
 func (hap *Haproxy) NewErrorPath() string {
 	baseDir := hap.properties.HapHome + "/" + hap.Application + "/errors"
+	os.MkdirAll(baseDir, 0755)
+	prefix := time.Now().Format("20060102150405")
+	return baseDir + "/" + prefix + "_" + hap.Application + hap.Platform + ".log"
+}
+
+func (hap *Haproxy) NewDebugPath() string {
+	baseDir := hap.properties.HapHome + "/" + hap.Application + "/dump"
 	os.MkdirAll(baseDir, 0755)
 	prefix := time.Now().Format("20060102150405")
 	return baseDir + "/" + prefix + "_" + hap.Application + hap.Platform + ".log"
