@@ -169,7 +169,7 @@ func filteredHandler(event string, message *nsq.Message, target string, f haaasd
 		}
 		f(data)
 	} else {
-		log.WithField("event", event).Info("Ignore event")
+		log.WithField("event", event).Debug("Ignore event")
 	}
 
 	return nil
@@ -183,7 +183,7 @@ func onCommitSlaveRequested(message *nsq.Message) error {
 }
 
 func reloadSlave(data *haaasd.EventMessage) error {
-	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
+	hap := haaasd.NewHaproxy("slave",properties, data.Application, data.Platform, data.HapVersion)
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != haaasd.UNCHANGED {
@@ -191,14 +191,18 @@ func reloadSlave(data *haaasd.EventMessage) error {
 		}
 		publishMessage("commit_slave_completed_", data)
 	} else {
-		log.WithError(err).Error("Commit failed")
+		log.WithFields(log.Fields{
+			"correlationId": data.Correlationid,
+			"application" : data.Application,
+			"platform": data.Platform,
+		}).WithError(err).Error("Commit failed")
 		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 	}
 	return nil
 }
 
 func reloadMaster(data *haaasd.EventMessage) error {
-	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
+	hap := haaasd.NewHaproxy("master",properties, data.Application, data.Platform, data.HapVersion)
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != haaasd.UNCHANGED {
@@ -206,7 +210,11 @@ func reloadMaster(data *haaasd.EventMessage) error {
 		}
 		publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 	} else {
-		log.WithError(err).Error("Commit failed")
+		log.WithFields(log.Fields{
+			"correlationId": data.Correlationid,
+			"application" : data.Application,
+			"platform": data.Platform,
+		}).WithError(err).Error("Commit failed")
 		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 	}
 	return nil

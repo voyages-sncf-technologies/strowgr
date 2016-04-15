@@ -11,11 +11,12 @@ import (
 	"time"
 )
 
-func NewHaproxy(properties *Config, application string, platform string, version string) *Haproxy {
+func NewHaproxy(role string, properties *Config, application string, platform string, version string) *Haproxy {
 	if version == "" {
 		version = "1.4.22"
 	}
 	return &Haproxy{
+		Role:             role,
 		Application: application,
 		Platform:    platform,
 		properties:  properties,
@@ -24,6 +25,7 @@ func NewHaproxy(properties *Config, application string, platform string, version
 }
 
 type Haproxy struct {
+	Role        string
 	Application string
 	Platform    string
 	Version     string
@@ -53,6 +55,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"correlationId" : data.Correlationid,
+			"role": hap.Role,
 			"path": path,
 		}).Error("Cannot read old configuration")
 		return ERR_CONF, err
@@ -63,6 +66,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	if bytes.Equal(oldConf, newConf) {
 		log.WithFields(log.Fields{
 			"correlationId": data.Correlationid,
+			"role": hap.Role,
 			"application": data.Application,
 			"plateform":   data.Platform,
 		}).Info("Unchanged configuration")
@@ -75,6 +79,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	log.WithFields(
 		log.Fields{
 			"correlationId": data.Correlationid,
+			"role": hap.Role,
 			"application": data.Application,
 			"plateform":   data.Platform,
 			"archivePath": archivePath,
@@ -89,6 +94,8 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	err = hap.reload(data.Correlationid)
 	if err != nil {
 		log.WithFields(log.Fields{
+			"correlationId": data.Correlationid,
+			"role": hap.Role,
 			"application": data.Application,
 			"plateform":   data.Platform,
 		}).WithError(err).Error("Reload failed")
@@ -101,6 +108,8 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	err = ioutil.WriteFile(fragmentPath, data.SyslogFragment, 0644)
 	if err != nil {
 		log.WithFields(log.Fields{
+			"correlationId": data.Correlationid,
+			"role": hap.Role,
 			"application": data.Application,
 			"plateform":   data.Platform,
 		}).WithError(err).Error("Failed to write syslog fragment")
@@ -127,6 +136,7 @@ func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *Eve
 
 		log.WithFields(log.Fields{
 			"correlationId": data.Correlationid,
+			"role": hap.Role,
 			"filename": filename,
 			"application": data.Application,
 			"platform": data.Platform,
@@ -177,6 +187,7 @@ func (hap *Haproxy) reload(correlationId string) error {
 	}
 	log.WithFields(log.Fields{
 		"correlationId" : correlationId,
+		"role": hap.Role,
 		"application": hap.Application,
 		"platform": hap.Platform,
 		"reloadScript": reloadScript,
@@ -223,7 +234,7 @@ func updateSymlink(correlationId, oldname string, newname string) {
 	newLink := true
 	if _, err := os.Stat(newname); err == nil {
 		os.Remove(newname)
-		newLink=false
+		newLink = false
 	}
 	err := os.Symlink(oldname, newname)
 	if err != nil {
@@ -233,7 +244,7 @@ func updateSymlink(correlationId, oldname string, newname string) {
 		}).Error("Symlink failed")
 	}
 
-	if newLink{
+	if newLink {
 		log.WithFields(log.Fields{
 			"correlationId" : correlationId,
 			"path": newname,
