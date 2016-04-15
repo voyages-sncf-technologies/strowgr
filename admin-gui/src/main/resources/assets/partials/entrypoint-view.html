@@ -12,7 +12,7 @@
 
 </script>
 
-<md-tabs md-dynamic-height>
+<md-tabs md-dynamic-height md-selected="selectedIndex">
     <md-tab>
         <md-tab-label><span ng-class="{blink: currentBlink}">Configuration courante</span></md-tab-label>
         <md-tab-body>
@@ -29,6 +29,12 @@
         <md-tab-label><span ng-class="{blink: commitBlink}">Commit en cours</span></md-tab-label>
         <md-tab-body>
             <entrypoint-configuration-view conf="committing"></entrypoint-configuration-view>
+        </md-tab-body>
+    </md-tab>
+    <md-tab ng-disabled="!current" md-on-select="load_update_model(current)">
+        <md-tab-label><span>Modifier</span></md-tab-label>
+        <md-tab-body>
+            <entrypoint-update conf="update_model"></entrypoint-update>
         </md-tab-body>
     </md-tab>
 </md-tabs>

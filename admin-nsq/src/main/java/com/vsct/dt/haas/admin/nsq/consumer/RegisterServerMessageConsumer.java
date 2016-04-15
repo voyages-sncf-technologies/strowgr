@@ -5,6 +5,7 @@ import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.collect.Sets;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
+import com.vsct.dt.haas.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.event.in.RegisterServerEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ public class RegisterServerMessageConsumer {
             RegisterServerEvent event = new RegisterServerEvent(payload.getCorrelationId(),
                     new EntryPointKeyVsctImpl(payload.getApplication(), payload.getPlatform()),
                     payload.getBackend(),
-                    Sets.newHashSet(new EntryPointBackendServer(payload.getId(), payload.getHostname(), payload.getIp(), payload.getPort(), payload.getContext(), new HashMap<>())));
+                    Sets.newHashSet(new IncomingEntryPointBackendServer(payload.getId(), payload.getHostname(), payload.getIp(), payload.getPort(), payload.getContext())));
 
             consumer.accept(event);
 

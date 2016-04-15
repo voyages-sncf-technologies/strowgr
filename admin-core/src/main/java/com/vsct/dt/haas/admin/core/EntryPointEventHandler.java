@@ -2,14 +2,11 @@ package com.vsct.dt.haas.admin.core;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
+import com.vsct.dt.haas.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.event.in.*;
-import com.vsct.dt.haas.admin.core.event.out.CommitBeginEvent;
-import com.vsct.dt.haas.admin.core.event.out.CommitCompleteEvent;
-import com.vsct.dt.haas.admin.core.event.out.EntryPointAddedEvent;
-import com.vsct.dt.haas.admin.core.event.out.ServerRegisteredEvent;
+import com.vsct.dt.haas.admin.core.event.out.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,6 +56,32 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
+    public void handle(UpdateEntryPointEvent event){
+        EntryPointKey key = event.getKey();
+        try {
+            this.stateManager.lock(key);
+
+            Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
+                    stateManager.getPendingConfiguration(key)
+                            .orElseGet(() -> stateManager.getCommittingConfiguration(key)
+                                    .orElseGet(() -> stateManager.getCurrentConfiguration(key)
+                                            .orElse(null)))
+            );
+
+            existingConfiguration.map(c -> c.mergeWithUpdate(event.getUpdatedEntryPoint()))
+                    .ifPresent(c -> {
+                        Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
+                        if(preparedConfiguration.isPresent()){
+                            outputBus.post(new EntryPointUpdatedEvent(event.getCorrelationId(), key, preparedConfiguration.get()));
+                        }
+                    });
+
+        } finally {
+            this.stateManager.release(key);
+        }
+    }
+
+    @Subscribe
     public void handle(RegisterServerEvent event) {
         LOGGER.info("receive event {}", event);
         EntryPointKey key = event.getKey();
@@ -66,8 +89,8 @@ public class EntryPointEventHandler {
             this.stateManager.lock(key);
             Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
                     stateManager.getPendingConfiguration(key)
-                            .orElse(stateManager.getCommittingConfiguration(key)
-                                    .orElse(stateManager.getCurrentConfiguration(key)
+                            .orElseGet(() -> stateManager.getCommittingConfiguration(key)
+                                    .orElseGet(() -> stateManager.getCurrentConfiguration(key)
                                             .orElse(null)))
             );
 
@@ -78,7 +101,7 @@ public class EntryPointEventHandler {
                         if (preparedConfiguration.isPresent()) {
                             LOGGER.info("new servers registered for EntryPoint {}", event.getKey().getID());
                             if (LOGGER.isDebugEnabled()) {
-                                for (EntryPointBackendServer server : event.getServers()) {
+                                for (IncomingEntryPointBackendServer server : event.getServers()) {
                                     LOGGER.debug("- registered server {}", server);
                                 }
                             }

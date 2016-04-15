@@ -21,6 +21,7 @@ import io.dropwizard.setup.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 
 public class HaasMain extends Application<HaasConfiguration> {
@@ -54,7 +55,7 @@ public class HaasMain extends Application<HaasConfiguration> {
         LOGGER.info("start dropwizard configuration");
 
         /* Main EventBus */
-        ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
+        ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(new ArrayBlockingQueue(100)).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
         EventBus eventBus = new AsyncEventBus(executor, new SubscriberExceptionHandler() {
             @Override
             public void handleException(Throwable exception, SubscriberExceptionContext context) {

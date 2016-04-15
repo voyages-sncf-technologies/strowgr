@@ -29,8 +29,4 @@ public class EntryPointEvent {
         return correlationId;
     }
 
-    public Optional<EntryPoint> getConfiguration(){
-        return Optional.empty();
-    }
-
 }
