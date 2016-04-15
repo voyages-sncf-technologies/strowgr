@@ -51,7 +51,10 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	oldConf, err := ioutil.ReadFile(path)
 	if err == nil {
 		if bytes.Equal(oldConf, newConf) {
-			log.Info("Ignore unchanged configuration")
+			log.WithFields(log.Fields{
+				"application": data.Application,
+				"plateform":   data.Platform,
+			}).Info("Ignore unchanged configuration")
 			return UNCHANGED, nil
 		}
 	}
@@ -59,12 +62,12 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	// Archive previous configuration
 	archivePath := hap.confArchivePath()
 	os.Rename(path, archivePath)
-	log.WithField("archivePath", archivePath).Printf("Old configuration saved")
+	log.WithField("archivePath", archivePath).Info("Old configuration saved")
 	err = ioutil.WriteFile(path, newConf, 0644)
 	if err != nil {
 		return ERR_CONF, err
 	}
-	log.WithField("path", path).Printf("New configuration written to %s", path)
+	log.WithField("path", path).Info("New configuration written to %s", path)
 
 	// Reload haproxy
 	err = hap.reload()
