@@ -85,6 +85,8 @@ public class EntryPointEventHandler {
                             ServerRegisteredEvent serverRegisteredEvent = new ServerRegisteredEvent(event.getCorrelationId(), event.getKey(), event.getBackend(), event.getServers());
                             LOGGER.debug("post to event bus event {}", serverRegisteredEvent);
                             outputBus.post(serverRegisteredEvent);
+                        } else {
+                            LOGGER.warn("can't prepare configurtion on key {}", key);
                         }
                     });
 
