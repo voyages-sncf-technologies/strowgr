@@ -307,7 +307,7 @@
                         };
 
                         $http.patch('/api/entrypoints/' + scope.conf.context.application + '/' + scope.conf.context.platform, updateModel).then(function (response) {
-                            $location.path('/');
+                            scope.$emit("entrypoint-updated");
                         }, function (error) {
                             console.info(error);
                         });
@@ -529,6 +529,10 @@
 
                         scope.$on('$destroy', function () {
                             $interval.cancel(refreshAuto);
+                        });
+
+                        scope.$on("entrypoint-updated", function() {
+                            scope.selectedIndex = 0;
                         });
 
                         scope.load_update_model = function(conf){
