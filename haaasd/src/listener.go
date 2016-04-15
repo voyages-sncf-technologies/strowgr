@@ -2,14 +2,14 @@ package haaasd
 
 import (
 	"errors"
+	log "github.com/Sirupsen/logrus"
 	"net"
 	"time"
-	log "github.com/Sirupsen/logrus"
 )
 
 type StoppableListener struct {
-	*net.TCPListener //Wrapped listener
-	StopChan chan int    //Channel used only to indicate listener should shutdown
+	*net.TCPListener          //Wrapped listener
+	StopChan         chan int //Channel used only to indicate listener should shutdown
 }
 
 func NewListener(l net.Listener) (*StoppableListener, error) {
@@ -21,7 +21,7 @@ func NewListener(l net.Listener) (*StoppableListener, error) {
 
 	retval := &StoppableListener{}
 	retval.TCPListener = tcpL
-	retval.StopChan = make(chan int,1)
+	retval.StopChan = make(chan int, 1)
 
 	return retval, nil
 }
@@ -41,7 +41,7 @@ func (sl *StoppableListener) Accept() (net.Conn, error) {
 		case <-sl.StopChan:
 			return nil, StoppedError
 		default:
-		//If the channel is still open, continue as normal
+			//If the channel is still open, continue as normal
 		}
 
 		if err != nil {

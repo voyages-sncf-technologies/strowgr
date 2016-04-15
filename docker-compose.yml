@@ -22,7 +22,7 @@ services:
   # Only one producer
   nsqd-slave:
     image: nsqio/nsq
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-slave
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-slave  -tcp-address=nsqd-slave:4150
     ports:
       - "14150:4150"
       - "14151:4151"
@@ -31,7 +31,7 @@ services:
 
   nsqd-master:
     image: nsqio/nsq
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-master
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-master -tcp-address=nsqd-master:4150
     ports:
       - "24150:4150"
       - "24151:4151"
@@ -67,11 +67,20 @@ services:
     image: nsqio/nsq
     ports:
       - "4171:4171"
-    command: /nsqadmin -http-address="0.0.0.0:4171" --lookupd-http-address=nsqlookupd:4161
+    command: /nsqadmin -http-address="nsq-admin:4171" --lookupd-http-address=nsqlookupd:4161
     depends_on:
       - nsqlookupd
       - nsqd-slave
       - nsqd-master
+
+  registrator:
+    image: haaas/haaas-registrator:1.0.0
+    command: -url http://192.168.99.100:8080 -address 192.168.99.100 -verbose
+#    privileged: true
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+     - nsq-admin
 
   # Webapp instances
   webapp-1:
@@ -79,12 +88,18 @@ services:
     ports:
      - 50180:50080
     command: instance1
+    labels:
+      - PLATFORM=REC1
+    depends_on:
+     - registrator
 
   webapp-2:
     image: haaas/webapp:1.0.0
     ports:
      - 50080
     command: instance2
+    labels:
+      - PLATFORM=REC1
 
   admin:
     image: haaas/admin:1.0.0
@@ -96,7 +111,7 @@ services:
 
   nsqd-admin:
     image: nsqio/nsq
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-admin
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-admin  -tcp-address=nsqd-admin:4150
     ports:
       - "4150"
       - "4151"
@@ -113,11 +128,13 @@ services:
      - ./static/:/usr/share/nginx/html
      - ./static/nginx.conf:/etc/nginx/nginx.conf
 
-networks:
-  default:
-    driver: bridge
-    ipam:
-     driver: default
-     config:
-       - subnet: 192.168.10.0/24
-         gateway: 192.168.10.254
+
+
+#networks:
+#  default:
+#    driver: bridge
+#    ipam:
+#     driver: default
+#     config:
+#       - subnet: 192.168.10.0/24
+#         gateway: 192.168.10.254

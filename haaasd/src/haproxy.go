@@ -1,14 +1,14 @@
 package haaasd
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	log "github.com/Sirupsen/logrus"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"time"
-	"bytes"
-	"errors"
 )
 
 func NewHaproxy(properties *Config, application string, platform string, version string) *Haproxy {
@@ -19,7 +19,7 @@ func NewHaproxy(properties *Config, application string, platform string, version
 		Application: application,
 		Platform:    platform,
 		properties:  properties,
-		Version: version,
+		Version:     version,
 	}
 }
 
@@ -31,48 +31,69 @@ type Haproxy struct {
 	State       int
 }
 
+const (
+	SUCCESS int = iota
+	UNCHANGED int = iota
+	ERR_SYSLOG int = iota
+	ERR_CONF int = iota
+	ERR_RELOAD int = iota
+)
 
 // ApplyConfiguration write the new configuration and reload
 // A rollback is called on failure
-func (hap *Haproxy) ApplyConfiguration(data *EventMessage) error {
+func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	hap.createSkeleton()
 
 	newConf := data.Conf
 	path := hap.confPath()
 
-	//	Check conf diff
+	// Check conf diff
 	oldConf, err := ioutil.ReadFile(path)
 	if err == nil {
 		if bytes.Equal(oldConf, newConf) {
-			log.Info("Ignore unchanged configuration");
-			return nil;
+			log.Info("Ignore unchanged configuration")
+			return UNCHANGED, nil
 		}
 	}
 
+	// Archive previous configuration
 	archivePath := hap.confArchivePath()
 	os.Rename(path, archivePath)
 	log.WithField("archivePath", archivePath).Printf("Old configuration saved")
 	err = ioutil.WriteFile(path, newConf, 0644)
 	if err != nil {
-		return err
+		return ERR_CONF,err
 	}
-
 	log.WithField("path", path).Printf("New configuration written to %s", path)
+
+	// Reload haproxy
 	err = hap.reload()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"application": data.Application,
-			"plateform" : data.Platform,
+			"plateform":   data.Platform,
 		}).WithError(err).Error("Reload failed")
 		hap.dumpConfiguration(newConf, data)
 		err = hap.rollback()
+		return ERR_RELOAD, err
+	}
+	// Write syslog fragment
+	fragmentPath := hap.syslogFragmentPath()
+	err = ioutil.WriteFile(fragmentPath, data.SyslogFragment, 0644)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"application": data.Application,
+			"plateform":   data.Platform,
+		}).WithError(err).Error("Failed to write syslog fragment")
+		// TODO Should we rollback on syslog error ?
+		return ERR_SYSLOG, err
 	}
 
-	return err
+	return SUCCESS, nil
 }
 
 // dumpConfiguration dumps the new configuration file with context for debugging purpose
-func (hap *Haproxy) dumpConfiguration(newConf []byte, data *EventMessage, ) {
+func (hap *Haproxy) dumpConfiguration(newConf []byte, data *EventMessage) {
 	errorFilename := hap.NewErrorPath()
 	f, err2 := os.Create(errorFilename)
 	defer f.Close()
@@ -123,7 +144,7 @@ func (hap *Haproxy) reload() error {
 	if err != nil {
 		log.WithError(err).Error("Error reloading")
 	}
-	log.WithField("reloadScript",reloadScript).WithField("cmd",cmd).Debug("Reload succeeded")
+	log.WithField("reloadScript", reloadScript).WithField("cmd", cmd).Debug("Reload succeeded")
 	return err
 }
 
@@ -150,9 +171,17 @@ func (hap *Haproxy) createSkeleton() error {
 	updateSymlink(hap.getHapctlFilename(), hap.getReloadScript())
 	updateSymlink(hap.getHapBinary(), baseDir + "/Config/haproxy")
 
-	log.WithField("dir",baseDir).Info("Skeleton created")
+	log.WithField("dir", baseDir).Info("Skeleton created")
 
 	return nil
+}
+
+// confPath give the path of the configuration file given an application context
+// It returns the absolute path to the file
+func (hap *Haproxy) syslogFragmentPath() string {
+	baseDir := hap.properties.HapHome + "/SYSLOG/Config/syslog.conf.d"
+	os.MkdirAll(baseDir, 0755)
+	return baseDir + "/syslog" + hap.Application + hap.Platform + ".conf"
 }
 
 // updateSymlink create or update a symlink
@@ -162,7 +191,7 @@ func updateSymlink(oldname string, newname string) {
 	}
 	err := os.Symlink(oldname, newname)
 	if err != nil {
-		log.WithError(err).WithField("path",newname).Error("Failed to create symlink")
+		log.WithError(err).WithField("path", newname).Error("Failed to create symlink")
 	}
 }
 
@@ -171,9 +200,9 @@ func createDirectory(dir string) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
-			log.WithError(err).WithField("dir",dir).Error("Failed to create")
-		}else {
-			log.WithField("dir",dir).Println("Directory created")
+			log.WithError(err).WithField("dir", dir).Error("Failed to create")
+		} else {
+			log.WithField("dir", dir).Println("Directory created")
 		}
 	}
 }
@@ -195,4 +224,3 @@ func (hap *Haproxy) getReloadScript() string {
 func (hap *Haproxy) getHapBinary() string {
 	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", hap.Version)
 }
-

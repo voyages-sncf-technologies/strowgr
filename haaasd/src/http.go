@@ -1,9 +1,10 @@
 package haaasd
+
 import (
-	"net/http"
-	log "github.com/Sirupsen/logrus"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"net"
+	"net/http"
 )
 
 type RestApi struct {
@@ -18,7 +19,7 @@ func NewRestApi(properties *Config) *RestApi {
 	return api
 }
 
-func (api *RestApi)Start() (error) {
+func (api *RestApi) Start() error {
 	sm := http.NewServeMux()
 	sm.HandleFunc("/uuid", func(writer http.ResponseWriter, request *http.Request) {
 		log.Debug("GET /uuid")
@@ -34,14 +35,14 @@ func (api *RestApi)Start() (error) {
 		return err
 	}
 
-	log.WithField("port",api.properties.Port).Info("Start listening")
+	log.WithField("port", api.properties.Port).Info("Start listening")
 	http.Serve(api.listener, sm)
 
 	return nil
 }
 
-func (api *RestApi)Stop() {
-	if (api.listener != nil) {
+func (api *RestApi) Stop() {
+	if api.listener != nil {
 		api.listener.Stop()
 	}
 }

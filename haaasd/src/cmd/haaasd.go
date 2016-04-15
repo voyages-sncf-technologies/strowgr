@@ -22,9 +22,10 @@ var (
 	configFile = flag.String("config", "haaas.conf", "Configuration file")
 	versionFlag = flag.Bool("version", false, "Print current version")
 	config = nsq.NewConfig()
-	properties haaasd.Config
+	properties *haaasd.Config
 	daemon      *haaasd.Daemon
 	producer    *nsq.Producer
+	syslog        *haaasd.Syslog
 )
 
 func main() {
@@ -38,8 +39,9 @@ func main() {
 
 	loadProperties()
 
-	daemon = haaasd.NewDaemon(&properties)
-
+	daemon = haaasd.NewDaemon(properties)
+	syslog = haaasd.NewSyslog(properties)
+	syslog.Init()
 	log.WithFields(log.Fields{
 		"status": properties.Status,
 		"id":    properties.NodeId(),
@@ -48,11 +50,11 @@ func main() {
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
 
 	initProducer()
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	var wg sync.WaitGroup
 	// Start http API
-	restApi := haaasd.NewRestApi(&properties)
+	restApi := haaasd.NewRestApi(properties)
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
@@ -62,7 +64,7 @@ func main() {
 		}
 	}()
 
-	//	 Start slave consumer
+	// Start slave consumer
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
@@ -74,7 +76,7 @@ func main() {
 		}
 	}()
 
-	//	 Start master consumer
+	// Start master consumer
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
@@ -134,7 +136,8 @@ func initProducer() {
 
 // loadProperties load properties file
 func loadProperties() {
-	if _, err := toml.DecodeFile(*configFile, &properties); err != nil {
+	properties = haaasd.DefaultConfig()
+	if _, err := toml.DecodeFile(*configFile, properties); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
@@ -161,7 +164,7 @@ func filteredHandler(event string, message *nsq.Message, target string, f haaasd
 		}
 		f(data)
 	} else {
-		log.WithField("event",event).Info("Ignore event")
+		log.WithField("event", event).Info("Ignore event")
 	}
 
 	return nil
@@ -175,9 +178,12 @@ func onCommitSlaveRequested(message *nsq.Message) error {
 }
 
 func reloadSlave(data *haaasd.EventMessage) error {
-	hap := haaasd.NewHaproxy(&properties, data.Application, data.Platform, data.HapVersion)
-	err := hap.ApplyConfiguration(data)
+	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
+	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
+		if status != haaasd.UNCHANGED {
+			syslog.Restart()
+		}
 		publishMessage("commit_slave_completed_", data)
 	} else {
 		log.WithError(err).Error("Commit failed")
@@ -187,9 +193,12 @@ func reloadSlave(data *haaasd.EventMessage) error {
 }
 
 func reloadMaster(data *haaasd.EventMessage) error {
-	hap := haaasd.NewHaproxy(&properties, data.Application, data.Platform, data.HapVersion)
-	err := hap.ApplyConfiguration(data)
+	hap := haaasd.NewHaproxy(properties, data.Application, data.Platform, data.HapVersion)
+	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
+		if status != haaasd.UNCHANGED {
+			syslog.Restart()
+		}
 		publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
 	} else {
 		log.WithError(err).Error("Commit failed")
@@ -209,6 +218,6 @@ func bodyToData(jsonStream []byte) (*haaasd.EventMessage, error) {
 func publishMessage(topic_prefix string, data interface{}) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
-	log.WithField("topic",topic).WithField("payload",jsonMsg).Info("Publish")
+	log.WithField("topic", topic).WithField("payload", string(jsonMsg)).Debug("Publish")
 	return producer.Publish(topic, []byte(jsonMsg))
 }
