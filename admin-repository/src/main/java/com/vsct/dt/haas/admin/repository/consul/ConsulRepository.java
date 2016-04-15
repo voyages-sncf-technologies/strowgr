@@ -32,6 +32,19 @@ import java.util.stream.Collectors;
 public class ConsulRepository implements EntryPointRepository, PortProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsulRepository.class);
 
+    /**
+     * Enum on different behavior on a session.
+     * RELEASE removes only the session when the TTL is reached or after an explicit release.
+     * DELETE removes the key/value which acquires this session too.
+     */
+    private enum CONSUL_BEHAVIOR {
+        RELEASE("release"), DELETE("delete");
+        private String value;
+
+        CONSUL_BEHAVIOR(String value) {
+            this.value = value;
+        }
+    }
 
     private final String host;
     private final int port;
@@ -203,13 +216,13 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     private Session createSession(EntryPointKey entryPointKey) throws IOException {
-        return createSession(entryPointKey, 10);
+        return createSession(entryPointKey, 10, CONSUL_BEHAVIOR.RELEASE);
     }
 
-    private Session createSession(EntryPointKey entryPointKey, Integer ttlInSec) throws IOException {
+    private Session createSession(EntryPointKey entryPointKey, Integer ttlInSec, CONSUL_BEHAVIOR behavior) throws IOException {
         HttpPut createSessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/create");
         if (ttlInSec != null) {
-            String payload = "{\"Behavior\":\"release\",\"TTL\":\"" + ttlInSec + "s\", \"Name\":\"" + entryPointKey.getID() + "\"}";
+            String payload = "{\"Behavior\":\"" + behavior.value + "\",\"TTL\":\"" + ttlInSec + "s\", \"Name\":\"" + entryPointKey.getID() + "\"}";
             LOGGER.trace("create a consul session with theses options: {} ", payload);
             createSessionURI.setEntity(new StringEntity(payload));
         }
@@ -321,7 +334,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                the session and thus the committing config will also be lost,
                TTL cannot be honored in that corner case.
              */
-            Session session = createSession(entryPointKey, ttl);
+            Session session = createSession(entryPointKey, ttl, CONSUL_BEHAVIOR.DELETE);
 
             HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/committing?acquire=" + session.ID);
 
