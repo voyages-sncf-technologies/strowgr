@@ -220,8 +220,10 @@ func (hap *Haproxy) syslogFragmentPath() string {
 
 // updateSymlink create or update a symlink
 func updateSymlink(correlationId, oldname string, newname string) {
+	newLink := true
 	if _, err := os.Stat(newname); err == nil {
 		os.Remove(newname)
+		newLink=false
 	}
 	err := os.Symlink(oldname, newname)
 	if err != nil {
@@ -229,7 +231,9 @@ func updateSymlink(correlationId, oldname string, newname string) {
 			"correlationId" : correlationId,
 			"path": newname,
 		}).Error("Symlink failed")
-	} else {
+	}
+
+	if newLink{
 		log.WithFields(log.Fields{
 			"correlationId" : correlationId,
 			"path": newname,
