@@ -51,15 +51,6 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 
 	// Check conf diff
 	oldConf, err := ioutil.ReadFile(path)
-
-	if err != nil {
-		log.WithFields(log.Fields{
-			"correlationId" : data.Correlationid,
-			"role": hap.Role,
-			"path": path,
-		}).Error("Cannot read old configuration")
-		return ERR_CONF, err
-	}
 	if log.GetLevel() == log.DebugLevel {
 		hap.dumpConfiguration(hap.NewDebugPath(), newConf, data)
 	}
