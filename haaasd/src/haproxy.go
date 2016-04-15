@@ -49,14 +49,18 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 
 	// Check conf diff
 	oldConf, err := ioutil.ReadFile(path)
-	if err == nil {
-		if bytes.Equal(oldConf, newConf) {
-			log.WithFields(log.Fields{
-				"application": data.Application,
-				"plateform":   data.Platform,
-			}).Info("Ignore unchanged configuration")
-			return UNCHANGED, nil
-		}
+
+	if err != nil {
+		log.WithField("path",path).Error("Cannot read old configuration")
+		return ERR_CONF, err
+	}
+
+	if bytes.Equal(oldConf, newConf) {
+		log.WithFields(log.Fields{
+			"application": data.Application,
+			"plateform":   data.Platform,
+		}).Info("Ignore unchanged configuration")
+		return UNCHANGED, nil
 	}
 
 	// Archive previous configuration
