@@ -7,6 +7,7 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
+import com.vsct.dt.haas.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.haas.admin.template.generator.MustacheTemplateGenerator;
 import org.junit.Test;
 
@@ -23,7 +24,7 @@ public class MustacheTemplateTest {
     MustacheTemplateGenerator templateGenerator = new MustacheTemplateGenerator();
 
     @Test
-    public void should_valorise_template_with_standard_context() throws IOException {
+    public void should_valorise_template_with_standard_context() throws IOException, IncompleteConfigurationException {
 
         EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
@@ -55,7 +56,7 @@ public class MustacheTemplateTest {
 
     /* For the purpose of this test we chose to sort servers by id */
     @Test
-    public void user_provided_context_for_servers_should_replace_server_provided_context() throws IOException {
+    public void user_provided_context_for_servers_should_replace_server_provided_context() throws IOException, IncompleteConfigurationException {
         EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
         Map<String, String> serverContext = new HashMap<>();serverContext.put("key1", "value1");serverContext.put("key2", "value2");
@@ -89,5 +90,30 @@ public class MustacheTemplateTest {
         assertThat(result).isEqualTo(expected);
     }
 
+    @Test(expected = IncompleteConfigurationException.class)
+    public void should_throw_exception_when_variable_is_missing_to_valorize_template() throws IOException, IncompleteConfigurationException {
+        EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
+        EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
+        Map<String, String> epContext = new HashMap<>();
+        epContext.put("application", "OCE");
+        epContext.put("platform", "REC1");
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource("template.missing.property.1.context.mustache").getFile());
+        FileReader reader = new FileReader(file);
+
+        Map<String, Integer> portsMapping = new HashMap<>();
+        portsMapping.put(configuration.syslogPortId(), 54250);
+        portsMapping.put("OCEREC1WS", 50200);
+
+        templateGenerator.generate(CharStreams.toString(reader), configuration, portsMapping);
+    }
+
+    @Test
+    public void should_not_throw_exception_when_variable_is_missing_but_default_behavior_exists(){
+
+    }
 }

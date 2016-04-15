@@ -22,7 +22,6 @@ public class RegisterServerPayload extends Payload {
     private final String ip;
     private final String port;
     private final Map<String, String> context;
-    private final Map<String, String> contextOverride;
 
     @JsonCreator
     public RegisterServerPayload(@JsonProperty("correlationid") String correlationId,
@@ -33,8 +32,7 @@ public class RegisterServerPayload extends Payload {
                                  @JsonProperty("hostname") String hostname,
                                  @JsonProperty("ip") String ip,
                                  @JsonProperty("port") String port,
-                                 @JsonProperty("context") Map<String, String> context,
-                                 @JsonProperty("contextOverride") Map<String, String> contextOverride) {
+                                 @JsonProperty("context") Map<String, String> context) {
         super(correlationId);
         checkNotNull(context, "context attribute is missing in RegisterServer event consume from NSQ");
         checkNotNull(application, "application attribute is missing in RegisterServer event consume from NSQ");
@@ -48,7 +46,6 @@ public class RegisterServerPayload extends Payload {
         this.ip = ip;
         this.port = port;
         this.context = context;
-        this.contextOverride = contextOverride;
     }
 
     public String getApplication() {
@@ -83,7 +80,4 @@ public class RegisterServerPayload extends Payload {
         return new HashMap<>(context);
     }
 
-    public Map<String, String> getContextOverride() {
-        return new HashMap<>(contextOverride);
-    }
 }

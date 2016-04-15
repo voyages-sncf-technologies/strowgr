@@ -3,10 +3,7 @@ package com.vsct.dt.haas.admin.core.configuration;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.vsct.dt.haas.admin.core.EntryPointKey;
-import com.vsct.dt.haas.admin.core.PortProvider;
-import com.vsct.dt.haas.admin.core.TemplateGenerator;
-import com.vsct.dt.haas.admin.core.TemplateLocator;
+import com.vsct.dt.haas.admin.core.*;
 import com.vsct.dt.haas.admin.core.event.in.UpdatedEntryPoint;
 import com.vsct.dt.haas.admin.core.event.in.UpdatedEntryPointBackend;
 
@@ -118,12 +115,11 @@ public class EntryPoint {
         return configuration;
     }
 
-    public String generateHaproxyConfiguration(EntryPointKey entryPointKey, TemplateLocator templateLocator, TemplateGenerator templateGenerator, PortProvider portProvider) {
+    public String generateHaproxyConfiguration(EntryPointKey entryPointKey, TemplateLocator templateLocator, TemplateGenerator templateGenerator, PortProvider portProvider) throws IncompleteConfigurationException {
         String template = templateLocator.readTemplate(this);
         Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, portProvider, this);
         return templateGenerator.generate(template, this, portsMapping);
     }
-
 
     private Map<String, Integer> getOrCreatePortsMapping(EntryPointKey key, PortProvider portProvider, EntryPoint entryPoint) {
         Map<String, Integer> portsMapping = new HashMap<>();
