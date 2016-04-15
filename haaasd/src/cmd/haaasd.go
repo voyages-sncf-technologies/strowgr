@@ -161,7 +161,7 @@ func filteredHandler(event string, message *nsq.Message, target string, f haaasd
 	}
 
 	if match {
-		log.WithField("event", event).WithField("payload", string(message.Body)).Debug("Handle event")
+		log.WithField("event", event).WithField("payload", message.Body).Debug("Handle event")
 		data, err := bodyToData(message.Body)
 		if err != nil {
 			log.WithError(err).Error("Unable to read data")

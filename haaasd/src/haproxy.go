@@ -70,7 +70,13 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	// Archive previous configuration
 	archivePath := hap.confArchivePath()
 	os.Rename(path, archivePath)
-	log.WithField("archivePath", archivePath).Info("Old configuration saved")
+	log.WithFields(
+		log.Fields{
+			"correlationId": data.Correlationid,
+			"application": data.Application,
+			"plateform":   data.Platform,
+			"archivePath": archivePath,
+		}).Info("Old configuration saved")
 	err = ioutil.WriteFile(path, newConf, 0644)
 	if err != nil {
 		return ERR_CONF, err
@@ -189,10 +195,13 @@ func (hap *Haproxy) createSkeleton(correlationId string) error {
 	createDirectory(correlationId, baseDir + "/scripts")
 	createDirectory(correlationId, baseDir + "/version-1")
 
-	updateSymlink(hap.getHapctlFilename(), hap.getReloadScript())
-	updateSymlink(hap.getHapBinary(), baseDir + "/Config/haproxy")
+	updateSymlink(correlationId, hap.getHapctlFilename(), hap.getReloadScript())
+	updateSymlink(correlationId, hap.getHapBinary(), baseDir + "/Config/haproxy")
 
-	log.WithField("dir", baseDir).Info("Skeleton created")
+	log.WithFields(log.Fields{
+		"correlationId" : correlationId,
+		"dir": baseDir,
+	}).Info("Skeleton created")
 
 	return nil
 }
@@ -206,13 +215,16 @@ func (hap *Haproxy) syslogFragmentPath() string {
 }
 
 // updateSymlink create or update a symlink
-func updateSymlink(oldname string, newname string) {
+func updateSymlink(correlationId, oldname string, newname string) {
 	if _, err := os.Stat(newname); err == nil {
 		os.Remove(newname)
 	}
 	err := os.Symlink(oldname, newname)
 	if err != nil {
-		log.WithError(err).WithField("path", newname).Error("Failed to create symlink")
+		log.WithError(err).WithFields(log.Fields{
+			"correlationId" : correlationId,
+			"path": newname,
+		}).Error("Failed to create symlink")
 	}
 }
 
@@ -226,7 +238,10 @@ func createDirectory(correlationId string, dir string) {
 				"dir": dir,
 			}).Error("Failed to create")
 		} else {
-			log.WithField("dir", dir).Println("Directory created")
+			log.WithFields(log.Fields{
+				"correlationId" : correlationId,
+				"dir": dir,
+			}).Info("Directory created")
 		}
 	}
 }
