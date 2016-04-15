@@ -243,21 +243,21 @@
                     scope.forbiddenServerKeys = ['id','hostname','ip','port'];
 
                     scope.addFrontend = function () {
-                        $scope.conf.frontends.push({
+                        scope.conf.frontends.push({
                             id: "",
                             context: {}
                         });
                     };
 
                     scope.removeFrontend = function (frontend) {
-                        var index = $scope.conf.frontends.indexOf(frontend);
+                        var index = scope.conf.frontends.indexOf(frontend);
                         if (index > -1) {
-                            $scope.conf.frontends.splice(index, 1);
+                            scope.conf.frontends.splice(index, 1);
                         }
                     };
 
                     scope.addBackend = function () {
-                        $scope.conf.backends.push({
+                        scope.conf.backends.push({
                             id: "",
                             servers: [],
                             context: {}
@@ -265,9 +265,9 @@
                     };
 
                     scope.removeBackend = function (backend) {
-                        var index = $scope.conf.backends.indexOf(backend);
+                        var index = scope.conf.backends.indexOf(backend);
                         if (index > -1) {
-                            $scope.conf.backends.splice(index, 1);
+                            scope.conf.backends.splice(index, 1);
                         }
                     };
 
