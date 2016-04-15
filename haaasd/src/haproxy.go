@@ -171,13 +171,7 @@ func (hap *Haproxy) NewDebugPath() string {
 func (hap *Haproxy) reload(correlationId string) error {
 
 	reloadScript := hap.getReloadScript()
-
-	cmd := exec.Command("sh", reloadScript, "reload", "-y")
-	env := os.Environ()
-	env = append(env, "HAP_INTERACTIVE=0")
-	cmd.Env = env
-	output, err := cmd.Output()
-
+	cmd, err := exec.Command("sh", reloadScript, "reload", "-y").Output()
 	if err != nil {
 		log.WithError(err).Error("Error reloading")
 	}
