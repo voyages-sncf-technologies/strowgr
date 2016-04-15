@@ -62,7 +62,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	log.WithField("archivePath", archivePath).Printf("Old configuration saved")
 	err = ioutil.WriteFile(path, newConf, 0644)
 	if err != nil {
-		return ERR_CONF,err
+		return ERR_CONF, err
 	}
 	log.WithField("path", path).Printf("New configuration written to %s", path)
 
@@ -140,7 +140,7 @@ func (hap *Haproxy) NewErrorPath() string {
 func (hap *Haproxy) reload() error {
 
 	reloadScript := hap.getReloadScript()
-	cmd, err := exec.Command("sh", reloadScript, "reload").Output()
+	cmd, err := exec.Command("sh", reloadScript, "reload", "-y").Output()
 	if err != nil {
 		log.WithError(err).Error("Error reloading")
 	}
