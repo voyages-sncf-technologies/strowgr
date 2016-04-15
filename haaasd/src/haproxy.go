@@ -71,7 +71,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	if err != nil {
 		return ERR_CONF, err
 	}
-	log.WithField("path", path).Info("New configuration written to %s", path)
+	log.WithField("path", path).Info("New configuration written")
 
 	// Reload haproxy
 	err = hap.reload()
