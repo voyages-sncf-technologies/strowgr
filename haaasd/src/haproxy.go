@@ -65,7 +65,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 			"correlationId": data.Correlationid,
 			"application": data.Application,
 			"plateform":   data.Platform,
-		}).Info("Ignore unchanged configuration")
+		}).Info("Unchanged configuration")
 		return UNCHANGED, nil
 	}
 
@@ -207,11 +207,6 @@ func (hap *Haproxy) createSkeleton(correlationId string) error {
 	updateSymlink(correlationId, hap.getHapctlFilename(), hap.getReloadScript())
 	updateSymlink(correlationId, hap.getHapBinary(), baseDir + "/Config/haproxy")
 
-	log.WithFields(log.Fields{
-		"correlationId" : correlationId,
-		"dir": baseDir,
-	}).Info("Skeleton created")
-
 	return nil
 }
 
@@ -233,7 +228,12 @@ func updateSymlink(correlationId, oldname string, newname string) {
 		log.WithError(err).WithFields(log.Fields{
 			"correlationId" : correlationId,
 			"path": newname,
-		}).Error("Failed to create symlink")
+		}).Error("Symlink failed")
+	} else {
+		log.WithFields(log.Fields{
+			"correlationId" : correlationId,
+			"path": newname,
+		}).Info("Symlink created")
 	}
 }
 
