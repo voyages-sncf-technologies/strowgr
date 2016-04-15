@@ -63,8 +63,8 @@ func (syslog *Syslog) Init() error {
 		log.Fatal(err)
 	}
 
-	createDirectory(fmt.Sprintf("%s/SYSLOG/logs", syslog.properties.HapHome))
-	createDirectory(configDir)
+	createDirectory("init",fmt.Sprintf("%s/SYSLOG/logs", syslog.properties.HapHome))
+	createDirectory("init",configDir)
 
 	f, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {

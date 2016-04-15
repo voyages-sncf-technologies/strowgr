@@ -42,7 +42,7 @@ const (
 // ApplyConfiguration write the new configuration and reload
 // A rollback is called on failure
 func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
-	hap.createSkeleton()
+	hap.createSkeleton(data.Correlationid)
 
 	newConf := data.Conf
 	path := hap.confPath()
@@ -51,12 +51,16 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	oldConf, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		log.WithField("path",path).Error("Cannot read old configuration")
+		log.WithFields(log.Fields{
+			"correlationId" : data.Correlationid,
+			"path": path,
+		}).Error("Cannot read old configuration")
 		return ERR_CONF, err
 	}
 
 	if bytes.Equal(oldConf, newConf) {
 		log.WithFields(log.Fields{
+			"correlationId": data.Correlationid,
 			"application": data.Application,
 			"plateform":   data.Platform,
 		}).Info("Ignore unchanged configuration")
@@ -74,14 +78,14 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	log.WithField("path", path).Info("New configuration written")
 
 	// Reload haproxy
-	err = hap.reload()
+	err = hap.reload(data.Correlationid)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"application": data.Application,
 			"plateform":   data.Platform,
 		}).WithError(err).Error("Reload failed")
 		hap.dumpConfiguration(newConf, data)
-		err = hap.rollback()
+		err = hap.rollback(data.Correlationid)
 		return ERR_RELOAD, err
 	}
 	// Write syslog fragment
@@ -113,7 +117,12 @@ func (hap *Haproxy) dumpConfiguration(newConf []byte, data *EventMessage) {
 		f.Write(newConf)
 		f.Sync()
 
-		log.WithField("filename", errorFilename).Info("Invalid conf logged into %s")
+		log.WithFields(log.Fields{
+			"correlationId": data.Correlationid,
+			"filename": errorFilename,
+			"application": data.Application,
+			"platform": data.Platform,
+		}).Info("Invalid conf logged into %s")
 	}
 }
 
@@ -144,36 +153,41 @@ func (hap *Haproxy) NewErrorPath() string {
 
 // reload calls external shell script to reload haproxy
 // It returns error if the reload fails
-func (hap *Haproxy) reload() error {
+func (hap *Haproxy) reload(correlationId string) error {
 
 	reloadScript := hap.getReloadScript()
 	cmd, err := exec.Command("sh", reloadScript, "reload", "-y").Output()
 	if err != nil {
 		log.WithError(err).Error("Error reloading")
 	}
-	log.WithField("reloadScript", reloadScript).WithField("cmd", cmd).Debug("Reload succeeded")
+	log.WithFields(log.Fields{
+		"correlationId" : correlationId,
+		"application": hap.Application,
+		"platform": hap.Platform,
+		"reloadScript": reloadScript,
+	}).WithField("cmd", cmd).Debug("Reload succeeded")
 	return err
 }
 
 // rollbac reverts configuration files and call for reload
-func (hap *Haproxy) rollback() error {
+func (hap *Haproxy) rollback(correlationId string) error {
 	lastConf := hap.confArchivePath()
 	if _, err := os.Stat(lastConf); os.IsNotExist(err) {
 		return errors.New("No configuration file to rollback")
 	}
 	os.Rename(lastConf, hap.confPath())
-	hap.reload()
+	hap.reload(correlationId)
 	return nil
 }
 
 // createSkeleton creates the directory tree for a new haproxy context
-func (hap *Haproxy) createSkeleton() error {
+func (hap *Haproxy) createSkeleton(correlationId string) error {
 	baseDir := hap.properties.HapHome + "/" + hap.Application
 
-	createDirectory(baseDir + "/Config")
-	createDirectory(baseDir + "/logs/" + hap.Application + hap.Platform)
-	createDirectory(baseDir + "/scripts")
-	createDirectory(baseDir + "/version-1")
+	createDirectory(correlationId, baseDir + "/Config")
+	createDirectory(correlationId, baseDir + "/logs/" + hap.Application + hap.Platform)
+	createDirectory(correlationId, baseDir + "/scripts")
+	createDirectory(correlationId, baseDir + "/version-1")
 
 	updateSymlink(hap.getHapctlFilename(), hap.getReloadScript())
 	updateSymlink(hap.getHapBinary(), baseDir + "/Config/haproxy")
@@ -203,11 +217,14 @@ func updateSymlink(oldname string, newname string) {
 }
 
 // createDirectory recursively creates directory if it doesn't exists
-func createDirectory(dir string) {
+func createDirectory(correlationId string, dir string) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
-			log.WithError(err).WithField("dir", dir).Error("Failed to create")
+			log.WithError(err).WithFields(log.Fields{
+				"correlationId" : correlationId,
+				"dir": dir,
+			}).Error("Failed to create")
 		} else {
 			log.WithField("dir", dir).Println("Directory created")
 		}
