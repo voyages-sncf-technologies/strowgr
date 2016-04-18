@@ -1,6 +1,7 @@
 package main
 
 import (
+
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	eventtypes "github.com/docker/engine-api/types/events"
@@ -10,13 +11,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"flag"
 	"os"
-	"net/http"
-	"fmt"
-	"io/ioutil"
-	"encoding/json"
-	"bytes"
 	"strconv"
-"strings"
+	"strings"
 )
 
 var (
@@ -91,16 +87,16 @@ func main() {
 					public_port := public_ports[0].HostPort
 					log.WithField("port", private_port).Debug("Analyze container")
 
-					id := strings.Replace(address, ".", "_", -1) +  strings.Replace(info.Name, "/", "_", -1)   + "_" + public_port
+					id := strings.Replace(address, ".", "_", -1) + strings.Replace(info.Name, "/", "_", -1) + "_" + public_port
 					instance := NewInstance();
-					instance.Id =  id
+					instance.Id = id
 					instance.App = info.Config.Labels["APPLICATION"]
 					instance.Platform = info.Config.Labels["PLATFORM"]
 					instance.Service = info.Config.Labels["SERVICE_" + private_port + "_NAME"]
 					instance.Port = public_port
 					instance.Ip = address
 					instance.Hostname = id
-					register_instance(instance)
+					instance.register(adminUrl)
 
 					//for label, value := range info.Config.Labels{
 					//	if strings.HasPrefix(label,"SERVICE_" + port + "_CONTEXT"){
@@ -134,46 +130,3 @@ func main() {
 	}
 }
 
-func NewInstance() *Instance {
-	return &Instance{
-		Context:make(map[string]string),
-		ContextOverride:make(map[string]string),
-	}
-}
-
-func register_instance(instance *Instance) {
-	log.WithFields(log.Fields{
-		"id": instance.Id,
-		"application": instance.App,
-		"platform": instance.Platform,
-	}).Info("Register")
-	var url = fmt.Sprintf("%s/api/entrypoint/%s/%s/backend/%s/register-server", adminUrl, instance.App, instance.Platform, instance.Service)
-	json, _ := json.Marshal(instance)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.WithError(err).WithField("url", url).WithField("json", string(json)).Error("Error requesting")
-		return
-	}
-	defer resp.Body.Close()
-
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
-}
-
-type Instance struct {
-	Id              string `json:"id"`
-	Hostname        string `json:"hostname"`
-	Ip              string `json:"ip"`
-	Port            string `json:"port"`
-	App             string `json:"-"`
-	Platform        string `json:"-"`
-	Service         string `json:"-"`
-	Context         map[string]string `json:"context"`
-	ContextOverride map[string]string `json:"contextOverride"`
-}

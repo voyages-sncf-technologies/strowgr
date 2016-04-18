@@ -1,2 +1,2 @@
-package main
+package registrator
 const VERSION string = "1.0.0"
