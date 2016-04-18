@@ -25,13 +25,13 @@ func (config *Config) NodeId() string {
 }
 
 type EventMessage struct {
-	Correlationid  string
-	Conf           []byte
-	Timestamp      int64
-	Application    string
-	Platform       string
-	HapVersion     string
-	SyslogFragment []byte
+	Correlationid  string	`json:"correlationId"`
+	Conf           []byte	`json:"conf"`
+	Timestamp      int64	`json:"timestamp"`
+	Application    string	`json:"application"`
+	Platform       string	`json:"platform"`
+	HapVersion     string	`json:"hapVersion"`
+	SyslogFragment []byte	`json:"syslogConf"`
 }
 
 const (
