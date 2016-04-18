@@ -20,8 +20,8 @@ defaults
         timeout server  120s    #
         timeout check 15s
         maxconn 20000   # Nb connexions concurrentes par frontend
-        log     {{missing_log}}  # En liaison avec param global
-        option  {{missing_entry.value}} # Format des logs (raw,tcp et http)
+        log     file.log  # En liaison avec param global
+        option  raw # Format des logs (raw,tcp et http)
 
 
 ############################################################

@@ -9,7 +9,6 @@ import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.util.*;
 
@@ -118,7 +117,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void try_commit_current_applies_for_not_existing_entrypoint() throws IncompleteConfigurationException {
+    public void try_commit_current_applies_for_not_existing_entrypoint() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), key);
         when(stateManager.tryCommitCurrent(key)).thenReturn(Optional.empty());
@@ -328,7 +327,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_current_applies_with_right_key() throws IncompleteConfigurationException {
+    public void try_commit_current_applies_with_right_key() {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), key);
@@ -350,7 +349,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_pending_applies_with_right_key() throws IncompleteConfigurationException {
+    public void try_commit_pending_applies_with_right_key() {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), key);

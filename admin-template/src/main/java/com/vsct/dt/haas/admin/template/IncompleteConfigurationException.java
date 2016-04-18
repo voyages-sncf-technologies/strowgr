@@ -1,11 +1,13 @@
-package com.vsct.dt.haas.admin.core;
+package com.vsct.dt.haas.admin.template;
+
+import com.github.mustachejava.MustacheException;
 
 import java.util.Set;
 
 /**
  * Created by william_montaz on 15/04/2016.
  */
-public class IncompleteConfigurationException extends Exception {
+public class IncompleteConfigurationException extends MustacheException {
     private final Set<String> missingEntries;
 
     public IncompleteConfigurationException(Set<String> missingEntries) {
@@ -19,5 +21,9 @@ public class IncompleteConfigurationException extends Exception {
             s.append("\t- ").append(e).append("\n");
         }
         return s.toString();
+    }
+
+    public Set<String> getMissingEntries() {
+        return missingEntries;
     }
 }

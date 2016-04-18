@@ -3,11 +3,10 @@ package com.vsct.dt.haas.admin.template;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
+import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
-import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
-import com.vsct.dt.haas.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.haas.admin.template.generator.MustacheTemplateGenerator;
 import org.junit.Test;
 
@@ -59,9 +58,13 @@ public class MustacheTemplateTest {
     public void user_provided_context_for_servers_should_replace_server_provided_context() throws IOException, IncompleteConfigurationException {
         EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
-        Map<String, String> serverContext = new HashMap<>();serverContext.put("key1", "value1");serverContext.put("key2", "value2");
-        Map<String, String> userContext1 = new HashMap<>();userContext1.put("key2", "user_value2");
-        Map<String, String> userContext2 = new HashMap<>();userContext2.put("key1", "user_value1");
+        Map<String, String> serverContext = new HashMap<>();
+        serverContext.put("key1", "value1");
+        serverContext.put("key2", "value2");
+        Map<String, String> userContext1 = new HashMap<>();
+        userContext1.put("key2", "user_value2");
+        Map<String, String> userContext2 = new HashMap<>();
+        userContext2.put("key1", "user_value1");
 
         EntryPointBackendServer server1 = new EntryPointBackendServer("instance_name_1", "server_name_1", "10.98.81.74", "9090", serverContext, userContext1);
         EntryPointBackendServer server2 = new EntryPointBackendServer("instance_name_2", "server_name_2", "10.98.81.75", "9090", serverContext, userContext2);
@@ -91,10 +94,12 @@ public class MustacheTemplateTest {
     }
 
     @Test(expected = IncompleteConfigurationException.class)
-    public void should_throw_exception_when_variable_is_missing_to_valorize_template() throws IOException, IncompleteConfigurationException {
+    public void should_throw_exception_when_variable_is_missing_to_valorize_template_attempt1_missing_global_entry() throws IOException, IncompleteConfigurationException {
         EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
-        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
+        Map<String, String> serverContext = new HashMap<>();
+        serverContext.put("maxconn", "50");
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), serverContext);
         EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
@@ -109,11 +114,98 @@ public class MustacheTemplateTest {
         portsMapping.put(configuration.syslogPortId(), 54250);
         portsMapping.put("OCEREC1WS", 50200);
 
-        templateGenerator.generate(CharStreams.toString(reader), configuration, portsMapping);
+        try {
+            templateGenerator.generate(CharStreams.toString(reader), configuration, portsMapping);
+        } catch (IncompleteConfigurationException e) {
+            System.out.println(e.getMessage());
+            assertThat(e.getMissingEntries().size()).isEqualTo(2);
+            assertThat(e.getMissingEntries().contains("missing_entry.value")).isTrue();
+            assertThat(e.getMissingEntries().contains("missing_log")).isTrue();
+            throw e;
+        }
+    }
+
+    @Test(expected = IncompleteConfigurationException.class)
+    public void should_throw_exception_when_variable_is_missing_to_valorize_template_attempt2_missing_front_entry() throws IOException, IncompleteConfigurationException {
+        EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
+
+        Map<String, String> serverContext = new HashMap<>();
+        serverContext.put("maxconn", "50");
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), serverContext);
+        EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
+        Map<String, String> epContext = new HashMap<>();
+        epContext.put("application", "OCE");
+        epContext.put("platform", "REC1");
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource("template.missing.property.2.context.mustache").getFile());
+        FileReader reader = new FileReader(file);
+
+        Map<String, Integer> portsMapping = new HashMap<>();
+        portsMapping.put(configuration.syslogPortId(), 54250);
+        portsMapping.put("OCEREC1WS", 50200);
+
+        try {
+            templateGenerator.generate(CharStreams.toString(reader), configuration, portsMapping);
+        } catch (IncompleteConfigurationException e) {
+            System.out.println(e.getMessage());
+            assertThat(e.getMissingEntries().size()).isEqualTo(1);
+            assertThat(e.getMissingEntries().contains("frontend.MISSING_FRONT.port")).isTrue();
+            throw e;
+        }
+    }
+
+    @Test(expected = IncompleteConfigurationException.class)
+    public void should_throw_exception_when_variable_is_missing_to_valorize_template_attempt31_missing_server_entry() throws IOException, IncompleteConfigurationException {
+        EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
+
+        Map<String, String> serverContext = new HashMap<>();
+        serverContext.put("maxconn", "50");
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), serverContext);
+        EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
+        Map<String, String> epContext = new HashMap<>();
+        epContext.put("application", "OCE");
+        epContext.put("platform", "REC1");
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource("template.missing.property.3.context.mustache").getFile());
+        FileReader reader = new FileReader(file);
+
+        Map<String, Integer> portsMapping = new HashMap<>();
+        portsMapping.put(configuration.syslogPortId(), 54250);
+        portsMapping.put("OCEREC1WS", 50200);
+
+        try {
+            templateGenerator.generate(CharStreams.toString(reader), configuration, portsMapping);
+        } catch (IncompleteConfigurationException e) {
+            System.out.println(e.getMessage());
+            assertThat(e.getMissingEntries().size()).isEqualTo(1);
+            assertThat(e.getMissingEntries().contains("missing_server_prop")).isTrue();
+            throw e;
+        }
     }
 
     @Test
-    public void should_not_throw_exception_when_variable_is_missing_but_default_behavior_exists(){
+    public void should_not_throw_exception_when_variable_is_missing_but_default_behavior_exists() throws IOException {
+        EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
+        EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
+        Map<String, String> epContext = new HashMap<>();
+        epContext.put("application", "OCE");
+        epContext.put("platform", "REC1");
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource("template.missing.property.with.default.mustache").getFile());
+        FileReader reader = new FileReader(file);
+
+        Map<String, Integer> portsMapping = new HashMap<>();
+        portsMapping.put(configuration.syslogPortId(), 54250);
+        portsMapping.put("OCEREC1WS", 50200);
+
+        templateGenerator.generate(CharStreams.toString(reader), configuration, portsMapping);
     }
 }
