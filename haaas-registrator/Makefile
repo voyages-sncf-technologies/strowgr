@@ -40,7 +40,7 @@ shell:
 	docker run --rm -ti $(IMAGE):$(VERSION) /bin/sh
 
 run:
-	docker rm -f $(BINARY); docker run --privileged -v /var/run/docker.sock:/var/run/docker.sock -d --name $(BINARY) $(IMAGE):$(VERSION) -url http://192.168.99.100:8080 -address 192.168.99.100
+	docker rm -f $(BINARY); docker run --privileged -v /var/run/docker.sock:/var/run/docker.sock -d --name $(BINARY) $(IMAGE):$(VERSION) -url http://192.168.99.100:8080 -address 192.168.99.100 -verbose
 
 logs:
 	docker logs -f $(BINARY)

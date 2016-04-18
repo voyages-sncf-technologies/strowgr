@@ -53,7 +53,7 @@ func eventCallback(event *dockerclient.Event, ec chan error, args ...interface{}
 				}
 
 				for exposedPort, _ := range info.Config.ExposedPorts {
-					private_port := exposedPort
+					private_port := strings.Replace(exposedPort,"/","_",-1)
 					public_ports := info.NetworkSettings.Ports[exposedPort]
 					if public_ports == nil || len(public_ports) == 0 {
 						log.WithField("private_port", private_port).Debug("Port not published")
