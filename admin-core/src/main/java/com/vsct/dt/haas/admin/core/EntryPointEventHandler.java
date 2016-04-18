@@ -123,7 +123,9 @@ public class EntryPointEventHandler {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            EntryPoint committingConfiguration = stateManager.tryCommitCurrent(key).orElseThrow(() -> new IllegalStateException("can't commit entrypoint " + key));
+            EntryPoint committingConfiguration = stateManager
+                    .tryCommitCurrent(key)
+                    .orElseThrow(() -> new IllegalStateException("can't commit entrypoint " + key));
             String template = templateLocator.readTemplate(committingConfiguration);
             Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration);
             String conf = templateGenerator.generate(template, committingConfiguration, portsMapping);

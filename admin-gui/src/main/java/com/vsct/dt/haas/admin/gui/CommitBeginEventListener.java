@@ -6,6 +6,8 @@ import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.event.out.CommitBeginEvent;
 import com.vsct.dt.haas.admin.nsq.producer.Producer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -16,6 +18,7 @@ import java.util.concurrent.TimeoutException;
  * Created by william_montaz on 15/02/2016.
  */
 public class CommitBeginEventListener {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommitBeginEventListener.class);
 
     private final Producer producer;
 
@@ -30,6 +33,7 @@ public class CommitBeginEventListener {
         String application = context.get("application");
         String platform = context.get("platform");
         /* TODO test application and platform nullity */
+        LOGGER.debug("send to nsq a CommitRequested from CommitBeginEvent {}", commitBeginEvent);
         this.producer.sendCommitRequested(commitBeginEvent.getCorrelationId(), configuration.getHaproxy(), application, platform, commitBeginEvent.getConf(), commitBeginEvent.getSyslogConf());
     }
 }
