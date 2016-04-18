@@ -155,7 +155,7 @@ func loadProperties() {
 }
 
 func filteredHandler(event string, message *nsq.Message, target string, f haaasd.HandlerFunc) error {
-	log.Debugf("%+v\n",message);
+	log.Debugf("%+v\n",string(message.Body));
 	defer message.Finish()
 	match, err := daemon.Is(target)
 	if err != nil {
