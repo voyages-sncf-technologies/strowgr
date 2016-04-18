@@ -107,6 +107,14 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 		// TODO Should we rollback on syslog error ?
 		return ERR_SYSLOG, err
 	}
+	log.WithFields(log.Fields{
+		"correlationId": data.Correlationid,
+		"role": hap.Role,
+		"application": data.Application,
+		"plateform":   data.Platform,
+		"content" : data.SyslogFragment,
+		"filename": fragmentPath,
+	}).Debug("Write syslog fragment")
 
 	return SUCCESS, nil
 }
