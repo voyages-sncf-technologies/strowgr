@@ -85,7 +85,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 		"role": hap.Role,
 		"application": data.Application,
 		"plateform":   data.Platform,
-		"path", path,
+		"path": path,
 	}).Info("New configuration written")
 
 	// Reload haproxy
