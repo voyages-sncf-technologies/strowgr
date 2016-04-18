@@ -108,5 +108,7 @@ func main() {
 	log.Info("Starting")
 	client.StartMonitorEvents(eventCallback, nil)
 
+	select{}
+
 }
 
