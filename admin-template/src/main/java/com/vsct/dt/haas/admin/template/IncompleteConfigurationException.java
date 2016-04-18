@@ -2,6 +2,7 @@ package com.vsct.dt.haas.admin.template;
 
 import com.github.mustachejava.MustacheException;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -24,6 +25,6 @@ public class IncompleteConfigurationException extends MustacheException {
     }
 
     public Set<String> getMissingEntries() {
-        return missingEntries;
+        return new HashSet<>(missingEntries);
     }
 }
