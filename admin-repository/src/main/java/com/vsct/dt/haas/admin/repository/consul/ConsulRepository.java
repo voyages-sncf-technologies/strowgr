@@ -227,7 +227,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             createSessionURI.setEntity(new StringEntity(payload));
         }
         Session session = client.execute(createSessionURI, createSessionResponseHandler);
-        LOGGER.debug("get session {} for key {}", sessionLocal.get(), entryPointKey);
+        LOGGER.debug("get session {} for key {}", session.ID, entryPointKey);
         return session;
     }
 
