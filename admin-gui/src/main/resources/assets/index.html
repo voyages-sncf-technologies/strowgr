@@ -141,6 +141,8 @@
             }).then(function (response) {
                 console.info("result:"+response.data);
                 $scope.haproxyGenerated = response.data;
+            }, function(error){
+                $scope.haproxyGenerated = error.data;
             });
         }]);
 
