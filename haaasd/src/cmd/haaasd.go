@@ -40,6 +40,7 @@ func main() {
 
 	if *verbose {
 		log.SetLevel(log.DebugLevel)
+		log.WithField("loglevel", "debug").Info("Change loglevel")
 	}
 
 	loadProperties()
