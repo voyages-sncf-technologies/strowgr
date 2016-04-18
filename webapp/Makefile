@@ -2,7 +2,8 @@
 
 BUILDDIR=bin
 BINARY=webapp
-IMAGE=haaas/$(BINARY)
+REGISTRY=dockerregistrydev.socrate.vsct.fr
+IMAGE=$(REGISTRY)/haaas/$(BINARY)
 
 VERSION=1.0.0
 
@@ -28,3 +29,9 @@ dist: ${BUILDDIR}/${BINARY}-linux_amd64
 
 clean:
 	rm -fr {dist,bin}
+
+push:
+	docker push $(IMAGE):$(VERSION)
+
+run:
+	docker rm -f $(BINARY); docker run -P -d -l platform.name=REL1 --name $(BINARY) $(IMAGE):$(VERSION) /app -instance $(hostname -i)
