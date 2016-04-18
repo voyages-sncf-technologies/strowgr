@@ -8,6 +8,8 @@ import (
 	"strings"
 	"github.com/samalba/dockerclient"
 	"fmt"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -18,7 +20,7 @@ var (
 	client *dockerclient.DockerClient
 )
 
-const(
+const (
 	APPLICATION_LABEL = "application.name"
 	PLATFORM_LABEL = "platform.name"
 	SERVICE_NAME_LABEL = "service.%s.name"
@@ -58,9 +60,9 @@ func eventCallback(event *dockerclient.Event, ec chan error, args ...interface{}
 						continue
 					}
 
-					serviceLabel := fmt.Sprintf(SERVICE_NAME_LABEL,private_port)
+					serviceLabel := fmt.Sprintf(SERVICE_NAME_LABEL, private_port)
 					if info.Config.Labels[serviceLabel] == "" {
-						log.WithField("container", info.Name).WithField("label",serviceLabel).Debug("Label is missing")
+						log.WithField("container", info.Name).WithField("label", serviceLabel).Debug("Label is missing")
 						continue
 					}
 					public_port := public_ports[0].HostPort
@@ -108,7 +110,12 @@ func main() {
 	log.Info("Starting")
 	client.StartMonitorEvents(eventCallback, nil)
 
-	select{}
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	select {
+	case signal := <-sigChan:
+		log.Printf("Got signal: %v\n", signal)
+	}
 
 }
 

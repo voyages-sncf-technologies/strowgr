@@ -1,7 +1,7 @@
 package main
 
 import (
-
+	registrator "../."
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	eventtypes "github.com/docker/engine-api/types/events"
@@ -34,7 +34,7 @@ func main() {
 	flag.Parse()
 
 	if (version) {
-		println(VERSION)
+		println(registrator.VERSION)
 		os.Exit(0)
 	}
 
