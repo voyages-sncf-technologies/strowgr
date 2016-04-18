@@ -79,7 +79,14 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	if err != nil {
 		return ERR_CONF, err
 	}
-	log.WithField("path", path).Info("New configuration written")
+
+	log.WithFields(log.Fields{
+		"correlationId": data.Correlationid,
+		"role": hap.Role,
+		"application": data.Application,
+		"plateform":   data.Platform,
+		"path", path,
+	}).Info("New configuration written")
 
 	// Reload haproxy
 	err = hap.reload(data.Correlationid)
