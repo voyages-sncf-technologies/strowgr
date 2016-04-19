@@ -33,6 +33,7 @@ func (instance *Instance) Register(adminUrl string) {
 		"id": instance.Id,
 		"application": instance.App,
 		"platform": instance.Platform,
+		"service" : instance.Service,
 	}).Info("Register")
 
 	var url = fmt.Sprintf("%s/api/entrypoint/%s/%s/backend/%s/register-server", adminUrl, instance.App, instance.Platform, instance.Service)

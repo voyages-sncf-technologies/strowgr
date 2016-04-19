@@ -42,18 +42,18 @@ func eventCallback(event *dockerclient.Event, ec chan error, args ...interface{}
 			if info.Config == nil || info.Config.ExposedPorts == nil {
 				log.WithField("container", info.Name).Debug("No exposed ports")
 			}else {
-				if info.Config.Labels[APPLICATION_LABEL] == "" {
-					log.WithField("container", info.Name).WithField("label", APPLICATION_LABEL).Debug("Label is missing")
+				if getMetadata(info.Config, APPLICATION_LABEL) == "" {
+					log.WithField("container", info.Name).WithField("key", APPLICATION_LABEL).Debug("Metadata is missing")
 					return
 				}
 
-				if info.Config.Labels[PLATFORM_LABEL] == "" && info.Config.Env[PLATFORM_LABEL] == "" {
-					log.WithField("container", info.Name).WithField("label", PLATFORM_LABEL).Debug("Label or env is missing")
+				if getMetadata(info.Config, PLATFORM_LABEL) == "" {
+					log.WithField("container", info.Name).WithField("key", PLATFORM_LABEL).Debug("Metadata is missing")
 					return
 				}
 
 				for exposedPort, _ := range info.Config.ExposedPorts {
-					private_port := strings.Replace(exposedPort,"/","_",-1)
+					private_port := strings.Replace(exposedPort, "/", "_", -1)
 					public_ports := info.NetworkSettings.Ports[exposedPort]
 					if public_ports == nil || len(public_ports) == 0 {
 						log.WithField("private_port", private_port).Debug("Port not published")
@@ -61,7 +61,7 @@ func eventCallback(event *dockerclient.Event, ec chan error, args ...interface{}
 					}
 
 					serviceLabel := fmt.Sprintf(SERVICE_NAME_LABEL, private_port)
-					if info.Config.Labels[serviceLabel] == "" {
+					if getMetadata(info.Config, serviceLabel) == "" {
 						log.WithField("container", info.Name).WithField("label", serviceLabel).Debug("Label is missing")
 						continue
 					}
@@ -71,15 +71,9 @@ func eventCallback(event *dockerclient.Event, ec chan error, args ...interface{}
 					id := strings.Replace(address, ".", "_", -1) + strings.Replace(info.Name, "/", "_", -1) + "_" + public_port
 					instance := registrator.NewInstance();
 					instance.Id = id
-					instance.App = info.Config.Labels[APPLICATION_LABEL]
-
-					platform := info.Config.Labels[PLATFORM_LABEL]
-					if platform == "" {
-						platform = info.Config.Env[PLATFORM_LABEL]
-					}
-
-					instance.Platform = platform
-					instance.Service = info.Config.Labels[serviceLabel]
+					instance.App = getMetadata(info.Config, APPLICATION_LABEL)
+					instance.Platform = getMetadata(info.Config, PLATFORM_LABEL)
+					instance.Service = getMetadata(info.Config, PLATFORM_LABEL)
 					instance.Port = public_port
 					instance.Ip = address
 					instance.Hostname = id
@@ -89,7 +83,24 @@ func eventCallback(event *dockerclient.Event, ec chan error, args ...interface{}
 			}
 		}
 	}
+}
 
+func getMetadata(config *dockerclient.ContainerConfig, key string) string {
+	if config.Labels[key] != "" {
+		return config.Labels[key]
+	}else {
+		return getEnv(config.Env, key)
+	}
+}
+
+func getEnv(haystack []string, needle string) string {
+	for index := range haystack {
+		res := strings.Split(haystack[index], "=")
+		if res[0] == needle {
+			return res[1]
+		}
+	}
+	return ""
 }
 
 func main() {
