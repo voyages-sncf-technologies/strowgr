@@ -47,8 +47,8 @@ func eventCallback(event *dockerclient.Event, ec chan error, args ...interface{}
 					return
 				}
 
-				if info.Config.Labels[PLATFORM_LABEL] == "" {
-					log.WithField("container", info.Name).WithField("label", PLATFORM_LABEL).Debug("Label is missing")
+				if info.Config.Labels[PLATFORM_LABEL] == "" && info.Config.Env[PLATFORM_LABEL] == "" {
+					log.WithField("container", info.Name).WithField("label", PLATFORM_LABEL).Debug("Label or env is missing")
 					return
 				}
 
@@ -72,7 +72,13 @@ func eventCallback(event *dockerclient.Event, ec chan error, args ...interface{}
 					instance := registrator.NewInstance();
 					instance.Id = id
 					instance.App = info.Config.Labels[APPLICATION_LABEL]
-					instance.Platform = info.Config.Labels[PLATFORM_LABEL]
+
+					platform := info.Config.Labels[PLATFORM_LABEL]
+					if platform == "" {
+						platform = info.Config.Env[PLATFORM_LABEL]
+					}
+
+					instance.Platform = platform
 					instance.Service = info.Config.Labels[serviceLabel]
 					instance.Port = public_port
 					instance.Ip = address
