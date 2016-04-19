@@ -12,15 +12,20 @@ import com.vsct.dt.haas.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.haas.admin.gui.resource.api.PortResources;
 import com.vsct.dt.haas.admin.nsq.producer.Producer;
 import com.vsct.dt.haas.admin.repository.consul.ConsulRepository;
+import com.vsct.dt.haas.admin.template.IncompleteConfigurationException;
 import com.vsct.dt.haas.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.haas.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.jersey.errors.ErrorMessage;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 
@@ -111,6 +116,14 @@ public class HaasMain extends Application<HaasConfiguration> {
         // the healthcheck on producer is done on http port which is by convention tcp port + 1
         environment.healthChecks().register("nsqproducer", new NsqHealthcheck(configuration.getNsqProducerFactory().getHost(), configuration.getNsqProducerFactory().getPort() + 1));
         environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
+
+        /* Exception mappers */
+        environment.jersey().register(new ExceptionMapper<IncompleteConfigurationException>() {
+            @Override
+            public Response toResponse(IncompleteConfigurationException e) {
+                return Response.status(500).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
+            }
+        });
     }
 
 }

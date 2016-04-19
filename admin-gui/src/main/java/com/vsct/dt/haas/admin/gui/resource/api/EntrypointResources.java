@@ -229,6 +229,11 @@ public class EntrypointResources {
     }
 
     @Subscribe
+    public void handle(EntryPointUpdatedEvent entryPointUpdatedEvent) {
+        handleWithCorrelationId(entryPointUpdatedEvent);
+    }
+
+    @Subscribe
     public void handle(ServerRegisteredEvent serverRegisteredEvent) {
         handleWithCorrelationId(serverRegisteredEvent);
     }
