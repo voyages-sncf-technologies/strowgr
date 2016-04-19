@@ -143,13 +143,13 @@ public class EntryPointEventHandler {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPoint> pendingConfiguration = stateManager.tryCommitPending(key);
-            if (pendingConfiguration.isPresent()) {
-                String template = templateLocator.readTemplate(pendingConfiguration.get());
-                Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, pendingConfiguration.get());
-                String conf = templateGenerator.generate(template, pendingConfiguration.get(), portsMapping);
-                String syslogConf = templateGenerator.generateSyslogFragment(pendingConfiguration.get(), portsMapping);
-                CommitBeginEvent commitBeginEvent = new CommitBeginEvent(event.getCorrelationId(), key, pendingConfiguration.get(), conf, syslogConf);
+            Optional<EntryPoint> committingConfiguration = stateManager.tryCommitPending(key);
+            if (committingConfiguration.isPresent()) {
+                String template = templateLocator.readTemplate(committingConfiguration.get());
+                Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, committingConfiguration.get());
+                String conf = templateGenerator.generate(template, committingConfiguration.get(), portsMapping);
+                String syslogConf = templateGenerator.generateSyslogFragment(committingConfiguration.get(), portsMapping);
+                CommitBeginEvent commitBeginEvent = new CommitBeginEvent(event.getCorrelationId(), key, committingConfiguration.get(), conf, syslogConf);
                 LOGGER.debug("from handleTryCommitPendingConfigurationEvent -> post to event bus event {}", commitBeginEvent);
                 outputBus.post(commitBeginEvent);
             } else {

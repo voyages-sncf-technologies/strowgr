@@ -100,12 +100,13 @@ public class EntryPointStateManager {
             } else {
                 repository.setCommittingConfiguration(key, pendingConfiguration.get(), commitTimeout);
                 repository.removePendingConfiguration(key);
+                return pendingConfiguration;
             }
         } else {
             LOGGER.trace("no pending configuration for key {}", key);
         }
 
-        return pendingConfiguration;
+        return Optional.empty();
     }
 
     /**
