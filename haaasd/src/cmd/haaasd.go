@@ -101,6 +101,10 @@ func main() {
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), properties.NodeId(), config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
+		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		if err != nil {
+			log.Panic("Could not connect")
+		}
 	}()
 
 	// Start reload pipeline
