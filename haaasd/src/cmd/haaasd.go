@@ -104,6 +104,7 @@ func main() {
 	}()
 
 	// Start reload pipeline
+	stopChan := make(chan interface{}, 1)
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
@@ -111,6 +112,8 @@ func main() {
 			select {
 			case reload := <-reloadChan:
 				reload.Execute()
+			case  <- stopChan:
+				return
 			}
 		}
 	}()
