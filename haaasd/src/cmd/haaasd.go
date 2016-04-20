@@ -27,7 +27,7 @@ var (
 	daemon      *haaasd.Daemon
 	producer    *nsq.Producer
 	syslog        *haaasd.Syslog
-	reloadChan = make(chan haaasd.EventMessage)
+	reloadChan = make(chan haaasd.ReloadEvent)
 )
 
 func main() {
@@ -103,6 +103,18 @@ func main() {
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
 	}()
 
+	// Start reload pipeline
+	go func() {
+		defer wg.Done()
+		wg.Add(1)
+		for {
+			select {
+			case reload := <-reloadChan:
+				reload.Execute()
+			}
+		}
+	}()
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	select {
@@ -164,7 +176,6 @@ func loadProperties() {
 }
 
 func filteredHandler(event string, message *nsq.Message, target string, f haaasd.HandlerFunc) error {
-	log.Debugf("%+v\n",string(message.Body));
 	defer message.Finish()
 	match, err := daemon.Is(target)
 	if err != nil {
@@ -178,7 +189,16 @@ func filteredHandler(event string, message *nsq.Message, target string, f haaasd
 			log.WithError(err).Error("Unable to read data")
 			return err
 		}
-		f(data)
+
+		switch event {
+		case "commit_requested":
+			reloadChan <- haaasd.ReloadEvent{F: f, Message: data}
+		case "commit_slave_completed":
+			reloadChan <- haaasd.ReloadEvent{F: f, Message: data}
+		case "commit_completed":
+			logAndForget(data)
+		}
+
 	} else {
 		log.WithField("event", event).Debug("Ignore event")
 	}
@@ -190,16 +210,25 @@ func onCommitRequested(message *nsq.Message) error {
 	return filteredHandler("commit_requested", message, "slave", reloadSlave)
 }
 func onCommitSlaveRequested(message *nsq.Message) error {
-	return filteredHandler("commit_slave_completed_", message, "master", reloadMaster)
+	return filteredHandler("commit_slave_completed", message, "master", reloadMaster)
 }
 func onCommitCompleted(message *nsq.Message) error {
-	message.Finish()
+	return filteredHandler("commit_completed", message, "slave", logAndForget)
+}
+
+// logAndForget is a generic function to just log event
+func logAndForget(data *haaasd.EventMessage) error {
+	log.WithFields(log.Fields{
+		"correlationId": data.Correlationid,
+		"application" : data.Application,
+		"platform": data.Platform,
+	}).Debug("Commit completed")
 	return nil
 }
 
-
 func reloadSlave(data *haaasd.EventMessage) error {
-	hap := haaasd.NewHaproxy("slave",properties, data.Application, data.Platform, data.HapVersion)
+	hap := haaasd.NewHaproxy("slave", properties, data.Application, data.Platform, data.HapVersion)
+
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != haaasd.UNCHANGED {
@@ -218,7 +247,7 @@ func reloadSlave(data *haaasd.EventMessage) error {
 }
 
 func reloadMaster(data *haaasd.EventMessage) error {
-	hap := haaasd.NewHaproxy("master",properties, data.Application, data.Platform, data.HapVersion)
+	hap := haaasd.NewHaproxy("master", properties, data.Application, data.Platform, data.HapVersion)
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != haaasd.UNCHANGED {

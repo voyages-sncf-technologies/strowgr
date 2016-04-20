@@ -25,13 +25,22 @@ func (config *Config) NodeId() string {
 }
 
 type EventMessage struct {
-	Correlationid  string	`json:"correlationId"`
-	Conf           []byte	`json:"conf"`
-	Timestamp      int64	`json:"timestamp"`
-	Application    string	`json:"application"`
-	Platform       string	`json:"platform"`
-	HapVersion     string	`json:"hapVersion"`
-	SyslogFragment []byte	`json:"syslogConf"`
+	Correlationid  string        `json:"correlationId"`
+	Conf           []byte        `json:"conf"`
+	Timestamp      int64        `json:"timestamp"`
+	Application    string        `json:"application"`
+	Platform       string        `json:"platform"`
+	HapVersion     string        `json:"hapVersion"`
+	SyslogFragment []byte        `json:"syslogConf"`
+}
+
+type ReloadEvent struct {
+	Message *EventMessage
+	F  func (data *EventMessage) error
+}
+
+func (re *ReloadEvent) Execute() error{
+	return re.F(re.Message)
 }
 
 const (
