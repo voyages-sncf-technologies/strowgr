@@ -128,6 +128,7 @@ func main() {
 	case signal := <-sigChan:
 		log.Printf("Got signal: %v\n", signal)
 	}
+	stopChan <- true
 	restApi.Stop()
 
 	log.Printf("Waiting on server to stop\n")
