@@ -27,6 +27,7 @@ var (
 	daemon      *haaasd.Daemon
 	producer    *nsq.Producer
 	syslog        *haaasd.Syslog
+	reloadChan = make(chan haaasd.EventMessage)
 )
 
 func main() {
@@ -92,6 +93,14 @@ func main() {
 		if err != nil {
 			log.Panic("Could not connect")
 		}
+	}()
+
+	// Start complete consumer
+	go func() {
+		defer wg.Done()
+		wg.Add(1)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), properties.NodeId(), config)
+		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
 	}()
 
 	sigChan := make(chan os.Signal, 1)
@@ -183,6 +192,11 @@ func onCommitRequested(message *nsq.Message) error {
 func onCommitSlaveRequested(message *nsq.Message) error {
 	return filteredHandler("commit_slave_completed_", message, "master", reloadMaster)
 }
+func onCommitCompleted(message *nsq.Message) error {
+	message.Finish()
+	return nil
+}
+
 
 func reloadSlave(data *haaasd.EventMessage) error {
 	hap := haaasd.NewHaproxy("slave",properties, data.Application, data.Platform, data.HapVersion)
