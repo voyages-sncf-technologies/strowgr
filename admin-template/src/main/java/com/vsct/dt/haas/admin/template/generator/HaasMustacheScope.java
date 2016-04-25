@@ -5,9 +5,7 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -30,9 +28,11 @@ public class HaasMustacheScope extends HashMap<String, Object> {
 
         Map<String, Object> frontend = configuration.getFrontends().stream().sorted((f1, f2) -> f1.getId().compareTo(f2.getId())).collect(Collectors.toMap(EntryPointFrontend::getId, this::toMustacheScope));
         this.put("frontend", frontend);
+        this.put("frontends", frontend.values());
 
         Map<String, Object> backend = configuration.getBackends().stream().sorted((b1, b2) -> b1.getId().compareTo(b2.getId())).collect(Collectors.toMap(EntryPointBackend::getId, this::toMustacheScope));
         this.put("backend", backend);
+        this.put("backends", backend.values());
     }
 
     public Map<String, Object> toMustacheScope(EntryPointFrontend frontend) {
@@ -53,7 +53,7 @@ public class HaasMustacheScope extends HashMap<String, Object> {
 
         scope.put("id", backend.getId());
 
-        Set<Object> servers = backend.getServers().stream().sorted((s1, s2) -> s1.getId().compareTo(s2.getId())).map(this::toMustacheScope).collect(Collectors.toSet());
+        Set<Object> servers = backend.getServers().stream().sorted((s1, s2) -> s1.getId().compareTo(s2.getId())).map(this::toMustacheScope).collect(Collectors.toCollection(LinkedHashSet::new));
         scope.put("servers", servers);
 
         return scope;
