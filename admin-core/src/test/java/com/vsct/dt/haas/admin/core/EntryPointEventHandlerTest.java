@@ -116,17 +116,6 @@ public class EntryPointEventHandlerTest {
         verify(stateManager, never()).prepare(any(), any());
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void try_commit_current_applies_for_not_existing_entrypoint() {
-        EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
-        TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), key);
-        when(stateManager.tryCommitCurrent(key)).thenReturn(Optional.empty());
-
-        handler.handleTryCommitCurrentConfigurationEvent(event);
-
-        fail("should throw an IllegalStateException");
-    }
-
     @Test
     public void update_entry_point_should_do_nothing_if_there_is_no_configuration_at_all() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("key");
