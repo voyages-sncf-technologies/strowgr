@@ -46,7 +46,7 @@ public class UriTemplateLocator implements TemplateLocator {
             });
         } catch (IOException e) {
             LOGGER.error("Can't retrieve template from ", e);
-            return null;
+            throw new RuntimeException(e);
         }
     }
 }
