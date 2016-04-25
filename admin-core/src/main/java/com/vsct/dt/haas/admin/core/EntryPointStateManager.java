@@ -96,7 +96,7 @@ public class EntryPointStateManager {
 
         if (pendingConfiguration.isPresent()) {
             if (repository.getCommittingConfiguration(key).isPresent()) {
-                LOGGER.debug("can't committing a new pending configuration, there is already one.");
+                LOGGER.debug("can't committing a new pending configuration, there is already one in commit phase.");
             } else {
                 repository.setCommittingConfiguration(key, pendingConfiguration.get(), commitTimeout);
                 repository.removePendingConfiguration(key);
@@ -122,6 +122,8 @@ public class EntryPointStateManager {
             if (!repository.getCommittingConfiguration(key).isPresent()) {
                 repository.setCommittingConfiguration(key, currentConfiguration.get(), commitTimeout);
                 return currentConfiguration;
+            } else {
+                LOGGER.debug("can't committing a new current configuration, there is already one in commit phase.");
             }
         } else {
             LOGGER.debug("can't find current configuration for entrypoint with key {}",key);
