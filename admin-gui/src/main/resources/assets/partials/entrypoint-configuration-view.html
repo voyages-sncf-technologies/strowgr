@@ -66,7 +66,7 @@
                         <md-list-item class="md-1-line"><span style="margin-right:5px;">Syslog </span><strong>{{conf.syslogPort}}</strong></md-list-item>
                         <md-list-item class="md-2-line" layout="column">
                             <div layout="row">
-                                <span>URL du la conf</span><template-display uri="conf.context.templateUri"></template-display><haproxy-generated context="conf.context"></haproxy-generated>
+                                <span>URL du la conf</span><template-display uri="conf.context.templateUri"></template-display><haproxy-generated conf="conf"></haproxy-generated>
                             </div>
                             <div><a href="{{conf.context.templateUri}}">{{conf.context.templateUri}}</a></div>
                         </md-list-item>

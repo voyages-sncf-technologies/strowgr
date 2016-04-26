@@ -134,14 +134,15 @@
                     restrict: 'E',
                     templateUrl: 'partials/haproxy-generated.html',
                     scope: {
-                        context: '=context'
+                        conf: '=conf'
                     },
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
                             $http({
-                                method: 'GET',
-                                url: '/api/entrypoints/' + scope.context.application + '/' + scope.context.platform + '/current/configuration/haproxy',
-                                responseType: 'text'
+                                method: 'POST',
+                                url: '/api/haproxy/template/valorise',
+                                responseType: 'text',
+                                data: scope.conf
                             }).then(function (response) {
                                 return response.data;
                             }, function (error) {
