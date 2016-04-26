@@ -95,19 +95,8 @@
 
         }]);
 
-        adminApp.controller('TemplateDisplay', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
-            $http({
-                method: 'GET',
-                url: '/api/haproxy/template?uri='+escape($scope.uri),
-                responseType: 'text'
-            }).then(function (response) {
-                console.info("result:"+response.data);
-                $scope.template = response.data;
-            });
-        }]);
-
-        adminApp.directive('templateDisplay', ['$mdDialog',
-            function ($mdDialog) {
+        adminApp.directive('templateDisplay', ['$mdDialog', '$http',
+            function ($mdDialog, $http) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/template-display.html',
@@ -116,15 +105,22 @@
                     },
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
-                            $mdDialog.show({
-                                templateUrl: 'template-display/popup.html',
-                                clickOutsideToClose: true,
-                                scope: scope,
-                                autoWrap: false,
-                                openFrom: element,
-                                closeTo: element,
-                                preserveScope: true,
-                                fullscreen: false
+                            $http({
+                                method: 'GET',
+                                url: '/api/haproxy/template?uri='+escape(scope.uri),
+                                responseType: 'text'
+                            }).then(function (response) {
+                                scope.template = response.data;
+                                $mdDialog.show({
+                                    templateUrl: 'template-display/popup.html',
+                                    clickOutsideToClose: true,
+                                    scope: scope,
+                                    autoWrap: false,
+                                    openFrom: element,
+                                    closeTo: element,
+                                    preserveScope: true,
+                                    fullscreen: false
+                                });
                             });
                         }
                     }
