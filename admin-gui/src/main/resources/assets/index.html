@@ -76,6 +76,29 @@
                     }, function (error) {
                         console.error("can't load haproxyName " + haproxyName + ". Response is " + response.data);
                     });
+                },
+                getGeneratedTemplate: function(conf){
+                    return $http({
+                        method: 'POST',
+                        url: '/api/haproxy/template/valorise',
+                        responseType: 'text',
+                        data: conf
+                    }).then(function (response) {
+                        return response.data;
+                    }, function (error) {
+                        return error.data;
+                    })
+                },
+                getTemplate: function(uri){
+                    return $http({
+                        method: 'GET',
+                        url: '/api/haproxy/template?uri=' + escape(uri),
+                        responseType: 'text'
+                    }).then(function (response) {
+                        return response.data;
+                    }, function (error) {
+                        return error.data;
+                    })
                 }
             }
         }]);
@@ -95,8 +118,8 @@
 
         }]);
 
-        adminApp.directive('templateDisplay', ['$mdDialog', '$http',
-            function ($mdDialog, $http) {
+        adminApp.directive('templateDisplay', ['$mdDialog', '$http', 'Haproxy',
+            function ($mdDialog, $http, Haproxy) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/template-display.html',
@@ -105,15 +128,7 @@
                     },
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
-                            $http({
-                                method: 'GET',
-                                url: '/api/haproxy/template?uri=' + escape(scope.uri),
-                                responseType: 'text'
-                            }).then(function (response) {
-                                return response.data;
-                            }, function (error) {
-                                return error.data;
-                            }).then(function (value) {
+                            Haproxy.getTemplate(scope.uri).then(function (value) {
                                 scope.template = value;
                                 $mdDialog.show({
                                     templateUrl: 'template-display/popup.html',
@@ -132,8 +147,8 @@
             }
         ]);
 
-        adminApp.directive('haproxyGenerated', ['$mdDialog', '$http',
-            function ($mdDialog, $http) {
+        adminApp.directive('haproxyGenerated', ['$mdDialog', '$http', 'Haproxy',
+            function ($mdDialog, $http, Haproxy) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/haproxy-generated.html',
@@ -142,16 +157,7 @@
                     },
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
-                            $http({
-                                method: 'POST',
-                                url: '/api/haproxy/template/valorise',
-                                responseType: 'text',
-                                data: scope.conf
-                            }).then(function (response) {
-                                return response.data;
-                            }, function (error) {
-                                return error.data;
-                            }).then(function (value) {
+                            Haproxy.getGeneratedTemplate(scope.conf).then(function (value) {
                                 scope.haproxyGenerated = value;
                                 $mdDialog.show({
                                     templateUrl: 'haproxy-generated/popup.html',
