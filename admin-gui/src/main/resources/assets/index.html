@@ -63,8 +63,20 @@
                         return response.data;
                     }, function(error){
                         if(error.status = 404){
-                            return "Port not fixed yet";
+                            return "Port not assigned yet";
                         }
+                    });
+                }
+            }
+        }]);
+
+        adminApp.factory('Haproxy', ['$http', function($http){
+            return {
+                getUri: function(id){
+                    return $http.get('/api/haproxy/uri/'+id).then(function (response) {
+                        return response.data;
+                    }, function(error){
+                        console.error("can't load haproxyName "+ haproxyName+". Response is "+response.data);
                     });
                 }
             }
@@ -77,13 +89,6 @@
                 url: '/api/entrypoints'
             }).then(function (response) {
                 $scope.entrypoints = response.data;
-            });
-
-
-            $http.get('/api/haproxy/uri/default-name').then(function (response) {
-                $scope.haproxyUri = response.data
-            }, function(error){
-                console.error("can't load haproxyName "+ haproxyName+". Response is "+response.data);
             });
 
             $scope.loadEntrypoint = function (id) {
@@ -129,7 +134,7 @@
             }
         ]);
 
-        adminApp.controller('HaproxyGenerated', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
+        adminApp.controller('HaproxyGenerated', ['$scope', '$http', function ($scope, $http) {
             console.log('get haproxy configuration');
             $http({
                 method: 'GET',
@@ -316,8 +321,8 @@
             }
         }]);
 
-        adminApp.directive('entrypointConfigurationView', ['PortProvider',
-            function (PortProvider) {
+        adminApp.directive('entrypointConfigurationView', ['PortProvider', 'Haproxy',
+            function (PortProvider, Haproxy) {
                 return {
 
                     templateUrl: 'partials/entrypoint-configuration-view.html',
@@ -325,6 +330,13 @@
                         conf: '=conf'
                     },
                     link: function (scope, element, attrs) {
+                        scope.$watch('conf', function (newConf, oldConf) {
+                            if(newConf != undefined){
+                                Haproxy.getUri(newConf.haproxy).then(function(uri){
+                                    scope.haproxyUri = uri;
+                                });
+                            }
+                        });
                     }
                 }
             }

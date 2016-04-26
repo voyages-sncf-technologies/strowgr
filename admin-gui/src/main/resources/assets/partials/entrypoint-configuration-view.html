@@ -89,7 +89,7 @@
                         <span><strong>{{frontend.port}}</strong></span>
                         <context-map title="Frontend {{frontend.id}}" context="frontend.context"></context-map>
                         <div flex id="test">
-                            <a href="http://{{$parent.$parent.$parent.$parent.haproxyUri}}:{{frontend.port}}/stats">stats</a>
+                            <a href="http://{{haproxyUri}}:{{frontend.port}}/stats">stats</a>
                         </div>
                     </div>
                 </div>
