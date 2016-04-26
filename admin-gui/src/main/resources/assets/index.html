@@ -110,7 +110,11 @@
                                 url: '/api/haproxy/template?uri=' + escape(scope.uri),
                                 responseType: 'text'
                             }).then(function (response) {
-                                scope.template = response.data;
+                                return response.data;
+                            }, function (error) {
+                                return error.data;
+                            }).then(function (value) {
+                                scope.template = value;
                                 $mdDialog.show({
                                     templateUrl: 'template-display/popup.html',
                                     clickOutsideToClose: true,
