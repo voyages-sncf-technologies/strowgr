@@ -25,8 +25,11 @@ public class UriTemplateLocator implements TemplateLocator {
 
     @Override
     public String readTemplate(EntryPoint configuration) {
-        try {
-            String uri = configuration.getContext().get(URI_FIELD);
+        return readTemplate(configuration.getContext().get(URI_FIELD));
+    }
+
+    public String readTemplate(String uri){
+        try{
             HttpGet getTemplate = new HttpGet(uri);
             LOGGER.debug("get template {}", uri);
             return client.execute(getTemplate, (response) -> {

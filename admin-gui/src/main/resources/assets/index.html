@@ -93,10 +93,9 @@
         }]);
 
         adminApp.controller('TemplateDisplay', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
-
             $http({
                 method: 'GET',
-                url: '/api/entrypoints/'+$scope.context.application+'/'+$scope.context.platform+'/current/template/haproxy',
+                url: '/api/haproxy/template?uri='+escape($scope.uri),
                 responseType: 'text'
             }).then(function (response) {
                 console.info("result:"+response.data);
@@ -110,9 +109,7 @@
                     restrict: 'E',
                     templateUrl: 'partials/template-display.html',
                     scope: {
-                        context: '=context',
-                        title: '@',
-                        template: '=template'
+                        uri: '=uri'
                     },
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
@@ -328,12 +325,6 @@
                         conf: '=conf'
                     },
                     link: function (scope, element, attrs) {
-                        scope.globalContextFilter = function (entry, index, array) {
-                            //if(entry.$key == 'application' || entry.$key == 'plateforme' || entry.$key == 'templateUri'){
-                            //    return false;
-                            //}
-                            return true;
-                        };
                     }
                 }
             }

@@ -1,16 +1,23 @@
 package com.vsct.dt.haas.admin.gui.resource.api;
 
 import com.vsct.dt.haas.admin.core.EntryPointRepository;
+import com.vsct.dt.haas.admin.core.TemplateLocator;
+import com.vsct.dt.haas.admin.template.locator.UriTemplateLocator;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 
 @Path("/haproxy")
 public class HaproxyResources {
+
+    private final UriTemplateLocator   templateLocator;
+    private final EntryPointRepository repository;
+
+    public HaproxyResources(EntryPointRepository repository, UriTemplateLocator templateLocator) {
+        this.repository = repository;
+        this.templateLocator = templateLocator;
+    }
 
     @GET
     @Path("/uri/{haproxyName : .+}")
@@ -19,11 +26,14 @@ public class HaproxyResources {
         return repository.getHaproxyVip(haproxyName).orElseThrow(() -> new RuntimeException("can't get haproxy uri of " + haproxyName));
     }
 
-    private final EntryPointRepository repository;
-
-    public HaproxyResources(EntryPointRepository repository) {
-        this.repository = repository;
+    @GET
+    @Path("/template")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getCommittingHaproxyTemplate(@QueryParam("uri") String uri) throws IOException {
+        if(uri == null || uri.equals("")){
+            throw new BadRequestException("You must provide 'uri' query param");
+        }
+        return templateLocator.readTemplate(uri);
     }
-
 
 }

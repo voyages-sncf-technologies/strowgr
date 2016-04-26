@@ -126,17 +126,6 @@ public class EntrypointResources {
     }
 
     @GET
-    @Path("/{id : .+}/current/template/haproxy")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String getHaproxyTemplate(@PathParam("id") String id) throws IOException {
-        Optional<EntryPoint> currentConfiguration = repository.getCurrentConfiguration(new EntryPointKeyDefaultImpl(id));
-        if (currentConfiguration.isPresent()) {
-            return templateLocator.readTemplate(currentConfiguration.get());
-        }
-        return "can't find haproxy template uri for entrypoint " + id;
-    }
-
-    @GET
     @Path("/{id : .+}/current/configuration/haproxy")
     @Produces(MediaType.TEXT_PLAIN)
     public String getHaproxyConfiguration(@PathParam("id") String id) throws IOException {
@@ -204,7 +193,7 @@ public class EntrypointResources {
         return "Request posted, look info to follow actions";
     }
 
-    public void handleWithCorrelationId(EntryPointEvent event) {
+    private void handleWithCorrelationId(EntryPointEvent event) {
         try {
             LOGGER.trace("remove entrypoint {}", event);
             AsyncResponseCallback asyncResponseCallback = callbacks.remove(event.getCorrelationId());

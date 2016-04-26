@@ -103,7 +103,7 @@ public class HaasMain extends Application<HaasConfiguration> {
         EntrypointResources restApiResource = new EntrypointResources(eventBus, repository, repository, templateLocator, templateGenerator);
         environment.jersey().register(restApiResource);
 
-        HaproxyResources haproxyResources = new HaproxyResources(repository);
+        HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator);
         environment.jersey().register(haproxyResources);
 
         PortResources portResources = new PortResources(repository);

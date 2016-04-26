@@ -1,50 +1,50 @@
 <style>
 
     div.entrypoint-configuration-view {
-    margin-top: 20px;
-    margin-left: 20px;
-    margin-right: 20px;
-    margin-bottom: 0;
+        margin-top: 20px;
+        margin-left: 20px;
+        margin-right: 20px;
+        margin-bottom: 0;
     }
 
     div.entrypoint-configuration-view * {
-    margin-top: 0;
-    margin-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
     }
 
     #globalTitle, #frontendsTitle, #backendsTitle {
-    margin-top: 6px;
-    margin-bottom: 6px;
+        margin-top: 6px;
+        margin-bottom: 6px;
     }
 
     #global, #frontends, #backends {
-    margin-bottom: 16px;
+        margin-bottom: 16px;
     }
 
     .entrypoint-configuration-view #global-details {
-    padding-left: 30px;
+        padding-left: 30px;
     }
 
     .entrypoint-configuration-view #frontends .frontend {
-    padding-left: 30px;
+        padding-left: 30px;
     }
 
     .entrypoint-configuration-view #backends .backend {
-    padding-left: 30px;
+        padding-left: 30px;
     }
 
     .entrypoint-configuration-view #backends .server {
-    padding-left: 30px;
+        padding-left: 30px;
     }
 
     .entrypoint-component {
-    border: solid 1px lightblue;
+        border: solid 1px lightblue;
     }
 
     .backend-item {
-    border-bottom: solid 1px lightblue;
-    padding: 10px 3px 5px 0px;
-    width: 100%;
+        border-bottom: solid 1px lightblue;
+        padding: 10px 3px 5px 0px;
+        width: 100%;
     }
 
 </style>
@@ -66,7 +66,7 @@
                         <md-list-item class="md-1-line"><span style="margin-right:5px;">Syslog </span><strong>{{conf.syslogPort}}</strong></md-list-item>
                         <md-list-item class="md-2-line" layout="column">
                             <div layout="row">
-                                <span>URL du la conf</span><template-display context="conf.context"></template-display><haproxy-generated context="conf.context"></haproxy-generated>
+                                <span>URL du la conf</span><template-display uri="conf.context.templateUri"></template-display><haproxy-generated context="conf.context"></haproxy-generated>
                             </div>
                             <div><a href="{{conf.context.templateUri}}">{{conf.context.templateUri}}</a></div>
                         </md-list-item>
