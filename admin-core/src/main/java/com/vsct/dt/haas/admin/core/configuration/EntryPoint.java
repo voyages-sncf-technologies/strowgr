@@ -113,27 +113,6 @@ public class EntryPoint {
         return configuration;
     }
 
-    public String generateHaproxyConfiguration(EntryPointKey entryPointKey, TemplateLocator templateLocator, TemplateGenerator templateGenerator, PortProvider portProvider) {
-        String template = templateLocator.readTemplate(this);
-        Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, portProvider, this);
-        return templateGenerator.generate(template, this, portsMapping);
-    }
-
-    private Map<String, Integer> getOrCreatePortsMapping(EntryPointKey key, PortProvider portProvider, EntryPoint entryPoint) {
-        Map<String, Integer> portsMapping = new HashMap<>();
-        String prefix = key.getID() + '-';
-
-        int syslogPort = portProvider.getPort(prefix + entryPoint.syslogPortId()).orElseGet(() -> portProvider.newPort(prefix + entryPoint.syslogPortId()));
-        portsMapping.put(entryPoint.syslogPortId(), syslogPort);
-
-        for (EntryPointFrontend frontend : entryPoint.getFrontends()) {
-            int frontendPort = portProvider.getPort(prefix + frontend.portId()).orElseGet(() -> portProvider.newPort(prefix + frontend.portId()));
-            portsMapping.put(frontend.portId(), frontendPort);
-        }
-
-        return portsMapping;
-    }
-
     public String getHapUser() {
         return hapUser;
     }

@@ -328,7 +328,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
         when(stateManager.tryCommitCurrent(key)).thenReturn(Optional.of(entryPoint));
-        when(portProvider.getPort(key.getID() + "-syslog")).thenReturn(Optional.of(666));
+        when(portProvider.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
 
         // Test
         handler.handleTryCommitCurrentConfigurationEvent(event);
@@ -350,7 +350,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
         when(stateManager.tryCommitPending(key)).thenReturn(Optional.of(entryPoint));
-        when(portProvider.getPort(key.getID() + "-syslog")).thenReturn(Optional.of(666));
+        when(portProvider.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
 
         // Test
         handler.handleTryCommitPendingConfigurationEvent(event);

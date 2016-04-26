@@ -10,7 +10,6 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import com.vsct.dt.haas.admin.core.event.in.*;
 import com.vsct.dt.haas.admin.core.event.out.*;
-import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointBackendServerMappingJson;
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.haas.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.haas.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
@@ -24,7 +23,6 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -42,18 +40,12 @@ public class EntrypointResources {
 
     private final EventBus             eventBus;
     private final EntryPointRepository repository;
-    private final PortProvider         portProvider;
     private Map<String, AsyncResponseCallback> callbacks       = new ConcurrentHashMap<>();
     private ScheduledExecutorService           timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
-    private final TemplateLocator   templateLocator;
-    private final TemplateGenerator templateGenerator;
 
-    public EntrypointResources(EventBus eventBus, EntryPointRepository repository, PortProvider portProvider, TemplateLocator templateLocator, TemplateGenerator templateGenerator) {
+    public EntrypointResources(EventBus eventBus, EntryPointRepository repository) {
         this.eventBus = eventBus;
         this.repository = repository;
-        this.portProvider = portProvider;
-        this.templateLocator = templateLocator;
-        this.templateGenerator = templateGenerator;
     }
 
     @GET
@@ -123,17 +115,6 @@ public class EntrypointResources {
         Optional<EntryPoint> configuration = repository.getCommittingConfiguration(new EntryPointKeyDefaultImpl(id));
 
         return new EntryPointMappingJson(configuration.orElseThrow(NotFoundException::new));
-    }
-
-    @GET
-    @Path("/{id : .+}/current/configuration/haproxy")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String getHaproxyConfiguration(@PathParam("id") String id) throws IOException {
-        EntryPointKeyDefaultImpl key = new EntryPointKeyDefaultImpl(id);
-        return repository
-                .getCurrentConfiguration(key)
-                .orElseThrow(() -> new IllegalStateException("can't get configurtion for id " + id))
-                .generateHaproxyConfiguration(key, templateLocator, templateGenerator, portProvider);
     }
 
     /* DEBUGGING METHODS */

@@ -10,7 +10,20 @@ public interface PortProvider {
 
     Optional<Map<String, Integer>> getPorts();
 
-    public Optional<Integer> getPort(String key);
+    Optional<Integer> getPort(String key);
+
+    default Optional<Integer> getPort(EntryPointKey key, String portId){
+        return getPort(PortProvider.getPortKey(key, portId));
+    }
 
     Integer newPort(String key);
+
+    default Integer newPort(EntryPointKey key, String portId){
+        return newPort(PortProvider.getPortKey(key, portId));
+    }
+
+    static String getPortKey(EntryPointKey key, String portId) {
+        return key.getID() + '-' + portId;
+    }
+
 }

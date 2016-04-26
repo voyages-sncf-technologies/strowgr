@@ -59,8 +59,8 @@
                 getPort: function (id) {
                     return $http.get('/api/ports/' + id).then(function (response) {
                         return response.data;
-                    }, function(error){
-                        if(error.status = 404){
+                    }, function (error) {
+                        if (error.status = 404) {
                             return "Port not assigned yet";
                         }
                     });
@@ -68,13 +68,13 @@
             }
         }]);
 
-        adminApp.factory('Haproxy', ['$http', function($http){
+        adminApp.factory('Haproxy', ['$http', function ($http) {
             return {
-                getUri: function(id){
-                    return $http.get('/api/haproxy/uri/'+id).then(function (response) {
+                getUri: function (id) {
+                    return $http.get('/api/haproxy/uri/' + id).then(function (response) {
                         return response.data;
-                    }, function(error){
-                        console.error("can't load haproxyName "+ haproxyName+". Response is "+response.data);
+                    }, function (error) {
+                        console.error("can't load haproxyName " + haproxyName + ". Response is " + response.data);
                     });
                 }
             }
@@ -107,7 +107,7 @@
                         scope.showContext = function () {
                             $http({
                                 method: 'GET',
-                                url: '/api/haproxy/template?uri='+escape(scope.uri),
+                                url: '/api/haproxy/template?uri=' + escape(scope.uri),
                                 responseType: 'text'
                             }).then(function (response) {
                                 scope.template = response.data;
@@ -128,41 +128,36 @@
             }
         ]);
 
-        adminApp.controller('HaproxyGenerated', ['$scope', '$http', function ($scope, $http) {
-            console.log('get haproxy configuration');
-            $http({
-                method: 'GET',
-                url: '/api/entrypoints/'+$scope.context.application+'/'+$scope.context.platform+'/current/configuration/haproxy',
-                responseType: 'text'
-            }).then(function (response) {
-                console.info("result:"+response.data);
-                $scope.haproxyGenerated = response.data;
-            }, function(error){
-                $scope.haproxyGenerated = error.data;
-            });
-        }]);
-
-        adminApp.directive('haproxyGenerated', ['$mdDialog',
-            function ($mdDialog) {
+        adminApp.directive('haproxyGenerated', ['$mdDialog', '$http',
+            function ($mdDialog, $http) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/haproxy-generated.html',
                     scope: {
-                        context: '=context',
-                        title: '@',
-                        haproxyGenerated: '=haproxyGenerated'
+                        context: '=context'
                     },
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
-                            $mdDialog.show({
-                                templateUrl: 'haproxy-generated/popup.html',
-                                clickOutsideToClose: true,
-                                scope: scope,
-                                autoWrap: false,
-                                openFrom: element,
-                                closeTo: element,
-                                preserveScope: true,
-                                fullscreen: false
+                            $http({
+                                method: 'GET',
+                                url: '/api/entrypoints/' + scope.context.application + '/' + scope.context.platform + '/current/configuration/haproxy',
+                                responseType: 'text'
+                            }).then(function (response) {
+                                return response.data;
+                            }, function (error) {
+                                return error.data;
+                            }).then(function (value) {
+                                scope.haproxyGenerated = value;
+                                $mdDialog.show({
+                                    templateUrl: 'haproxy-generated/popup.html',
+                                    clickOutsideToClose: true,
+                                    scope: scope,
+                                    autoWrap: false,
+                                    openFrom: element,
+                                    closeTo: element,
+                                    preserveScope: true,
+                                    fullscreen: false
+                                });
                             });
                         }
                     }
@@ -227,18 +222,18 @@
 
         }]);
 
-        adminApp.directive('entrypointUpdate', ['$http', function($http){
+        adminApp.directive('entrypointUpdate', ['$http', function ($http) {
             return {
                 templateUrl: 'partials/update-entrypoint.html',
                 scope: {
                     conf: '=conf'
                 },
-                link: function(scope, element, attrs){
+                link: function (scope, element, attrs) {
 
                     scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
                     scope.forbiddenFrontendKeys = ['id', 'port'];
                     scope.forbiddenBackendKeys = ['id'];
-                    scope.forbiddenServerKeys = ['id','hostname','ip','port'];
+                    scope.forbiddenServerKeys = ['id', 'hostname', 'ip', 'port'];
 
                     scope.addFrontend = function () {
                         scope.conf.frontends.push({
@@ -269,10 +264,10 @@
                         }
                     };
 
-                    scope.updateEntrypoint = function() {
+                    scope.updateEntrypoint = function () {
                         //Create the update model
                         var frontends = [];
-                        for(var i = 0; i < scope.conf.frontends.length; i++){
+                        for (var i = 0; i < scope.conf.frontends.length; i++) {
                             var f = scope.conf.frontends[i];
                             frontends.push({
                                 id: f.id,
@@ -281,10 +276,10 @@
                         }
 
                         var backends = [];
-                        for(var i = 0; i < scope.conf.backends.length; i++){
+                        for (var i = 0; i < scope.conf.backends.length; i++) {
                             var b = scope.conf.backends[i];
                             var servers = [];
-                            for(var j = 0; j < b.servers.length; j++){
+                            for (var j = 0; j < b.servers.length; j++) {
                                 servers.push({
                                     id: b.servers[j].id,
                                     contextOverride: b.servers[j].contextOverride
@@ -325,8 +320,8 @@
                     },
                     link: function (scope, element, attrs) {
                         scope.$watch('conf', function (newConf, oldConf) {
-                            if(newConf != undefined){
-                                Haproxy.getUri(newConf.haproxy).then(function(uri){
+                            if (newConf != undefined) {
+                                Haproxy.getUri(newConf.haproxy).then(function (uri) {
                                     scope.haproxyUri = uri;
                                 });
                             }
@@ -362,7 +357,6 @@
                 }
             }
         ]);
-
 
         adminApp.directive('contextMapInput', [
             function () {
@@ -530,11 +524,11 @@
                             $interval.cancel(refreshAuto);
                         });
 
-                        scope.$on("entrypoint-updated", function() {
+                        scope.$on("entrypoint-updated", function () {
                             scope.selectedIndex = 0;
                         });
 
-                        scope.load_update_model = function(conf){
+                        scope.load_update_model = function (conf) {
                             scope.update_model = conf;
                         };
                     }

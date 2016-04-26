@@ -177,13 +177,12 @@ public class EntryPointEventHandler {
 
     private Map<String, Integer> getOrCreatePortsMapping(EntryPointKey key, EntryPoint entryPoint) {
         Map<String, Integer> portsMapping = new HashMap<>();
-        String prefix = key.getID() + '-';
 
-        int syslogPort = portProvider.getPort(prefix + entryPoint.syslogPortId()).orElseGet(() -> portProvider.newPort(prefix + entryPoint.syslogPortId()));
+        int syslogPort = portProvider.getPort(key, entryPoint.syslogPortId()).orElseGet(() -> portProvider.newPort(key, entryPoint.syslogPortId()));
         portsMapping.put(entryPoint.syslogPortId(), syslogPort);
 
         for (EntryPointFrontend frontend : entryPoint.getFrontends()) {
-            int frontendPort = portProvider.getPort(prefix + frontend.portId()).orElseGet(() -> portProvider.newPort(prefix + frontend.portId()));
+            int frontendPort = portProvider.getPort(key, frontend.portId()).orElseGet(() -> portProvider.newPort(key, frontend.portId()));
             portsMapping.put(frontend.portId(), frontendPort);
         }
 

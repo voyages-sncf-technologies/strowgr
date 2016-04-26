@@ -409,16 +409,6 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public Optional<String> getHaproxyVip(String haproxyName) {
-        try {
-            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName + "/vip?raw");
-            return client.execute(getHaproxyURI, getHaproxyURIHandler);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public Integer newPort(String key) {
         int newPort = -1;
         try {
@@ -460,6 +450,16 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             throw new RuntimeException(e);
         }
         return newPort;
+    }
+
+    @Override
+    public Optional<String> getHaproxyVip(String haproxyName) {
+        try {
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName + "/vip?raw");
+            return client.execute(getHaproxyURI, getHaproxyURIHandler);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public String encodeJson(Map<String, Integer> portsByEntrypoint) throws IOException {

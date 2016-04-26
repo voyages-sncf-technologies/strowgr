@@ -100,10 +100,10 @@ public class HaasMain extends Application<HaasConfiguration> {
         configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
 
         /* REST Resources */
-        EntrypointResources restApiResource = new EntrypointResources(eventBus, repository, repository, templateLocator, templateGenerator);
+        EntrypointResources restApiResource = new EntrypointResources(eventBus, repository);
         environment.jersey().register(restApiResource);
 
-        HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator);
+        HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);
         environment.jersey().register(haproxyResources);
 
         PortResources portResources = new PortResources(repository);
