@@ -127,10 +127,6 @@
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
                             Haproxy.getTemplate(scope.uri).then(function (value) {
-                                return value;
-                            }, function (error) {
-                                return error.data;
-                            }).then(function (value) {
                                 scope.template = value;
                                 $mdDialog.show({
                                     templateUrl: 'template-display/popup.html',
@@ -142,6 +138,13 @@
                                     preserveScope: true,
                                     fullscreen: false
                                 });
+                            }, function (error) {
+                                var alert = $mdDialog.alert({
+                                    htmlContent: '<pre>' + error.data.message + '</pre>',
+                                    clickOutsideToClose: true,
+                                    ok: "Je dois corriger la configuration"
+                                });
+                                $mdDialog.show(alert);
                             });
                         }
                     }
@@ -160,10 +163,6 @@
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
                             Haproxy.getGeneratedTemplate(scope.conf).then(function (value) {
-                                return value;
-                            }, function (error) {
-                                return error.data;
-                            }).then(function (value) {
                                 scope.haproxyGenerated = value;
                                 $mdDialog.show({
                                     templateUrl: 'haproxy-generated/popup.html',
@@ -175,6 +174,13 @@
                                     preserveScope: true,
                                     fullscreen: false
                                 });
+                            }, function (error) {
+                                var alert = $mdDialog.alert({
+                                    htmlContent: '<pre>' + error.data.message + '</pre>',
+                                    clickOutsideToClose: true,
+                                    ok: "Je dois corriger la configuration"
+                                });
+                                $mdDialog.show(alert);
                             });
                         }
                     }
@@ -244,8 +250,9 @@
                     $location.path('/');
                 }, function (error) {
                     var alert = $mdDialog.alert({
-                        htmlContent: '<pre>'+error.data.message+'</pre>',
-                        clickOutsideToClose: true
+                        htmlContent: '<pre>' + error.data.message + '</pre>',
+                        clickOutsideToClose: true,
+                        ok: "Je reprends ma configuration"
                     });
                     $mdDialog.show(alert);
                 });
@@ -330,13 +337,13 @@
                             backends: backends
                         };
 
-                        Haproxy.getGeneratedTemplate(scope.conf).then(function(response){
+                        Haproxy.getGeneratedTemplate(scope.conf).then(function (response) {
                             return $http.patch('/api/entrypoints/' + scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
                         }).then(function (response) {
                             scope.$emit("entrypoint-updated");
                         }, function (error) {
                             var alert = $mdDialog.alert({
-                                htmlContent: '<pre>'+error.data.message+'</pre>',
+                                htmlContent: '<pre>' + error.data.message + '</pre>',
                                 clickOutsideToClose: true,
                                 ok: "Je reprends ma configuration"
                             });
