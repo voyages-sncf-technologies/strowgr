@@ -16,6 +16,8 @@
     <script src="webjars/angularjs/1.4.9/angular-animate.min.js"></script>
     <script src="webjars/angularjs/1.4.9/angular-messages.min.js"></script>
 
+    <script src="webjars/angular-sanitize/1.4.9/angular-sanitize.min.js"></script>
+
     <script src="webjars/angular-material/1.0.5/angular-material.js"></script>
 
     <script src="webjars/lodash/4.0.0/lodash.min.js"></script>
@@ -37,7 +39,7 @@
     </style>
 
     <script type="text/javascript">
-        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages']);
+        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages', 'ngSanitize']);
 
         adminApp.config(['$routeProvider', function ($routeProvider) {
             $routeProvider.
@@ -77,7 +79,7 @@
                         console.error("can't load haproxyName " + haproxyName + ". Response is " + response.data);
                     });
                 },
-                getGeneratedTemplate: function(conf){
+                getGeneratedTemplate: function (conf) {
                     return $http({
                         method: 'POST',
                         url: '/api/haproxy/template/valorise',
@@ -85,20 +87,16 @@
                         data: conf
                     }).then(function (response) {
                         return response.data;
-                    }, function (error) {
-                        return error.data;
-                    })
+                    });
                 },
-                getTemplate: function(uri){
+                getTemplate: function (uri) {
                     return $http({
                         method: 'GET',
                         url: '/api/haproxy/template?uri=' + escape(uri),
                         responseType: 'text'
                     }).then(function (response) {
                         return response.data;
-                    }, function (error) {
-                        return error.data;
-                    })
+                    });
                 }
             }
         }]);
@@ -129,6 +127,10 @@
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
                             Haproxy.getTemplate(scope.uri).then(function (value) {
+                                return value;
+                            }, function (error) {
+                                return error.data;
+                            }).then(function (value) {
                                 scope.template = value;
                                 $mdDialog.show({
                                     templateUrl: 'template-display/popup.html',
@@ -158,6 +160,10 @@
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {
                             Haproxy.getGeneratedTemplate(scope.conf).then(function (value) {
+                                return value;
+                            }, function (error) {
+                                return error.data;
+                            }).then(function (value) {
                                 scope.haproxyGenerated = value;
                                 $mdDialog.show({
                                     templateUrl: 'haproxy-generated/popup.html',
@@ -174,9 +180,10 @@
                     }
                 }
             }
-        ]);
+        ])
+        ;
 
-        adminApp.controller('AddEntrypointCtrl', ['$scope', '$http', '$location', function ($scope, $http, $location) {
+        adminApp.controller('AddEntrypointCtrl', ['$scope', '$http', '$location', 'Haproxy', '$mdDialog', function ($scope, $http, $location, Haproxy, $mdDialog) {
             /* Init conf object, avoid undefined inner objects and show expected fields */
             $scope.conf = {
                 haproxy: "",
@@ -223,11 +230,24 @@
                 }
             };
 
+            /* Checks the entrypoint configuration first and then creates the entrypoint */
             $scope.createEntrypoint = function () {
-                $http.put('/api/entrypoints/' + $scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf).then(function (response) {
+                /* Since ports are provided by the backend, we simulate their presence for template valorisation validation */
+                var confWithFakePorts = angular.copy($scope.conf);
+                confWithFakePorts.syslogPort = "00000";
+                for (var i = 0; i < confWithFakePorts.frontends.length; i++) {
+                    confWithFakePorts.frontends[i].port = "00000";
+                }
+                Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (template) {
+                    return $http.put('/api/entrypoints/' + $scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf);
+                }).then(function (response) {
                     $location.path('/');
                 }, function (error) {
-                    console.info(error);
+                    var alert = $mdDialog.alert({
+                        htmlContent: '<pre>'+error.data.message+'</pre>',
+                        clickOutsideToClose: true
+                    });
+                    $mdDialog.show(alert);
                 });
             };
 
