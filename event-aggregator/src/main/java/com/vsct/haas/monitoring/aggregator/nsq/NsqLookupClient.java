@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Set;
 
-public class NsqLookup {
+public class NsqLookupClient {
 
-    private static final Logger LOGGER          = LoggerFactory.getLogger(NsqLookup.class);
+    private static final Logger LOGGER          = LoggerFactory.getLogger(NsqLookupClient.class);
     private static final String TOPICS_ENDPOINT = "/topics";
 
     private final CloseableHttpClient client;
@@ -26,7 +26,7 @@ public class NsqLookup {
     private final String host;
     private final int    port;
 
-    public NsqLookup(String host, int port) {
+    public NsqLookupClient(String host, int port) {
         this.host = host;
         this.port = port;
         this.client = HttpClients.createDefault();
@@ -34,6 +34,7 @@ public class NsqLookup {
 
     public Set<String> getTopics() throws UnavailableNsqException {
         try {
+            LOGGER.info("Listing all nsq topics");
             HttpGet uri = new HttpGet("http://" + host + ":" + port + TOPICS_ENDPOINT);
             return client.execute(uri, new ResponseHandler<Set<String>>() {
                 @Override
