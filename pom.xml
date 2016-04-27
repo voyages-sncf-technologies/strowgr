@@ -16,6 +16,7 @@
         <module>admin-nsq</module>
         <module>admin-template</module>
         <module>admin-scheduler</module>
+        <module>event-aggregator</module>
     </modules>
 
     <properties>
