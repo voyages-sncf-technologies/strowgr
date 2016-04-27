@@ -253,7 +253,7 @@
 
         }]);
 
-        adminApp.directive('entrypointUpdate', ['$http', function ($http) {
+        adminApp.directive('entrypointUpdate', ['$http', 'Haproxy', '$mdDialog', function ($http, Haproxy, $mdDialog) {
             return {
                 templateUrl: 'partials/update-entrypoint.html',
                 scope: {
@@ -330,10 +330,17 @@
                             backends: backends
                         };
 
-                        $http.patch('/api/entrypoints/' + scope.conf.context.application + '/' + scope.conf.context.platform, updateModel).then(function (response) {
+                        Haproxy.getGeneratedTemplate(scope.conf).then(function(response){
+                            return $http.patch('/api/entrypoints/' + scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
+                        }).then(function (response) {
                             scope.$emit("entrypoint-updated");
                         }, function (error) {
-                            console.info(error);
+                            var alert = $mdDialog.alert({
+                                htmlContent: '<pre>'+error.data.message+'</pre>',
+                                clickOutsideToClose: true,
+                                ok: "Je reprends ma configuration"
+                            });
+                            $mdDialog.show(alert);
                         });
                     };
 
