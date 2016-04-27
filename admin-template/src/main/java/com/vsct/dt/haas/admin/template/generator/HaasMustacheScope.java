@@ -4,6 +4,7 @@ import com.vsct.dt.haas.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
+import com.vsct.dt.haas.admin.template.IncompleteConfigurationException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,7 +25,7 @@ public class HaasMustacheScope extends HashMap<String, Object> {
         /* Put all context first which guaranties essential properties of a configuration are not overridden */
         this.putAll(configuration.getContext());
         this.put("hap_user", configuration.getHapUser());
-        this.put("syslog_port", getPort(configuration.syslogPortId()));
+        getPort(configuration.syslogPortId()).ifPresent(p -> this.put("syslog_port", p));
 
         Map<String, Object> frontend = configuration.getFrontends().stream().sorted((f1, f2) -> f1.getId().compareTo(f2.getId())).collect(Collectors.toMap(EntryPointFrontend::getId, this::toMustacheScope));
         this.put("frontend", frontend);
@@ -40,7 +41,7 @@ public class HaasMustacheScope extends HashMap<String, Object> {
         /* Put all context first which guaranties essential properties of a frontend are not overridden */
         scope.putAll(frontend.getContext());
         scope.put("id", frontend.getId());
-        scope.put("port", getPort(frontend.portId()));
+        getPort(frontend.portId()).ifPresent(p -> scope.put("port", p));
 
         return scope;
     }
@@ -75,12 +76,8 @@ public class HaasMustacheScope extends HashMap<String, Object> {
         return scope;
     }
 
-    private int getPort(String id) {
-        Integer port = portsMapping.get(id);
-        if(port == null){
-            throw new RuntimeException("Impossible to find a port for "+id+" It should have been provided by the caller in the portsMapping hashmap");
-        }
-        return port;
+    private Optional<Integer> getPort(String id) {
+        return Optional.ofNullable(portsMapping.get(id));
     }
 
 }

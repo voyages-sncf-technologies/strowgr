@@ -7,6 +7,7 @@ import com.vsct.dt.haas.admin.core.TemplateGenerator;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
+import com.vsct.dt.haas.admin.template.IncompleteConfigurationException;
 import com.vsct.dt.haas.admin.template.locator.UriTemplateLocator;
 
 import javax.validation.Valid;
@@ -31,14 +32,14 @@ public class HaproxyResources {
     @GET
     @Path("/uri/{haproxyName : .+}")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getHaproxyURI(@PathParam("haproxyName") String haproxyName) throws IOException {
+    public String getHaproxyURI(@PathParam("haproxyName") String haproxyName) {
         return repository.getHaproxyVip(haproxyName).orElseThrow(() -> new RuntimeException("can't get haproxy uri of " + haproxyName));
     }
 
     @GET
     @Path("/template")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getHaproxyTemplate(@QueryParam("uri") String uri) throws IOException {
+    public String getHaproxyTemplate(@QueryParam("uri") String uri) {
         if (uri == null || uri.equals("")) {
             throw new BadRequestException("You must provide 'uri' query param");
         }
@@ -49,8 +50,12 @@ public class HaproxyResources {
     @Path("/template/valorise")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String getHaproxyConfiguration(@Valid EntryPointWithPortsMappingJson configuration) throws IOException {
-        return generateHaproxyConfiguration(configuration);
+    public String getHaproxyConfiguration(@Valid EntryPointWithPortsMappingJson configuration) {
+        try {
+            return generateHaproxyConfiguration(configuration);
+        } catch (IncompleteConfigurationException e) {
+            throw new BadRequestException(e.getMessage());
+        }
     }
 
     private String generateHaproxyConfiguration(EntryPointWithPortsMappingJson configuration) {
