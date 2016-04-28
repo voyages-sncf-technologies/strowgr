@@ -16,7 +16,6 @@ public class Consumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(Consumer.class);
 
     private static final ObjectMapper mapper  = new ObjectMapper();
-    private static final String       CHANNEL = "AGGREGATOR";
     private String eventName;
     private String haproxyId;
 
@@ -25,7 +24,7 @@ public class Consumer {
     private ParsedPayloadWriter writer;
     private ErrorRecordWriter   errorWriter;
 
-    public Consumer(NSQLookup lookup, String topic, ParsedPayloadWriter writer, ErrorRecordWriter errorWriter) {
+    public Consumer(NSQLookup lookup, String topic, String channel, ParsedPayloadWriter writer, ErrorRecordWriter errorWriter) {
         LOGGER.info("Creating NSQConsumer for topic -> " + topic);
 
         /* By convention, topic is using _ to sperate eventName and haproxyId */
@@ -42,7 +41,7 @@ public class Consumer {
         this.writer = writer;
         this.errorWriter = errorWriter;
 
-        this.consumer = new NSQConsumer(lookup, topic, CHANNEL, consumeMessage);
+        this.consumer = new NSQConsumer(lookup, topic, channel, consumeMessage);
     }
 
     public void start() {
