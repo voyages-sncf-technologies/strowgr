@@ -1,24 +1,17 @@
 package com.vsct.haas.monitoring.aggregator;
 
 import com.datastax.driver.core.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.DefaultNSQLookup;
 import com.github.brainlag.nsq.lookup.NSQLookup;
-import com.vsct.haas.monitoring.aggregator.cassandra.CassandraEvent;
-import com.vsct.haas.monitoring.aggregator.cassandra.Sender;
+import com.vsct.haas.monitoring.aggregator.cassandra.ParsedPayloadWriter;
+import com.vsct.haas.monitoring.aggregator.cassandra.ErrorRecordWriter;
 import com.vsct.haas.monitoring.aggregator.nsq.Consumer;
-import com.vsct.haas.monitoring.aggregator.nsq.NsqEventHeader;
-import com.vsct.haas.monitoring.aggregator.nsq.NsqLookupClient;
 import com.vsct.haas.monitoring.aggregator.nsq.UnavailableNsqException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public class AggregatorMain {
 
@@ -42,15 +35,15 @@ public class AggregatorMain {
         session = cluster.connect(KEYSPACE);
         LOGGER.info("Initiated Cassandra session");
 
-        Sender sender = new Sender(session);
+        ParsedPayloadWriter writer = new ParsedPayloadWriter(session);
+        ErrorRecordWriter errorWriter = new ErrorRecordWriter(session);
 
         NSQLookup lookup = new DefaultNSQLookup();
         lookup.addLookupAddress("parisiancocktail", 54161);
-
-        consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", sender));
-        consumers.put("commit_slave_completed_default-name", new Consumer(lookup, "commit_slave_completed_default-name", sender));
-        consumers.put("commit_requested_default-name", new Consumer(lookup, "commit_requested_default-name", sender));
-        consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", sender));
+        consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", writer, errorWriter));
+        consumers.put("commit_slave_completed_default-name", new Consumer(lookup, "commit_slave_completed_default-name", writer, errorWriter));
+        consumers.put("commit_requested_default-name", new Consumer(lookup, "commit_requested_default-name", writer, errorWriter));
+        consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", writer, errorWriter));
 
         LOGGER.info("Starting NSQ Consumers");
         for (Consumer consumer : consumers.values()) {

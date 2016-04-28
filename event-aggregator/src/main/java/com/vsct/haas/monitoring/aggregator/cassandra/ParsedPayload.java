@@ -1,21 +1,12 @@
 package com.vsct.haas.monitoring.aggregator.cassandra;
 
+import com.vsct.haas.monitoring.aggregator.StringDates;
 import com.vsct.haas.monitoring.aggregator.nsq.NsqEventHeader;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.UUID;
 
-public class CassandraEvent {
-
-    private static final DateTimeFormatter dateTimeFormatter  = DateTimeFormatter.ISO_LOCAL_DATE;
-    private static final int               MILLISEC_PER_SEC   = 1000;
-    private static final int               SECONDS_PER_MINUTE = 60;
-    private static final int               SECONDS_PER_HOUR   = 60 * SECONDS_PER_MINUTE;
-    private static final int               HOURS_PER_DAY      = 24;
-    private static final int               SECONDS_PER_DAY    = SECONDS_PER_HOUR * HOURS_PER_DAY;
-    private static final int               MILLISEC_PER_DAY   = MILLISEC_PER_SEC * SECONDS_PER_DAY;
+public class ParsedPayload {
 
     private final String id;
     private final String date;
@@ -25,14 +16,14 @@ public class CassandraEvent {
     private final String haproxyId;
     private final String payload;
 
-    public CassandraEvent(NsqEventHeader header, String haproxyId, String eventName, String payload) {
+    public ParsedPayload(NsqEventHeader header, String haproxyId, String eventName, String payload) {
         this.id = header.getApplication() + "/" + header.getPlatform();
         this.eventTimestamp = header.getTimestamp();
         this.eventName = eventName;
         this.correlationId = header.getCorrelationId();
         this.haproxyId = haproxyId;
         this.payload = payload;
-        this.date = LocalDate.ofEpochDay(header.getTimestamp().getTime() / MILLISEC_PER_DAY).format(dateTimeFormatter);
+        this.date = StringDates.ISO_LOCAL_DATE(this.eventTimestamp);
     }
 
     public String getId() {
@@ -68,7 +59,7 @@ public class CassandraEvent {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        CassandraEvent that = (CassandraEvent) o;
+        ParsedPayload that = (ParsedPayload) o;
 
         if (eventTimestamp != that.eventTimestamp) return false;
         if (id != null ? !id.equals(that.id) : that.id != null) return false;
