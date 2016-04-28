@@ -1,8 +1,6 @@
 package com.vsct.haas.monitoring.aggregator;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Metadata;
-import com.datastax.driver.core.Session;
+import com.datastax.driver.core.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.DefaultNSQLookup;
@@ -15,8 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class AggregatorMain {
 
@@ -29,8 +29,9 @@ public class AggregatorMain {
     private static final Map<String, NSQConsumer> consumers = new HashMap<>();
     private static final String                   TABLE     = "entrypoint_by_day";
     private static final String                   KEYSPACE  = "haaas";
-    private static Cluster cluster;
-    private static Session session;
+    private static Cluster           cluster;
+    private static Session           session;
+    private static PreparedStatement preparedStatement;
 
     public static void main(String[] args) throws UnavailableNsqException, InterruptedException {
         NsqLookupClient lookupClient = new NsqLookupClient("parisiancocktail", 54161);
@@ -44,6 +45,11 @@ public class AggregatorMain {
 
         session = cluster.connect(KEYSPACE);
         LOGGER.info("Initiated Cassandra session");
+
+        preparedStatement = session.prepare(
+                "INSERT INTO " + TABLE + " (id, date, event_timestamp, correlation_id, event_name, haproxy_id, payload) VALUES (?,?,?,?,?,?,?);"
+        );
+        LOGGER.info("Prepared statement");
 
         NSQLookup lookup = new DefaultNSQLookup();
         lookup.addLookupAddress("parisiancocktail", 54161);
@@ -100,10 +106,15 @@ public class AggregatorMain {
                 return;
             }
 
-            CassandraEvent cassandraEvent = new CassandraEvent(payload, haproxyId, eventName, new String(message.getMessage()));
+            String payloadString = null;
+            try {
+                payloadString = new String(message.getMessage());
+                CassandraEvent cassandraEvent = new CassandraEvent(payload, haproxyId, eventName, payloadString);
 
-            sendToCassandra(cassandraEvent);
-
+                sendToCassandra(cassandraEvent);
+            } catch (Throwable t) {
+                LOGGER.error("Cannot publish message to cassandra. Reason: "+t.getMessage()+" MESSAGE -> "+payloadString);
+            }
             message.finished();
         });
     }
@@ -111,18 +122,16 @@ public class AggregatorMain {
     private static void sendToCassandra(CassandraEvent event) {
         if (LOGGER.isDebugEnabled()) LOGGER.debug("Record " + event.getEventName() + " for " + event.getId());
 
-        session.execute(
-                "INSERT INTO " + TABLE + " (id, date, event_timestamp, event_name, correlation_id, haproxy_id, payload) " +
-                        "VALUES (" +
-                        "'"+event.getId() + "'," +
-                        "'"+event.getDate() + "'," +
-                        event.getEventTimestamp() + "," +
-                        "'"+event.getEventName() + "'," +
-                        event.getCorrelationId() + "," +
-                        "'"+event.getHaproxyId() + "'," +
-                        "'"+event.getPayload() + "')" +
-                        ";");
-
+        BoundStatement bound = preparedStatement.bind(
+                event.getId(),
+                event.getDate(),
+                event.getEventTimestamp(),
+                event.getCorrelationId(),
+                event.getEventName(),
+                event.getHaproxyId(),
+                event.getPayload()
+        );
+        session.execute(bound);
     }
 
 }

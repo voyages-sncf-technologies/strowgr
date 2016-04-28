@@ -4,17 +4,20 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Date;
+import java.util.UUID;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class NsqEventHeader {
 
-    private final long   timestamp;
-    private final String correlationId;
+    private final Date   timestamp;
+    private final UUID   correlationId;
     private final String application;
     private final String platform;
 
     @JsonCreator
-    public NsqEventHeader(@JsonProperty("correlationId") String correlationId,
-                          @JsonProperty("timestamp") long timestamp,
+    public NsqEventHeader(@JsonProperty("correlationId") UUID correlationId,
+                          @JsonProperty("timestamp") Date timestamp,
                           @JsonProperty("application") String application,
                           @JsonProperty("platform") String platform) {
         this.correlationId = correlationId;
@@ -23,11 +26,11 @@ public class NsqEventHeader {
         this.platform = platform;
     }
 
-    public long getTimestamp() {
+    public Date getTimestamp() {
         return timestamp;
     }
 
-    public String getCorrelationId() {
+    public UUID getCorrelationId() {
         return correlationId;
     }
 
@@ -57,7 +60,7 @@ public class NsqEventHeader {
 
     @Override
     public int hashCode() {
-        int result = (int) (timestamp ^ (timestamp >>> 32));
+        int result = timestamp != null ? timestamp.hashCode() : 0;
         result = 31 * result + (correlationId != null ? correlationId.hashCode() : 0);
         result = 31 * result + (application != null ? application.hashCode() : 0);
         result = 31 * result + (platform != null ? platform.hashCode() : 0);
