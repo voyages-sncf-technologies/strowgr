@@ -113,7 +113,7 @@ public class AggregatorMain {
 
                 sendToCassandra(cassandraEvent);
             } catch (Throwable t) {
-                LOGGER.error("Cannot publish message to cassandra. Reason: "+t.getMessage()+" MESSAGE -> "+payloadString);
+                LOGGER.error("Cannot publish message to cassandra. Reason: "+t.getMessage()+". "+eventName+" -> "+payloadString);
             }
             message.finished();
         });
