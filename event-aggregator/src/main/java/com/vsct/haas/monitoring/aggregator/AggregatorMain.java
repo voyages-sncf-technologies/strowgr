@@ -34,7 +34,7 @@ public class AggregatorMain {
     private static PreparedStatement preparedStatement;
 
     public static void main(String[] args) throws UnavailableNsqException, InterruptedException {
-        NsqLookupClient lookupClient = new NsqLookupClient("parisiancocktail", 54161);
+        //NsqLookupClient lookupClient = new NsqLookupClient("parisiancocktail", 54161);
 
         /* Reach Cassandra */
         cluster = Cluster.builder()
