@@ -17,6 +17,7 @@
         <module>admin-template</module>
         <module>admin-scheduler</module>
         <module>event-aggregator</module>
+        <module>event-gui</module>
     </modules>
 
     <properties>
