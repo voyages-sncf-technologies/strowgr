@@ -9,7 +9,7 @@ import (
 
 var (
 	config = Config{HapHome: "/HOME"}
-	hap    = NewHaproxy(&config, "TST", "DEV", "1.4.22")
+	hap    = NewHaproxy("master",&config, "TST", "DEV", "1.4.22")
 )
 
 func TestGetReloadScript(t *testing.T) {
@@ -23,7 +23,7 @@ func TestCreateSkeleton(t *testing.T) {
 	tmpdir, _ := ioutil.TempDir("", "haaas")
 	defer os.Remove(tmpdir)
 	config.HapHome = tmpdir
-	hap.createSkeleton()
+	hap.createSkeleton("mycorrelationid")
 	AssertFileExists(t, tmpdir+"/TST/Config")
 	AssertFileExists(t, tmpdir+"/TST/logs/TSTDEV")
 	AssertFileExists(t, tmpdir+"/TST/scripts")
