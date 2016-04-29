@@ -28,6 +28,7 @@ var (
 	producer    *nsq.Producer
 	syslog        *haaasd.Syslog
 	reloadChan = make(chan haaasd.ReloadEvent)
+	lastSyslogReload = time.Now()
 )
 
 func main() {
@@ -56,7 +57,7 @@ func main() {
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
 
-	initProducer()
+	createTopicsAndChannels()
 	time.Sleep(1 * time.Second)
 
 	var wg sync.WaitGroup
@@ -116,7 +117,7 @@ func main() {
 			select {
 			case reload := <-reloadChan:
 				reload.Execute()
-			case  <- stopChan:
+			case <-stopChan:
 				return
 			}
 		}
@@ -135,37 +136,42 @@ func main() {
 	wg.Wait()
 }
 
-func initProducer() {
+func createTopicsAndChannels() {
 	// Create required topics
 	topics := []string{"commit_slave_completed", "commit_completed", "commit_failed"}
 	channels := []string{"slave", "master"}
 	topicChan := make(chan string, len(topics))
+
+	// fill the channel
 	for i := range topics {
 		topicChan <- topics[i]
 	}
-	left := len(topics)
-	for left > 0 {
+
+	for len(topicChan) > 0 {
+		// create the topic
 		topic := <-topicChan
 		log.WithField("topic", topic).Info("Creating topic")
 		url := fmt.Sprintf("%s/topic/create?topic=%s_%s", properties.ProducerRestAddr, topic, properties.ClusterId)
 		resp, err := http.PostForm(url, nil)
 		if err != nil || resp.StatusCode != 200 {
+			// retry to create this topic
 			topicChan <- topic
 			continue
 		}
-		for channel := range channels {
-			log.WithField("channel", channels[channel]).Info("Creating channel")
-			url := fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s-%s", properties.ProducerRestAddr, topic, properties.ClusterId, properties.ClusterId, channels[channel])
+
+		// create the channels of the topics
+		for _, channel := range channels {
+			log.WithField("channel", channel).Info("Creating channel")
+			url := fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s-%s", properties.ProducerRestAddr, topic, properties.ClusterId, properties.ClusterId, channel)
 			resp, err := http.PostForm(url, nil)
 			if err != nil || resp.StatusCode != 200 {
+				// retry all for this topic if channel creation failed
 				topicChan <- topic
 				continue
 			}
 		}
 
 		log.WithField("topic", topic).Info("Topic created")
-		left--
-
 	}
 }
 
@@ -240,7 +246,13 @@ func reloadSlave(data *haaasd.EventMessage) error {
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != haaasd.UNCHANGED {
-			syslog.Restart()
+			elapsed := time.Now().Sub(lastSyslogReload)
+			if elapsed.Seconds() > 10 {
+				syslog.Restart()
+				lastSyslogReload = time.Now()
+			} else {
+				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
+			}
 		}
 		publishMessage("commit_slave_completed_", data)
 	} else {

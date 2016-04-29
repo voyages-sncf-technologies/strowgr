@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"time"
+	"io"
 )
 
 func NewHaproxy(role string, properties *Config, application string, platform string, version string) *Haproxy {
@@ -98,7 +99,10 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 			"plateform":   data.Platform,
 		}).WithError(err).Error("Reload failed")
 		hap.dumpConfiguration(hap.NewErrorPath(), newConf, data)
-		err = hap.rollback(data.Correlationid)
+		errRollback := hap.rollback(data.Correlationid)
+		if errRollback != nil {
+			log.WithError(errRollback).Error("error in rollback in addition to error of the reload")
+		}
 		return ERR_RELOAD, err
 	}
 	// Write syslog fragment
@@ -119,7 +123,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 		"role": hap.Role,
 		"application": data.Application,
 		"plateform":   data.Platform,
-		"content" : data.SyslogFragment,
+		"content" : string(data.SyslogFragment),
 		"filename": fragmentPath,
 	}).Debug("Write syslog fragment")
 
@@ -128,7 +132,6 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 
 // dumpConfiguration dumps the new configuration file with context for debugging purpose
 func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *EventMessage) {
-
 	f, err2 := os.Create(filename)
 	defer f.Close()
 	if err2 == nil {
@@ -187,7 +190,7 @@ func (hap *Haproxy) NewDebugPath() string {
 func (hap *Haproxy) reload(correlationId string) error {
 
 	reloadScript := hap.getReloadScript()
-	cmd, err := exec.Command("sh", reloadScript, "reload", "-y").Output()
+	output, err := exec.Command("sh", reloadScript, "reload", "-y").Output()
 	if err != nil {
 		log.WithError(err).Error("Error reloading")
 	}
@@ -197,16 +200,17 @@ func (hap *Haproxy) reload(correlationId string) error {
 		"application": hap.Application,
 		"platform": hap.Platform,
 		"reloadScript": reloadScript,
-	}).WithField("cmd", cmd).Debug("Reload succeeded")
+	}).WithField("cmd", string(output[:])).Debug("Reload succeeded")
 	return err
 }
 
-// rollbac reverts configuration files and call for reload
+// rollback reverts configuration files and call for reload
 func (hap *Haproxy) rollback(correlationId string) error {
 	lastConf := hap.confArchivePath()
 	if _, err := os.Stat(lastConf); os.IsNotExist(err) {
 		return errors.New("No configuration file to rollback")
 	}
+	// TODO remove current hap.confPath() ?
 	os.Rename(lastConf, hap.confPath())
 	hap.reload(correlationId)
 	return nil
@@ -292,4 +296,84 @@ func (hap *Haproxy) getReloadScript() string {
 // It returns the full path to the haproxy binary
 func (hap *Haproxy) getHapBinary() string {
 	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", hap.Version)
+}
+
+
+// COPY DIR
+
+// Copies file source to destination dest.
+func CopyFile(source string, dest string) (err error) {
+	sf, err := os.Open(source)
+	if err != nil {
+		return err
+	}
+	defer sf.Close()
+	df, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer df.Close()
+	_, err = io.Copy(df, sf)
+	if err == nil {
+		si, err := os.Stat(source)
+		if err != nil {
+			err = os.Chmod(dest, si.Mode())
+		}
+
+	}
+
+	return
+}
+
+// Recursively copies a directory tree, attempting to preserve permissions.
+// Source directory must exist, destination directory must *not* exist.
+func CopyDir(source string, dest string) (err error) {
+
+	// get properties of source dir
+	fi, err := os.Stat(source)
+	if err != nil {
+		return err
+	}
+
+	if !fi.IsDir() {
+		log.Error("Source is not a directory")
+		return errors.New("Source is not a directory")
+	}
+
+	// ensure dest dir does not already exist
+
+	_, err = os.Open(dest)
+	if !os.IsNotExist(err) {
+		log.Error("Destination already exists")
+		return errors.New("Destination already exists")
+	}
+
+	// create dest dir
+
+	err = os.MkdirAll(dest, fi.Mode())
+	if err != nil {
+		return err
+	}
+
+	entries, err := ioutil.ReadDir(source)
+
+	for _, entry := range entries {
+
+		sfp := source + "/" + entry.Name()
+		dfp := dest + "/" + entry.Name()
+		if entry.IsDir() {
+			err = CopyDir(sfp, dfp)
+			if err != nil {
+				log.Println(err)
+			}
+		} else {
+			// perform copy
+			err = CopyFile(sfp, dfp)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+
+	}
+	return
 }

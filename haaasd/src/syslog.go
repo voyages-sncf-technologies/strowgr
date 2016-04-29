@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"text/template"
 	"os"
+	"time"
 )
 
 const syslogBaseConf = `
@@ -42,13 +43,22 @@ type Syslog struct {
 // restart calls external shell script to reload syslog
 // It returns error if the reload fails
 func (syslog *Syslog) Restart() error {
-
 	syslogCtl := fmt.Sprintf("%s/SYSLOG/scripts/haplogctl", syslog.properties.HapHome)
-	cmd, err := exec.Command("sh", syslogCtl, "restart").Output()
+	output, err := exec.Command("sh", syslogCtl, "stop").Output()
 	if err != nil {
-		log.WithField("script", syslogCtl).WithField("output", string(cmd)).WithError(err).Error("Error restarting syslog")
+		log.WithField("script", syslogCtl).WithField("output", string(output)).WithError(err).Error("can't stop syslog")
+	} else {
+		log.WithField("output", string(output[:])).Info("Syslog stopped. Wait 1s before the restart.")
+		time.Sleep(time.Duration(1) * time.Second)
+
+		output, err = exec.Command("sh", syslogCtl, "start").Output()
+		if err != nil {
+			log.WithField("script", syslogCtl).WithField("output", string(output)).WithError(err).Error("can't start syslog")
+		} else {
+			log.WithField("output", string(output[:])).Info("Syslog started")
+
+		}
 	}
-	log.Debug("Syslog restarted")
 	return err
 }
 
@@ -63,10 +73,10 @@ func (syslog *Syslog) Init() error {
 		log.Fatal(err)
 	}
 
-	createDirectory("init",fmt.Sprintf("%s/SYSLOG/logs", syslog.properties.HapHome))
-	createDirectory("init",configDir)
+	createDirectory("init", fmt.Sprintf("%s/SYSLOG/logs", syslog.properties.HapHome))
+	createDirectory("init", configDir)
 
-	f, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(configFile, os.O_CREATE | os.O_WRONLY, 0644)
 	if err != nil {
 		log.WithError(err).Error("Fail to write base syslog file")
 		return err
