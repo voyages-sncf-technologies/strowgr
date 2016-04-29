@@ -45,7 +45,7 @@ const (
 // ApplyConfiguration write the new configuration and reload
 // A rollback is called on failure
 func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
-	hap.createSkeleton(data.Correlationid)
+	hap.createSkeleton(data.CorrelationId)
 
 	newConf := data.Conf
 	path := hap.confPath()
@@ -57,7 +57,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	}
 	if bytes.Equal(oldConf, newConf) {
 		log.WithFields(log.Fields{
-			"correlationId": data.Correlationid,
+			"correlationId": data.CorrelationId,
 			"role": hap.Role,
 			"application": data.Application,
 			"plateform":   data.Platform,
@@ -70,7 +70,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	os.Rename(path, archivePath)
 	log.WithFields(
 		log.Fields{
-			"correlationId": data.Correlationid,
+			"correlationId": data.CorrelationId,
 			"role": hap.Role,
 			"application": data.Application,
 			"plateform":   data.Platform,
@@ -82,7 +82,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	}
 
 	log.WithFields(log.Fields{
-		"correlationId": data.Correlationid,
+		"correlationId": data.CorrelationId,
 		"role": hap.Role,
 		"application": data.Application,
 		"plateform":   data.Platform,
@@ -90,16 +90,16 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	}).Info("New configuration written")
 
 	// Reload haproxy
-	err = hap.reload(data.Correlationid)
+	err = hap.reload(data.CorrelationId)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"correlationId": data.Correlationid,
+			"correlationId": data.CorrelationId,
 			"role": hap.Role,
 			"application": data.Application,
 			"plateform":   data.Platform,
 		}).WithError(err).Error("Reload failed")
 		hap.dumpConfiguration(hap.NewErrorPath(), newConf, data)
-		errRollback := hap.rollback(data.Correlationid)
+		errRollback := hap.rollback(data.CorrelationId)
 		if errRollback != nil {
 			log.WithError(errRollback).Error("error in rollback in addition to error of the reload")
 		}
@@ -110,7 +110,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	err = ioutil.WriteFile(fragmentPath, data.SyslogFragment, 0644)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"correlationId": data.Correlationid,
+			"correlationId": data.CorrelationId,
 			"role": hap.Role,
 			"application": data.Application,
 			"plateform":   data.Platform,
@@ -119,7 +119,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 		return ERR_SYSLOG, err
 	}
 	log.WithFields(log.Fields{
-		"correlationId": data.Correlationid,
+		"correlationId": data.CorrelationId,
 		"role": hap.Role,
 		"application": data.Application,
 		"plateform":   data.Platform,
@@ -138,13 +138,13 @@ func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *Eve
 		f.WriteString("================================================================\n")
 		f.WriteString(fmt.Sprintf("application: %s\n", data.Application))
 		f.WriteString(fmt.Sprintf("platform: %s\n", data.Platform))
-		f.WriteString(fmt.Sprintf("correlationid: %s\n", data.Correlationid))
+		f.WriteString(fmt.Sprintf("correlationId: %s\n", data.CorrelationId))
 		f.WriteString("================================================================\n")
 		f.Write(newConf)
 		f.Sync()
 
 		log.WithFields(log.Fields{
-			"correlationId": data.Correlationid,
+			"correlationId": data.CorrelationId,
 			"role": hap.Role,
 			"filename": filename,
 			"application": data.Application,

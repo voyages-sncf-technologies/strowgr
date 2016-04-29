@@ -13,7 +13,7 @@ cat <<-EOF
     "conf":"$BASE64",
     "syslogFragment":"$SYSLOG_BASE64"
     "timestamp":$TS,
-    "correlationid":"$UUID",
+    "correlationId":"$UUID",
     "application":"OCE",
     "platform":"REC1",
     "hapversion": "1.4.22"

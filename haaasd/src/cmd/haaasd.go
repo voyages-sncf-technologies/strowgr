@@ -233,7 +233,7 @@ func onCommitCompleted(message *nsq.Message) error {
 // logAndForget is a generic function to just log event
 func logAndForget(data *haaasd.EventMessage) error {
 	log.WithFields(log.Fields{
-		"correlationId": data.Correlationid,
+		"correlationId": data.CorrelationId,
 		"application" : data.Application,
 		"platform": data.Platform,
 	}).Debug("Commit completed")
@@ -257,11 +257,11 @@ func reloadSlave(data *haaasd.EventMessage) error {
 		publishMessage("commit_slave_completed_", data)
 	} else {
 		log.WithFields(log.Fields{
-			"correlationId": data.Correlationid,
+			"correlationId": data.CorrelationId,
 			"application" : data.Application,
 			"platform": data.Platform,
 		}).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
+		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationId": data.CorrelationId})
 	}
 	return nil
 }
@@ -273,14 +273,14 @@ func reloadMaster(data *haaasd.EventMessage) error {
 		if status != haaasd.UNCHANGED {
 			syslog.Restart()
 		}
-		publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
+		publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationId": data.CorrelationId})
 	} else {
 		log.WithFields(log.Fields{
-			"correlationId": data.Correlationid,
+			"correlationId": data.CorrelationId,
 			"application" : data.Application,
 			"platform": data.Platform,
 		}).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationid": data.Correlationid})
+		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationId": data.CorrelationId})
 	}
 	return nil
 }

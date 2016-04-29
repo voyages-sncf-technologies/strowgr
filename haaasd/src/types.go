@@ -25,7 +25,7 @@ func (config *Config) NodeId() string {
 }
 
 type EventMessage struct {
-	Correlationid  string        `json:"correlationId"`
+	CorrelationId  string        `json:"correlationId"`
 	Conf           []byte        `json:"conf"`
 	Timestamp      int64        `json:"timestamp"`
 	Application    string        `json:"application"`
