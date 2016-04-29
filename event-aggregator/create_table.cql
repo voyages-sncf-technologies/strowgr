@@ -6,7 +6,7 @@ CREATE TABLE entrypoint_by_day (
     event_name text,
     haproxy_id text,
     payload text,
-    PRIMARY KEY ((id,date),event_timestamp,correlation_id)
+    PRIMARY KEY ((id,date),event_timestamp, correlation_id, event_name)
 ) WITH CLUSTERING ORDER BY (event_timestamp DESC);
 
 CREATE TABLE error_by_day (
