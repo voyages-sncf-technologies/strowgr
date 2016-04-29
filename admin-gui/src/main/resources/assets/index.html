@@ -455,7 +455,8 @@
                         };
 
                         scope.remove = function (item) {
-                            chipsToContext();
+                            /* remove key from scope, because it will not be in chips anymore */
+                            delete scope.context[item.key];
                         }
 
                     }
