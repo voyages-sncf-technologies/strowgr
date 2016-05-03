@@ -55,13 +55,14 @@ public class AggregatorMain {
 
         ParsedPayloadWriter writer = new ParsedPayloadWriter(session);
         ErrorRecordWriter errorWriter = new ErrorRecordWriter(session);
+        MessageRecorder messageRecorder = new MessageRecorder(writer, errorWriter);
 
         NSQLookup lookup = new DefaultNSQLookup();
         lookup.addLookupAddress(nsqlookupHost, nsqlookupPort);
-        consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", channel, writer, errorWriter));
-        consumers.put("commit_slave_completed_default-name", new Consumer(lookup, "commit_slave_completed_default-name", channel, writer, errorWriter));
-        consumers.put("commit_requested_default-name", new Consumer(lookup, "commit_requested_default-name", channel, writer, errorWriter));
-        consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", channel, writer, errorWriter));
+        consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", channel, messageRecorder));
+        consumers.put("commit_slave_completed_default-name", new Consumer(lookup, "commit_slave_completed_default-name", channel, messageRecorder));
+        consumers.put("commit_requested_default-name", new Consumer(lookup, "commit_requested_default-name", channel, messageRecorder));
+        consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", channel, messageRecorder));
 
         LOGGER.info("Starting NSQ Consumers");
         for (Consumer consumer : consumers.values()) {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.callbacks.NSQMessageCallback;
 import com.github.brainlag.nsq.lookup.NSQLookup;
+import com.vsct.haas.monitoring.aggregator.MessageRecorder;
 import com.vsct.haas.monitoring.aggregator.cassandra.ParsedPayload;
 import com.vsct.haas.monitoring.aggregator.cassandra.ErrorRecord;
 import com.vsct.haas.monitoring.aggregator.cassandra.ParsedPayloadWriter;
@@ -11,20 +12,22 @@ import com.vsct.haas.monitoring.aggregator.cassandra.ErrorRecordWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+
 public class Consumer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Consumer.class);
 
-    private static final ObjectMapper mapper  = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
+
     private String eventName;
     private String haproxyId;
 
     private NSQConsumer consumer;
 
-    private ParsedPayloadWriter writer;
-    private ErrorRecordWriter   errorWriter;
+    private MessageRecorder     messageRecorder;
 
-    public Consumer(NSQLookup lookup, String topic, String channel, ParsedPayloadWriter writer, ErrorRecordWriter errorWriter) {
+    public Consumer(NSQLookup lookup, String topic, String channel, MessageRecorder messageRecorder) {
         LOGGER.info("Creating NSQConsumer for topic -> " + topic);
 
         /* By convention, topic is using _ to sperate eventName and haproxyId */
@@ -38,10 +41,9 @@ public class Consumer {
         this.eventName = sb.toString();
         this.haproxyId = subs[subs.length - 1];
 
-        this.writer = writer;
-        this.errorWriter = errorWriter;
-
         this.consumer = new NSQConsumer(lookup, topic, channel, consumeMessage);
+
+        this.messageRecorder = messageRecorder;
     }
 
     public void start() {
@@ -53,18 +55,21 @@ public class Consumer {
     }
 
     private NSQMessageCallback consumeMessage = (message) -> {
-        NsqEventHeader payload = null;
-        String payloadString = null;
-        try {
-            payloadString = new String(message.getMessage());
-            payload = mapper.readValue(message.getMessage(), NsqEventHeader.class);
-            ParsedPayload parsedPayload = new ParsedPayload(payload, haproxyId, eventName, payloadString);
-            writer.write(parsedPayload);
-        } catch (Throwable t) {
-            LOGGER.error("Cannot publish message to cassandra. Reason: " + t.getMessage() + ". " + eventName + " -> " + payloadString);
-            errorWriter.write(new ErrorRecord(message, t.getMessage()));
-        }
+        messageRecorder.record(() -> {
+            String payload = new String(message.getMessage());
+            NsqEventHeader header = null;
+            try {
+                header = mapper.readValue(payload, NsqEventHeader.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return new ParsedPayload(header, haproxyId, eventName, payload);
+        }, t -> {
+            LOGGER.error("Cannot record message. Reason: " + t.getMessage() + ". " + eventName + " -> " + new String(message.getMessage()));
+            return new ErrorRecord(message, t.getMessage());
+        });
 
         message.finished();
     };
-}
+};

@@ -26,7 +26,8 @@ public class ParsedPayloadWriter {
     }
 
     public void write(ParsedPayload payload) {
-        if (LOGGER.isDebugEnabled()) LOGGER.debug("Record event " + payload.getEventName() + " for " + payload.getId());
+        if (LOGGER.isDebugEnabled())
+            LOGGER.debug("Record event " + payload.getEventName() + " for " + payload.getId());
 
         BoundStatement bound = writeEventPeparedStatement.bind(
                 payload.getId(),
@@ -37,7 +38,8 @@ public class ParsedPayloadWriter {
                 payload.getHaproxyId(),
                 payload.getPayload()
         );
-        session.execute(bound);
+
+        session.executeAsync(bound);
     }
 
 }
