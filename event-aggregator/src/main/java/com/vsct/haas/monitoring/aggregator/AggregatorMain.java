@@ -62,7 +62,7 @@ public class AggregatorMain {
         consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", channel, messageRecorder));
         consumers.put("commit_slave_completed_default-name", new Consumer(lookup, "commit_slave_completed_default-name", channel, messageRecorder));
         consumers.put("commit_requested_default-name", new Consumer(lookup, "commit_requested_default-name", channel, messageRecorder));
-        consumers.put("commit_completed_default-name", new Consumer(lookup, "commit_completed_default-name", channel, messageRecorder));
+        consumers.put("commit_failed_default-name", new Consumer(lookup, "commit_failed_default-name", channel, messageRecorder));
 
         LOGGER.info("Starting NSQ Consumers");
         for (Consumer consumer : consumers.values()) {
