@@ -18,13 +18,11 @@ type Instance struct {
 	Platform        string `json:"-"`
 	Service         string `json:"-"`
 	Context         map[string]string `json:"context"`
-	ContextOverride map[string]string `json:"contextOverride"`
 }
 
 func NewInstance() *Instance {
 	return &Instance{
 		Context:make(map[string]string),
-		ContextOverride:make(map[string]string),
 	}
 }
 
@@ -46,6 +44,8 @@ func (instance *Instance) Register(adminUrl string) {
 	if err != nil {
 		log.WithError(err).WithField("url", url).WithField("json", string(json)).Error("Error requesting")
 		return
+	} else {
+		log.WithField("url", url).WithField("body", string(json)).Debug("http post HaaS admin")
 	}
 	defer resp.Body.Close()
 
