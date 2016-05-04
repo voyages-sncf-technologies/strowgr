@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.haas.admin.nsq.Payload;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class CommitBeginPayload extends Payload {
 
     private final String application;
@@ -18,10 +20,10 @@ public class CommitBeginPayload extends Payload {
                               @JsonProperty("conf") String conf,
                               @JsonProperty("syslogConf") String syslogConf) {
         super(correlationId);
-        this.application = application;
-        this.platform = platform;
-        this.conf = conf;
-        this.syslogConf = syslogConf;
+        this.application = checkNotNull(application);
+        this.platform = checkNotNull(platform);
+        this.conf = checkNotNull(conf);
+        this.syslogConf = checkNotNull(syslogConf);
     }
 
     public String getApplication() {

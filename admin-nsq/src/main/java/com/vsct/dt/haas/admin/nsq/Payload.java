@@ -1,5 +1,7 @@
 package com.vsct.dt.haas.admin.nsq;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * Created by william_montaz on 02/02/2016.
  */
@@ -10,8 +12,12 @@ public abstract class Payload {
     private final String correlationId;
 
     public Payload(String correlationId) {
-        this.correlationId = correlationId;
-        this.timestamp = System.currentTimeMillis();
+        this(correlationId, System.currentTimeMillis());
+    }
+
+    public Payload(String correlationId, long timestamp) {
+        this.correlationId = checkNotNull(correlationId);
+        this.timestamp = checkNotNull(timestamp);
     }
 
     public long getTimestamp() {

@@ -25,6 +25,7 @@ public class RegisterServerPayload extends Payload {
 
     @JsonCreator
     public RegisterServerPayload(@JsonProperty("correlationid") String correlationId,
+                                 @JsonProperty("timestamp") Long timestamp,
                                  @JsonProperty("application") String application,
                                  @JsonProperty("platform") String platform,
                                  @JsonProperty("backend") String backend,
@@ -33,19 +34,15 @@ public class RegisterServerPayload extends Payload {
                                  @JsonProperty("ip") String ip,
                                  @JsonProperty("port") String port,
                                  @JsonProperty("context") Map<String, String> context) {
-        super(correlationId);
-        checkNotNull(context, "context attribute is missing in RegisterServer event consume from NSQ");
-        checkNotNull(application, "application attribute is missing in RegisterServer event consume from NSQ");
-        checkNotNull(platform, "platform attribute is missing in RegisterServer event consume from NSQ");
-        checkNotNull(backend, "backend attribute is missing in RegisterServer event consume from NSQ");
-        this.application = application;
-        this.platform = platform;
-        this.backend = backend;
-        this.id = id;
-        this.hostname = hostname;
-        this.ip = ip;
-        this.port = port;
-        this.context = context;
+        super(correlationId, timestamp);
+        this.context = checkNotNull(context, "context attribute is missing in RegisterServer event consume from NSQ");
+        this.application = checkNotNull(application, "application attribute is missing in RegisterServer event consume from NSQ");
+        this.platform = checkNotNull(platform, "platform attribute is missing in RegisterServer event consume from NSQ");
+        this.backend = checkNotNull(backend, "backend attribute is missing in RegisterServer event consume from NSQ");
+        this.id = checkNotNull(id);
+        this.hostname = checkNotNull(hostname);
+        this.ip = checkNotNull(ip);
+        this.port = checkNotNull(port);
     }
 
     public String getApplication() {
