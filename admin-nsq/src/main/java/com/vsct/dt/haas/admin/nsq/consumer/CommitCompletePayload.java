@@ -15,7 +15,7 @@ public class CommitCompletePayload extends Payload {
     private final String platform;
 
     @JsonCreator
-    public CommitCompletePayload(@JsonProperty("correlationid") String correlationId,
+    public CommitCompletePayload(@JsonProperty("correlationId") String correlationId,
                                  @JsonProperty("timestamp") Long timestamp,
                                  @JsonProperty("application") String application,
                                  @JsonProperty("platform") String platform) {

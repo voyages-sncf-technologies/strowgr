@@ -15,7 +15,7 @@ public class EntryPointDeployedPayload extends Payload {
     private final String platform;
 
     @JsonCreator
-    public EntryPointDeployedPayload(@JsonProperty("correlationid") String correlationId,
+    public EntryPointDeployedPayload(@JsonProperty("correlationId") String correlationId,
                                      @JsonProperty("timestamp") Long timestamp,
                                      @JsonProperty("application") String application,
                                      @JsonProperty("platform") String platform) {

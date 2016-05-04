@@ -24,7 +24,7 @@ public class RegisterServerPayload extends Payload {
     private final Map<String, String> context;
 
     @JsonCreator
-    public RegisterServerPayload(@JsonProperty("correlationid") String correlationId,
+    public RegisterServerPayload(@JsonProperty("correlationId") String correlationId,
                                  @JsonProperty("timestamp") Long timestamp,
                                  @JsonProperty("application") String application,
                                  @JsonProperty("platform") String platform,
