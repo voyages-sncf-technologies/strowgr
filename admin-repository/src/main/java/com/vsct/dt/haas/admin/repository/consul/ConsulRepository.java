@@ -462,6 +462,27 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         }
     }
 
+    @Override
+    public Optional<String> getCommitCorrelationId(EntryPointKey key) {
+        try {
+            HttpGet get = new HttpGet("http://"+host+":"+port+"/v1/kv/admin/" + key.getID() + "/commitCorrelationId?raw");
+            return client.execute(get, response -> {
+                int status = response.getStatusLine().getStatusCode();
+                if(status == 404){
+                    return Optional.empty();
+                }
+                if (status >= 200 && status < 300) {
+                    HttpEntity entity = response.getEntity();
+                    return Optional.of(EntityUtils.toString(entity));
+                } else {
+                    throw new ClientProtocolException("Unexpected response status: " + status);
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public String encodeJson(Map<String, Integer> portsByEntrypoint) throws IOException {
         ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
         return ow.writeValueAsString(portsByEntrypoint);

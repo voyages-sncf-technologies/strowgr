@@ -71,7 +71,7 @@ public class EntryPointEventHandler {
             existingConfiguration.map(c -> c.mergeWithUpdate(event.getUpdatedEntryPoint()))
                     .ifPresent(c -> {
                         Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
-                        if(preparedConfiguration.isPresent()){
+                        if (preparedConfiguration.isPresent()) {
                             outputBus.post(new EntryPointUpdatedEvent(event.getCorrelationId(), key, preparedConfiguration.get()));
                         }
                     });
@@ -119,11 +119,11 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
-    public void handleTryCommitCurrentConfigurationEvent(TryCommitCurrentConfigurationEvent event) {
+    public void handle(TryCommitCurrentConfigurationEvent event) {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPoint> committingConfiguration = stateManager.tryCommitCurrent(key);
+            Optional<EntryPoint> committingConfiguration = stateManager.tryCommitCurrent(event.getCorrelationId(), key);
             if(committingConfiguration.isPresent()) {
                 EntryPoint configuration = committingConfiguration.get();
                 String template = templateLocator.readTemplate(configuration);
@@ -131,7 +131,7 @@ public class EntryPointEventHandler {
                 String conf = templateGenerator.generate(template, configuration, portsMapping);
                 String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
                 CommitBeginEvent commitBeginEvent = new CommitBeginEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
-                LOGGER.debug("from handleTryCommitCurrentConfigurationEvent -> post to event bus event {}", commitBeginEvent);
+                LOGGER.debug("from handle -> post to event bus event {}", commitBeginEvent);
                 outputBus.post(commitBeginEvent);
             }
         } finally {
@@ -140,11 +140,11 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
-    public void handleTryCommitPendingConfigurationEvent(TryCommitPendingConfigurationEvent event) {
+    public void handle(TryCommitPendingConfigurationEvent event) {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPoint> committingConfiguration = stateManager.tryCommitPending(key);
+            Optional<EntryPoint> committingConfiguration = stateManager.tryCommitPending(event.getCorrelationId(), key);
             if (committingConfiguration.isPresent()) {
                 EntryPoint configuration = committingConfiguration.get();
                 String template = templateLocator.readTemplate(configuration);
@@ -152,7 +152,7 @@ public class EntryPointEventHandler {
                 String conf = templateGenerator.generate(template, configuration, portsMapping);
                 String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
                 CommitBeginEvent commitBeginEvent = new CommitBeginEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
-                LOGGER.debug("from handleTryCommitPendingConfigurationEvent -> post to event bus event {}", commitBeginEvent);
+                LOGGER.debug("from handle -> post to event bus event {}", commitBeginEvent);
                 outputBus.post(commitBeginEvent);
             }
         } finally {
@@ -161,14 +161,17 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
-    public void handleCommitSuccessEvent(CommitSuccessEvent event) {
+    public void handle(CommitSuccessEvent event) {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPoint> currentConfiguration = stateManager.commit(key);
-            if (currentConfiguration.isPresent()) {
-                LOGGER.info("Configuration for EntryPoint {} has been committed", event.getKey().getID());
-                outputBus.post(new CommitCompleteEvent(event.getCorrelationId(), key, currentConfiguration.get()));
+            Optional<String> optionalCorrelationId = stateManager.getCommitCorrelationId(key);
+            if(optionalCorrelationId.isPresent() && optionalCorrelationId.get().equals(event.getCorrelationId())) {
+                Optional<EntryPoint> currentConfiguration = stateManager.commit(key);
+                if (currentConfiguration.isPresent()) {
+                    LOGGER.info("Configuration for EntryPoint {} has been committed", event.getKey().getID());
+                    outputBus.post(new CommitCompleteEvent(event.getCorrelationId(), key, currentConfiguration.get()));
+                }
             }
         } finally {
             this.stateManager.release(key);
@@ -187,6 +190,22 @@ public class EntryPointEventHandler {
         }
 
         return portsMapping;
+    }
+
+    public void handle(CommitFailureEvent event) {
+        EntryPointKey key = event.getKey();
+        try{
+            this.stateManager.lock(key);
+            Optional<String> commitCorrelationId = stateManager.getCommitCorrelationId(key);
+            if(commitCorrelationId.isPresent() && commitCorrelationId.get().equals(event.getCorrelationId())){
+                LOGGER.info("Configuration for EntryPoint {} failed. Commit is canceled.");
+                stateManager.cancelCommit(key);
+            } else {
+                LOGGER.info("Received a faield event but either there is no committing configuration or the correlation id does not match.");
+            }
+        } finally {
+            this.stateManager.release(key);
+        }
     }
 
     public static class EntryPointEventHandlerBuilder {

@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import java.util.*;
 
-import static org.fest.assertions.Fail.fail;
 import static org.mockito.Mockito.*;
 
 public class EntryPointEventHandlerTest {
@@ -319,7 +318,8 @@ public class EntryPointEventHandlerTest {
     public void try_commit_current_applies_with_right_key() {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
-        TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), key);
+        String correlationId = CorrelationId.newCorrelationId();
+        TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
@@ -327,21 +327,23 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
-        when(stateManager.tryCommitCurrent(key)).thenReturn(Optional.of(entryPoint));
+
+        when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portProvider.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
 
         // Test
-        handler.handleTryCommitCurrentConfigurationEvent(event);
+        handler.handle(event);
 
         // Check
-        verify(stateManager).tryCommitCurrent(key);
+        verify(stateManager).tryCommitCurrent(correlationId, key);
     }
 
     @Test
     public void try_commit_pending_applies_with_right_key() {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
-        TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), key);
+        String correlationId = CorrelationId.newCorrelationId();
+        TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
@@ -349,30 +351,82 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
-        when(stateManager.tryCommitPending(key)).thenReturn(Optional.of(entryPoint));
+        when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portProvider.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
 
         // Test
-        handler.handleTryCommitPendingConfigurationEvent(event);
+        handler.handle(event);
 
         // Check
-        verify(stateManager).tryCommitPending(key);
+        verify(stateManager).tryCommitPending(correlationId, key);
     }
 
     @Test
-    public void commit_success_event_applies_with_right_key() {
+    public void commit_success_event_does_nothing_if_commit_correlationid_does_not_exists() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         CommitSuccessEvent event = new CommitSuccessEvent(CorrelationId.newCorrelationId(), key);
+        when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.empty());
         when(stateManager.commit(key)).thenReturn(Optional.empty());
+        handler.handle(event);
 
-        handler.handleCommitSuccessEvent(event);
+        verify(stateManager, never()).commit(any());
+    }
+
+    @Test
+    public void commit_success_event_does_nothing_if_commit_correlationid_does_not_match() {
+        EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
+        CommitSuccessEvent event = new CommitSuccessEvent(CorrelationId.newCorrelationId(), key);
+        when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(CorrelationId.newCorrelationId()));
+        when(stateManager.commit(key)).thenReturn(Optional.empty());
+        handler.handle(event);
+
+        verify(stateManager, never()).commit(any());
+    }
+
+    @Test
+    public void commit_success_event_applies_commit_if_correlation_id_matches() {
+        EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
+        String correlationId = CorrelationId.newCorrelationId();
+        CommitSuccessEvent event = new CommitSuccessEvent(correlationId, key);
+        when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(correlationId));
+        when(stateManager.commit(key)).thenReturn(Optional.empty());
+        handler.handle(event);
 
         verify(stateManager).commit(key);
     }
 
     @Test
-    public void commit_failure_event() {
-        /* Not Implemented Yet */
+    public void commit_failure_event_does_nothing_if_there_is_no_committing_configuration() {
+        EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
+        CommitFailureEvent commitFailureEvent = new CommitFailureEvent(CorrelationId.newCorrelationId(), key);
+        when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.empty());
+
+        handler.handle(commitFailureEvent);
+
+        verify(stateManager, never()).cancelCommit(any());
+    }
+
+    @Test
+    public void commit_failure_event_does_nothing_if_the_correlation_id_does_not_match_the_event_that_trigerred_it() {
+        EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
+        CommitFailureEvent commitFailureEvent = new CommitFailureEvent(CorrelationId.newCorrelationId(), key);
+        when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(CorrelationId.newCorrelationId()));
+
+        handler.handle(commitFailureEvent);
+
+        verify(stateManager, never()).cancelCommit(any());
+    }
+
+    @Test
+    public void commit_failure_event_removes_committing_configuration_if_correlation_id_matches() {
+        EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
+        String correlationId = CorrelationId.newCorrelationId();
+        CommitFailureEvent commitFailureEvent = new CommitFailureEvent(correlationId, key);
+        when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(correlationId));
+
+        handler.handle(commitFailureEvent);
+
+        verify(stateManager).cancelCommit(key);
     }
 
     /* Server registration tests are made on one server but they apply to a set of server provided by the event */

@@ -39,4 +39,8 @@ public interface EntryPointRepository {
     void release(EntryPointKey key);
 
     Optional<String> getHaproxyVip(String haproxyName);
+
+    Optional<String> getCommitCorrelationId(EntryPointKey key);
+
+    void setCommitCorrelationId(String correlationId);
 }
