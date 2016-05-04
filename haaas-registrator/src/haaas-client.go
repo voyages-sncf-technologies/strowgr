@@ -36,7 +36,7 @@ func (instance *Instance) Register(adminUrl string) {
 		"service" : instance.Service,
 	}).Info("Register")
 
-	var url = fmt.Sprintf("%s/api/entrypoint/%s/%s/backend/%s/register-server", adminUrl, instance.App, instance.Platform, instance.Service)
+	var url = fmt.Sprintf("%s/api/entrypoints/%s/%s/backend/%s/register-server", adminUrl, instance.App, instance.Platform, instance.Service)
 	json, _ := json.Marshal(instance)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 	req.Header.Set("Content-Type", "application/json")

@@ -73,7 +73,7 @@ func eventCallback(event *dockerclient.Event, ec chan error, args ...interface{}
 					instance.Id = id
 					instance.App = getMetadata(info.Config, APPLICATION_LABEL)
 					instance.Platform = getMetadata(info.Config, PLATFORM_LABEL)
-					instance.Service = getMetadata(info.Config, PLATFORM_LABEL)
+					instance.Service = getMetadata(info.Config, serviceLabel)
 					instance.Port = public_port
 					instance.Ip = address
 					instance.Hostname = id
