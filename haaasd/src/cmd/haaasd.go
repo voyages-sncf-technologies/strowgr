@@ -232,15 +232,12 @@ func onCommitCompleted(message *nsq.Message) error {
 
 // logAndForget is a generic function to just log event
 func logAndForget(data *haaasd.EventMessage) error {
-	log.WithFields(log.Fields{
-		"correlationId": data.CorrelationId,
-		"application" : data.Application,
-		"platform": data.Platform,
-	}).Debug("Commit completed")
+	log.WithFields(data.Context().Fields()).Debug("Commit completed")
 	return nil
 }
 
 func reloadSlave(data *haaasd.EventMessage) error {
+	context := data.Context().UpdateTimestamp()
 	hap := haaasd.NewHaproxy("slave", properties, data.Application, data.Platform, data.HapVersion)
 
 	status, err := hap.ApplyConfiguration(data)
@@ -256,31 +253,25 @@ func reloadSlave(data *haaasd.EventMessage) error {
 		}
 		publishMessage("commit_slave_completed_", data)
 	} else {
-		log.WithFields(log.Fields{
-			"correlationId": data.CorrelationId,
-			"application" : data.Application,
-			"platform": data.Platform,
-		}).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationId": data.CorrelationId})
+		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
+		publishMessage("commit_failed_", context)
 	}
 	return nil
 }
 
 func reloadMaster(data *haaasd.EventMessage) error {
+	context := data.Context().UpdateTimestamp()
+
 	hap := haaasd.NewHaproxy("master", properties, data.Application, data.Platform, data.HapVersion)
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != haaasd.UNCHANGED {
 			syslog.Restart()
 		}
-		publishMessage("commit_completed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationId": data.CorrelationId})
+		publishMessage("commit_completed_", context)
 	} else {
-		log.WithFields(log.Fields{
-			"correlationId": data.CorrelationId,
-			"application" : data.Application,
-			"platform": data.Platform,
-		}).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", map[string]string{"application": data.Application, "platform": data.Platform, "correlationId": data.CorrelationId})
+		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
+		publishMessage("commit_failed_", context)
 	}
 	return nil
 }

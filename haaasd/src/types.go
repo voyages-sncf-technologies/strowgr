@@ -1,5 +1,10 @@
 package haaasd
 
+import (
+	"time"
+	log "github.com/Sirupsen/logrus"
+)
+
 type Config struct {
 	LookupdAddr      string
 	ProducerAddr     string
@@ -27,19 +32,53 @@ func (config *Config) NodeId() string {
 type EventMessage struct {
 	CorrelationId  string        `json:"correlationId"`
 	Conf           []byte        `json:"conf"`
-	Timestamp      int64        `json:"timestamp"`
+	Timestamp      int64         `json:"timestamp"`
 	Application    string        `json:"application"`
 	Platform       string        `json:"platform"`
 	HapVersion     string        `json:"hapVersion"`
 	SyslogFragment []byte        `json:"syslogConf"`
 }
 
-type ReloadEvent struct {
-	Message *EventMessage
-	F  func (data *EventMessage) error
+// retrieve Context from an EventMessage
+func (em EventMessage) Context() Context {
+	return Context{
+		CorrelationId: em.CorrelationId,
+		Timestamp: em.Timestamp,
+		Application: em.Application,
+		Platform: em.Platform,
+	}
 }
 
-func (re *ReloadEvent) Execute() error{
+// context for tracing current process
+type Context struct {
+	CorrelationId string        `json:"correlationId"`
+	Timestamp     int64         `json:"timestamp"`
+	Application   string        `json:"application"`
+	Platform      string        `json:"platform"`
+}
+
+// update the timestamp of the current context
+func (ctx Context) UpdateTimestamp() Context {
+	ctx.Timestamp = time.Now().Unix()
+	return ctx
+}
+
+// translate Context to Fields for logging purpose
+func (ctx Context) Fields() log.Fields {
+	return log.Fields{
+		"correlationId":ctx.CorrelationId,
+		"timestamp":ctx.Timestamp,
+		"application":ctx.Application,
+		"platform":ctx.Platform,
+	}
+}
+
+type ReloadEvent struct {
+	Message *EventMessage
+	F       func(data *EventMessage) error
+}
+
+func (re *ReloadEvent) Execute() error {
 	return re.F(re.Message)
 }
 
