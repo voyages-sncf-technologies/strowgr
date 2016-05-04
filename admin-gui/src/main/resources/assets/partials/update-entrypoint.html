@@ -16,11 +16,23 @@
     div.server {
         padding-left: 120px;
     }
+
+    div.md-chip-content {
+        font-size: 12px;
+    }
+
+    #update-entrypoint-form input {
+        font-size: 12px;
+    }
+
+    #update-entrypoint-form md-input-container.hide-errors-spacer div.md-errors-spacer {
+        display: none;
+    }
 </style>
 
 <form id="update-entrypoint-form" name="updateEntrypointForm" ng-submit="updateEntrypoint()" flex
       ng-keydown="$event.keyCode == 13 && $event.preventDefault();">
-    <div layout="row">
+    <div layout="row" flex>
         <md-input-container flex="10">
             <label>HAproxy cible</label>
             <input name="haproxy" ng-model="conf.haproxy" disabled/>
@@ -57,17 +69,17 @@
     </div>
     <div layout="row">
         <md-subheader class="md-primary">Frontends</md-subheader>
-        <md-button class="md-fab md-primary md-mini" ng-click="addFrontend()">
-            <md-icon class="material-icons" style="font-size: 22px">add</md-icon>
+        <div layout layout-align="center center">
+            <md-icon class="material-icons" ng-click="addFrontend()" style="cursor:pointer;">add</md-icon>
             <md-tooltip>Ajouter un frontend</md-tooltip>
-        </md-button>
+        </div>
     </div>
-    <div id="frontends">
+    <div id="frontends" flex>
         <div ng-repeat="frontend in conf.frontends" layout="row" layout-align="start center">
-            <md-button class="md-warn md-mini" ng-click="removeFrontend(frontend)">
-                <md-icon class="material-icons" style="font-size: 22px">clear</md-icon>
+            <div layout layout-align="center center">
+                <md-icon class="material-icons" ng-click="removeFrontend(frontend)" style="cursor:pointer;">clear</md-icon>
                 <md-tooltip>Supprimer le frontend</md-tooltip>
-            </md-button>
+            </div>
             <ng-form name="frontendForm">
                 <md-input-container>
                     <label>ID</label>
@@ -78,24 +90,24 @@
                     </div>
                 </md-input-container>
             </ng-form>
-            <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Contexte</p>
+            <p class="md-body-2" style="padding-right: 20px;padding-left: 10px;margin-left: 20px">Contexte =></p>
             <context-map-input context="frontend.context" forbidden="forbiddenFrontendKeys" flex></context-map-input>
         </div>
     </div>
     <div layout="row">
         <md-subheader class="md-primary">Backends</md-subheader>
-        <md-button class="md-fab md-primary md-mini" ng-click="addBackend()">
-            <md-icon class="material-icons" style="font-size: 22px">add</md-icon>
+        <div layout layout-align="center center">
+            <md-icon class="material-icons" ng-click="addBackend()" style="cursor:pointer;">add</md-icon>
             <md-tooltip>Ajouter un backend</md-tooltip>
-        </md-button>
+        </div>
     </div>
-    <div id="backends">
+    <div id="backends" flex>
         <div ng-repeat="backend in conf.backends" layout="column" layout-align="start start">
             <div layout="row" layout-align="start center" flex>
-                <md-button class="md-warn md-mini" ng-click="removeBackend(backend)">
-                    <md-icon class="material-icons" style="font-size: 22px">clear</md-icon>
+                <div layout layout-align="center center">
+                    <md-icon class="material-icons" style="cursor:pointer;" ng-click="removeBackend(backend)">clear</md-icon>
                     <md-tooltip>Supprimer le backend</md-tooltip>
-                </md-button>
+                </div>
                 <ng-form name="backendForm">
                     <md-input-container>
                         <label>ID</label>
@@ -106,30 +118,32 @@
                         </div>
                     </md-input-container>
                 </ng-form>
-                <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Contexte</p>
+                <p class="md-body-2" style="padding-right: 20px;padding-left: 10px;margin-left: 20px">Contexte =></p>
                 <context-map-input context="backend.context" forbidden="forbiddenBackendKeys" flex></context-map-input>
             </div>
-            <div class="server" ng-repeat="server in backend.servers" layout="row" layout-align="start center" flex>
-                <md-input-container flex="10">
+            <div class="server" ng-repeat="server in backend.servers" layout="row" layout-align="start center"
+                 flex="100" style="width: 100%">
+                <md-input-container flex="10" class="hide-errors-spacer">
                     <label>Serveur</label>
                     <input name="id" ng-model="server.id" disabled/>
                 </md-input-container>
-                <md-input-container flex="10">
+                <md-input-container flex="10" class="hide-errors-spacer">
                     <label>Hostname</label>
                     <input name="hostname" ng-model="server.hostname" disabled/>
                 </md-input-container>
-                <md-input-container flex="10">
+                <md-input-container flex="10" class="hide-errors-spacer">
                     <label>IP</label>
                     <input name="ip" ng-model="server.ip" disabled/>
                 </md-input-container>
-                <md-input-container flex="10">
+                <md-input-container flex="10" class="hide-errors-spacer">
                     <label>Port</label>
                     <input name="port" ng-model="server.port" disabled/>
                 </md-input-container>
-                <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Contexte</p>
-                <context-map-input context="server.context" forbidden="forbiddenServerKeys" readonly="true" flex></context-map-input>
-                <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Surcharge Contexte</p>
-                <context-map-input context="server.contextOverride" forbidden="forbiddenServerKeys" flex></context-map-input>
+                <context-map-input context="server.context" forbidden="forbiddenServerKeys" readonly="true"
+                                   flex></context-map-input>
+                <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Surcharge Contexte => </p>
+                <context-map-input context="server.contextOverride" forbidden="forbiddenServerKeys"
+                                   flex></context-map-input>
             </div>
         </div>
     </div>
