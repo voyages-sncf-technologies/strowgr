@@ -1,56 +1,58 @@
 <style>
 
-    div.entrypoint-configuration-view {
+    #entrypoint-configuration-view #container {
         margin-top: 20px;
         margin-left: 20px;
         margin-right: 20px;
         margin-bottom: 0;
     }
 
-    div.entrypoint-configuration-view * {
+    #entrypoint-configuration-view #container * {
         margin-top: 0;
         margin-bottom: 0;
     }
 
-    #globalTitle, #frontendsTitle, #backendsTitle {
+    #entrypoint-configuration-view #globalTitle,
+    #entrypoint-configuration-view #frontendsTitle,
+    #entrypoint-configuration-view #backendsTitle {
         margin-top: 6px;
         margin-bottom: 6px;
     }
 
-    #global, #frontends, #backends {
+    #entrypoint-configuration-view #global,
+    #entrypoint-configuration-view #frontendList,
+    #entrypoint-configuration-view #backendList {
         margin-bottom: 16px;
     }
 
-    .entrypoint-configuration-view #global-details {
+    #entrypoint-configuration-view #global-details {
         padding-left: 30px;
     }
 
-    .entrypoint-configuration-view #frontends .frontend {
+    #entrypoint-configuration-view #frontendList .frontend {
         padding-left: 30px;
     }
 
-    .entrypoint-configuration-view #backends .backend {
-        padding-left: 30px;
-    }
-
-    .entrypoint-configuration-view #backends .server {
-        padding-left: 30px;
-    }
-
-    .entrypoint-component {
+    #entrypoint-configuration-view .entrypoint-component {
         border: solid 1px lightblue;
     }
 
-    .backend-item {
+    #entrypoint-configuration-view #global,
+    #entrypoint-configuration-view #frontends,
+    #entrypoint-configuration-view #backends {
+        margin-bottom: 16px;
+    }
+
+    #entrypoint-configuration-view .backend-item {
         border-bottom: solid 1px lightblue;
         padding: 10px 3px 5px 0px;
         width: 100%;
     }
 
 </style>
-<div layout="row">
-    <div class="entrypoint-configuration-view" ng-show="conf" layout="column" ng-cloak flex layout-xs>
-        <div flex class="entrypoint-component">
+<div id="entrypoint-configuration-view" layout="row">
+    <div id="container" ng-show="conf" layout="column" ng-cloak flex layout-xs>
+        <div id="global" flex class="entrypoint-component">
             <md-toolbar class="md-primary">
                 <div class="md-toolbar-tools">
                     <h2 class="md-flex">Configuration globale</h2>
@@ -74,14 +76,14 @@
                 </div>
             </md-content>
         </div>
-        <div flex class="entrypoint-component">
+        <div id="frontends" flex class="entrypoint-component">
             <md-toolbar class="md-primary">
                 <div class="md-toolbar-tools">
                     <h2 class="md-flex">Frontends</h2>
                 </div>
             </md-toolbar>
             <md-content style="padding:20px;">
-                <div id="frontends">
+                <div id="frontendList">
                     <div class="frontend" ng-repeat="frontend in conf.frontends | orderBy:'id' track by frontend.id"
                          layout="row"
                          layout-margin layout-align="start center">
@@ -96,15 +98,15 @@
             </md-content>
         </div>
     </div>
-    <div layout="row" class="entrypoint-configuration-view" ng-show="conf" flex layout-xl>
-        <div flex class="entrypoint-component">
+    <div id="container" layout="row" ng-show="conf" flex layout-xl>
+        <div id="backends" flex class="entrypoint-component">
             <md-toolbar class="md-primary">
                 <div class="md-toolbar-tools">
                     <h2 class="md-flex">Backends</h2>
                 </div>
             </md-toolbar>
             <md-content style="padding:20px;">
-                <div ng-repeat="backend in conf.backends  | orderBy:'id' track by backend.id" layout="column">
+                <div id="backendList" ng-repeat="backend in conf.backends  | orderBy:'id' track by backend.id" layout="column">
                     <div layout="row">
                         <div flex="25" layout="row">
                             <div flex><h3>{{backend.id}}<context-map title="Backend {{backend.id}}" context="backend.context"></context-map>
