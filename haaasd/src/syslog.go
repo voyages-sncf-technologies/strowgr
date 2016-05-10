@@ -46,16 +46,16 @@ func (syslog *Syslog) Restart() error {
 	syslogCtl := fmt.Sprintf("%s/SYSLOG/scripts/haplogctl", syslog.properties.HapHome)
 	output, err := exec.Command("sh", syslogCtl, "stop").Output()
 	if err != nil {
-		log.WithField("script", syslogCtl).WithField("output", string(output)).WithError(err).Error("can't stop syslog")
+		log.WithFields(SyslogFields()).WithField("script", syslogCtl).WithField("output", string(output)).WithError(err).Error("can't stop syslog")
 	} else {
-		log.WithField("output", string(output[:])).Info("Syslog stopped. Wait 1s before the restart.")
+		log.WithFields(SyslogFields()).WithField("output", string(output[:])).Info("Syslog stopped. Wait 1s before the restart.")
 		time.Sleep(time.Duration(1) * time.Second)
 
 		output, err = exec.Command("sh", syslogCtl, "start").Output()
 		if err != nil {
-			log.WithField("script", syslogCtl).WithField("output", string(output)).WithError(err).Error("can't start syslog")
+			log.WithFields(SyslogFields()).WithField("script", syslogCtl).WithField("output", string(output)).WithError(err).Error("can't start syslog")
 		} else {
-			log.WithField("output", string(output[:])).Info("Syslog started")
+			log.WithFields(SyslogFields()).WithField("output", string(output[:])).Info("Syslog started")
 
 		}
 	}
@@ -70,19 +70,26 @@ func (syslog *Syslog) Init() error {
 	t := template.New("Syslog template")
 	t, err := t.Parse(syslogBaseConf)
 	if err != nil {
-		log.Fatal(err)
+		log.WithFields(SyslogFields()).Fatal(err)
 	}
 
-	createDirectory("init", fmt.Sprintf("%s/SYSLOG/logs", syslog.properties.HapHome))
-	createDirectory("init", configDir)
+	createDirectory(Context{}, "init", fmt.Sprintf("%s/SYSLOG/logs", syslog.properties.HapHome))
+	createDirectory(Context{}, "init", configDir)
 
 	f, err := os.OpenFile(configFile, os.O_CREATE | os.O_WRONLY, 0644)
 	if err != nil {
-		log.WithError(err).Error("Fail to write base syslog file")
+		log.WithFields(SyslogFields()).WithError(err).Error("Fail to write base syslog file")
 		return err
 	}
 	t.Execute(f, syslog.properties)
-	log.WithField("filename", configFile).Debug("Syslog conf written")
+	log.WithFields(SyslogFields()).WithField("filename", configFile).Debug("Syslog conf written")
 
 	return nil
+}
+
+func SyslogFields() log.Fields {
+	return log.Fields{
+		"timestamp": time.Now().UnixNano() / int64(time.Millisecond),
+		"type": "syslog",
+	}
 }

@@ -237,7 +237,7 @@ func logAndForget(data *haaasd.EventMessage) error {
 }
 
 func reloadSlave(data *haaasd.EventMessage) error {
-	context := data.Context().UpdateTimestamp()
+	context := data.Context()
 	hap := haaasd.NewHaproxy("slave", properties, data.Application, data.Platform, data.HapVersion)
 
 	status, err := hap.ApplyConfiguration(data)
@@ -251,16 +251,16 @@ func reloadSlave(data *haaasd.EventMessage) error {
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		publishMessage("commit_slave_completed_", data)
+		publishMessage("commit_slave_completed_", context.UpdateTimestamp())
 	} else {
 		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", context)
+		publishMessage("commit_failed_", context.UpdateTimestamp())
 	}
 	return nil
 }
 
 func reloadMaster(data *haaasd.EventMessage) error {
-	context := data.Context().UpdateTimestamp()
+	context := data.Context()
 
 	hap := haaasd.NewHaproxy("master", properties, data.Application, data.Platform, data.HapVersion)
 	status, err := hap.ApplyConfiguration(data)
@@ -268,10 +268,10 @@ func reloadMaster(data *haaasd.EventMessage) error {
 		if status != haaasd.UNCHANGED {
 			syslog.Restart()
 		}
-		publishMessage("commit_completed_", context)
+		publishMessage("commit_completed_", context.UpdateTimestamp())
 	} else {
 		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", context)
+		publishMessage("commit_failed_", context.UpdateTimestamp())
 	}
 	return nil
 }
@@ -284,9 +284,9 @@ func bodyToData(jsonStream []byte) (*haaasd.EventMessage, error) {
 	return &message, err
 }
 
-func publishMessage(topic_prefix string, data interface{}) error {
-	jsonMsg, _ := json.Marshal(data)
+func publishMessage(topic_prefix string, context haaasd.Context) error {
+	jsonMsg, _ := json.Marshal(context)
 	topic := topic_prefix + properties.ClusterId
-	log.WithField("topic", topic).WithField("payload", string(jsonMsg)).Debug("Publish")
+	log.WithFields(context.Fields()).WithField("topic", topic).WithField("payload", string(jsonMsg)).Debug("Publish")
 	return producer.Publish(topic, []byte(jsonMsg))
 }
