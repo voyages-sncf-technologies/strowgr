@@ -126,7 +126,7 @@ public class EntryPointEventHandler {
             Optional<EntryPoint> committingConfiguration = stateManager.tryCommitCurrent(event.getCorrelationId(), key);
             if(committingConfiguration.isPresent()) {
                 EntryPoint configuration = committingConfiguration.get();
-                String template = templateLocator.readTemplate(configuration);
+                String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration "+key));
                 Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, configuration);
                 String conf = templateGenerator.generate(template, configuration, portsMapping);
                 String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
@@ -147,7 +147,7 @@ public class EntryPointEventHandler {
             Optional<EntryPoint> committingConfiguration = stateManager.tryCommitPending(event.getCorrelationId(), key);
             if (committingConfiguration.isPresent()) {
                 EntryPoint configuration = committingConfiguration.get();
-                String template = templateLocator.readTemplate(configuration);
+                String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + key));
                 Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, configuration);
                 String conf = templateGenerator.generate(template, configuration, portsMapping);
                 String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);

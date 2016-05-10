@@ -201,6 +201,14 @@
                 backends: []
             };
 
+            $scope.gitlabTemplate = {
+                host: "gitlab.socrate.vsct.fr",
+                group: "",
+                repository: "",
+                tag: "",
+                path: ""
+            };
+
             $scope.availableHaproxy = ['default-name'];
 
             $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
@@ -238,12 +246,18 @@
 
             /* Checks the entrypoint configuration first and then creates the entrypoint */
             $scope.createEntrypoint = function () {
+                /* Consturction of gitlab url */
+                $scope.conf.context.templateUri = "http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.gitlabTemplate.path;
+
+                console.log($scope.conf.context.templateUri);
+
                 /* Since ports are provided by the backend, we simulate their presence for template valorisation validation */
                 var confWithFakePorts = angular.copy($scope.conf);
                 confWithFakePorts.syslogPort = "00000";
                 for (var i = 0; i < confWithFakePorts.frontends.length; i++) {
                     confWithFakePorts.frontends[i].port = "00000";
                 }
+
                 Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (template) {
                     return $http.put('/api/entrypoints/' + $scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf);
                 }).then(function (response) {

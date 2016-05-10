@@ -1,11 +1,7 @@
 package com.vsct.dt.haas.admin.gui.resource.api;
 
-import com.vsct.dt.haas.admin.core.EntryPointKey;
-import com.vsct.dt.haas.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.haas.admin.core.EntryPointRepository;
 import com.vsct.dt.haas.admin.core.TemplateGenerator;
-import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
-import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.haas.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.haas.admin.template.IncompleteConfigurationException;
 import com.vsct.dt.haas.admin.template.locator.UriTemplateLocator;
@@ -13,8 +9,6 @@ import com.vsct.dt.haas.admin.template.locator.UriTemplateLocator;
 import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.util.HashMap;
 
 @Path("/haproxy")
 public class HaproxyResources {
@@ -43,7 +37,7 @@ public class HaproxyResources {
         if (uri == null || uri.equals("")) {
             throw new BadRequestException("You must provide 'uri' query param");
         }
-        return templateLocator.readTemplate(uri);
+        return templateLocator.readTemplate(uri).orElseThrow(() -> new NotFoundException("Could not find any template at " + uri));
     }
 
     @POST
@@ -52,15 +46,12 @@ public class HaproxyResources {
     @Produces(MediaType.TEXT_PLAIN)
     public String getHaproxyConfiguration(@Valid EntryPointWithPortsMappingJson configuration) {
         try {
-            return generateHaproxyConfiguration(configuration);
+            String uri = configuration.getContext().get(UriTemplateLocator.URI_FIELD);
+            String template = templateLocator.readTemplate(uri).orElseThrow(() -> new NotFoundException("Could not find any template at " + uri));
+            return templateGenerator.generate(template, configuration, configuration.generatePortMapping());
         } catch (IncompleteConfigurationException e) {
             throw new BadRequestException(e.getMessage());
         }
-    }
-
-    private String generateHaproxyConfiguration(EntryPointWithPortsMappingJson configuration) {
-        String template = templateLocator.readTemplate(configuration.getContext().get(UriTemplateLocator.URI_FIELD));
-        return templateGenerator.generate(template, configuration, configuration.generatePortMapping());
     }
 
 }
