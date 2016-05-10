@@ -9,6 +9,7 @@ import com.vsct.dt.haas.admin.nsq.producer.Producer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
@@ -27,7 +28,7 @@ public class CommitBeginEventListener {
     }
 
     @Subscribe
-    public void handle(CommitBeginEvent commitBeginEvent) throws NSQException, TimeoutException, JsonProcessingException {
+    public void handle(CommitBeginEvent commitBeginEvent) throws NSQException, TimeoutException, JsonProcessingException, UnsupportedEncodingException {
         EntryPoint configuration = commitBeginEvent.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + commitBeginEvent));
         Map<String, String> context = configuration.getContext();
         String application = context.get("application");

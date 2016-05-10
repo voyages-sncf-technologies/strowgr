@@ -31,6 +31,7 @@ public class UriTemplateLocator implements TemplateLocator {
     public String readTemplate(String uri){
         try{
             HttpGet getTemplate = new HttpGet(uri);
+            getTemplate.addHeader("Content-Type", "text/plain; charset=utf-8");
             LOGGER.debug("get template {}", uri);
             return client.execute(getTemplate, (response) -> {
                 int status = response.getStatusLine().getStatusCode();
