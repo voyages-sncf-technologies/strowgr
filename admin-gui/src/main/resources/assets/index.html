@@ -411,6 +411,10 @@
                                 preserveScope: true,
                                 fullscreen: false
                             });
+                        };
+
+                        scope.contextIsNotEmpty = function (){
+                            return Object.keys(scope.context).length > 0;
                         }
                     }
                 }
