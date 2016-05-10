@@ -37,7 +37,7 @@ public class UriTemplateLocator implements TemplateLocator {
                 int status = response.getStatusLine().getStatusCode();
                 if (status >= 200 && status < 300) {
                     HttpEntity entity = response.getEntity();
-                    String entitySer = EntityUtils.toString(entity);
+                    String entitySer = EntityUtils.toString(entity, "UTF-8");
                     if (entitySer == null) {
                         throw new IllegalStateException("template from " + uri + " has null content.");
                     } else {

@@ -33,6 +33,7 @@ public class MustacheTemplateGenerator implements TemplateGenerator {
 
         RecordMissingEntriesObjectHandler objectHandler = new RecordMissingEntriesObjectHandler();
         mf.setObjectHandler(objectHandler);
+
         Mustache mustache = mf.compile(new StringReader(template), "no_cache");
 
         HaasMustacheScope scope = new HaasMustacheScope(configuration, portsMapping);

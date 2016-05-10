@@ -32,8 +32,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Path("/entrypoints")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
+@Consumes(MediaType.APPLICATION_JSON + ";charset=utf-8")
 public class EntrypointResources {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntrypointResources.class);
