@@ -2,6 +2,8 @@ package com.vsct.dt.haas.admin.core;
 
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 
+import java.util.Optional;
+
 public interface TemplateLocator {
-    String readTemplate(EntryPoint configuration);
+    Optional<String> readTemplate(EntryPoint configuration);
 }
