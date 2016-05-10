@@ -28,7 +28,11 @@ public class HaasConfiguration extends Configuration {
 
     @Valid
     @NotNull
-    private CommitMessageConsumerFactory commitMessageConsumerFactory;
+    private CommitCompletedConsumerFactory commitCompletedConsumerFactory;
+
+    @Valid
+    @NotNull
+    private CommitFailedConsumerFactory commitFailedConsumerFactory;
 
     @Valid
     @NotNull
@@ -83,14 +87,24 @@ public class HaasConfiguration extends Configuration {
         this.periodicSchedulerFactory = periodicSchedulerFactory;
     }
 
-    @JsonProperty("commitMessageConsumer")
-    public CommitMessageConsumerFactory getCommitMessageConsumerFactory() {
-        return commitMessageConsumerFactory;
+    @JsonProperty("commitCompletedConsumer")
+    public CommitCompletedConsumerFactory getCommitCompletedConsumerFactory() {
+        return commitCompletedConsumerFactory;
     }
 
-    @JsonProperty("commitMessageConsumer")
-    public void setCommitMessageConsumerFactory(CommitMessageConsumerFactory commitMessageConsumerFactory) {
-        this.commitMessageConsumerFactory = commitMessageConsumerFactory;
+    @JsonProperty("commitCompletedConsumer")
+    public void setCommitCompletedConsumerFactory(CommitCompletedConsumerFactory commitCompletedConsumerFactory) {
+        this.commitCompletedConsumerFactory = commitCompletedConsumerFactory;
+    }
+
+    @JsonProperty("commitFailedConsumer")
+    public CommitFailedConsumerFactory getCommitFailedConsumerFactory() {
+        return commitFailedConsumerFactory;
+    }
+
+    @JsonProperty("commitFailedConsumer")
+    public void setCommitFailedConsumerFactory(CommitFailedConsumerFactory commitFailedConsumerFactory) {
+        this.commitFailedConsumerFactory = commitFailedConsumerFactory;
     }
 
     @JsonProperty("registerServerMessageConsumer")

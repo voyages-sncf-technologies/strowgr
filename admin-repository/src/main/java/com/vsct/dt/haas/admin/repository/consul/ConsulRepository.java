@@ -309,7 +309,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
     @Override
     public Optional<EntryPoint> getCommittingConfiguration(EntryPointKey key) {
-        return getCommittingConfigurationWithCorrelationId(key).map(identity());
+        return getCommittingConfigurationWithCorrelationId(key).map(committingConfigurationJson -> new EntryPoint(committingConfigurationJson.getHaproxy(), committingConfigurationJson.getHapUser(), committingConfigurationJson.getFrontends(), committingConfigurationJson.getBackends(), committingConfigurationJson.getContext()));
     }
 
     private Optional<CommittingConfigurationJson> getCommittingConfigurationWithCorrelationId(EntryPointKey key) {

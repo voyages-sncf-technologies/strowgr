@@ -11,19 +11,19 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
-public class CommitMessageConsumer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommitMessageConsumer.class);
+public class CommitCompletedConsumer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumer.class);
 
     private static final String CHANNEL = "admin";
-    private final NSQConsumer successCommitConsumer;
+    private final NSQConsumer nsqConsumer;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public CommitMessageConsumer(String topic, NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer) {
-        successCommitConsumer = new NSQConsumer(lookup, topic + haproxy, CHANNEL, (message) -> {
+    public CommitCompletedConsumer(String topic, NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer) {
+        nsqConsumer = new NSQConsumer(lookup, topic + haproxy, CHANNEL, (message) -> {
 
-            CommitCompletePayload payload = null;
+            CommitCompletedPayload payload = null;
             try {
-                payload = mapper.readValue(message.getMessage(), CommitCompletePayload.class);
+                payload = mapper.readValue(message.getMessage(), CommitCompletedPayload.class);
             } catch (IOException e) {
                 LOGGER.error("can't deserialize the payload:" + Arrays.toString(message.getMessage()), e);
                 //Avoid republishing message and stop processing
@@ -38,11 +38,11 @@ public class CommitMessageConsumer {
     }
 
     public void start() {
-        successCommitConsumer.start();
+        nsqConsumer.start();
     }
 
     public void stop() {
-        successCommitConsumer.shutdown();
+        nsqConsumer.shutdown();
     }
 
 }

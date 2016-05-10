@@ -40,7 +40,7 @@ public class UriTemplateLocator implements TemplateLocator {
                     if (entitySer == null) {
                         throw new IllegalStateException("template from " + uri + " has null content.");
                     } else {
-                        LOGGER.info("template from " + uri + " starts with " + entitySer.substring(0, Math.max(20, entitySer.length())));
+                        LOGGER.debug("template from " + uri + " starts with " + entitySer.substring(0, Math.max(20, entitySer.length())));
                     }
                     return entitySer;
                 } else {

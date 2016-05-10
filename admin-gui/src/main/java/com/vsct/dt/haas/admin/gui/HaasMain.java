@@ -17,7 +17,6 @@ import com.vsct.dt.haas.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.haas.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.jersey.errors.ErrorMessage;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.slf4j.Logger;
@@ -86,7 +85,8 @@ public class HaasMain extends Application<HaasConfiguration> {
 
         /* NSQ Consumers */
         NSQLookup lookup = configuration.getNsqLookupfactory().build(environment);
-        configuration.getCommitMessageConsumerFactory().build(lookup, configuration.getDefaultHAPName(), eventBus::post, environment);
+        configuration.getCommitCompletedConsumerFactory().build(lookup, configuration.getDefaultHAPName(), eventBus::post, environment);
+        configuration.getCommitFailedConsumerFactory().build(lookup, configuration.getDefaultHAPName(), eventBus::post, environment);
         configuration.getRegisterServerMessageConsumerFactory().build(lookup, eventBus::post, environment);
 
         /* NSQ Producers */

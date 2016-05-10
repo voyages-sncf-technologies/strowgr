@@ -199,10 +199,10 @@ public class EntryPointEventHandler {
             this.stateManager.lock(key);
             Optional<String> commitCorrelationId = stateManager.getCommitCorrelationId(key);
             if(commitCorrelationId.isPresent() && commitCorrelationId.get().equals(event.getCorrelationId())){
-                LOGGER.info("Configuration for EntryPoint {} failed. Commit is canceled.");
+                LOGGER.info("Configuration for EntryPoint {} failed. Commit is canceled.", key);
                 stateManager.cancelCommit(key);
             } else {
-                LOGGER.info("Received a faield event but either there is no committing configuration or the correlation id does not match.");
+                LOGGER.info("Received a failed event but either there is no committing configuration or the correlation id does not match.");
             }
         } finally {
             this.stateManager.release(key);
