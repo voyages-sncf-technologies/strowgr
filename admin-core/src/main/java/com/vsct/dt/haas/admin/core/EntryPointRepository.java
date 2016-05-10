@@ -26,7 +26,7 @@ public interface EntryPointRepository {
      * @param configuration conent of the entrypoint
      * @param ttl the ttl in seconds
      */
-    void setCommittingConfiguration(EntryPointKey key, EntryPoint configuration, int ttl);
+    void setCommittingConfiguration(String correlationId, EntryPointKey key, EntryPoint configuration, int ttl);
 
     void removeCommittingConfiguration(EntryPointKey key);
 
@@ -42,5 +42,4 @@ public interface EntryPointRepository {
 
     Optional<String> getCommitCorrelationId(EntryPointKey key);
 
-    void setCommitCorrelationId(String correlationId);
 }

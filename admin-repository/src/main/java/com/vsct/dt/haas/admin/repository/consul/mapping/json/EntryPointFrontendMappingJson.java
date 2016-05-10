@@ -18,4 +18,5 @@ public class EntryPointFrontendMappingJson extends EntryPointFrontend {
                                          @JsonProperty("context") Map<String, String> context) {
         super(id, context);
     }
+
 }

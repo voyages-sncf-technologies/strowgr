@@ -101,7 +101,7 @@ public class EntryPointStateManager {
             if (repository.getCommittingConfiguration(key).isPresent()) {
                 LOGGER.debug("can't committing a new pending configuration, there is already one in commit phase.");
             } else {
-                repository.setCommittingConfiguration(key, pendingConfiguration.get(), commitTimeout);
+                repository.setCommittingConfiguration(correlationId, key, pendingConfiguration.get(), commitTimeout);
                 repository.removePendingConfiguration(key);
                 return pendingConfiguration;
             }
@@ -125,7 +125,7 @@ public class EntryPointStateManager {
 
         if (currentConfiguration.isPresent()) {
             if (!repository.getCommittingConfiguration(key).isPresent()) {
-                repository.setCommittingConfiguration(key, currentConfiguration.get(), commitTimeout);
+                repository.setCommittingConfiguration(correlationId, key, currentConfiguration.get(), commitTimeout);
                 return currentConfiguration;
             } else {
                 LOGGER.debug("can't committing a new current configuration, there is already one in commit phase.");

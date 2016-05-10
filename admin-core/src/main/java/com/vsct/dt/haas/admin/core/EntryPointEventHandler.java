@@ -192,6 +192,7 @@ public class EntryPointEventHandler {
         return portsMapping;
     }
 
+    @Subscribe
     public void handle(CommitFailureEvent event) {
         EntryPointKey key = event.getKey();
         try{
