@@ -105,16 +105,16 @@ public class CassandraClient {
         );
 
         futur.get().keySet().forEach(k -> {
-            System.out.print(k.correlationId + " ");
+            System.out.print(k.correlationId + " END");
             result.get(k).forEach(v -> {
                 if (showPayload) {
-                    System.out.print(v.name +"("+v.timestamp+")|" + v.payload + "| ->");
+                    System.out.print(" <- "+v.name +"("+v.timestamp+")|" + v.payload + "|");
                 }
                 else {
-                    System.out.print(v.name +"("+v.timestamp+") -> ");
+                    System.out.print(" <- "+v.name +"("+v.timestamp+")");
                 }
             });
-            System.out.println("END");
+            System.out.println(" <- BEGIN");
         });
 
         System.out.println("\nClosing Cassandra connection");
