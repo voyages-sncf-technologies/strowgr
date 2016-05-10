@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func NewHaproxy(role string, properties *Config, application string, platform string, version string) *Haproxy {
+func NewHaproxy(role string, properties *Config, application string, platform string, version string, context Context) *Haproxy {
 	if version == "" {
 		version = "1.4.22"
 	}
@@ -21,6 +21,7 @@ func NewHaproxy(role string, properties *Config, application string, platform st
 		Platform:    platform,
 		properties:  properties,
 		Version:     version,
+		Context: context,
 	}
 }
 
@@ -173,7 +174,7 @@ func (hap *Haproxy) reload(correlationId string) error {
 	reloadScript := hap.getReloadScript()
 	output, err := exec.Command("sh", reloadScript, "reload", "-y").Output()
 	if err != nil {
-		log.WithError(err).Error("Error reloading")
+		log.WithFields(hap.Context.Fields()).WithError(err).Error("Error reloading")
 	}
 	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 		"role": hap.Role,

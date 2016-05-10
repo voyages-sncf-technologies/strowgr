@@ -238,7 +238,7 @@ func logAndForget(data *haaasd.EventMessage) error {
 
 func reloadSlave(data *haaasd.EventMessage) error {
 	context := data.Context()
-	hap := haaasd.NewHaproxy("slave", properties, data.Application, data.Platform, data.HapVersion)
+	hap := haaasd.NewHaproxy("slave", properties, data.Application, data.Platform, data.HapVersion, context)
 
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
@@ -251,10 +251,10 @@ func reloadSlave(data *haaasd.EventMessage) error {
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		publishMessage("commit_slave_completed_", context.UpdateTimestamp())
+		publishMessage("commit_slave_completed_", data, context)
 	} else {
 		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", context.UpdateTimestamp())
+		publishContextMessage("commit_failed_", context)
 	}
 	return nil
 }
@@ -262,16 +262,16 @@ func reloadSlave(data *haaasd.EventMessage) error {
 func reloadMaster(data *haaasd.EventMessage) error {
 	context := data.Context()
 
-	hap := haaasd.NewHaproxy("master", properties, data.Application, data.Platform, data.HapVersion)
+	hap := haaasd.NewHaproxy("master", properties, data.Application, data.Platform, data.HapVersion, context)
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != haaasd.UNCHANGED {
 			syslog.Restart()
 		}
-		publishMessage("commit_completed_", context.UpdateTimestamp())
+		publishContextMessage("commit_completed_", context)
 	} else {
 		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", context.UpdateTimestamp())
+		publishContextMessage("commit_failed_", context)
 	}
 	return nil
 }
@@ -284,8 +284,11 @@ func bodyToData(jsonStream []byte) (*haaasd.EventMessage, error) {
 	return &message, err
 }
 
-func publishMessage(topic_prefix string, context haaasd.Context) error {
-	jsonMsg, _ := json.Marshal(context)
+func publishContextMessage(topic_prefix string, context haaasd.Context) error {
+	return publishMessage(topic_prefix, context, context.UpdateTimestamp())
+}
+func publishMessage(topic_prefix string, data interface{}, context haaasd.Context) error {
+	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
 	log.WithFields(context.Fields()).WithField("topic", topic).WithField("payload", string(jsonMsg)).Debug("Publish")
 	return producer.Publish(topic, []byte(jsonMsg))
