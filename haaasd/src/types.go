@@ -59,7 +59,7 @@ type Context struct {
 
 // update the timestamp of the current context
 func (ctx Context) UpdateTimestamp() Context {
-	ctx.Timestamp = time.Now().Unix()
+	ctx.Timestamp = time.Now().UnixNano() / int64(time.Millisecond)
 	return ctx
 }
 
@@ -67,7 +67,7 @@ func (ctx Context) UpdateTimestamp() Context {
 func (ctx Context) Fields() log.Fields {
 	return log.Fields{
 		"correlationId":ctx.CorrelationId,
-		"timestamp":ctx.Timestamp,
+		"timestamp":ctx.UpdateTimestamp().Timestamp,
 		"application":ctx.Application,
 		"platform":ctx.Platform,
 	}

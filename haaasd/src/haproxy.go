@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"time"
-	"io"
 )
 
 func NewHaproxy(role string, properties *Config, application string, platform string, version string) *Haproxy {
@@ -32,6 +31,7 @@ type Haproxy struct {
 	Version     string
 	properties  *Config
 	State       int
+	Context     Context
 }
 
 const (
@@ -56,24 +56,18 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 		hap.dumpConfiguration(hap.NewDebugPath(), newConf, data)
 	}
 	if bytes.Equal(oldConf, newConf) {
-		log.WithFields(log.Fields{
-			"correlationId": data.CorrelationId,
-			"role": hap.Role,
-			"application": data.Application,
-			"plateform":   data.Platform,
-		}).Debug("Unchanged configuration")
+		log.WithFields(hap.Context.Fields()).WithFields(
+			log.Fields{"role": hap.Role,
+			}).Debug("Unchanged configuration")
 		return UNCHANGED, nil
 	}
 
 	// Archive previous configuration
 	archivePath := hap.confArchivePath()
 	os.Rename(path, archivePath)
-	log.WithFields(
+	log.WithFields(hap.Context.Fields()).WithFields(
 		log.Fields{
-			"correlationId": data.CorrelationId,
 			"role": hap.Role,
-			"application": data.Application,
-			"plateform":   data.Platform,
 			"archivePath": archivePath,
 		}).Info("Old configuration saved")
 	err = ioutil.WriteFile(path, newConf, 0644)
@@ -81,27 +75,23 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 		return ERR_CONF, err
 	}
 
-	log.WithFields(log.Fields{
-		"correlationId": data.CorrelationId,
+	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 		"role": hap.Role,
-		"application": data.Application,
-		"plateform":   data.Platform,
 		"path": path,
 	}).Info("New configuration written")
 
 	// Reload haproxy
 	err = hap.reload(data.CorrelationId)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"correlationId": data.CorrelationId,
+		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 			"role": hap.Role,
-			"application": data.Application,
-			"plateform":   data.Platform,
 		}).WithError(err).Error("Reload failed")
 		hap.dumpConfiguration(hap.NewErrorPath(), newConf, data)
 		errRollback := hap.rollback(data.CorrelationId)
 		if errRollback != nil {
 			log.WithError(errRollback).Error("error in rollback in addition to error of the reload")
+		} else {
+			log.WithFields(hap.Context.Fields()).Debug("rollback done")
 		}
 		return ERR_RELOAD, err
 	}
@@ -109,20 +99,14 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	fragmentPath := hap.syslogFragmentPath()
 	err = ioutil.WriteFile(fragmentPath, data.SyslogFragment, 0644)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"correlationId": data.CorrelationId,
+		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 			"role": hap.Role,
-			"application": data.Application,
-			"plateform":   data.Platform,
 		}).WithError(err).Error("Failed to write syslog fragment")
 		// TODO Should we rollback on syslog error ?
 		return ERR_SYSLOG, err
 	}
-	log.WithFields(log.Fields{
-		"correlationId": data.CorrelationId,
+	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 		"role": hap.Role,
-		"application": data.Application,
-		"plateform":   data.Platform,
 		"content" : string(data.SyslogFragment),
 		"filename": fragmentPath,
 	}).Debug("Write syslog fragment")
@@ -143,12 +127,9 @@ func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *Eve
 		f.Write(newConf)
 		f.Sync()
 
-		log.WithFields(log.Fields{
-			"correlationId": data.CorrelationId,
+		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 			"role": hap.Role,
 			"filename": filename,
-			"application": data.Application,
-			"platform": data.Platform,
 		}).Info("Dump configuration")
 	}
 }
@@ -194,13 +175,11 @@ func (hap *Haproxy) reload(correlationId string) error {
 	if err != nil {
 		log.WithError(err).Error("Error reloading")
 	}
-	log.WithFields(log.Fields{
-		"correlationId" : correlationId,
+	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 		"role": hap.Role,
-		"application": hap.Application,
-		"platform": hap.Platform,
 		"reloadScript": reloadScript,
-	}).WithField("cmd", string(output[:])).Debug("Reload succeeded")
+		"cmd": string(output[:]),
+	}).Debug("Reload succeeded")
 	return err
 }
 
@@ -220,13 +199,13 @@ func (hap *Haproxy) rollback(correlationId string) error {
 func (hap *Haproxy) createSkeleton(correlationId string) error {
 	baseDir := hap.properties.HapHome + "/" + hap.Application
 
-	createDirectory(correlationId, baseDir + "/Config")
-	createDirectory(correlationId, baseDir + "/logs/" + hap.Application + hap.Platform)
-	createDirectory(correlationId, baseDir + "/scripts")
-	createDirectory(correlationId, baseDir + "/version-1")
+	createDirectory(hap.Context, correlationId, baseDir + "/Config")
+	createDirectory(hap.Context, correlationId, baseDir + "/logs/" + hap.Application + hap.Platform)
+	createDirectory(hap.Context, correlationId, baseDir + "/scripts")
+	createDirectory(hap.Context, correlationId, baseDir + "/version-1")
 
-	updateSymlink(correlationId, hap.getHapctlFilename(), hap.getReloadScript())
-	updateSymlink(correlationId, hap.getHapBinary(), baseDir + "/Config/haproxy")
+	updateSymlink(hap.Context, correlationId, hap.getHapctlFilename(), hap.getReloadScript())
+	updateSymlink(hap.Context, correlationId, hap.getHapBinary(), baseDir + "/Config/haproxy")
 
 	return nil
 }
@@ -240,7 +219,7 @@ func (hap *Haproxy) syslogFragmentPath() string {
 }
 
 // updateSymlink create or update a symlink
-func updateSymlink(correlationId, oldname string, newname string) {
+func updateSymlink(context Context, correlationId, oldname, newname string) {
 	newLink := true
 	if _, err := os.Stat(newname); err == nil {
 		os.Remove(newname)
@@ -248,32 +227,28 @@ func updateSymlink(correlationId, oldname string, newname string) {
 	}
 	err := os.Symlink(oldname, newname)
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{
-			"correlationId" : correlationId,
+		log.WithFields(context.Fields()).WithError(err).WithFields(log.Fields{
 			"path": newname,
 		}).Error("Symlink failed")
 	}
 
 	if newLink {
-		log.WithFields(log.Fields{
-			"correlationId" : correlationId,
+		log.WithFields(context.Fields()).WithFields(log.Fields{
 			"path": newname,
 		}).Info("Symlink created")
 	}
 }
 
 // createDirectory recursively creates directory if it doesn't exists
-func createDirectory(correlationId string, dir string) {
+func createDirectory(context Context, correlationId string, dir string) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{
-				"correlationId" : correlationId,
+			log.WithError(err).WithFields(context.Fields()).WithFields(log.Fields{
 				"dir": dir,
 			}).Error("Failed to create")
 		} else {
-			log.WithFields(log.Fields{
-				"correlationId" : correlationId,
+			log.WithFields(context.Fields()).WithFields(log.Fields{
 				"dir": dir,
 			}).Info("Directory created")
 		}
@@ -296,84 +271,4 @@ func (hap *Haproxy) getReloadScript() string {
 // It returns the full path to the haproxy binary
 func (hap *Haproxy) getHapBinary() string {
 	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", hap.Version)
-}
-
-
-// COPY DIR
-
-// Copies file source to destination dest.
-func CopyFile(source string, dest string) (err error) {
-	sf, err := os.Open(source)
-	if err != nil {
-		return err
-	}
-	defer sf.Close()
-	df, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer df.Close()
-	_, err = io.Copy(df, sf)
-	if err == nil {
-		si, err := os.Stat(source)
-		if err != nil {
-			err = os.Chmod(dest, si.Mode())
-		}
-
-	}
-
-	return
-}
-
-// Recursively copies a directory tree, attempting to preserve permissions.
-// Source directory must exist, destination directory must *not* exist.
-func CopyDir(source string, dest string) (err error) {
-
-	// get properties of source dir
-	fi, err := os.Stat(source)
-	if err != nil {
-		return err
-	}
-
-	if !fi.IsDir() {
-		log.Error("Source is not a directory")
-		return errors.New("Source is not a directory")
-	}
-
-	// ensure dest dir does not already exist
-
-	_, err = os.Open(dest)
-	if !os.IsNotExist(err) {
-		log.Error("Destination already exists")
-		return errors.New("Destination already exists")
-	}
-
-	// create dest dir
-
-	err = os.MkdirAll(dest, fi.Mode())
-	if err != nil {
-		return err
-	}
-
-	entries, err := ioutil.ReadDir(source)
-
-	for _, entry := range entries {
-
-		sfp := source + "/" + entry.Name()
-		dfp := dest + "/" + entry.Name()
-		if entry.IsDir() {
-			err = CopyDir(sfp, dfp)
-			if err != nil {
-				log.Println(err)
-			}
-		} else {
-			// perform copy
-			err = CopyFile(sfp, dfp)
-			if err != nil {
-				log.Println(err)
-			}
-		}
-
-	}
-	return
 }
