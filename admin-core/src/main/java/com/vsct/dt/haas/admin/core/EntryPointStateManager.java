@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -88,17 +89,19 @@ public class EntryPointStateManager {
     /**
      * Put the pending configuration in committing state, only if there is not already a configuration in committing state
      *
+     *
+     * @param correlationId
      * @param key of the entrypoint
      * @return the new committing configuration (optional)
      */
-    Optional<EntryPoint> tryCommitPending(EntryPointKey key) {
+    Optional<EntryPoint> tryCommitPending(String correlationId, EntryPointKey key) {
         Optional<EntryPoint> pendingConfiguration = repository.getPendingConfiguration(key);
 
         if (pendingConfiguration.isPresent()) {
             if (repository.getCommittingConfiguration(key).isPresent()) {
                 LOGGER.debug("can't committing a new pending configuration, there is already one in commit phase.");
             } else {
-                repository.setCommittingConfiguration(key, pendingConfiguration.get(), commitTimeout);
+                repository.setCommittingConfiguration(correlationId, key, pendingConfiguration.get(), commitTimeout);
                 repository.removePendingConfiguration(key);
                 return pendingConfiguration;
             }
@@ -112,21 +115,23 @@ public class EntryPointStateManager {
     /**
      * Put the current configuration in committing state, only if there is not already a configuration in committing state
      *
+     *
+     * @param correlationId
      * @param key of the entrypoint
      * @return the new committing configuration (optional)
      */
-    Optional<EntryPoint> tryCommitCurrent(EntryPointKey key) {
+    Optional<EntryPoint> tryCommitCurrent(String correlationId, EntryPointKey key) {
         Optional<EntryPoint> currentConfiguration = repository.getCurrentConfiguration(key);
 
         if (currentConfiguration.isPresent()) {
             if (!repository.getCommittingConfiguration(key).isPresent()) {
-                repository.setCommittingConfiguration(key, currentConfiguration.get(), commitTimeout);
+                repository.setCommittingConfiguration(correlationId, key, currentConfiguration.get(), commitTimeout);
                 return currentConfiguration;
             } else {
                 LOGGER.debug("can't committing a new current configuration, there is already one in commit phase.");
             }
         } else {
-            LOGGER.debug("can't find current configuration for entrypoint with key {}",key);
+            LOGGER.debug("can't find current configuration for entrypoint with key {}", key);
         }
         return Optional.empty();
     }
@@ -148,4 +153,22 @@ public class EntryPointStateManager {
         return Optional.empty();
     }
 
+    /**
+     * Removes the committing configuration
+     * @param key of the entrypoint
+     * @return the current configuration, if available
+     */
+    public Optional<EntryPoint> cancelCommit(EntryPointKey key) {
+        repository.removeCommittingConfiguration(key);
+        return this.getCommittingConfiguration(key);
+    }
+
+    /**
+     * Returns the correlation id that led to a commit action
+     * @param key of the entrypoint
+     * @return an Optional of String. The Optional is empty if there is no committing configuration at all
+     */
+    public Optional<String> getCommitCorrelationId(EntryPointKey key) {
+        return repository.getCommitCorrelationId(key);
+    }
 }

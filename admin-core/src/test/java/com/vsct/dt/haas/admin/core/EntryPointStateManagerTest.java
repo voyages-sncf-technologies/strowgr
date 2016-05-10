@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
+import com.vsct.dt.haas.admin.core.event.CorrelationId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -193,9 +194,10 @@ public class EntryPointStateManagerTest {
                 Optional.empty()
         );
 
-        entryPointStateManager.tryCommitPending(key);
+        String correlationId = CorrelationId.newCorrelationId();
+        entryPointStateManager.tryCommitPending(correlationId, key);
 
-        verify(repositoryMock).setCommittingConfiguration(key, pendingConfiguration, 10);
+        verify(repositoryMock).setCommittingConfiguration(correlationId, key, pendingConfiguration, 10);
         verify(repositoryMock).removePendingConfiguration(key);
     }
 
@@ -226,9 +228,9 @@ public class EntryPointStateManagerTest {
                 Optional.of(existingCommittingConfiguration)
         );
 
-        entryPointStateManager.tryCommitPending(key);
+        entryPointStateManager.tryCommitPending(CorrelationId.newCorrelationId(), key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), any(), anyInt());
         verify(repositoryMock, never()).removePendingConfiguration(any());
     }
 
@@ -240,9 +242,9 @@ public class EntryPointStateManagerTest {
                 Optional.empty()
         );
 
-        entryPointStateManager.tryCommitPending(key);
+        entryPointStateManager.tryCommitPending(CorrelationId.newCorrelationId(), key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), any(), anyInt());
         verify(repositoryMock, never()).removePendingConfiguration(any());
     }
 
@@ -265,9 +267,10 @@ public class EntryPointStateManagerTest {
                 Optional.empty()
         );
 
-        entryPointStateManager.tryCommitCurrent(key);
+        String correlationId = CorrelationId.newCorrelationId();
+        entryPointStateManager.tryCommitCurrent(correlationId, key);
 
-        verify(repositoryMock).setCommittingConfiguration(eq(key), eq(currentConfiguration), eq(10));
+        verify(repositoryMock).setCommittingConfiguration(eq(correlationId), eq(key), eq(currentConfiguration), eq(10));
     }
 
     @Test
@@ -297,9 +300,9 @@ public class EntryPointStateManagerTest {
                 Optional.of(existingCommittingConfiguration)
         );
 
-        entryPointStateManager.tryCommitCurrent(key);
+        entryPointStateManager.tryCommitCurrent(CorrelationId.newCorrelationId(), key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), any(), anyInt());
     }
 
     @Test
@@ -310,9 +313,9 @@ public class EntryPointStateManagerTest {
                 Optional.empty()
         );
 
-        entryPointStateManager.tryCommitCurrent(key);
+        entryPointStateManager.tryCommitCurrent(CorrelationId.newCorrelationId(), key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), any(), anyInt());
     }
 
     @Test
@@ -325,8 +328,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.commit(key);
 
-        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), anyInt());
-        verify(repositoryMock, never()).removePendingConfiguration(any());
+        verify(repositoryMock, never()).setCommittingConfiguration(any(), any(), any(), anyInt());
     }
 
     @Test

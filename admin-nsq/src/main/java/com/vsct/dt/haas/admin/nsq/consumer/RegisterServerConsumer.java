@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.collect.Sets;
-import com.vsct.dt.haas.admin.core.configuration.EntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.haas.admin.core.event.in.RegisterServerEvent;
 import org.slf4j.Logger;
@@ -12,17 +11,16 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.function.Consumer;
 
-public class RegisterServerMessageConsumer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServerMessageConsumer.class);
+public class RegisterServerConsumer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServerConsumer.class);
 
     private static final String CHANNEL = "admin";
     private final NSQConsumer registerServerConsumer;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public RegisterServerMessageConsumer(String topic, NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
+    public RegisterServerConsumer(String topic, NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
 
         registerServerConsumer = new NSQConsumer(lookup, topic, CHANNEL, (message) -> {
 

@@ -19,4 +19,5 @@ public class EntryPointBackendMappingJson extends EntryPointBackend {
                                         @JsonProperty("context") Map<String, String> context) {
         super(id, servers.stream().map(Function.identity()).collect(Collectors.toSet()), context);
     }
+
 }

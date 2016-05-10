@@ -3,6 +3,8 @@ package com.vsct.dt.haas.admin.repository.consul.mapping.json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.haas.admin.core.configuration.EntryPoint;
+import com.vsct.dt.haas.admin.core.configuration.EntryPointBackend;
+import com.vsct.dt.haas.admin.core.configuration.EntryPointFrontend;
 
 import java.util.Map;
 import java.util.Set;
