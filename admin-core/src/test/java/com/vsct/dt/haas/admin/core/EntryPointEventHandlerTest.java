@@ -330,6 +330,7 @@ public class EntryPointEventHandlerTest {
 
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portProvider.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
+        when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
 
         // Test
         handler.handle(event);
@@ -353,6 +354,7 @@ public class EntryPointEventHandlerTest {
                 .build();
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portProvider.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
+        when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
 
         // Test
         handler.handle(event);
