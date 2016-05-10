@@ -1,11 +1,11 @@
 <div flex>
     <md-icon icon="help_outline" style="font-size:16px;padding-left:3px;cursor:pointer;" ng-click="showContext()">help_outline</md-icon>
-    <md-tooltip>V&eacute;rifie que l'url est joignable</md-tooltip>
+    <md-tooltip>Consulter</md-tooltip>
 </div>
 <script type="text/ng-template" id="template-display/popup.html">
     <md-dialog style="width: 800px;">
         <md-dialog-content>
-            <div>
+            <div layout layout-margin>
                 <pre>{{template}}</pre>
             </div>
         </md-dialog-content>
