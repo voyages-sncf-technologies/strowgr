@@ -41,7 +41,7 @@
     <script type="text/javascript">
         var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages', 'ngSanitize']);
 
-        adminApp.config(['$routeProvider', function ($routeProvider) {
+        adminApp.config(['$routeProvider', '$mdThemingProvider', function ($routeProvider, $mdThemingProvider) {
             $routeProvider.
                     when('/entrypoints', {
                         templateUrl: 'partials/entrypoints.html',
@@ -53,7 +53,19 @@
                     }).
                     otherwise({
                         redirectTo: '/entrypoints'
+                    });
+
+            $mdThemingProvider.theme('default')
+                    .primaryPalette('blue-grey', {
+                        'default': '300',
+                        'hue-1': '100',
+                        'hue-2': '500',
+                        'hue-3': '800'
                     })
+                    .accentPalette('grey', {
+                        'default': '300'
+                    })
+                    .warnPalette('amber');
         }]);
 
         adminApp.factory('PortProvider', ['$http', function ($http) {
@@ -606,14 +618,15 @@
 </head>
 <body>
 <div id="wrapper" layout="column">
-    <div>
+    <div style="margin-bottom: 15px">
         <md-content>
             <md-toolbar>
                 <div class="md-toolbar-tools">
-                    <h2>
-                        <span>HAProxy As A Service</span>
-                    </h2>
-                    <md-button class="md-raised md-warn md-hue-2" ng-href="/#/add-entrypoint">
+                    <h1 style="font-size: 42px">
+                        <span>Strowgr</span>
+                    </h1>
+                    <span flex></span>
+                    <md-button class="md-raised md-accent" ng-href="/#/add-entrypoint">
                         Ajouter un entrypoint
                     </md-button>
                 </div>

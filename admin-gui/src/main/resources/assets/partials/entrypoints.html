@@ -1,19 +1,9 @@
 <style>
-    .left-menu {
-        color: rgb(63,81,181);
-        background-color: #FFFFFF;
-    }
-
-    .left-menu div {
-        background-color: #FFFFFF;
-    }
 
     .left-menu .btn {
         width: 250px;
         margin: 0;
         padding: 0;
-        color: rgb(63,81,181);
-        background-color: #FFFFFF;
         border-radius: 0 20px 20px 0;
         box-shadow: 0 0px 0px 0 rgba(0, 0, 0, 0);
     }
@@ -22,8 +12,6 @@
         font-weight: bold;
         position: relative;
         z-index: 10;
-        color: #FFFFFF;
-        background-color: #3F51B5;
         box-shadow: 0 7px 12px 0 rgba(0, 0, 0, .50);
     }
 
@@ -31,15 +19,12 @@
         font-weight: bold;
         position: relative;
         z-index: 10;
-        color: #FFFFFF;
-        background-color: #3F51B5;
         box-shadow: 0 5px 8px 0 rgba(0, 0, 0, .50);
     }
 
     .left-menu #entrypointFilter {
         width: 200px;
         padding-left: 10px;
-        background-color: #FFFFFF;
     }
 </style>
 
@@ -47,15 +32,15 @@
     <div class="left-menu">
         <div flex layout-align="start start" id="entrypointFilter">
             <md-input-container class="md-block" flex="90">
-                <label>Filtrer</label>
+                <label>Rechercher une configuration</label>
                 <input ng-model="searchTerm">
             </md-input-container>
         </div>
-        <div ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout layout-align="start center" ng-cloack>
-            <md-button id="{{entrypointId}}-select-btn"
+        <div flex ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout layout-align="start center" ng-cloack>
+            <md-button flex id="{{entrypointId}}-select-btn"
                        md-ink-ripple="false"
-                       ng-class="{selected: selectedEntrypoint == entrypointId}"
-                       class="btn" ng-click="loadEntrypoint(entrypointId)">{{entrypointId}}</md-button>
+                       ng-class="{selected: selectedEntrypoint == entrypointId, 'md-hue-3': selectedEntrypoint == entrypointId}"
+                       class="md-raised md-primary" ng-click="loadEntrypoint(entrypointId)">{{entrypointId}}</md-button>
         </div>
     </div>
     <div flex>

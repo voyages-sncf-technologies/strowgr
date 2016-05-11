@@ -33,14 +33,15 @@
 
 <form id="update-entrypoint-form" name="updateEntrypointForm" ng-submit="updateEntrypoint()" flex
       ng-keydown="$event.keyCode == 13 && $event.preventDefault();">
+    <h3 class="md-title">CONFIGURATION GLOBALE</h3>
     <div layout="row" flex>
         <md-input-container flex="10">
             <label>HAproxy cible</label>
-            <input name="haproxy" ng-model="conf.haproxy" disabled/>
+            <input name="haproxy" ng-model="conf.haproxy" disabled style="font-weight: bold; color: black;"/>
         </md-input-container>
         <md-input-container flex="10">
             <label>User haproxy (ex. hapwdia1)</label>
-            <input name="hapUser" ng-model="conf.hapUser" required/>
+            <input name="hapUser" ng-model="conf.hapUser" required style="font-weight: bold; color: black;"/>
 
             <div ng-messages="updateEntrypointForm.hapUser.$error">
                 <div ng-message="required">Il faut indiquer un user pour le process haproxy</div>
@@ -48,15 +49,15 @@
         </md-input-container>
         <md-input-container flex="10">
             <label>Application</label>
-            <input name="application" ng-model="conf.context.application" disabled/>
+            <input name="application" ng-model="conf.context.application" disabled style="font-weight: bold; color: black;"/>
         </md-input-container>
         <md-input-container flex="10">
             <label>Plateforme</label>
-            <input name="platform" ng-model="conf.context.platform" disabled/>
+            <input name="platform" ng-model="conf.context.platform" disabled style="font-weight: bold; color: black;"/>
         </md-input-container>
         <md-input-container flex>
             <label>URL gitlab de la conf haproxy</label>
-            <input name="templateUri" ng-model="conf.context.templateUri" type="url" required/>
+            <input name="templateUri" ng-model="conf.context.templateUri" type="url" required style="font-weight: bold; color: black;"/>
 
             <div ng-messages="updateEntrypointForm.templateUri.$error">
                 <div ng-message="required">Il faut fournir une URL vers le template HAProxy</div>
@@ -65,11 +66,11 @@
         </md-input-container>
     </div>
     <div layout="row" layout-align="start center">
-        <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Contexte global</p>
+        <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Contexte global => </p>
         <context-map-input context="conf.context" forbidden="forbiddenGlobalKeys" flex></context-map-input>
     </div>
     <div layout="row">
-        <md-subheader class="md-primary">Frontends</md-subheader>
+        <h3 class="md-title">FRONTENDS</h3>
         <div layout layout-align="center center">
             <md-icon class="material-icons" ng-click="addFrontend()" style="cursor:pointer;">add</md-icon>
             <md-tooltip>Ajouter un frontend</md-tooltip>
@@ -84,19 +85,19 @@
             <ng-form name="frontendForm">
                 <md-input-container>
                     <label>ID</label>
-                    <input name="id" ng-model="frontend.id" required/>
+                    <input name="id" ng-model="frontend.id" required style="font-weight: bold; color: black;"/>
 
                     <div ng-messages="frontendForm.id.$error">
                         <div ng-message="required">Il faut renseigner un id pour le frontend</div>
                     </div>
                 </md-input-container>
             </ng-form>
-            <p class="md-body-2" style="padding-right: 20px;padding-left: 10px;margin-left: 20px">Contexte =></p>
+            <p class="md-body-2" style="padding-right: 20px;padding-left: 10px;margin-left: 20px">Contexte du frontend {{frontend.id}} =></p>
             <context-map-input context="frontend.context" forbidden="forbiddenFrontendKeys" flex></context-map-input>
         </div>
     </div>
     <div layout="row">
-        <md-subheader class="md-primary">Backends</md-subheader>
+        <h3 class="md-title">BACKENDS</h3>
         <div layout layout-align="center center">
             <md-icon class="material-icons" ng-click="addBackend()" style="cursor:pointer;">add</md-icon>
             <md-tooltip>Ajouter un backend</md-tooltip>
@@ -112,33 +113,33 @@
                 <ng-form name="backendForm">
                     <md-input-container>
                         <label>ID</label>
-                        <input name="id" ng-model="backend.id" required/>
+                        <input name="id" ng-model="backend.id" required style="font-weight: bold; color: black;"/>
 
                         <div ng-messages="backendForm.id.$error">
                             <div ng-message="required">Il faut renseigner un id pour le backend</div>
                         </div>
                     </md-input-container>
                 </ng-form>
-                <p class="md-body-2" style="padding-right: 20px;padding-left: 10px;margin-left: 20px">Contexte =></p>
+                <p class="md-body-2" style="padding-right: 20px;padding-left: 10px;margin-left: 20px">Contexte du backend {{backend.id}} =></p>
                 <context-map-input context="backend.context" forbidden="forbiddenBackendKeys" flex></context-map-input>
             </div>
             <div class="server" ng-repeat="server in backend.servers" layout="row" layout-align="start center"
                  flex="100" style="width: 100%">
                 <md-input-container flex="10" class="hide-errors-spacer">
                     <label>Serveur</label>
-                    <input name="id" ng-model="server.id" disabled/>
+                    <input name="id" ng-model="server.id" disabled style="font-weight: bold; color: black;"/>
                 </md-input-container>
                 <md-input-container flex="10" class="hide-errors-spacer">
                     <label>Hostname</label>
-                    <input name="hostname" ng-model="server.hostname" disabled/>
+                    <input name="hostname" ng-model="server.hostname" disabled style="font-weight: bold; color: black;"/>
                 </md-input-container>
                 <md-input-container flex="10" class="hide-errors-spacer">
                     <label>IP</label>
-                    <input name="ip" ng-model="server.ip" disabled/>
+                    <input name="ip" ng-model="server.ip" disabled style="font-weight: bold; color: black;"/>
                 </md-input-container>
                 <md-input-container flex="10" class="hide-errors-spacer">
                     <label>Port</label>
-                    <input name="port" ng-model="server.port" disabled/>
+                    <input name="port" ng-model="server.port" disabled style="font-weight: bold; color: black;"/>
                 </md-input-container>
                 <context-map-input context="server.context" forbidden="forbiddenServerKeys" readonly="true"
                                    flex></context-map-input>
@@ -150,7 +151,7 @@
     </div>
     <div layout="row">
         <md-input-container>
-            <input type="submit" value="Mettre &agrave; jour l'entrypoint"/>
+            <input class="md-accent" type="submit" value="Mettre &agrave; jour l'entrypoint"/>
         </md-input-container>
     </div>
 </form>
