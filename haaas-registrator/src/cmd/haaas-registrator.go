@@ -4,6 +4,7 @@ import (
 	registrator "../."
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
+	"github.com/docker/engine-api/types/container"
 	eventtypes "github.com/docker/engine-api/types/events"
 	"github.com/docker/engine-api/types/filters"
 	events "github.com/vdemeester/docker-events"
@@ -11,8 +12,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"flag"
 	"os"
-	"strconv"
 	"strings"
+	"fmt"
 )
 
 var (
@@ -20,6 +21,12 @@ var (
 	adminUrl string
 	address string
 	debug bool
+)
+
+const (
+	APPLICATION_LABEL = "application.name"
+	PLATFORM_LABEL = "platform.name"
+	SERVICE_NAME_LABEL = "service.%s.name"
 )
 
 func init() {
@@ -62,48 +69,42 @@ func main() {
 			if info.Config == nil || info.Config.ExposedPorts == nil {
 				log.WithField("container", info.Name).Debug("No exposed ports")
 			}else {
-				if info.Config.Labels["APPLICATION"] == "" {
-					log.WithField("container", info.Name).WithField("label", "APPLICATION").Debug("Label is missing")
+				if getMetadata(info.Config, APPLICATION_LABEL) == "" {
+					log.WithField("container", info.Name).WithField("key", APPLICATION_LABEL).Debug("Metadata is missing")
 					return
 				}
 
-				if info.Config.Labels["PLATFORM"] == "" {
-					log.WithField("container", info.Name).WithField("label", "PLATFORM").Debug("Label is missing")
+				if getMetadata(info.Config, PLATFORM_LABEL) == "" {
+					log.WithField("container", info.Name).WithField("key", PLATFORM_LABEL).Debug("Metadata is missing")
 					return
 				}
 
 				for exposedPort, _ := range info.Config.ExposedPorts {
-					private_port := strconv.Itoa(exposedPort.Int())
+					private_port := strings.Replace(exposedPort.Port(), "/", "_", -1)
 					public_ports := info.NetworkSettings.Ports[exposedPort]
 					if public_ports == nil || len(public_ports) == 0 {
 						log.WithField("private_port", private_port).Debug("Port not published")
 						continue
 					}
 
-					if info.Config.Labels["SERVICE_" + private_port + "_NAME"] == "" {
-						log.WithField("container", info.Name).WithField("label", "SERVICE_" + private_port + "_NAME").Debug("Label is missing")
+					serviceLabel := fmt.Sprintf(SERVICE_NAME_LABEL, private_port)
+					if getMetadata(info.Config, serviceLabel) == "" {
+						log.WithField("container", info.Name).WithField("label", serviceLabel).Debug("Label is missing")
 						continue
 					}
 					public_port := public_ports[0].HostPort
 					log.WithField("port", private_port).Debug("Analyze container")
 
 					id := strings.Replace(address, ".", "_", -1) + strings.Replace(info.Name, "/", "_", -1) + "_" + public_port
-					instance := NewInstance();
+					instance := registrator.NewInstance();
 					instance.Id = id
-					instance.App = info.Config.Labels["APPLICATION"]
-					instance.Platform = info.Config.Labels["PLATFORM"]
-					instance.Service = info.Config.Labels["SERVICE_" + private_port + "_NAME"]
+					instance.App = getMetadata(info.Config, APPLICATION_LABEL)
+					instance.Platform = getMetadata(info.Config, PLATFORM_LABEL)
+					instance.Service = getMetadata(info.Config, serviceLabel)
 					instance.Port = public_port
 					instance.Ip = address
 					instance.Hostname = id
-					instance.register(adminUrl)
-
-					//for label, value := range info.Config.Labels{
-					//	if strings.HasPrefix(label,"SERVICE_" + port + "_CONTEXT"){
-					//		key := label[len("SERVICE_" + port + "_CONTEXT"),len(label)-1]
-					//
-					//	}
-					//}
+					instance.Register(adminUrl)
 				}
 			}
 		}
@@ -130,3 +131,20 @@ func main() {
 	}
 }
 
+func getMetadata(config *container.Config, key string) string {
+	if config.Labels[key] != "" {
+		return config.Labels[key]
+	}else {
+		return getEnv(config.Env, key)
+	}
+}
+
+func getEnv(haystack []string, needle string) string {
+	for index := range haystack {
+		res := strings.Split(haystack[index], "=")
+		if res[0] == needle {
+			return res[1]
+		}
+	}
+	return ""
+}

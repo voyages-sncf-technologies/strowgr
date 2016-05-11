@@ -1,5 +1,7 @@
 .PHONY: all test clean build install dist
 
+
+
 BUILDDIR=bin
 BINARY=haaas-registrator
 REGISTRY=dockerregistrydev.socrate.vsct.fr
@@ -17,9 +19,8 @@ deps:
 generate:
 	echo "package registrator\nconst VERSION string = \"$(VERSION)\"" > src/version.go
 
-
 build: generate
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./src/cmd/haaas-registrator-1.8.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./src/cmd/haaas-registrator.go
 
 docker-build:
 	docker build -t $(IMAGE)-builder -f build.Dockerfile .
