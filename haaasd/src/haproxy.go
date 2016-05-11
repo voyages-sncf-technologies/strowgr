@@ -24,11 +24,11 @@ func NewHaproxy(role string, properties *Config, version string, context Context
 }
 
 type Haproxy struct {
-	Role        string
-	Version     string
-	properties  *Config
-	State       int
-	Context     Context
+	Role       string
+	Version    string
+	properties *Config
+	State      int
+	Context    Context
 }
 
 const (
@@ -135,15 +135,12 @@ func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *Eve
 // It returns the absolute path to the file
 func (hap *Haproxy) confPath() string {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/Config"
-	os.MkdirAll(baseDir, 0755)
 	return baseDir + "/hap" + hap.Context.Application + hap.Context.Platform + ".conf"
 }
 
 // confPath give the path of the archived configuration file given an application context
 func (hap *Haproxy) confArchivePath() string {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/version-1"
-	// It returns the absolute path to the file
-	os.MkdirAll(baseDir, 0755)
 	return baseDir + "/hap" + hap.Context.Application + hap.Context.Platform + ".conf"
 }
 
@@ -151,14 +148,12 @@ func (hap *Haproxy) confArchivePath() string {
 // It returns the full path to the file
 func (hap *Haproxy) NewErrorPath() string {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/errors"
-	os.MkdirAll(baseDir, 0755)
 	prefix := time.Now().Format("20060102150405")
 	return baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
 }
 
 func (hap *Haproxy) NewDebugPath() string {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/dump"
-	os.MkdirAll(baseDir, 0755)
 	prefix := time.Now().Format("20060102150405")
 	return baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
 }
@@ -166,17 +161,17 @@ func (hap *Haproxy) NewDebugPath() string {
 // reload calls external shell script to reload haproxy
 // It returns error if the reload fails
 func (hap *Haproxy) reload(correlationId string) error {
-
 	reloadScript := hap.getReloadScript()
 	output, err := exec.Command("sh", reloadScript, "reload", "-y").Output()
 	if err != nil {
 		log.WithFields(hap.Context.Fields()).WithError(err).Error("Error reloading")
+	} else {
+		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
+			"role": hap.Role,
+			"reloadScript": reloadScript,
+			"cmd": string(output[:]),
+		}).Debug("Reload succeeded")
 	}
-	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-		"role": hap.Role,
-		"reloadScript": reloadScript,
-		"cmd": string(output[:]),
-	}).Debug("Reload succeeded")
 	return err
 }
 
@@ -200,6 +195,8 @@ func (hap *Haproxy) createSkeleton(correlationId string) error {
 	createDirectory(hap.Context, correlationId, baseDir + "/logs/" + hap.Context.Application + hap.Context.Platform)
 	createDirectory(hap.Context, correlationId, baseDir + "/scripts")
 	createDirectory(hap.Context, correlationId, baseDir + "/version-1")
+	createDirectory(hap.Context, correlationId, baseDir + "/errors")
+	createDirectory(hap.Context, correlationId, baseDir + "/dump")
 
 	updateSymlink(hap.Context, correlationId, hap.getHapctlFilename(), hap.getReloadScript())
 	updateSymlink(hap.Context, correlationId, hap.getHapBinary(), baseDir + "/Config/haproxy")
