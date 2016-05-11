@@ -1,12 +1,12 @@
 <span ng-show="contextIsNotEmpty()">
-    <md-icon icon="zoom_in"  style="cursor:pointer;" ng-click="showContext()">zoom_in</md-icon>
-    <md-tooltip>Voir le contexte associ&eacute;</md-tooltip>
+    <md-icon icon="view_list"  style="cursor:pointer;" ng-click="showContext()">view_list</md-icon>
+    <md-tooltip>{{tooltip}}</md-tooltip>
 </span>
 <script type="text/ng-template" id="context-map/popup.html">
     <md-dialog style="width: 500px;">
         <md-dialog-content>
             <div layout-padding>
-                <h4>Contexte {{title}}</h4>
+                <h4>{{title}}</h4>
 
                 <div layout="row" ng-repeat="(key, value) in context" flex>
                     <span flex="20" style="text-align: right"><strong>{{key}}</strong></span>

@@ -398,7 +398,8 @@
                     templateUrl: 'partials/context-map.html',
                     scope: {
                         context: '=context',
-                        title: '@'
+                        title: '@',
+                        tooltip: '@'
                     },
                     link: function (scope, element, attrs) {
                         scope.showContext = function () {

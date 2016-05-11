@@ -52,7 +52,7 @@
 </style>
 <div id="entrypoint-configuration-view" layout="row">
     <div id="container" ng-show="conf" layout="column" ng-cloak flex layout-xs>
-        <div id="global" flex class="entrypoint-component">
+        <div id="global" class="entrypoint-component">
             <md-toolbar class="md-primary">
                 <div class="md-toolbar-tools">
                     <h2 class="md-flex">Configuration globale</h2>
@@ -63,12 +63,17 @@
                 <div id="global-details" layout="column" style="padding:20px;">
 
                     <md-list>
-                        <md-list-item class="md-1-line"><span style="margin-right:5px;">D&eacute;ploy&eacute; sur</span><strong>{{conf.haproxy}}</strong></md-list-item>
-                        <md-list-item class="md-1-line"><span style="margin-right:5px;">User HAProxy </span><strong>{{conf.hapUser}}</strong></md-list-item>
-                        <md-list-item class="md-1-line"><span style="margin-right:5px;">Syslog </span><strong>{{conf.syslogPort}}</strong></md-list-item>
+                        <md-list-item class="md-1-line"><span style="margin-right:5px;">D&eacute;ploy&eacute; sur</span><strong>{{conf.haproxy}}</strong>
+                        </md-list-item>
+                        <md-list-item class="md-1-line"><span style="margin-right:5px;">User HAProxy </span><strong>{{conf.hapUser}}</strong>
+                        </md-list-item>
+                        <md-list-item class="md-1-line"><span style="margin-right:5px;">Syslog </span><strong>{{conf.syslogPort}}</strong>
+                        </md-list-item>
                         <md-list-item class="md-2-line" layout="column">
                             <div layout="row">
-                                <span>Template </span><template-display uri="conf.context.templateUri"></template-display><haproxy-generated conf="conf"></haproxy-generated>
+                                <span>Template </span>
+                                <template-display uri="conf.context.templateUri"></template-display>
+                                <haproxy-generated conf="conf"></haproxy-generated>
                             </div>
                         </md-list-item>
                     </md-list>
@@ -88,7 +93,7 @@
                          layout-margin layout-align="start center">
                         <span><strong>{{frontend.id}}</strong></span>
                         <span><strong>{{frontend.port}}</strong></span>
-                        <context-map title="Frontend {{frontend.id}}" context="frontend.context"></context-map>
+                        <context-map title="Contexte du frontend {{frontend.id}}" tooltip="Voir le contexte du frontend {{frontend.id}}" context="frontend.context"></context-map>
                         <div flex id="test">
                             <a href="http://{{haproxyUri}}:{{frontend.port}}/stats">stats</a>
                         </div>
@@ -105,22 +110,25 @@
                 </div>
             </md-toolbar>
             <md-content style="padding:20px;">
-                <div id="backendList" ng-repeat="backend in conf.backends  | orderBy:'id' track by backend.id" layout="column">
-                    <div layout="row">
+                <div id="backendList" ng-repeat="backend in conf.backends  | orderBy:'id' track by backend.id"
+                     layout="column">
+                    <div layout="column">
                         <div flex="25" layout="row">
-                            <div flex><h3>{{backend.id}}<context-map title="Backend {{backend.id}}" context="backend.context"></context-map>
-                            </h3></div>
+                            <div flex>
+                                <h3>{{backend.id}}
+                                    <context-map title="Contexte du backend {{backend.id}}" tooltip="Voir le contexte du backend {{backend.id}" context="backend.context"></context-map>
+                                </h3>
+                            </div>
                         </div>
                         <div flex="75">
-                            <div layout="row"
-                                 ng-repeat="server in backend.servers  | orderBy:'id' track by server.id">
+                            <div layout="row" ng-repeat="server in backend.servers  | orderBy:'id' track by server.id">
                                 <div class="backend-item" layout="row">
                                     <div flex="40" layout="column">
                                         <div flex>{{server.id}}</div>
                                         <div flex>
-                                            <context-map title="Serveur {{server.id}}"
+                                            <context-map title="Context du serveur {{server.id}}" tooltip="Voir le contexte du serveur {{server.id}}"
                                                          context="server.context"></context-map>
-                                            <context-map title="Serveur {{server.id}}"
+                                            <context-map title="Surcharge contexte du serveur {{server.id}}" tooltip="Voir la surcharge de contexte du serveur {{server.id}}"
                                                          context="server.contextOverride"></context-map>
                                         </div>
                                     </div>
