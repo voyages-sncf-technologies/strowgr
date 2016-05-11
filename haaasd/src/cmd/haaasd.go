@@ -238,7 +238,7 @@ func logAndForget(data *haaasd.EventMessage) error {
 
 func reloadSlave(data *haaasd.EventMessage) error {
 	context := data.Context()
-	hap := haaasd.NewHaproxy("slave", properties, data.Application, data.Platform, data.HapVersion, context)
+	hap := haaasd.NewHaproxy("slave", properties,data.HapVersion, context)
 
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
@@ -262,7 +262,7 @@ func reloadSlave(data *haaasd.EventMessage) error {
 func reloadMaster(data *haaasd.EventMessage) error {
 	context := data.Context()
 
-	hap := haaasd.NewHaproxy("master", properties, data.Application, data.Platform, data.HapVersion, context)
+	hap := haaasd.NewHaproxy("master", properties, data.HapVersion, context)
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != haaasd.UNCHANGED {

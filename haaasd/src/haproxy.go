@@ -11,14 +11,12 @@ import (
 	"time"
 )
 
-func NewHaproxy(role string, properties *Config, application string, platform string, version string, context Context) *Haproxy {
+func NewHaproxy(role string, properties *Config, version string, context Context) *Haproxy {
 	if version == "" {
 		version = "1.4.22"
 	}
 	return &Haproxy{
 		Role:             role,
-		Application: application,
-		Platform:    platform,
 		properties:  properties,
 		Version:     version,
 		Context: context,
@@ -27,8 +25,6 @@ func NewHaproxy(role string, properties *Config, application string, platform st
 
 type Haproxy struct {
 	Role        string
-	Application string
-	Platform    string
 	Version     string
 	properties  *Config
 	State       int
@@ -138,33 +134,33 @@ func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *Eve
 // confPath give the path of the configuration file given an application context
 // It returns the absolute path to the file
 func (hap *Haproxy) confPath() string {
-	baseDir := hap.properties.HapHome + "/" + hap.Application + "/Config"
+	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/Config"
 	os.MkdirAll(baseDir, 0755)
-	return baseDir + "/hap" + hap.Application + hap.Platform + ".conf"
+	return baseDir + "/hap" + hap.Context.Application + hap.Context.Platform + ".conf"
 }
 
 // confPath give the path of the archived configuration file given an application context
 func (hap *Haproxy) confArchivePath() string {
-	baseDir := hap.properties.HapHome + "/" + hap.Application + "/version-1"
+	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/version-1"
 	// It returns the absolute path to the file
 	os.MkdirAll(baseDir, 0755)
-	return baseDir + "/hap" + hap.Application + hap.Platform + ".conf"
+	return baseDir + "/hap" + hap.Context.Application + hap.Context.Platform + ".conf"
 }
 
 // NewErrorPath gives a unique path the error file given the hap context
 // It returns the full path to the file
 func (hap *Haproxy) NewErrorPath() string {
-	baseDir := hap.properties.HapHome + "/" + hap.Application + "/errors"
+	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/errors"
 	os.MkdirAll(baseDir, 0755)
 	prefix := time.Now().Format("20060102150405")
-	return baseDir + "/" + prefix + "_" + hap.Application + hap.Platform + ".log"
+	return baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
 }
 
 func (hap *Haproxy) NewDebugPath() string {
-	baseDir := hap.properties.HapHome + "/" + hap.Application + "/dump"
+	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/dump"
 	os.MkdirAll(baseDir, 0755)
 	prefix := time.Now().Format("20060102150405")
-	return baseDir + "/" + prefix + "_" + hap.Application + hap.Platform + ".log"
+	return baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
 }
 
 // reload calls external shell script to reload haproxy
@@ -198,10 +194,10 @@ func (hap *Haproxy) rollback(correlationId string) error {
 
 // createSkeleton creates the directory tree for a new haproxy context
 func (hap *Haproxy) createSkeleton(correlationId string) error {
-	baseDir := hap.properties.HapHome + "/" + hap.Application
+	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
 
 	createDirectory(hap.Context, correlationId, baseDir + "/Config")
-	createDirectory(hap.Context, correlationId, baseDir + "/logs/" + hap.Application + hap.Platform)
+	createDirectory(hap.Context, correlationId, baseDir + "/logs/" + hap.Context.Application + hap.Context.Platform)
 	createDirectory(hap.Context, correlationId, baseDir + "/scripts")
 	createDirectory(hap.Context, correlationId, baseDir + "/version-1")
 
@@ -216,7 +212,7 @@ func (hap *Haproxy) createSkeleton(correlationId string) error {
 func (hap *Haproxy) syslogFragmentPath() string {
 	baseDir := hap.properties.HapHome + "/SYSLOG/Config/syslog.conf.d"
 	os.MkdirAll(baseDir, 0755)
-	return baseDir + "/syslog" + hap.Application + hap.Platform + ".conf"
+	return baseDir + "/syslog" + hap.Context.Application + hap.Context.Platform + ".conf"
 }
 
 // updateSymlink create or update a symlink
@@ -265,7 +261,7 @@ func (hap *Haproxy) getHapctlFilename() string {
 // getReloadScript calculates reload script path given the hap context
 // It returns the full script path
 func (hap *Haproxy) getReloadScript() string {
-	return fmt.Sprintf("%s/%s/scripts/hapctl%s%s", hap.properties.HapHome, hap.Application, hap.Application, hap.Platform)
+	return fmt.Sprintf("%s/%s/scripts/hapctl%s%s", hap.properties.HapHome, hap.Context.Application, hap.Context.Application, hap.Context.Platform)
 }
 
 // getHapBinary calculates the haproxy binary to use given the expected version
