@@ -204,10 +204,10 @@
 
             $scope.gitlabTemplate = {
                 host: "gitlab.socrate.vsct.fr",
-                group: "",
-                repository: "",
+                group: "dt",
+                repository: "haproxy-templates-horsprod",
                 tag: "",
-                path: ""
+                filename: "haproxy_template.conf"
             };
 
             $scope.availableHaproxy = ['default-name'];
@@ -247,8 +247,8 @@
 
             /* Checks the entrypoint configuration first and then creates the entrypoint */
             $scope.createEntrypoint = function () {
-                /* Consturction of gitlab url */
-                $scope.conf.context.templateUri = "http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.gitlabTemplate.path;
+                /* Construction of gitlab url */
+                $scope.conf.context.templateUri = "http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.conf.context.application+"/"+$scope.gitlabTemplate.filename;
 
                 console.log($scope.conf.context.templateUri);
 

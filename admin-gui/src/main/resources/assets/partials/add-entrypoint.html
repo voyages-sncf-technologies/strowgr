@@ -49,31 +49,15 @@
                 <div ng-message="required">Il faut renseigner une plateforme</div>
             </div>
         </md-input-container>
-        <md-input-container flex="15">
-            <label>Host Gitlab</label>
-            <input name="gitlabHost" ng-model="gitlabTemplate.host" required/>
+        <md-input-container flex="20">
+            <label>Nom du template</label>
+            <input name="gitlabPath" ng-model="gitlabTemplate.filename" required/>
 
-            <div ng-messages="newEntrypointForm.gitlabHost.$error">
-                <div ng-message="required">Il faut renseigner un host gitlab</div>
-            </div>
-        </md-input-container>
-        <md-input-container flex="5">
-            <label>Groupe</label>
-            <input name="gitlabGroup" ng-model="gitlabTemplate.group" required/>
-
-            <div ng-messages="newEntrypointForm.gitlabGroup.$error">
-                <div ng-message="required">Il faut renseigner un groupe gitlab</div>
+            <div ng-messages="newEntrypointForm.gitlabPath.$error">
+                <div ng-message="required">Il faut renseigner le nom du template (au sein du repository)</div>
             </div>
         </md-input-container>
         <md-input-container flex="10">
-            <label>Repo</label>
-            <input name="gitlabRepo" ng-model="gitlabTemplate.repository" required/>
-
-            <div ng-messages="newEntrypointForm.gitlabRepo.$error">
-                <div ng-message="required">Il faut renseigner un repo gitlab</div>
-            </div>
-        </md-input-container>
-        <md-input-container flex="5">
             <label>TAG</label>
             <input name="gitlabTag" ng-model="gitlabTemplate.tag" required/>
 
@@ -81,12 +65,12 @@
                 <div ng-message="required">Il faut renseigner un tag</div>
             </div>
         </md-input-container>
-        <md-input-container flex>
-            <label>Path</label>
-            <input name="gitlabPath" ng-model="gitlabTemplate.path" required/>
+        <md-input-container flex="15">
+            <label>Host Gitlab</label>
+            <input name="gitlabHost" ng-model="gitlabTemplate.host" required/>
 
-            <div ng-messages="newEntrypointForm.gitlabPath.$error">
-                <div ng-message="required">Il faut renseigner le path vers le template (au sein du repository)</div>
+            <div ng-messages="newEntrypointForm.gitlabHost.$error">
+                <div ng-message="required">Il faut renseigner un host gitlab</div>
             </div>
         </md-input-container>
     </div>
