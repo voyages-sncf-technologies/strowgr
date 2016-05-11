@@ -101,7 +101,7 @@
             }
         }]);
 
-        adminApp.controller('EntrypointsCtrl', ['$scope', '$http', '$interval', function ($scope, $http, $interval) {
+        adminApp.controller('EntrypointsCtrl', ['$scope', '$http', '$interval', '$rootScope', function ($scope, $http, $interval, $rootScope) {
 
             $http({
                 method: 'GET',
@@ -112,6 +112,7 @@
 
             $scope.loadEntrypoint = function (id) {
                 $scope.selectedEntrypoint = id;
+                $rootScope.$broadcast("entrypoint-updated");
             }
 
         }]);
@@ -274,7 +275,7 @@
 
         }]);
 
-        adminApp.directive('entrypointUpdate', ['$http', 'Haproxy', '$mdDialog', function ($http, Haproxy, $mdDialog) {
+        adminApp.directive('entrypointUpdate', ['$http', 'Haproxy', '$mdDialog', '$rootScope', function ($http, Haproxy, $mdDialog, $rootScope) {
             return {
                 templateUrl: 'partials/update-entrypoint.html',
                 scope: {
@@ -354,7 +355,7 @@
                         Haproxy.getGeneratedTemplate(scope.conf).then(function (response) {
                             return $http.patch('/api/entrypoints/' + scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
                         }).then(function (response) {
-                            scope.$emit("entrypoint-updated");
+                            $rootScope.$broadcast("entrypoint-updated");
                         }, function (error) {
                             var alert = $mdDialog.alert({
                                 htmlContent: '<pre>' + error.data.message + '</pre>',
@@ -414,7 +415,7 @@
                         };
 
                         scope.contextIsNotEmpty = function (){
-                            return Object.keys(scope.context).length > 0;
+                            return scope.context != undefined && Object.keys(scope.context).length > 0;
                         }
                     }
                 }
