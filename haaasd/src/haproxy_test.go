@@ -9,7 +9,7 @@ import (
 
 var (
 	config = Config{HapHome: "/HOME"}
-	hap    = NewHaproxy("master",&config, "TST", "DEV", "1.4.22")
+	hap    = NewHaproxy("master",&config, "TST", "DEV", "1.4.22", Context{})
 )
 
 func TestGetReloadScript(t *testing.T) {
