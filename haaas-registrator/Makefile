@@ -17,10 +17,10 @@ deps:
 	go get -t ./...
 
 generate:
-	echo "package registrator\nconst VERSION string = \"$(VERSION)\"" > src/version.go
+	echo "package registrator\nconst VERSION string = \"$(VERSION)\"" > version.go
 
 build: generate
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 ./src/cmd/haaas-registrator.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64
 
 docker-build:
 	docker build -t $(IMAGE)-builder -f build.Dockerfile .
