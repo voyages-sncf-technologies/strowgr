@@ -96,7 +96,7 @@ func main() {
 					log.WithField("port", private_port).Debug("Analyze container")
 
 					id := strings.Replace(address, ".", "_", -1) + strings.Replace(info.Name, "/", "_", -1) + "_" + public_port
-					instance := registrator.NewInstance();
+					instance := haaasregistrator.NewInstance();
 					instance.Id = id
 					instance.App = getMetadata(info.Config, APPLICATION_LABEL)
 					instance.Platform = getMetadata(info.Config, PLATFORM_LABEL)
