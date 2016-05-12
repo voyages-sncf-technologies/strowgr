@@ -364,7 +364,15 @@
                             backends: backends
                         };
 
-                        Haproxy.getGeneratedTemplate(scope.conf).then(function (response) {
+                        /* Since ports are provided by the backend, we simulate their presence for new frontends for template valorisation validation */
+                        var confWithFakePorts = angular.copy(scope.conf);
+                        for (var i = 0; i < confWithFakePorts.frontends.length; i++) {
+                            if(confWithFakePorts.frontends[i].port == undefined) {
+                                confWithFakePorts.frontends[i].port = "00000";
+                            }
+                        };
+
+                        Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (response) {
                             return $http.patch('/api/entrypoints/' + scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
                         }).then(function (response) {
                             $rootScope.$broadcast("entrypoint-updated");
