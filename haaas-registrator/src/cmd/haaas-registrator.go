@@ -1,7 +1,7 @@
 package main
 
 import (
-	".."
+	"haaasregistrator"
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/container"
@@ -41,7 +41,7 @@ func main() {
 	flag.Parse()
 
 	if (version) {
-		println(registrator.VERSION)
+		println(haaasregistrator.VERSION)
 		os.Exit(0)
 	}
 
