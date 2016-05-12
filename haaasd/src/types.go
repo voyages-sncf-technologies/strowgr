@@ -82,15 +82,6 @@ func (re *ReloadEvent) Execute() error {
 	return re.F(re.Message)
 }
 
-const (
-	STATE_IDLE = iota
-	STATE_RELOADING_SLAVE = iota
-	STATE_ROLLBACK_SLAVE = iota
-	STATE_RELOADING_MASTER = iota
-	STATE_ROLLBACK_MASTER = iota
-	STATE_ERROR = iota
-)
-
 type EventHandler interface {
 	HandleMessage(data *EventMessage) error
 }
