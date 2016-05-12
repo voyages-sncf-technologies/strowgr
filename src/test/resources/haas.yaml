@@ -1,8 +1,0 @@
-server:
-  type: simple
-  rootPath: /api/
-  applicationContextPath: /
-  requestLog:
-      appenders: []
-logging:
-  level: INFO

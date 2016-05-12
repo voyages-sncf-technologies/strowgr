@@ -1,3 +1,6 @@
 .idea
 *.iml
 target
+.DS_Store
+**/haas.yaml
+**/dependency-reduced-pom.xml

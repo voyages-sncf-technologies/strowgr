@@ -1,0 +1,47 @@
+global
+        maxconn 30000   # Doit etre coherent avec les valeurs suivantes
+        log     127.0.0.1:54250 local0
+        daemon
+        user    hapocer1
+        group   haproxy
+        #chroot
+        stats socket /HOME/hapadm/OCE/logs/OCEREC1/haproxy.stat mode 666
+
+defaults
+        mode http       # Parametre a figer des le depart (default:tcp)
+        retries 3       # Nombre de tentatives avant fallback
+        option  redispatch      # Permet le fallback sur une autre instance
+        option  httpclose       # Permet de désactiver le keepalive HTTP
+        #       option dontlognull
+        timeout client  20s     #
+        timeout http-request 20s#
+        timeout queue   60s     #       Valeurs a ajuster selon l'usage !!
+        timeout connect 5s      #
+        timeout server  120s    #
+        timeout check 15s
+        maxconn 20000   # Nb connexions concurrentes par frontend
+        log     global  # En liaison avec param global
+        option  httplog # Format des logs (raw,tcp et http)
+
+
+############################################################
+#                                                          #
+#                conf DMZ1 --> DMZ2                        #
+#                                                          #
+############################################################
+
+####################### CUR1 ###############################
+# WEBSERVICES
+frontend OCEREC1WS
+        bind    :50200  # Port d'ecoute toutes IP confondues
+        default_backend OCEREC1WS
+
+backend OCEREC1WS # serveurs de gestion
+        stats   uri /stats
+        balance roundrobin
+        #option  httpchk GET /testsession/images/b.gif HTTP/1.0
+        #http-check disable-on-404
+        cookie OCEREC1WS insert indirect nocache
+
+        server instance_name_1 10.98.81.74:9090 key1 value1 key2 user_value2 cookie server_name_1 check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
+        server instance_name_2 10.98.81.75:9090 key1 user_value1 key2 value2 cookie server_name_2 check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s

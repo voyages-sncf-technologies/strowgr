@@ -1,0 +1,140 @@
+<style type="text/css">
+    #add-entrypoint-form {
+        padding: 15px;
+    }
+
+    #add-entrypoint-form #frontends, #backends {
+        padding-left: 40px;
+    }
+
+    #add-entrypoint-form md-input-container {
+        margin-bottom: 0;
+    }
+</style>
+
+<form id="add-entrypoint-form" name="newEntrypointForm" ng-submit="createEntrypoint()" flex ng-keydown="$event.keyCode == 13 && $event.preventDefault();">
+    <div layout="row">
+        <md-input-container flex="10">
+            <label>HAproxy cible</label>
+            <md-select name="haproxy" ng-model="conf.haproxy" required>
+                <md-option ng-repeat="haproxy in availableHaproxy" value="{{haproxy}}" ng-selected="$first">
+                    {{haproxy}}
+                </md-option>
+            </md-select>
+            <div ng-messages="newEntrypointForm.haproxy.$error">
+                <div ng-message="required">Il faut choisir un couple master/slave</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
+            <label>User haproxy (ex. hapwdia1)</label>
+            <input name="hapUser" ng-model="conf.hapUser" required/>
+
+            <div ng-messages="newEntrypointForm.hapUser.$error">
+                <div ng-message="required">Il faut indiquer un user pour le process haproxy</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
+            <label>Application</label>
+            <input name="application" ng-model="conf.context.application" required/>
+
+            <div ng-messages="newEntrypointForm.application.$error">
+                <div ng-message="required">Il faut renseigner une application</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
+            <label>Plateforme</label>
+            <input name="platform" ng-model="conf.context.platform" required/>
+
+            <div ng-messages="newEntrypointForm.platform.$error">
+                <div ng-message="required">Il faut renseigner une plateforme</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="20">
+            <label>Nom du template</label>
+            <input name="gitlabPath" ng-model="gitlabTemplate.filename" required/>
+
+            <div ng-messages="newEntrypointForm.gitlabPath.$error">
+                <div ng-message="required">Il faut renseigner le nom du template (au sein du repository)</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
+            <label>TAG</label>
+            <input name="gitlabTag" ng-model="gitlabTemplate.tag" required/>
+
+            <div ng-messages="newEntrypointForm.gitlabTag.$error">
+                <div ng-message="required">Il faut renseigner un tag</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="15">
+            <label>Host Gitlab</label>
+            <input name="gitlabHost" ng-model="gitlabTemplate.host" required/>
+
+            <div ng-messages="newEntrypointForm.gitlabHost.$error">
+                <div ng-message="required">Il faut renseigner un host gitlab</div>
+            </div>
+        </md-input-container>
+    </div>
+    <div layout="row" layout-align="start center">
+        <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Contexte global</p>
+        <context-map-input context="conf.context" forbidden="forbiddenGlobalKeys" flex></context-map-input>
+    </div>
+    <div layout="row">
+        <md-subheader class="md-primary">Frontends</md-subheader>
+        <md-button class="md-fab md-primary md-mini" ng-click="addFrontend()">
+            <md-icon class="material-icons" style="font-size: 22px">add</md-icon>
+            <md-tooltip>Ajouter un frontend</md-tooltip>
+        </md-button>
+    </div>
+    <div id="frontends">
+        <div ng-repeat="frontend in conf.frontends" layout="row" layout-align="start center">
+            <md-button class="md-warn md-mini" ng-click="removeFrontend(frontend)">
+                <md-icon class="material-icons" style="font-size: 22px">clear</md-icon>
+                <md-tooltip>Supprimer le frontend</md-tooltip>
+            </md-button>
+            <ng-form name="frontendForm">
+                <md-input-container>
+                    <label>ID</label>
+                    <input name="id" ng-model="frontend.id" required/>
+
+                    <div ng-messages="frontendForm.id.$error">
+                        <div ng-message="required">Il faut renseigner un id pour le frontend</div>
+                    </div>
+                </md-input-container>
+            </ng-form>
+            <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Contexte</p>
+            <context-map-input context="frontend.context" forbidden="forbiddenFrontendKeys" flex></context-map-input>
+        </div>
+    </div>
+    <div layout="row">
+        <md-subheader class="md-primary">Backends</md-subheader>
+        <md-button class="md-fab md-primary md-mini" ng-click="addBackend()">
+            <md-icon class="material-icons" style="font-size: 22px">add</md-icon>
+            <md-tooltip>Ajouter un backend</md-tooltip>
+        </md-button>
+    </div>
+    <div id="backends">
+        <div ng-repeat="backend in conf.backends" layout="row" layout-align="start center">
+            <md-button class="md-warn md-mini" ng-click="removeBackend(backend)">
+                <md-icon class="material-icons" style="font-size: 22px">clear</md-icon>
+                <md-tooltip>Supprimer le backend</md-tooltip>
+            </md-button>
+            <ng-form name="backendForm">
+                <md-input-container>
+                    <label>ID</label>
+                    <input name="id" ng-model="backend.id" required/>
+
+                    <div ng-messages="backendForm.id.$error">
+                        <div ng-message="required">Il faut renseigner un id pour le backend</div>
+                    </div>
+                </md-input-container>
+            </ng-form>
+            <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Contexte</p>
+            <context-map-input context="backend.context" forbidden="forbiddenBackendKeys" flex></context-map-input>
+        </div>
+    </div>
+    <div layout="row">
+        <md-input-container>
+            <input type="submit" value="Cr&eacute;er l'entrypoint" />
+        </md-input-container>
+    </div>
+</form>
