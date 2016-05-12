@@ -17,7 +17,7 @@ deps:
 	go get -t ./...
 
 generate:
-	echo "package haaasregistrator \nconst VERSION string = \"$(VERSION)\"" > version.go
+	sed "s/{{ VERSION }}/$(VERSION)/" version.go.tpl > version.go
 
 build: generate
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64
