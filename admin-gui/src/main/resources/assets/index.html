@@ -382,8 +382,8 @@
             }
         }]);
 
-        adminApp.directive('entrypointConfigurationView', ['PortProvider', 'Haproxy',
-            function (PortProvider, Haproxy) {
+        adminApp.directive('entrypointConfigurationView', ['PortProvider', 'Haproxy', '$window',
+            function (PortProvider, Haproxy, $window) {
                 return {
 
                     templateUrl: 'partials/entrypoint-configuration-view.html',
@@ -398,6 +398,10 @@
                                 });
                             }
                         });
+
+                        scope.openStatsPage = function(frontend){
+                            $window.open("http://"+scope.haproxyUri+":"+frontend.port+"/stats");
+                        };
                     }
                 }
             }

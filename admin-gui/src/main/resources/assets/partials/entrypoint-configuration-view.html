@@ -87,7 +87,7 @@
                                       layout="row" layout-padding layout-align="start center">
                             <div layout-align="center center">
                                 <md-icon icon="network_check" style="cursor:pointer;"
-                                         ng-href="http://{{haproxyUri}}:{{frontend.port}}/stats">network_check
+                                         ng-click="openStatsPage(frontend)">network_check
                                 </md-icon>
                                 <md-tooltip>Page de stats HAproxy</md-tooltip>
                             </div>
