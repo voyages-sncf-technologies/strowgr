@@ -35,22 +35,21 @@ public class UriTemplateLocator implements TemplateLocator {
             getTemplate.addHeader("Content-Type", "text/plain; charset=utf-8");
             LOGGER.debug("get template {}", uri);
             return client.execute(getTemplate, (response) -> {
+                Optional<String> result = Optional.empty();
                 int status = response.getStatusLine().getStatusCode();
-                if (status == 404) return Optional.empty();
                 if (status >= 200 && status < 300) {
                     HttpEntity entity = response.getEntity();
                     String entitySer = EntityUtils.toString(entity, "UTF-8");
                     if (entitySer == null) {
                         throw new IllegalStateException("template from " + uri + " has null content.");
-                    }
-                    else {
+                    } else {
                         LOGGER.debug("template from " + uri + " starts with " + entitySer.substring(0, Math.max(20, entitySer.length())));
                     }
-                    return Optional.of(entitySer);
-                }
-                else {
+                    result = Optional.of(entitySer);
+                } else if (status != 404) {
                     throw new ClientProtocolException("Unexpected response status: " + status);
                 }
+                return result;
             });
         } catch (IOException e) {
             LOGGER.error("Can't retrieve template from ", e);
