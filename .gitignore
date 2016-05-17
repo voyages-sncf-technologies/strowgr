@@ -3,4 +3,5 @@
 target
 .DS_Store
 **/haas.yaml
+**/strowgr.yaml
 **/dependency-reduced-pom.xml
