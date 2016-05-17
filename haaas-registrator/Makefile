@@ -20,9 +20,16 @@ generate:
 build: generate
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 cmd/haaas-registrator.go
 
+test: generate
+	go test -v ./...
+
 docker-build:
 	docker build -t $(IMAGE)-builder -f build.Dockerfile .
 	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder make build VERSION=$(VERSION)-$(COMMIT_ID)
+
+docker-test:
+	docker build -t $(IMAGE)-builder -f build.Dockerfile .
+	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder make test
 
 docker-image: dist
 	cp Dockerfile dist

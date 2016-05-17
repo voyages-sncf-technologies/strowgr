@@ -1,7 +1,10 @@
 package main
 
 import (
-	"haaasregistrator"
+	"./.."
+	"flag"
+	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/container"
@@ -9,25 +12,25 @@ import (
 	"github.com/docker/engine-api/types/filters"
 	events "github.com/vdemeester/docker-events"
 	"golang.org/x/net/context"
-	log "github.com/Sirupsen/logrus"
-	"flag"
 	"os"
 	"strings"
-	"fmt"
 )
 
 var (
-	version bool
+	version  bool
 	adminUrl string
-	address string
-	debug bool
+	address  string
+	debug    bool
 )
 
 const (
-	APPLICATION_LABEL = "application.name"
-	PLATFORM_LABEL = "platform.name"
+	APPLICATION_LABEL  = "application.name"
+	PLATFORM_LABEL     = "platform.name"
 	SERVICE_NAME_LABEL = "service.%s.name"
+	ID_NAMING_STRATEGY = "registrator.id_generator"
 )
+
+type NamingStrategy func(info types.ContainerJSON, instance *haaasregistrator.Instance) string
 
 func init() {
 	log.SetFormatter(new(log.TextFormatter))
@@ -40,12 +43,12 @@ func main() {
 	flag.StringVar(&address, "address", "", "Ip address")
 	flag.Parse()
 
-	if (version) {
+	if version {
 		println(haaasregistrator.VERSION)
 		os.Exit(0)
 	}
 
-	if (debug) {
+	if debug {
 		log.SetLevel(log.DebugLevel)
 	}
 
@@ -61,14 +64,17 @@ func main() {
 	eventHandler.Handle("start", func(m eventtypes.Message) {
 
 		info, err := cli.ContainerInspect(context.Background(), m.ID)
+
+		var namingStrategy NamingStrategy = getNamingStrategy(info.Config)
+
 		log.WithField("info", info).Debug("Inspect container")
 		if err != nil {
 			log.WithError(err).WithField("containerId", m.ID).Error("Cannot register instance")
-		}else {
+		} else {
 			log.WithField("info", info).Debug("Inspect container")
 			if info.Config == nil || info.Config.ExposedPorts == nil {
 				log.WithField("container", info.Name).Debug("No exposed ports")
-			}else {
+			} else {
 				if getMetadata(info.Config, APPLICATION_LABEL) == "" {
 					log.WithField("container", info.Name).WithField("key", APPLICATION_LABEL).Debug("Metadata is missing")
 					return
@@ -95,15 +101,15 @@ func main() {
 					public_port := public_ports[0].HostPort
 					log.WithField("port", private_port).Debug("Analyze container")
 
-					id := strings.Replace(address, ".", "_", -1) + strings.Replace(info.Name, "/", "_", -1) + "_" + public_port
-					instance := haaasregistrator.NewInstance();
-					instance.Id = id
+					instance := haaasregistrator.NewInstance()
 					instance.App = getMetadata(info.Config, APPLICATION_LABEL)
 					instance.Platform = getMetadata(info.Config, PLATFORM_LABEL)
 					instance.Service = getMetadata(info.Config, serviceLabel)
 					instance.Port = public_port
 					instance.Ip = address
+					id := namingStrategy(info, instance)
 					instance.Hostname = id
+					instance.Id = id
 					instance.Register(adminUrl)
 				}
 			}
@@ -134,7 +140,7 @@ func main() {
 func getMetadata(config *container.Config, key string) string {
 	if config.Labels[key] != "" {
 		return config.Labels[key]
-	}else {
+	} else {
 		return getEnv(config.Env, key)
 	}
 }
@@ -148,3 +154,21 @@ func getEnv(haystack []string, needle string) string {
 	}
 	return ""
 }
+
+func getNamingStrategy(config *container.Config) NamingStrategy{
+	switch getMetadata(config, ID_NAMING_STRATEGY) {
+	case "container_name":
+		return containerNamingStrategy
+	default:
+		return defaultNamingStrategy
+	}
+}
+
+func defaultNamingStrategy(info types.ContainerJSON, instance *haaasregistrator.Instance) string {
+	return strings.Replace(instance.Ip, ".", "_", -1) + "_" + strings.Replace(info.Name, "/", "_", -1) + "_" + instance.Port
+}
+
+func containerNamingStrategy(info types.ContainerJSON, instance *haaasregistrator.Instance) string {
+	return info.Name + "_" + instance.Service
+}
+
