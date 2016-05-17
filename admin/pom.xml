@@ -65,7 +65,7 @@
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>StrowgrMain</mainClass>
+                                    <mainClass>com.vsct.dt.strowgr.admin.gui.StrowgrMain</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
@@ -239,6 +239,11 @@
             <name>DT Snapshots</name>
             <url>http://nexus/content/repositories/dt-snapshots/</url>
         </snapshotRepository>
+        <repository>
+            <id>dt-releases</id>
+            <name>DT Releases</name>
+            <url>http://nexus/content/repositories/dt-releases/</url>
+        </repository>
     </distributionManagement>
 
 </project>
