@@ -1,6 +1,6 @@
 .idea
 *.iml
-target
+**/target
 .DS_Store
 **/haas.yaml
 **/strowgr.yaml
