@@ -4,7 +4,7 @@ RUN go get -v github.com/Sirupsen/logrus
 RUN go get -v github.com/BurntSushi/toml/cmd/tomlv
 RUN go get -v github.com/bitly/go-nsq
 
-ENV SRC $GOPATH/src/github.com/voyages-sncf-technologies/strowgr
+ENV SRC $GOPATH/src/github.com/voyages-sncf-technologies/strowgr/sidekick
 
 RUN mkdir -p $SRC
 WORKDIR /$SRC
