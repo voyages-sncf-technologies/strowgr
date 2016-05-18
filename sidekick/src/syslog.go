@@ -1,4 +1,4 @@
-package haaasd
+package sidekick
 
 import (
 	log "github.com/Sirupsen/logrus"

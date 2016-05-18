@@ -1,2 +1,2 @@
-package haaasregistrator
+package sidekick
 const VERSION string = "{{ VERSION }}"

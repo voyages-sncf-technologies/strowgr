@@ -1,2 +1,2 @@
-package haaasd
+package sidekick
 const AppVersion = "DEV"
