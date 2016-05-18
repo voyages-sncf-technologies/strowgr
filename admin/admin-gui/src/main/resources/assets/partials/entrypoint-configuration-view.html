@@ -1,0 +1,143 @@
+<style>
+
+    #entrypoint-configuration-view #container {
+        margin-top: 20px;
+        margin-left: 20px;
+        margin-right: 20px;
+        margin-bottom: 0;
+    }
+
+    #entrypoint-configuration-view #container * {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    #entrypoint-configuration-view #globalTitle,
+    #entrypoint-configuration-view #frontendsTitle,
+    #entrypoint-configuration-view #backendsTitle {
+        margin-top: 6px;
+        margin-bottom: 6px;
+    }
+
+    #entrypoint-configuration-view #global,
+    #entrypoint-configuration-view #frontendList,
+    #entrypoint-configuration-view #backendList {
+        margin-bottom: 16px;
+    }
+
+    #entrypoint-configuration-view #global-details,
+    #entrypoint-configuration-view #frontendList,
+    #entrypoint-configuration-view #backendList {
+        padding-left: 30px;
+    }
+
+    #entrypoint-configuration-view .entrypoint-component {
+        /*border: solid 1px;*/
+    }
+
+    #entrypoint-configuration-view #global,
+    #entrypoint-configuration-view #frontends,
+    #entrypoint-configuration-view #backends {
+        margin-bottom: 16px;
+    }
+
+    #entrypoint-configuration-view .backend-item {
+        /*border-bottom: solid 1px;*/
+        padding: 10px 3px 5px 0px;
+        width: 100%;
+    }
+
+</style>
+<div id="entrypoint-configuration-view" layout="row">
+    <div id="container" ng-show="conf" layout="column" ng-cloak flex layout-xs>
+        <div id="global" class="entrypoint-component">
+            <div class="md-primary md-hue-1" layout="row" layout-padding layout-align="start center">
+                <h2 class="md-display-1">Configuration globale</h2>
+                <context-map title="Contexte global" tooltip="Voir le contexte global"
+                             context="conf.context"></context-map>
+            </div>
+            <md-content>
+                <div id="global-details" layout="column">
+                    <md-list>
+                        <md-list-item class="md-1-line" layout-padding><span>D&eacute;ploy&eacute; sur</span><strong>{{conf.haproxy}}</strong>
+                        </md-list-item>
+                        <md-list-item class="md-1-line" layout-padding><span>User HAProxy </span><strong>{{conf.hapUser}}</strong>
+                        </md-list-item>
+                        <md-list-item class="md-1-line" layout-padding>
+                            <span>Syslog </span><strong>{{conf.syslogPort}}</strong>
+                        </md-list-item>
+                        <md-list-item class="md-1-line" layout-padding>
+                            <span>Template </span>
+                            <template-display uri="conf.context.templateUri"></template-display>
+                            <haproxy-generated conf="conf"></haproxy-generated>
+                        </md-list-item>
+                    </md-list>
+                </div>
+            </md-content>
+        </div>
+        <div id="frontends" flex class="entrypoint-component">
+            <div class="md-primary md-hue-1" layout="row" layout-padding layout-align="start center">
+                <h2 class="md-display-1">Frontends</h2>
+            </div>
+            <md-content>
+                <div id="frontendList" layout="column">
+                    <md-list>
+                        <md-list-item class="md-1-line"
+                                      ng-repeat="frontend in conf.frontends | orderBy:'id' track by frontend.id"
+                                      layout="row" layout-padding layout-align="start center">
+                            <div layout-align="center center">
+                                <md-icon icon="network_check" style="cursor:pointer;"
+                                         ng-click="openStatsPage(frontend)">network_check
+                                </md-icon>
+                                <md-tooltip>Page de stats HAproxy</md-tooltip>
+                            </div>
+                            <span><strong>{{frontend.id}}</strong></span>
+                            <span><strong>{{frontend.port}}</strong></span>
+                            <context-map title="Contexte du frontend {{frontend.id}}"
+                                         tooltip="Voir le contexte du frontend {{frontend.id}}"
+                                         context="frontend.context"></context-map>
+                        </md-list-item>
+                    </md-list>
+                </div>
+            </md-content>
+        </div>
+    </div>
+    <div id="container" layout="row" ng-show="conf" flex layout-xl>
+        <div id="backends" flex class="entrypoint-component">
+            <div class="md-primary md-hue-1" layout="row" layout-padding layout-align="start center">
+                <h2 class="md-primary md-display-1">Backends</h2>
+            </div>
+            <md-content>
+                <div id="backendList" layout="column">
+                    <div layout="column" layout-align="center start" flex
+                         ng-repeat="backend in conf.backends  | orderBy:'id' track by backend.id">
+                        <div flex layout="row" layout-align="start center">
+                            <span class="md-title">{{backend.id}}</span>
+                            <context-map title="Contexte du backend {{backend.id}}"
+                                         tooltip="Voir le contexte du backend {{backend.id}"
+                                         context="backend.context"></context-map>
+                        </div>
+                        <div style="width: 100%;padding-bottom: 5px" layout="row" layout-align="start start"
+                             ng-repeat="server in backend.servers  | orderBy:'id' track by server.id">
+                            <div flex="40" layout="column" layout-align="center end" style="padding-right: 20px">
+                                <span flex>{{server.id}}</span>
+                                <div layout layout-align="start center" flex>
+                                    <context-map title="Context du serveur {{server.id}}"
+                                                 tooltip="Voir le contexte du serveur {{server.id}}"
+                                                 context="server.context"></context-map>
+                                    <context-map title="Surcharge contexte du serveur {{server.id}}"
+                                                 tooltip="Voir la surcharge de contexte du serveur {{server.id}}"
+                                                 context="server.contextOverride"></context-map>
+                                </div>
+                            </div>
+                            <div style="width: 100%"  flex layout="column">
+                                <span flex>Host: <strong>{{server.hostname}}</strong></span>
+                                <span flex>IP: <strong>{{server.ip}}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </md-content>
+        </div>
+    </div>
+</div>
