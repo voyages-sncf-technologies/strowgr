@@ -12,11 +12,14 @@ default: build
 
 all: docker-build docker-image
 
-generate:
-	sed "s/{{ VERSION }}/$(VERSION)/" version.go.tpl >  $(CURDIR)/sidekick/src/version.go
+deps:
+	go get -t ./...
 
-build: src/cmd/sidekick.go
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 src/cmd/sidekick.go
+generate:
+	sed "s/{{ VERSION }}/$(VERSION)/" version.go.tpl >  $(CURDIR)/sidekick/version.go
+
+build: generate
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 cmd/sidekick.go
 
 docker-builder:
 	docker build -t $(IMAGE)-builder -f Dockerfile.build .
@@ -57,4 +60,4 @@ run: docker-builder
 	docker run --rm -ti --net strowgr_default \
 		-v $(CURDIR)/../data/slave/sidekick.conf:/sidekick.conf \
 		-v $(CURDIR)/../data/slave/hapadm:/HOME/hapadm \
-		$(IMAGE)-builder go run ./src/sidekick.go -config /sidekick.conf -ip local
+		$(IMAGE)-builder go run ./cmd/sidekick.go -config /sidekick.conf -ip local
