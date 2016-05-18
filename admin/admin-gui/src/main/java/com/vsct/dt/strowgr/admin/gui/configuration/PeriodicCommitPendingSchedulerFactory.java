@@ -37,13 +37,13 @@ public class PeriodicCommitPendingSchedulerFactory {
         environment.lifecycle().manage(new Managed() {
             @Override
             public void start() throws Exception {
-                LOGGER.info("Starting CommitCurrentScheduler");
+                LOGGER.info("Starting CommitPendingScheduler");
                 scheduler.start();
             }
 
             @Override
             public void stop() throws Exception {
-                LOGGER.info("Stopping CommitCurrentScheduler");
+                LOGGER.info("Stopping CommitPendingScheduler");
                 scheduler.stop();
             }
         });
