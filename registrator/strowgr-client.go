@@ -1,4 +1,4 @@
-package haaasregistrator
+package registrator
 
 import (
 	log "github.com/Sirupsen/logrus"
