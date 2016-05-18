@@ -20,7 +20,7 @@ func TestGetReloadScript(t *testing.T) {
 }
 
 func TestCreateSkeleton(t *testing.T) {
-	tmpdir, _ := ioutil.TempDir("", "haaas")
+	tmpdir, _ := ioutil.TempDir("", "strowgr")
 	defer os.Remove(tmpdir)
 	config.HapHome = tmpdir
 	hap.createSkeleton("mycorrelationid")

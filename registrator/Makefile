@@ -1,9 +1,9 @@
 .PHONY: all test clean build install dist
 
 BUILDDIR=bin
-BINARY=haaas-registrator
-REGISTRY=dockerregistrydev.socrate.vsct.fr
-IMAGE=$(REGISTRY)/haaas/$(BINARY)
+BINARY=registrator
+REGISTRY="dockerregistrydev.socrate.vsct.fr/"
+IMAGE=$(REGISTRY)strowgr/$(BINARY)
 COMMIT_ID=$(shell git rev-parse --short HEAD)
 VERSION?=$(shell cat VERSION)
 
@@ -18,18 +18,18 @@ generate:
 	sed "s/{{ VERSION }}/$(VERSION)/" version.go.tpl > version.go
 
 build: generate
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 cmd/haaas-registrator.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -o ${BUILDDIR}/${BINARY}-linux_amd64 cmd/registrator.go
 
 test: generate
 	go test -v ./...
 
 docker-build:
 	docker build -t $(IMAGE)-builder -f Dockerfile.build .
-	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder make build VERSION=$(VERSION)-$(COMMIT_ID)
+	docker run -v $(CURDIR)/bin:/go/src/github.com/voyages-sncf-technologies/strowgr/registrator/bin $(IMAGE)-builder make build VERSION=$(VERSION)-$(COMMIT_ID)
 
 docker-test:
 	docker build -t $(IMAGE)-builder -f Dockerfile.build .
-	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder make test
+	docker run -v $(CURDIR)/bin:/go/src/github.com/voyages-sncf-technologies/strowgr/registrator/bin $(IMAGE)-builder make test
 
 docker-image: dist
 	cp Dockerfile dist

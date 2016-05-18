@@ -30,7 +30,7 @@ const (
 	ID_NAMING_STRATEGY = "registrator.id_generator"
 )
 
-type NamingStrategy func(info types.ContainerJSON, instance *haaasregistrator.Instance) string
+type NamingStrategy func(info types.ContainerJSON, instance *registrator.Instance) string
 
 func init() {
 	log.SetFormatter(new(log.TextFormatter))
@@ -44,7 +44,7 @@ func main() {
 	flag.Parse()
 
 	if version {
-		println(haaasregistrator.VERSION)
+		println(registrator.VERSION)
 		os.Exit(0)
 	}
 
@@ -101,7 +101,7 @@ func main() {
 					public_port := public_ports[0].HostPort
 					log.WithField("port", private_port).Debug("Analyze container")
 
-					instance := haaasregistrator.NewInstance()
+					instance := registrator.NewInstance()
 					instance.App = getMetadata(info.Config, APPLICATION_LABEL)
 					instance.Platform = getMetadata(info.Config, PLATFORM_LABEL)
 					instance.Service = getMetadata(info.Config, serviceLabel)
@@ -164,11 +164,11 @@ func getNamingStrategy(config *container.Config) NamingStrategy{
 	}
 }
 
-func defaultNamingStrategy(info types.ContainerJSON, instance *haaasregistrator.Instance) string {
+func defaultNamingStrategy(info types.ContainerJSON, instance *registrator.Instance) string {
 	return strings.Replace(instance.Ip, ".", "_", -1) + "_" + strings.Replace(info.Name, "/", "_", -1) + "_" + instance.Port
 }
 
-func containerNamingStrategy(info types.ContainerJSON, instance *haaasregistrator.Instance) string {
+func containerNamingStrategy(info types.ContainerJSON, instance *registrator.Instance) string {
 	return info.Name + "_" + instance.Service
 }
 

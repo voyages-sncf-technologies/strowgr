@@ -9,8 +9,8 @@ import (
 	"runtime"
 )
 
-func instanceFixture() *haaasregistrator.Instance {
-	instance := haaasregistrator.NewInstance()
+func instanceFixture() *registrator.Instance {
+	instance := registrator.NewInstance()
 	instance.App = "Test"
 	instance.Platform = "TST"
 	instance.Service = "BACK"

@@ -19,15 +19,15 @@ import (
 
 var (
 	ip = flag.String("ip", "4.3.2.1", "Node ip address")
-	configFile = flag.String("config", "haaas.conf", "Configuration file")
+	configFile = flag.String("config", "sidekick.conf", "Configuration file")
 	version = flag.Bool("version", false, "Print current version")
 	verbose = flag.Bool("verbose", false, "Log in verbose mode")
 	config = nsq.NewConfig()
-	properties *haaasd.Config
-	daemon      *haaasd.Daemon
+	properties *sidekick.Config
+	daemon      *sidekick.Daemon
 	producer    *nsq.Producer
-	syslog        *haaasd.Syslog
-	reloadChan = make(chan haaasd.ReloadEvent)
+	syslog        *sidekick.Syslog
+	reloadChan = make(chan sidekick.ReloadEvent)
 	lastSyslogReload = time.Now()
 )
 
@@ -36,7 +36,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		println(haaasd.AppVersion)
+		println(sidekick.VERSION)
 		os.Exit(0)
 	}
 
@@ -47,13 +47,13 @@ func main() {
 
 	loadProperties()
 
-	daemon = haaasd.NewDaemon(properties)
-	syslog = haaasd.NewSyslog(properties)
+	daemon = sidekick.NewDaemon(properties)
+	syslog = sidekick.NewSyslog(properties)
 	syslog.Init()
 	log.WithFields(log.Fields{
 		"status": properties.Status,
 		"id":    properties.NodeId(),
-	}).Info("Starting haaasd")
+	}).Info("Starting sidekick")
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
 
@@ -62,7 +62,7 @@ func main() {
 
 	var wg sync.WaitGroup
 	// Start http API
-	restApi := haaasd.NewRestApi(properties)
+	restApi := sidekick.NewRestApi(properties)
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
@@ -177,7 +177,7 @@ func createTopicsAndChannels() {
 
 // loadProperties load properties file
 func loadProperties() {
-	properties = haaasd.DefaultConfig()
+	properties = sidekick.DefaultConfig()
 	if _, err := toml.DecodeFile(*configFile, properties); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
@@ -189,7 +189,7 @@ func loadProperties() {
 	}
 }
 
-func filteredHandler(event string, message *nsq.Message, target string, f haaasd.HandlerFunc) error {
+func filteredHandler(event string, message *nsq.Message, target string, f sidekick.HandlerFunc) error {
 	defer message.Finish()
 	match, err := daemon.Is(target)
 	if err != nil {
@@ -206,9 +206,9 @@ func filteredHandler(event string, message *nsq.Message, target string, f haaasd
 
 		switch event {
 		case "commit_requested":
-			reloadChan <- haaasd.ReloadEvent{F: f, Message: data}
+			reloadChan <- sidekick.ReloadEvent{F: f, Message: data}
 		case "commit_slave_completed":
-			reloadChan <- haaasd.ReloadEvent{F: f, Message: data}
+			reloadChan <- sidekick.ReloadEvent{F: f, Message: data}
 		case "commit_completed":
 			logAndForget(data)
 		}
@@ -231,18 +231,18 @@ func onCommitCompleted(message *nsq.Message) error {
 }
 
 // logAndForget is a generic function to just log event
-func logAndForget(data *haaasd.EventMessage) error {
+func logAndForget(data *sidekick.EventMessage) error {
 	log.WithFields(data.Context().Fields()).Debug("Commit completed")
 	return nil
 }
 
-func reloadSlave(data *haaasd.EventMessage) error {
+func reloadSlave(data *sidekick.EventMessage) error {
 	context := data.Context()
-	hap := haaasd.NewHaproxy("slave", properties,data.HapVersion, context)
+	hap := sidekick.NewHaproxy("slave", properties,data.HapVersion, context)
 
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
-		if status != haaasd.UNCHANGED {
+		if status != sidekick.UNCHANGED {
 			elapsed := time.Now().Sub(lastSyslogReload)
 			if elapsed.Seconds() > 10 {
 				syslog.Restart()
@@ -259,13 +259,13 @@ func reloadSlave(data *haaasd.EventMessage) error {
 	return nil
 }
 
-func reloadMaster(data *haaasd.EventMessage) error {
+func reloadMaster(data *sidekick.EventMessage) error {
 	context := data.Context()
 
-	hap := haaasd.NewHaproxy("master", properties, data.HapVersion, context)
+	hap := sidekick.NewHaproxy("master", properties, data.HapVersion, context)
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
-		if status != haaasd.UNCHANGED {
+		if status != sidekick.UNCHANGED {
 			syslog.Restart()
 		}
 		publishContextMessage("commit_completed_", context)
@@ -277,17 +277,17 @@ func reloadMaster(data *haaasd.EventMessage) error {
 }
 
 // Unmarshal json to EventMessage
-func bodyToData(jsonStream []byte) (*haaasd.EventMessage, error) {
+func bodyToData(jsonStream []byte) (*sidekick.EventMessage, error) {
 	dec := json.NewDecoder(bytes.NewReader(jsonStream))
-	var message haaasd.EventMessage
+	var message sidekick.EventMessage
 	err := dec.Decode(&message)
 	return &message, err
 }
 
-func publishContextMessage(topic_prefix string, context haaasd.Context) error {
+func publishContextMessage(topic_prefix string, context sidekick.Context) error {
 	return publishMessage(topic_prefix, context, context.UpdateTimestamp())
 }
-func publishMessage(topic_prefix string, data interface{}, context haaasd.Context) error {
+func publishMessage(topic_prefix string, data interface{}, context sidekick.Context) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
 	log.WithFields(context.Fields()).WithField("topic", topic).WithField("payload", string(jsonMsg)).Debug("Publish")

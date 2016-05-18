@@ -1,2 +1,2 @@
 package sidekick
-const AppVersion = "DEV"
+const VERSION = "DEV"

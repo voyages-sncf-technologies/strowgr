@@ -2,5 +2,5 @@
 .idea
 bin
 *.iml
-haaasd/haproxy-default-name.conf*
+sidekick/haproxy-default-name.conf*
 

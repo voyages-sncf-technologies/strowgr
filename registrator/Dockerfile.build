@@ -1,6 +1,6 @@
-FROM dockerregistrydev.socrate.vsct.fr/golang:1.5
+FROM golang:1.6
 
-ENV SRC /go/src/gitlab.socrate.vsct.fr/dt/haaasd
+ENV SRC /go/src/github.com/voyages-sncf-technologies/strowgr/registrator
 
 RUN go get github.com/docker/engine-api
 RUN go get github.com/vdemeester/docker-events
