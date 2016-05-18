@@ -24,11 +24,11 @@ test: generate
 	go test -v ./...
 
 docker-build:
-	docker build -t $(IMAGE)-builder -f build.Dockerfile .
+	docker build -t $(IMAGE)-builder -f Dockerfile.build .
 	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder make build VERSION=$(VERSION)-$(COMMIT_ID)
 
 docker-test:
-	docker build -t $(IMAGE)-builder -f build.Dockerfile .
+	docker build -t $(IMAGE)-builder -f Dockerfile.build .
 	docker run -v $(CURDIR)/bin:/go/src/gitlab.socrate.vsct.fr/dt/haaasd/bin $(IMAGE)-builder make test
 
 docker-image: dist
