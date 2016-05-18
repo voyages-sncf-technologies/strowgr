@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./.."
+	"github.com/voyages-sncf-technologies/strowgr/registrator"
 	"flag"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
