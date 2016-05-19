@@ -182,7 +182,7 @@ public class EntrypointResources {
             if (asyncResponseCallback != null) {
                 asyncResponseCallback.handle(event);
             } else {
-                LOGGER.warn("can't find callback for async response of the event {}", event);
+                LOGGER.debug("can't find callback for async response of the event {}", event);
             }
         } catch (Exception e) {
             LOGGER.error("can't handle EntryPointEvent " + event, e);
