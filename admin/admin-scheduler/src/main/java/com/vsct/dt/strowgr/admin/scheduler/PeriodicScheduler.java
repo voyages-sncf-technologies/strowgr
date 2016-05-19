@@ -20,9 +20,9 @@ public class PeriodicScheduler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicScheduler.class);
 
     private final EntryPointRepository repository;
-    private final Consumer<T> consumer;
-    private final Function<String, T> provider;
-    private final long periodMilli;
+    private final Consumer<T>          consumer;
+    private final Function<String, T>  provider;
+    private final long                 periodMilli;
     private volatile boolean stop = false;
 
     private final Thread automaticScheduler = new Thread(new Runnable() {
@@ -35,8 +35,13 @@ public class PeriodicScheduler<T> {
                     LOGGER.error("a sleep interruption", e);
                     return;
                 }
-                for (String ep : repository.getEntryPointsId()) {
-                    consumer.accept(provider.apply(ep));
+                try {
+                    for (String ep : repository.getEntryPointsId()) {
+                        consumer.accept(provider.apply(ep));
+                    }
+                } catch (Throwable t){
+                    t.printStackTrace();
+                    LOGGER.error("PeriodicScheduler failed. Reason {}", t.getMessage());
                 }
             }
         }
