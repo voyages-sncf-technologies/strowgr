@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.vsct.dt.strowgr</groupId>
+        <artifactId>strowgr-parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>sidekick</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>mvn-golang</packaging>
+
+    <build>
+        <sourceDirectory>${basedir}${file.separator}src</sourceDirectory>
+        <directory>${basedir}${file.separator}bin</directory>
+        <plugins>
+            <plugin>
+                <groupId>com.igormaznitsa</groupId>
+                <artifactId>mvn-golang-wrapper</artifactId>
+                <version>2.0.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <goVersion>${go.sdk.version}</goVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-get</id>
+                        <configuration>
+                            <targetOs>linux</targetOs>
+                            <targetArch>amd64</targetArch>
+                            <buildFlags>
+                                <flag>-u</flag>
+                            </buildFlags>
+                            <autofixGitCache>true</autofixGitCache>
+                            <packages>
+                                <package>github.com/Sirupsen/logrus</package>
+                                <package>github.com/BurntSushi/toml</package>
+                                <package>github.com/bitly/go-nsq</package>
+                            </packages>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-build</id>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <packages>
+                                <package>cmd/sidekick.go</package>
+                            </packages>
+                            <targetOs>linux</targetOs>
+                            <targetArch>amd64</targetArch>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

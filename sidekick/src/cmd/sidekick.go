@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/voyages-sncf-technologies/strowgr/sidekick"
+	".."
 	"bytes"
 	"encoding/json"
 	"flag"
