@@ -1,37 +1,37 @@
 package registrator
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"net/http"
-	"fmt"
-	"io/ioutil"
-	"encoding/json"
 	"bytes"
+	"encoding/json"
+	"fmt"
+	log "github.com/Sirupsen/logrus"
+	"io/ioutil"
+	"net/http"
 )
 
 type Instance struct {
-	Id              string `json:"id"`
-	Hostname        string `json:"hostname"`
-	Ip              string `json:"ip"`
-	Port            string `json:"port"`
-	App             string `json:"-"`
-	Platform        string `json:"-"`
-	Service         string `json:"-"`
-	Context         map[string]string `json:"context"`
+	Id       string            `json:"id"`
+	Hostname string            `json:"hostname"`
+	Ip       string            `json:"ip"`
+	Port     string            `json:"port"`
+	App      string            `json:"-"`
+	Platform string            `json:"-"`
+	Service  string            `json:"-"`
+	Context  map[string]string `json:"context"`
 }
 
 func NewInstance() *Instance {
 	return &Instance{
-		Context:make(map[string]string),
+		Context: make(map[string]string),
 	}
 }
 
 func (instance *Instance) Register(adminUrl string) {
 	log.WithFields(log.Fields{
-		"id": instance.Id,
+		"id":          instance.Id,
 		"application": instance.App,
-		"platform": instance.Platform,
-		"service" : instance.Service,
+		"platform":    instance.Platform,
+		"service":     instance.Service,
 	}).Info("Register")
 
 	var url = fmt.Sprintf("%s/api/entrypoints/%s/%s/backend/%s/register-server", adminUrl, instance.App, instance.Platform, instance.Service)
