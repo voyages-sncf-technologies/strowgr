@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en" ng-app="adminApp">
+<head>
+    <meta charset="utf-8">
+    <title>Strowgr</title>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+
+    <link rel="stylesheet" href="webjars/angular-material/1.0.5/angular-material.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script src="webjars/angularjs/1.4.9/angular.min.js"></script>
+
+    <script src="webjars/angularjs/1.4.9/angular-route.min.js"></script>
+
+    <script src="webjars/angularjs/1.4.9/angular-animate.min.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular-aria.min.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular-animate.min.js"></script>
+    <script src="webjars/angularjs/1.4.9/angular-messages.min.js"></script>
+
+    <script src="webjars/angular-sanitize/1.4.9/angular-sanitize.min.js"></script>
+
+    <script src="webjars/angular-material/1.0.5/angular-material.js"></script>
+
+    <script src="webjars/lodash/4.0.0/lodash.min.js"></script>
+    <script src="webjars/angular-material-icons/0.6.0/angular-material-icons.min.js"></script>
+
+    <style type="text/css">
+        .layout-margin {
+            margin: 4px;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        #wrapper {
+            min-height: 100%;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages', 'ngSanitize']);
+
+        adminApp.config(['$routeProvider', '$mdThemingProvider', function ($routeProvider, $mdThemingProvider) {
+            $routeProvider.
+                    when('/entrypoints', {
+                        templateUrl: 'partials/entrypoints.html',
+                        controller: 'EntrypointsCtrl'
+                    }).
+                    when('/add-entrypoint', {
+                        templateUrl: 'partials/add-entrypoint.html',
+                        controller: 'AddEntrypointCtrl'
+                    }).
+                    otherwise({
+                        redirectTo: '/entrypoints'
+                    });
+
+            $mdThemingProvider.theme('default')
+                    .primaryPalette('blue-grey', {
+                        'default': '300',
+                        'hue-1': '100',
+                        'hue-2': '500',
+                        'hue-3': '800'
+                    })
+                    .accentPalette('grey', {
+                        'default': '300'
+                    })
+                    .warnPalette('amber');
+        }]);
+
+        adminApp.factory('PortProvider', ['$http', function ($http) {
+            return {
+                getPort: function (id) {
+                    return $http.get('/api/ports/' + id).then(function (response) {
+                        return response.data;
+                    }, function (error) {
+                        if (error.status = 404) {
+                            return "Port not assigned yet";
+                        }
+                    });
+                }
+            }
+        }]);
+
+        adminApp.factory('Haproxy', ['$http', function ($http) {
+            return {
+                getUri: function (id) {
+                    return $http.get('/api/haproxy/uri/' + id).then(function (response) {
+                        return response.data;
+                    }, function (error) {
+                        console.error("can't load haproxyName " + haproxyName + ". Response is " + response.data);
+                    });
+                },
+                getGeneratedTemplate: function (conf) {
+                    return $http({
+                        method: 'POST',
+                        url: '/api/haproxy/template/valorise',
+                        responseType: 'text',
+                        data: conf
+                    }).then(function (response) {
+                        return response.data;
+                    });
+                },
+                getTemplate: function (uri) {
+                    return $http({
+                        method: 'GET',
+                        url: '/api/haproxy/template?uri=' + escape(uri),
+                        responseType: 'text'
+                    }).then(function (response) {
+                        return response.data;
+                    });
+                }
+            }
+        }]);
+
+        adminApp.controller('EntrypointsCtrl', ['$scope', '$http', '$interval', '$rootScope', function ($scope, $http, $interval, $rootScope) {
+
+            $http({
+                method: 'GET',
+                url: '/api/entrypoints'
+            }).then(function (response) {
+                $scope.entrypoints = response.data;
+            });
+
+            $scope.loadEntrypoint = function (id) {
+                $scope.selectedEntrypoint = id;
+                $rootScope.$broadcast("entrypoint-updated");
+            }
+
+        }]);
+
+        adminApp.directive('templateDisplay', ['$mdDialog', '$http', 'Haproxy',
+            function ($mdDialog, $http, Haproxy) {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/template-display.html',
+                    scope: {
+                        uri: '=uri'
+                    },
+                    link: function (scope, element, attrs) {
+                        scope.showContext = function () {
+                            Haproxy.getTemplate(scope.uri).then(function (value) {
+                                scope.template = value;
+                                $mdDialog.show({
+                                    templateUrl: 'template-display/popup.html',
+                                    clickOutsideToClose: true,
+                                    scope: scope,
+                                    autoWrap: false,
+                                    openFrom: element,
+                                    closeTo: element,
+                                    preserveScope: true,
+                                    fullscreen: false
+                                });
+                            }, function (error) {
+                                var alert = $mdDialog.alert({
+                                    htmlContent: '<pre>' + error.data.message + '</pre>',
+                                    clickOutsideToClose: true,
+                                    ok: "Je dois corriger la configuration"
+                                });
+                                $mdDialog.show(alert);
+                            });
+                        }
+                    }
+                }
+            }
+        ]);
+
+        adminApp.directive('haproxyGenerated', ['$mdDialog', '$http', 'Haproxy',
+            function ($mdDialog, $http, Haproxy) {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/haproxy-generated.html',
+                    scope: {
+                        conf: '=conf'
+                    },
+                    link: function (scope, element, attrs) {
+                        scope.showContext = function () {
+                            Haproxy.getGeneratedTemplate(scope.conf).then(function (value) {
+                                scope.haproxyGenerated = value;
+                                $mdDialog.show({
+                                    templateUrl: 'haproxy-generated/popup.html',
+                                    clickOutsideToClose: true,
+                                    scope: scope,
+                                    autoWrap: false,
+                                    openFrom: element,
+                                    closeTo: element,
+                                    preserveScope: true,
+                                    fullscreen: false
+                                });
+                            }, function (error) {
+                                var alert = $mdDialog.alert({
+                                    htmlContent: '<pre>' + error.data.message + '</pre>',
+                                    clickOutsideToClose: true,
+                                    ok: "Je dois corriger la configuration"
+                                });
+                                $mdDialog.show(alert);
+                            });
+                        }
+                    }
+                }
+            }
+        ])
+        ;
+
+        adminApp.controller('AddEntrypointCtrl', ['$scope', '$http', '$location', 'Haproxy', '$mdDialog', function ($scope, $http, $location, Haproxy, $mdDialog) {
+            /* Init conf object, avoid undefined inner objects and show expected fields */
+            $scope.conf = {
+                haproxy: "",
+                hapUser: "hapadm",
+                context: {
+                    templateUri: ""
+                },
+                frontends: [],
+                backends: []
+            };
+
+            $scope.gitlabTemplate = {
+                host: "gitlab.socrate.vsct.fr",
+                group: "dt",
+                repository: "haproxy-templates-horsprod",
+                tag: "",
+                filename: "haproxy_template.conf"
+            };
+
+            $scope.availableHaproxy = ['default-name'];
+
+            $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
+            $scope.forbiddenFrontendKeys = ['id', 'port'];
+            $scope.forbiddenBackendKeys = ['id'];
+
+            $scope.addFrontend = function () {
+                $scope.conf.frontends.push({
+                    id: "",
+                    context: {}
+                });
+            };
+
+            $scope.removeFrontend = function (frontend) {
+                var index = $scope.conf.frontends.indexOf(frontend);
+                if (index > -1) {
+                    $scope.conf.frontends.splice(index, 1);
+                }
+            };
+
+            $scope.addBackend = function () {
+                $scope.conf.backends.push({
+                    id: "",
+                    servers: [],
+                    context: {}
+                });
+            };
+
+            $scope.removeBackend = function (backend) {
+                var index = $scope.conf.backends.indexOf(backend);
+                if (index > -1) {
+                    $scope.conf.backends.splice(index, 1);
+                }
+            };
+
+            /* Checks the entrypoint configuration first and then creates the entrypoint */
+            $scope.createEntrypoint = function () {
+                /* Construction of gitlab url */
+                $scope.conf.context.templateUri = "http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.conf.context.application+"/"+$scope.gitlabTemplate.filename;
+
+                console.log($scope.conf.context.templateUri);
+
+                /* Since ports are provided by the backend, we simulate their presence for template valorisation validation */
+                var confWithFakePorts = angular.copy($scope.conf);
+                confWithFakePorts.syslogPort = "00000";
+                for (var i = 0; i < confWithFakePorts.frontends.length; i++) {
+                    confWithFakePorts.frontends[i].port = "00000";
+                }
+
+                Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (template) {
+                    return $http.put('/api/entrypoints/' + $scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf);
+                }).then(function (response) {
+                    $location.path('/');
+                }, function (error) {
+                    var alert = $mdDialog.alert({
+                        htmlContent: '<pre>' + error.data.message + '</pre>',
+                        clickOutsideToClose: true,
+                        ok: "Je reprends ma configuration"
+                    });
+                    $mdDialog.show(alert);
+                });
+            };
+
+        }]);
+
+        adminApp.directive('entrypointUpdate', ['$http', 'Haproxy', '$mdDialog', '$rootScope', function ($http, Haproxy, $mdDialog, $rootScope) {
+            return {
+                templateUrl: 'partials/update-entrypoint.html',
+                scope: {
+                    conf: '=conf'
+                },
+                link: function (scope, element, attrs) {
+
+                    scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
+                    scope.forbiddenFrontendKeys = ['id', 'port'];
+                    scope.forbiddenBackendKeys = ['id'];
+                    scope.forbiddenServerKeys = ['id', 'hostname', 'ip', 'port'];
+
+                    scope.addFrontend = function () {
+                        scope.conf.frontends.push({
+                            id: "",
+                            context: {}
+                        });
+                    };
+
+                    scope.removeFrontend = function (frontend) {
+                        var index = scope.conf.frontends.indexOf(frontend);
+                        if (index > -1) {
+                            scope.conf.frontends.splice(index, 1);
+                        }
+                    };
+
+                    scope.addBackend = function () {
+                        scope.conf.backends.push({
+                            id: "",
+                            servers: [],
+                            context: {}
+                        });
+                    };
+
+                    scope.removeBackend = function (backend) {
+                        var index = scope.conf.backends.indexOf(backend);
+                        if (index > -1) {
+                            scope.conf.backends.splice(index, 1);
+                        }
+                    };
+
+                    scope.updateEntrypoint = function () {
+                        //Create the update model
+                        var frontends = [];
+                        for (var i = 0; i < scope.conf.frontends.length; i++) {
+                            var f = scope.conf.frontends[i];
+                            frontends.push({
+                                id: f.id,
+                                context: f.context
+                            })
+                        }
+
+                        var backends = [];
+                        for (var i = 0; i < scope.conf.backends.length; i++) {
+                            var b = scope.conf.backends[i];
+                            var servers = [];
+                            for (var j = 0; j < b.servers.length; j++) {
+                                servers.push({
+                                    id: b.servers[j].id,
+                                    contextOverride: b.servers[j].contextOverride
+                                });
+                            }
+                            backends.push({
+                                id: b.id,
+                                context: b.context,
+                                servers: servers
+                            })
+                        }
+
+                        var updateModel = {
+                            hapUser: scope.conf.hapUser,
+                            context: scope.conf.context,
+                            frontends: frontends,
+                            backends: backends
+                        };
+
+                        /* Since ports are provided by the backend, we simulate their presence for new frontends for template valorisation validation */
+                        var confWithFakePorts = angular.copy(scope.conf);
+                        for (var i = 0; i < confWithFakePorts.frontends.length; i++) {
+                            if(confWithFakePorts.frontends[i].port == undefined) {
+                                confWithFakePorts.frontends[i].port = "00000";
+                            }
+                        };
+
+                        Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (response) {
+                            return $http.patch('/api/entrypoints/' + scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
+                        }).then(function (response) {
+                            $rootScope.$broadcast("entrypoint-updated");
+                        }, function (error) {
+                            var alert = $mdDialog.alert({
+                                htmlContent: '<pre>' + error.data.message + '</pre>',
+                                clickOutsideToClose: true,
+                                ok: "Je reprends ma configuration"
+                            });
+                            $mdDialog.show(alert);
+                        });
+                    };
+
+                }
+            }
+        }]);
+
+        adminApp.directive('entrypointConfigurationView', ['PortProvider', 'Haproxy', '$window',
+            function (PortProvider, Haproxy, $window) {
+                return {
+
+                    templateUrl: 'partials/entrypoint-configuration-view.html',
+                    scope: {
+                        conf: '=conf'
+                    },
+                    link: function (scope, element, attrs) {
+                        scope.$watch('conf', function (newConf, oldConf) {
+                            if (newConf != undefined) {
+                                Haproxy.getUri(newConf.haproxy).then(function (uri) {
+                                    scope.haproxyUri = uri;
+                                });
+                            }
+                        });
+
+                        scope.openStatsPage = function(frontend){
+                            $window.open("http://"+scope.haproxyUri+":"+frontend.port+"/stats");
+                        };
+                    }
+                }
+            }
+        ]);
+
+        adminApp.directive('contextMap', ['$mdDialog',
+            function ($mdDialog) {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/context-map.html',
+                    scope: {
+                        context: '=context',
+                        title: '@',
+                        tooltip: '@'
+                    },
+                    link: function (scope, element, attrs) {
+                        scope.showContext = function () {
+                            $mdDialog.show({
+                                templateUrl: 'context-map/popup.html',
+                                clickOutsideToClose: true,
+                                scope: scope,
+                                autoWrap: false,
+                                openFrom: element,
+                                closeTo: element,
+                                preserveScope: true,
+                                fullscreen: false
+                            });
+                        };
+
+                        scope.contextIsNotEmpty = function (){
+                            return scope.context != undefined && Object.keys(scope.context).length > 0;
+                        }
+                    }
+                }
+            }
+        ]);
+
+        adminApp.directive('contextMapInput', [
+            function () {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/context-map-input.html',
+                    scope: {
+                        context: '=context',
+                        forbidden: '=?forbidden',
+                        readonly: '=readonly'
+                    },
+                    link: function (scope, element, attrs) {
+
+                        if (scope.forbidden == undefined) scope.forbidden = [];
+                        scope.chips = [];
+
+                        scope.$watch('context', function (newContext, oldContext) {
+                            if (newContext != undefined) {
+                                scope.chips = Object.keys(newContext).filter(function (key) {
+                                    return scope.forbidden.indexOf(key) == -1;
+                                }).sort().map(function (key) {
+                                    return {key: key, value: scope.context[key]};
+                                });
+                            }
+                        }, true);
+
+                        var chipsToContext = function () {
+                            /* keys provided by some other components should not be disturbed by thoose created by context map input
+                             this is why we use angular.extend */
+                            scope.context = angular.extend({}, scope.chips.reduce(function (context, chip) {
+                                context[chip.key] = chip.value;
+                                return context;
+                            }, {}), scope.context);
+                        };
+
+                        scope.validateContextInput = function (chip) {
+                            var keyValue = chip.split(":");
+                            if (keyValue.length != 2) return null;
+                            var key = keyValue[0];
+                            var value = keyValue[1];
+                            if (scope.forbidden.indexOf(key) > -1) return null;
+                            if (value == '') return null;
+                            return {
+                                key: key,
+                                value: value.trim()
+                            }
+                        };
+
+                        scope.add = function (item) {
+                            chipsToContext();
+                        };
+
+                        scope.remove = function (item) {
+                            /* remove key from scope, because it will not be in chips anymore */
+                            delete scope.context[item.key];
+                        }
+
+                    }
+                }
+            }
+        ]);
+
+        adminApp.directive('entrypointView', ['$interval', '$timeout', '$http', '$q', 'PortProvider',
+            function ($interval, $timeout, $http, $q, PortProvider) {
+                return {
+                    restrict: 'E',
+                    templateUrl: 'partials/entrypoint-view.html',
+                    scope: {
+                        id: '=id'
+                    },
+                    link: function (scope, element, attrs) {
+                        var reloadDelay = 3000;
+                        var blinkingDelay = 3000;
+                        var autoRefresh = false;
+                        var blinking = false;
+
+                        refreshAllStates = function () {
+                            return $q.all({
+                                current: $http.get('/api/entrypoints/' + scope.id + '/current')
+                                        .then(function (response) {
+                                            return portPromises(scope.id, response.data);
+                                        }, function (error) {
+                                            //TODO Check for 404
+                                            scope.current = undefined
+                                        }),
+                                pending: $http.get('/api/entrypoints/' + scope.id + '/pending')
+                                        .then(function (response) {
+                                            return portPromises(scope.id, response.data);
+                                        }, function (error) {
+                                            //TODO Check for 404
+                                            scope.pending = undefined
+                                        }),
+                                committing: $http.get('/api/entrypoints/' + scope.id + '/committing')
+                                        .then(function (response) {
+                                            return portPromises(scope.id, response.data);
+                                        }, function (error) {
+                                            //TODO Check for 404
+                                            scope.committing = undefined
+                                        })
+                            }).then(function (values) {
+                                scope.current = values.current;
+                                scope.pending = values.pending;
+                                scope.committing = values.committing;
+                            });
+                        };
+
+                        var portPromises = function (id, conf) {
+                            var promises = [].concat(conf.frontends.map(function (frontend) {
+                                return PortProvider.getPort(id + '-' + frontend.id).then(function (port) {
+                                    frontend.port = port;
+                                });
+                            }));
+                            promises.push(PortProvider.getPort(id + '-syslog').then(function (port) {
+                                conf.syslogPort = port;
+                            }));
+                            return $q.all(promises).then(function () {
+                                return conf;
+                            });
+                        };
+
+
+                        /* When id is changed, we must reload the data */
+                        scope.$watch('id', function (newValue, oldValue) {
+                            autoRefresh = false;
+                            blinking = false;
+                            refreshAllStates().then(function () {
+                                autoRefresh = true;
+                                blinking = true;
+                            });
+                        });
+
+                        var refreshAuto = $interval(function () {
+                            if (scope.id && autoRefresh) {
+                                refreshAllStates();
+                            }
+                        }, reloadDelay);
+
+                        /* Make tab blink while something is committing */
+                        scope.$watch('committing', function (newValue, oldValue) {
+                            if (blinking) {
+                                scope.commitBlink = (newValue != undefined);
+                            }
+                        }, true);
+
+                        /* Make tab blink several seconds when new pending */
+                        scope.$watch('pending', function (newValue, oldValue) {
+                            if (blinking) {
+                                scope.pendingBlink = true;
+                                $timeout(function () {
+                                    scope.pendingBlink = false;
+                                }, blinkingDelay);
+                            }
+                        }, true);
+
+                        /* Make tab blink several seconds when new current */
+                        scope.$watch('current', function (newValue, oldValue) {
+                            if (blinking) {
+                                scope.currentBlink = true;
+                                $timeout(function () {
+                                    scope.currentBlink = false;
+                                }, blinkingDelay);
+                            }
+                        }, true);
+
+                        scope.$on('$destroy', function () {
+                            $interval.cancel(refreshAuto);
+                        });
+
+                        scope.$on("entrypoint-updated", function () {
+                            scope.selectedIndex = 0;
+                        });
+
+                        scope.load_update_model = function (conf) {
+                            scope.update_model = conf;
+                        };
+                    }
+                }
+            }]);
+
+
+    </script>
+</head>
+<body>
+<div id="wrapper" layout="column">
+    <div style="margin-bottom: 15px">
+        <md-content>
+            <md-toolbar>
+                <div class="md-toolbar-tools">
+                    <h1 style="font-size: 42px">
+                        <span>Strowgr</span>
+                    </h1>
+                    <span flex></span>
+                    <md-button class="md-raised md-accent" ng-href="/#/add-entrypoint">
+                        Ajouter un entrypoint
+                    </md-button>
+                </div>
+            </md-toolbar>
+        </md-content>
+    </div>
+    <div ng-view layout flex>
+    </div>
+    <div>
+        <md-content>
+            <md-toolbar>
+                <div class="md-toolbar-tools">
+                </div>
+            </md-toolbar>
+        </md-content>
+    </div>
+</div>
+</body>
+</html>

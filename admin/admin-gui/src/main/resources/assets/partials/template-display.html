@@ -1,0 +1,13 @@
+<div flex>
+    <md-icon icon="visibility" style="cursor:pointer;" ng-click="showContext()">visibility</md-icon>
+    <md-tooltip>Consulter</md-tooltip>
+</div>
+<script type="text/ng-template" id="template-display/popup.html">
+    <md-dialog style="width: 800px;">
+        <md-dialog-content>
+            <div layout layout-margin>
+                <pre>{{template}}</pre>
+            </div>
+        </md-dialog-content>
+    </md-dialog>
+</script>
