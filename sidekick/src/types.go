@@ -1,8 +1,8 @@
 package sidekick
 
 import (
-	"time"
 	log "github.com/Sirupsen/logrus"
+	"time"
 )
 
 type Config struct {
@@ -17,10 +17,10 @@ type Config struct {
 	Status           string
 }
 
-func DefaultConfig() (*Config) {
+func DefaultConfig() *Config {
 	return &Config{
-		Port:5000,
-		HapHome:"/HOME/hapadm",
+		Port:      5000,
+		HapHome:   "/HOME/hapadm",
 		ClusterId: "default-name",
 	}
 }
@@ -30,31 +30,31 @@ func (config *Config) NodeId() string {
 }
 
 type EventMessage struct {
-	CorrelationId  string        `json:"correlationId"`
-	Conf           []byte        `json:"conf"`
-	Timestamp      int64         `json:"timestamp"`
-	Application    string        `json:"application"`
-	Platform       string        `json:"platform"`
-	HapVersion     string        `json:"hapVersion"`
-	SyslogFragment []byte        `json:"syslogConf"`
+	CorrelationId  string `json:"correlationId"`
+	Conf           []byte `json:"conf"`
+	Timestamp      int64  `json:"timestamp"`
+	Application    string `json:"application"`
+	Platform       string `json:"platform"`
+	HapVersion     string `json:"hapVersion"`
+	SyslogFragment []byte `json:"syslogConf"`
 }
 
 // retrieve Context from an EventMessage
 func (em EventMessage) Context() Context {
 	return Context{
 		CorrelationId: em.CorrelationId,
-		Timestamp: em.Timestamp,
-		Application: em.Application,
-		Platform: em.Platform,
+		Timestamp:     em.Timestamp,
+		Application:   em.Application,
+		Platform:      em.Platform,
 	}
 }
 
 // context for tracing current process
 type Context struct {
-	CorrelationId string        `json:"correlationId"`
-	Timestamp     int64         `json:"timestamp"`
-	Application   string        `json:"application"`
-	Platform      string        `json:"platform"`
+	CorrelationId string `json:"correlationId"`
+	Timestamp     int64  `json:"timestamp"`
+	Application   string `json:"application"`
+	Platform      string `json:"platform"`
 }
 
 // update the timestamp of the current context
@@ -66,10 +66,10 @@ func (ctx Context) UpdateTimestamp() Context {
 // translate Context to Fields for logging purpose
 func (ctx Context) Fields() log.Fields {
 	return log.Fields{
-		"correlationId":ctx.CorrelationId,
-		"timestamp":ctx.UpdateTimestamp().Timestamp,
-		"application":ctx.Application,
-		"platform":ctx.Platform,
+		"correlationId": ctx.CorrelationId,
+		"timestamp":     ctx.UpdateTimestamp().Timestamp,
+		"application":   ctx.Application,
+		"platform":      ctx.Platform,
 	}
 }
 

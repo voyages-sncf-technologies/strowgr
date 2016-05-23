@@ -1,10 +1,6 @@
 package sidekick
 
 import (
-//	"fmt"
-//	"io/ioutil"
-//	"log"
-//	"net/http"
 )
 
 type Daemon struct {

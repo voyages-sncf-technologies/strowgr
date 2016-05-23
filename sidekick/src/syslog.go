@@ -1,11 +1,11 @@
 package sidekick
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"os/exec"
 	"fmt"
-	"text/template"
+	log "github.com/Sirupsen/logrus"
 	"os"
+	"os/exec"
+	"text/template"
 	"time"
 )
 
@@ -76,7 +76,7 @@ func (syslog *Syslog) Init() error {
 	createDirectory(Context{}, "init", fmt.Sprintf("%s/SYSLOG/logs", syslog.properties.HapHome))
 	createDirectory(Context{}, "init", configDir)
 
-	f, err := os.OpenFile(configFile, os.O_CREATE | os.O_WRONLY, 0644)
+	f, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.WithFields(SyslogFields()).WithError(err).Error("Fail to write base syslog file")
 		return err
@@ -90,6 +90,6 @@ func (syslog *Syslog) Init() error {
 func SyslogFields() log.Fields {
 	return log.Fields{
 		"timestamp": time.Now().UnixNano() / int64(time.Millisecond),
-		"type": "syslog",
+		"type":      "syslog",
 	}
 }

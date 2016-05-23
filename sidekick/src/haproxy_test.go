@@ -9,7 +9,7 @@ import (
 
 var (
 	config = Config{HapHome: "/HOME"}
-	hap = NewHaproxy("master", &config, "1.4.22", Context{Application:"TST", Platform:"DEV"})
+	hap    = NewHaproxy("master", &config, "1.4.22", Context{Application: "TST", Platform: "DEV"})
 )
 
 func TestGetReloadScript(t *testing.T) {
@@ -24,13 +24,13 @@ func TestCreateSkeleton(t *testing.T) {
 	defer os.Remove(tmpdir)
 	config.HapHome = tmpdir
 	hap.createSkeleton("mycorrelationid")
-	AssertFileExists(t, tmpdir + "/TST/Config")
-	AssertFileExists(t, tmpdir + "/TST/logs/TSTDEV")
-	AssertFileExists(t, tmpdir + "/TST/scripts")
-	AssertFileExists(t, tmpdir + "/TST/version-1")
+	AssertFileExists(t, tmpdir+"/TST/Config")
+	AssertFileExists(t, tmpdir+"/TST/logs/TSTDEV")
+	AssertFileExists(t, tmpdir+"/TST/scripts")
+	AssertFileExists(t, tmpdir+"/TST/version-1")
 	if runtime.GOOS != "windows" {
-		AssertIsSymlink(t, tmpdir + "/TST/Config/haproxy")
-		AssertIsSymlink(t, tmpdir + "/TST/scripts/hapctlTSTDEV")
+		AssertIsSymlink(t, tmpdir+"/TST/Config/haproxy")
+		AssertIsSymlink(t, tmpdir+"/TST/scripts/hapctlTSTDEV")
 	}
 }
 
@@ -50,7 +50,7 @@ func AssertFileExists(t *testing.T, file string) {
 
 func AssertIsSymlink(t *testing.T, file string) {
 	fi, err := os.Lstat(file)
-	if err != nil || (fi.Mode() & os.ModeSymlink != os.ModeSymlink) {
+	if err != nil || (fi.Mode()&os.ModeSymlink != os.ModeSymlink) {
 		t.Logf("File or directory '%s' does not exists", file)
 		t.Fail()
 	}

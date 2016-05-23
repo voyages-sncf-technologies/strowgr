@@ -16,10 +16,10 @@ func NewHaproxy(role string, properties *Config, version string, context Context
 		version = "1.4.22"
 	}
 	return &Haproxy{
-		Role:             role,
-		properties:  properties,
-		Version:     version,
-		Context: context,
+		Role:       role,
+		properties: properties,
+		Version:    version,
+		Context:    context,
 	}
 }
 
@@ -32,10 +32,10 @@ type Haproxy struct {
 }
 
 const (
-	SUCCESS int = iota
-	UNCHANGED int = iota
+	SUCCESS    int = iota
+	UNCHANGED  int = iota
 	ERR_SYSLOG int = iota
-	ERR_CONF int = iota
+	ERR_CONF   int = iota
 	ERR_RELOAD int = iota
 )
 
@@ -54,8 +54,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	}
 	if bytes.Equal(oldConf, newConf) {
 		log.WithFields(hap.Context.Fields()).WithFields(
-			log.Fields{"role": hap.Role,
-			}).Debug("Unchanged configuration")
+			log.Fields{"role": hap.Role}).Debug("Unchanged configuration")
 		return UNCHANGED, nil
 	}
 
@@ -64,7 +63,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	os.Rename(path, archivePath)
 	log.WithFields(hap.Context.Fields()).WithFields(
 		log.Fields{
-			"role": hap.Role,
+			"role":        hap.Role,
 			"archivePath": archivePath,
 		}).Info("Old configuration saved")
 	err = ioutil.WriteFile(path, newConf, 0644)
@@ -103,8 +102,8 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 		return ERR_SYSLOG, err
 	}
 	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-		"role": hap.Role,
-		"content" : string(data.SyslogFragment),
+		"role":     hap.Role,
+		"content":  string(data.SyslogFragment),
 		"filename": fragmentPath,
 	}).Debug("Write syslog fragment")
 
@@ -125,7 +124,7 @@ func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *Eve
 		f.Sync()
 
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-			"role": hap.Role,
+			"role":     hap.Role,
 			"filename": filename,
 		}).Info("Dump configuration")
 	}
@@ -167,9 +166,9 @@ func (hap *Haproxy) reload(correlationId string) error {
 		log.WithFields(hap.Context.Fields()).WithError(err).Error("Error reloading")
 	} else {
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-			"role": hap.Role,
+			"role":         hap.Role,
 			"reloadScript": reloadScript,
-			"cmd": string(output[:]),
+			"cmd":          string(output[:]),
 		}).Debug("Reload succeeded")
 	}
 	return err
@@ -191,15 +190,15 @@ func (hap *Haproxy) rollback(correlationId string) error {
 func (hap *Haproxy) createSkeleton(correlationId string) error {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
 
-	createDirectory(hap.Context, correlationId, baseDir + "/Config")
-	createDirectory(hap.Context, correlationId, baseDir + "/logs/" + hap.Context.Application + hap.Context.Platform)
-	createDirectory(hap.Context, correlationId, baseDir + "/scripts")
-	createDirectory(hap.Context, correlationId, baseDir + "/version-1")
-	createDirectory(hap.Context, correlationId, baseDir + "/errors")
-	createDirectory(hap.Context, correlationId, baseDir + "/dump")
+	createDirectory(hap.Context, correlationId, baseDir+"/Config")
+	createDirectory(hap.Context, correlationId, baseDir+"/logs/"+hap.Context.Application+hap.Context.Platform)
+	createDirectory(hap.Context, correlationId, baseDir+"/scripts")
+	createDirectory(hap.Context, correlationId, baseDir+"/version-1")
+	createDirectory(hap.Context, correlationId, baseDir+"/errors")
+	createDirectory(hap.Context, correlationId, baseDir+"/dump")
 
 	updateSymlink(hap.Context, correlationId, hap.getHapctlFilename(), hap.getReloadScript())
-	updateSymlink(hap.Context, correlationId, hap.getHapBinary(), baseDir + "/Config/haproxy")
+	updateSymlink(hap.Context, correlationId, hap.getHapBinary(), baseDir+"/Config/haproxy")
 
 	return nil
 }

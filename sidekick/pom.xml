@@ -57,6 +57,10 @@
                             <targetArch>amd64</targetArch>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>default-test</id>
+                        <phase>none</phase>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
