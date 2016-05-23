@@ -1,15 +1,10 @@
-.PHONY: webapp haaasd docs haaas-registrator
+.PHONY: sidekick registrator
 
-all: webapp haaasd haaas-registrator
+all: sidekick registrator
 
-webapp:
-	cd webapp && make docker-build && make docker-image
+sidekick:
+	cd sidekick && make docker-build && make docker-image
 
-haaasd:
-	cd haaasd && make docker-build && make docker-image
+registrator:
+	cd registrator && make docker-build && make docker-image
 
-haaas-registrator:
-	cd haaas-registrator && make docker-build && make docker-image
-
-docs:
-	docker run --rm -v $(CURDIR)/docs:/docs dockerregistry.socrate.vsct.fr:5000/dt/plantuml /docs/*.puml

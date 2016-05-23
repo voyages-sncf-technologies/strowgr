@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-dir="$(dirname $0)"
-cwd=$(cd $dir; pwd)
-
-VERSION=1.0.0-SNAPSHOT
-
-curl -J -L http://nexus.socrate.vsct.fr/content/repositories/dt-snapshots/com/vsct/dt/haaas/haaaas-registrator/$VERSION/haaas-registrator-$VERSION.tar.gz | tar xzvC $cwd

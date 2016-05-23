@@ -40,10 +40,9 @@ services:
 
   #  HA proxies
   ha-master:
-    image: haaas/haaasd:1.0.0
-    container_name: haaasd-master
+    image: strowgr/sidekick:1.0.0
     volumes:
-      - ./data/master/haaasd.conf:/haaasd.conf
+      - ./data/master/sidekick.conf:/sidekick.conf
     ports:
       - 52000:52000
       - 50000
@@ -52,10 +51,9 @@ services:
       - "larimar:1.2.3.4"
 
   ha-slave:
-    image: haaas/haaasd:1.0.0
-    container_name: haaasd-slave
+    image: strowgr/sidekick:1.0.0
     volumes:
-      - ./data/slave/haaasd.conf:/haaasd.conf
+      - ./data/slave/sidekick.conf:/sidekick.conf
     ports:
       - 50000
       - 52001:52000
@@ -74,7 +72,7 @@ services:
       - nsqd-master
 
   registrator:
-    image: haaas/haaas-registrator:1.0.0
+    image: strowgr/registrator:1.0.0
     command: -url http://192.168.99.100:8080 -address 192.168.99.100 -verbose
 #    privileged: true
     volumes:
@@ -82,27 +80,8 @@ services:
     depends_on:
      - nsq-admin
 
-  # Webapp instances
-  webapp-1:
-    image: haaas/webapp:1.0.0
-    ports:
-     - 50180:50080
-    command: instance1
-    labels:
-      - PLATFORM=REC1
-    depends_on:
-     - registrator
-
-  webapp-2:
-    image: haaas/webapp:1.0.0
-    ports:
-     - 50080
-    command: instance2
-    labels:
-      - PLATFORM=REC1
-
   admin:
-    image: haaas/admin:1.0.0
+    image: strowgr/admin:1.0.0
     ports:
       - 8080:8080
     command: server /server.yml
