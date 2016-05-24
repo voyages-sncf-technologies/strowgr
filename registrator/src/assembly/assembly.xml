@@ -12,10 +12,19 @@
             <outputDirectory>${file.separator}</outputDirectory>
             <includes>
                 <include>README*</include>
-                <include>LICENSE*</include>
                 <include>NOTICE*</include>
             </includes>
         </fileSet>
+
+        <fileSet>
+            <directory>${project.parent.basedir}</directory>
+            <outputDirectory>${file.separator}</outputDirectory>
+            <includes>
+                <include>LICENSE*</include>
+            </includes>
+        </fileSet>
+
+
         <fileSet>
             <directory>${project.build.directory}</directory>
             <outputDirectory>${file.separator}</outputDirectory>
