@@ -14,6 +14,7 @@
     <packaging>mvn-golang</packaging>
 
     <build>
+        <finalName>${artifactId}-${version}-${target.os}-${target.arch}</finalName>
         <sourceDirectory>${basedir}${file.separator}src${file.separator}main${file.separator}go</sourceDirectory>
         <plugins>
             <plugin>
@@ -35,7 +36,6 @@
                             </buildFlags>
                             <autofixGitCache>true</autofixGitCache>
                             <packages>
-                                <!--<package>github.com/govend/govend</package>-->
                                 <package>github.com/Sirupsen/logrus</package>
                                 <package>github.com/vdemeester/docker-events</package>
                                 <package>github.com/docker/engine-api</package>
@@ -45,12 +45,11 @@
                     <execution>
                         <id>default-build</id>
                         <configuration>
-                            <targetOs>linux</targetOs>
-                            <targetArch>amd64</targetArch>
+                            <targetOs>${target.os}</targetOs>
+                            <targetArch>${target.arch}</targetArch>
                             <packages>
                                 <package>cmd/registrator.go</package>
                             </packages>
-                            <resultName>registrator-linux-amd64</resultName>
                         </configuration>
                     </execution>
                     <execution>

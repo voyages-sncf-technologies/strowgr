@@ -20,7 +20,7 @@
             <directory>${project.build.directory}</directory>
             <outputDirectory>${file.separator}</outputDirectory>
             <includes>
-                <include>registrator-linux-amd64</include>
+                <include>${project.build.finalName}</include>
             </includes>
         </fileSet>
     </fileSets>
