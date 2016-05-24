@@ -15,9 +15,10 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>mvn-golang</packaging>
 
+
     <build>
-        <sourceDirectory>${basedir}${file.separator}src</sourceDirectory>
-        <directory>${basedir}${file.separator}bin</directory>
+        <finalName>${artifactId}-${target.os}-${target.arch}</finalName>
+        <sourceDirectory>${basedir}${file.separator}src${file.separator}main${file.separator}go</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
@@ -53,8 +54,8 @@
                             <packages>
                                 <package>cmd/sidekick.go</package>
                             </packages>
-                            <targetOs>linux</targetOs>
-                            <targetArch>amd64</targetArch>
+                            <targetOs>${target.os}</targetOs>
+                            <targetArch>${target.arch}</targetArch>
                         </configuration>
                     </execution>
                     <execution>
