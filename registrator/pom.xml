@@ -14,8 +14,7 @@
     <packaging>mvn-golang</packaging>
 
     <build>
-        <sourceDirectory>${basedir}${file.separator}src</sourceDirectory>
-        <directory>${basedir}${file.separator}bin</directory>
+        <sourceDirectory>${basedir}${file.separator}src${file.separator}main${file.separator}go</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
@@ -51,6 +50,7 @@
                             <packages>
                                 <package>cmd/registrator.go</package>
                             </packages>
+                            <resultName>registrator-linux-amd64</resultName>
                         </configuration>
                     </execution>
                     <execution>
@@ -59,6 +59,23 @@
                             <goal>test</goal>
                         </goals>
                         <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <descriptor>src/assembly/linux.xml</descriptor>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>create-archive</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
