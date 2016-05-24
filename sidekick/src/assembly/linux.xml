@@ -16,6 +16,15 @@
                 <include>NOTICE*</include>
             </includes>
         </fileSet>
+
+        <fileSet>
+            <directory>${project.basedir}${file.separator}conf</directory>
+            <outputDirectory>${file.separator}</outputDirectory>
+            <includes>
+                <include>*.toml.sample</include>
+            </includes>
+        </fileSet>
+
         <fileSet>
             <directory>${project.build.directory}</directory>
             <outputDirectory>${file.separator}</outputDirectory>
