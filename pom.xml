@@ -44,6 +44,14 @@
                 <target.arch>amd64</target.arch>
             </properties>
         </profile>
+
+        <profile>
+            <id>target-darwin</id>
+            <properties>
+                <target.os>darwin</target.os>
+                <target.arch>amd64</target.arch>
+            </properties>
+        </profile>
     </profiles>
 
 </project>

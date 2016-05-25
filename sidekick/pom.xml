@@ -17,7 +17,7 @@
 
 
     <build>
-        <finalName>${artifactId}-${target.os}-${target.arch}</finalName>
+        <finalName>${project.artifactId}-${target.os}-${target.arch}</finalName>
         <sourceDirectory>${basedir}${file.separator}src${file.separator}main${file.separator}go</sourceDirectory>
         <plugins>
             <plugin>
@@ -32,8 +32,8 @@
                     <execution>
                         <id>default-get</id>
                         <configuration>
-                            <targetOs>linux</targetOs>
-                            <targetArch>amd64</targetArch>
+                            <targetOs>${target.os}</targetOs>
+                            <targetArch>${target.arch}</targetArch>
                             <buildFlags>
                                 <flag>-u</flag>
                             </buildFlags>

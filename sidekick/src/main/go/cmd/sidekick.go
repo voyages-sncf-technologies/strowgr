@@ -210,7 +210,7 @@ func filteredHandler(event string, message *nsq.Message, target string, f sideki
 		case "commit_slave_completed":
 			reloadChan <- sidekick.ReloadEvent{F: f, Message: data}
 		case "commit_completed":
-			logAndForget(data)
+			f(data)
 		}
 
 	} else {
@@ -237,8 +237,16 @@ func logAndForget(data *sidekick.EventMessage) error {
 }
 
 func reloadSlave(data *sidekick.EventMessage) error {
+	return reloadHaProxy(data, "slave", "commit_slave_completed_", data)
+}
+
+func reloadMaster(data *sidekick.EventMessage) error {
+	return reloadHaProxy(data, "master", "commit_completed_", data.Context().UpdateTimestamp())
+}
+
+func reloadHaProxy(data *sidekick.EventMessage, role string, topic string, message interface{}) error {
 	context := data.Context()
-	hap := sidekick.NewHaproxy("slave", properties,data.HapVersion, context)
+	hap := sidekick.NewHaproxy(role, properties, data.HapVersion, context)
 
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
@@ -251,24 +259,7 @@ func reloadSlave(data *sidekick.EventMessage) error {
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		publishMessage("commit_slave_completed_", data, context)
-	} else {
-		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
-		publishContextMessage("commit_failed_", context)
-	}
-	return nil
-}
-
-func reloadMaster(data *sidekick.EventMessage) error {
-	context := data.Context()
-
-	hap := sidekick.NewHaproxy("master", properties, data.HapVersion, context)
-	status, err := hap.ApplyConfiguration(data)
-	if err == nil {
-		if status != sidekick.UNCHANGED {
-			syslog.Restart()
-		}
-		publishContextMessage("commit_completed_", context)
+		publishMessage(topic, message, context)
 	} else {
 		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
 		publishContextMessage("commit_failed_", context)
