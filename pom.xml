@@ -22,6 +22,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <go.sdk.version>1.6</go.sdk.version>
         <java.version>1.8</java.version>
+        <docker.registry>dockerregistrydev.socrate.vsct.fr/</docker.registry>
+        <docker.namespace>strowgr</docker.namespace>
     </properties>
 
     <profiles>
@@ -31,10 +33,8 @@
             <properties>
                 <target.os>linux</target.os>
                 <target.arch>amd64</target.arch>
+                <target.ext></target.ext>
             </properties>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
         </profile>
 
         <profile>
@@ -42,6 +42,7 @@
             <properties>
                 <target.os>windows</target.os>
                 <target.arch>amd64</target.arch>
+                <target.ext>.exe</target.ext>
             </properties>
         </profile>
 
@@ -50,6 +51,7 @@
             <properties>
                 <target.os>darwin</target.os>
                 <target.arch>amd64</target.arch>
+                <target.ext></target.ext>
             </properties>
         </profile>
     </profiles>
