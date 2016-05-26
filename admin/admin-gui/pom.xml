@@ -10,32 +10,35 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>admin-gui</artifactId>
+    <properties>
+        <project.build.finalNameWithExt>${project.build.finalName}.jar</project.build.finalNameWithExt>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
             <artifactId>admin-core</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
             <artifactId>admin-repository</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
             <artifactId>admin-nsq</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
             <artifactId>admin-scheduler</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
             <artifactId>admin-template</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <!-- Dropwizard -->
         <dependency>
@@ -87,5 +90,25 @@
         </dependency>
     </dependencies>
 
+    <build>
+
+        <resources>
+            <resource>
+                <directory>src/docker</directory>
+                <targetPath>${project.build.directory}/docker-filtered</targetPath>
+                <includes>
+                    <include>Dockerfile</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

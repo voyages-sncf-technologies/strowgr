@@ -24,6 +24,9 @@
         <java.version>1.8</java.version>
         <docker.registry>dockerregistrydev.socrate.vsct.fr/</docker.registry>
         <docker.namespace>strowgr</docker.namespace>
+        <docker.image>${project.artifactId}</docker.image>
+        <project.build.finalNameWithExt>${project.build.finalName}</project.build.finalNameWithExt>
+
     </properties>
 
     <profiles>
@@ -35,6 +38,9 @@
                 <target.arch>amd64</target.arch>
                 <target.ext></target.ext>
             </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
         </profile>
 
         <profile>
@@ -55,5 +61,85 @@
             </properties>
         </profile>
     </profiles>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <inherited>true</inherited>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>2.5.3</version>
+                    <configuration>
+                        <descriptor>src/assembly/assembly.xml</descriptor>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>create-archive</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.6</version>
+                    <configuration>
+
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>default</id>
+                            <goals>
+                                <goal>resources</goal>
+                            </goals>
+                            <phase>process-resources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+
+
+                <plugin>
+                    <groupId>com.spotify</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>0.4.10</version>
+                    <configuration>
+                        <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
+                        <imageName>${docker.registry}${docker.namespace}/${docker.image}:${project.version}</imageName>
+                        <resources>
+                            <resource>
+                                <directory>${project.build.directory}</directory>
+                                <include>${project.build.finalNameWithExt}</include>
+                            </resource>
+                        </resources>
+                        <imageTags>
+                            <imageTag>${project.version}</imageTag>
+                            <imageTag>latest</imageTag>
+                        </imageTags>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>default-build</id>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                            <phase>package</phase>
+                        </execution>
+                        <!--<execution>-->
+                            <!--<id>default-deploy</id>-->
+                            <!--<goals>-->
+                                <!--<goal>push</goal>-->
+                            <!--</goals>-->
+                            <!--<phase>none</phase>-->
+                        <!--</execution>-->
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+    </build>
 
 </project>

@@ -1,10 +1,18 @@
 <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-    <id>bin</id>
+    <id>dist</id>
     <formats>
         <format>tar.gz</format>
     </formats>
+
+    <files>
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}${target.ext}</source>
+            <outputDirectory>${file.separator}</outputDirectory>
+            <destName>${project.artifactId}${target.ext}</destName>
+        </file>
+    </files>
 
     <fileSets>
         <fileSet>
@@ -32,12 +40,5 @@
             </includes>
         </fileSet>
 
-        <fileSet>
-            <directory>${project.build.directory}</directory>
-            <outputDirectory>${file.separator}</outputDirectory>
-            <includes>
-                <include>${project.build.finalName}</include>
-            </includes>
-        </fileSet>
     </fileSets>
 </assembly>

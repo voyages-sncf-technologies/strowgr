@@ -17,9 +17,34 @@
 
 
     <build>
-        <finalName>${project.artifactId}-${target.os}-${target.arch}</finalName>
+        <finalName>${project.artifactId}-${target.os}-${target.arch}-${project.version}</finalName>
         <sourceDirectory>${basedir}${file.separator}src${file.separator}main${file.separator}go</sourceDirectory>
+
+        <resources>
+            <resource>
+                <directory>src/docker</directory>
+                <targetPath>${project.build.directory}/docker-filtered</targetPath>
+                <includes>
+                    <include>Dockerfile</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
         <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+            </plugin>
+
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
                 <artifactId>mvn-golang-wrapper</artifactId>
@@ -56,6 +81,7 @@
                             </packages>
                             <targetOs>${target.os}</targetOs>
                             <targetArch>${target.arch}</targetArch>
+                            <resultName>${project.build.finalName}${target.ext}</resultName>
                         </configuration>
                     </execution>
                     <execution>
@@ -64,24 +90,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.5.3</version>
-                <configuration>
-                    <descriptor>src/assembly/assembly.xml</descriptor>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>create-archive</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
 
         </plugins>
     </build>

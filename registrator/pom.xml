@@ -13,10 +13,51 @@
     <artifactId>registrator</artifactId>
     <packaging>mvn-golang</packaging>
 
+    <profiles>
+        <profile>
+            <id>build-docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <inherited>true</inherited>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
-        <finalName>${artifactId}-${version}-${target.os}-${target.arch}</finalName>
-        <sourceDirectory>${basedir}${file.separator}src${file.separator}main${file.separator}go</sourceDirectory>
+
+        <resources>
+            <resource>
+                <directory>src/docker</directory>
+                <targetPath>${project.build.directory}/docker-filtered</targetPath>
+                <includes>
+                    <include>Dockerfile</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <finalName>${project.artifactId}-${target.os}-${target.arch}-${project.version}</finalName>
+        <sourceDirectory>${project.basedir}${file.separator}src${file.separator}main${file.separator}go
+        </sourceDirectory>
         <plugins>
+
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+            </plugin>
+
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
                 <artifactId>mvn-golang-wrapper</artifactId>
@@ -59,25 +100,17 @@
                         </goals>
                         <phase>none</phase>
                     </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.5.3</version>
-                <configuration>
-                    <descriptor>src/assembly/assembly.xml</descriptor>
-                </configuration>
-                <executions>
                     <execution>
-                        <id>create-archive</id>
-                        <phase>package</phase>
+                        <id>default-install</id>
                         <goals>
-                            <goal>single</goal>
+                            <goal>install</goal>
                         </goals>
+                        <phase>none</phase>
                     </execution>
                 </executions>
             </plugin>
+
+
 
         </plugins>
     </build>

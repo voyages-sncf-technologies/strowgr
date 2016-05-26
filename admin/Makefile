@@ -16,12 +16,11 @@ docker-builder:
 docker-build: docker-builder
 	docker run --rm -v $(CURDIR)/target:/dist -v maven:/root/.m2 $(IMAGE)-builder
 
-docker-image: dist
-	cp docker/* dist
-	docker build -t $(IMAGE):$(VERSION) dist
+docker-image: docker
+	cp docker/* target/docker
+	docker build -t $(IMAGE):$(VERSION) target/docker
 
 dist: target
-	rm -fr dist && mkdir dist
-	cp ${BUILDDIR}/admin-*.jar dist/app.jar
+	rm -fr target/docker && mkdir target/docker
+	cp ${BUILDDIR}/admin-*.jar target/docker/app.jar
 
-	
