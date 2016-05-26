@@ -11,7 +11,7 @@
 
     <modules>
         <module>admin-core</module>
-        <module>admin-repository</module>
+        <module>admin-consul</module>
         <module>admin-gui</module>
         <module>admin-nsq</module>
         <module>admin-template</module>

@@ -17,7 +17,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ConsulRepositoryTest {
+public class ConsulReaderTest {
 
     @Test
     public void should_return_value_when_status_in_range_200_299() throws ClientProtocolException {
@@ -40,7 +40,7 @@ public class ConsulRepositoryTest {
 
             // test
             try {
-                ConsulRepository.parseHttpResponse(httpResponse, this::getHttpEntity);
+                new ConsulReader(null).parseHttpResponse(httpResponse, this::getHttpEntity);
                 // check
                 fail("can't reach this point for status " + status);
             } catch (ClientProtocolException e) {
@@ -60,7 +60,7 @@ public class ConsulRepositoryTest {
 
             // test
             try {
-                ConsulRepository.parseHttpResponse(httpResponse, this::getHttpEntity);
+                new ConsulReader(null).parseHttpResponse(httpResponse, this::getHttpEntity);
                 // check
                 fail("can't reach this point for status " + status);
             } catch (ClientProtocolException e) {
@@ -91,13 +91,13 @@ public class ConsulRepositoryTest {
 
         // test
         if (with404) {
-            httpEntity = ConsulRepository.parseHttpResponseAccepting404(httpResponse, this::getHttpEntity);
+            httpEntity = new ConsulReader(null).parseHttpResponseAccepting404(httpResponse, this::getHttpEntity);
         } else {
-            httpEntity = ConsulRepository.parseHttpResponse(httpResponse, this::getHttpEntity);
+            httpEntity = new ConsulReader(null).parseHttpResponse(httpResponse, this::getHttpEntity);
         }
 
         // check
-        if(with404 && status == 404){
+        if (with404 && status == 404) {
             assertThat(httpEntity).isNotNull();
             assertThat(httpEntity.isPresent()).isFalse();
         } else {

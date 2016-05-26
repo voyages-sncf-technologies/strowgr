@@ -19,7 +19,7 @@
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
-            <artifactId>admin-repository</artifactId>
+            <artifactId>admin-consul</artifactId>
             <version>${parent.version}</version>
         </dependency>
         <dependency>
