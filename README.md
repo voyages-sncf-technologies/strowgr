@@ -1,12 +1,19 @@
 # strowgr
+
 A service discovery around Haproxy
 
+
+## Build
+
+Build the whole project:
+
 ```shell
-(cd sidekick && make docker-build && make docker-image)
+$ mvn package
 ```
 
-### Build all
-
+Build additionally docker images of `admin` and `sidekick`:
+                  
 ```shell
-make
+$ mvn package -Pdocker
 ```
+
