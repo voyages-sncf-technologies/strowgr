@@ -11,6 +11,8 @@ public abstract class Payload {
 
     private String correlationId;
 
+    protected Payload(){}
+
     public Payload(String correlationId) {
         this(correlationId, System.currentTimeMillis());
     }

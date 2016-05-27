@@ -32,7 +32,6 @@ public class RegisterServerPayload extends Payload {
                                  @JsonProperty("ip") String ip,
                                  @JsonProperty("port") String port,
                                  @JsonProperty("context") Map<String, String> context) {
-        super(null, null);
         this.context = checkNotNull(context, "context attribute is missing in RegisterServer event consume from NSQ");
         this.application = checkNotNull(application, "application attribute is missing in RegisterServer event consume from NSQ");
         this.platform = checkNotNull(platform, "platform attribute is missing in RegisterServer event consume from NSQ");
