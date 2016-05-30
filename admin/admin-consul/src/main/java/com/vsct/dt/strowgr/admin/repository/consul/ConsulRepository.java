@@ -78,45 +78,45 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
     @Override
     public void lock(EntryPointKey entryPointKey) {
+        String sessionId = null;
         try {
-            Session session;
             if (sessionLocal.get() == null) {
-                session = createSession(entryPointKey);
-                sessionLocal.set(session.ID);
+                sessionId = createSession(entryPointKey).get().ID;
+                sessionLocal.set(sessionId);
             } else {
-                LOGGER.warn("reuse session for key {}, session {}", sessionLocal.get());
+                LOGGER.warn("reuse session for key {}, session {}", sessionId);
             }
 
-            LOGGER.debug("attempt to acquire lock for key {} on session {}", entryPointKey, sessionLocal.get());
-            HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey + "/lock?acquire=" + sessionLocal.get());
+            LOGGER.debug("attempt to acquire lock for key {} on session {}", entryPointKey, sessionId);
+            HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey + "/lock?acquire=" + sessionId);
 
             /* TODO, implement wait with a blocking query */
-            Optional<Boolean> locked = Optional.of(Boolean.TRUE);
+            boolean locked = true;
             int count = 0;
-            while (!locked.orElseThrow((Supplier<RuntimeException>) () -> new IllegalStateException("can't read boolean from consul")) && (count++ < 10)) {
-                locked = client.execute(acquireEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
-                if (!locked.orElseThrow((Supplier<RuntimeException>) () -> new IllegalStateException("can't read boolean from consul"))) {
+            while (!locked && (count++ < 10)) {
+                locked = client.execute(acquireEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity)).get();
+                if (!locked) {
                     /* Avoid crazy spinning*/
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
-                        LOGGER.error("error in consul repository for session " + sessionLocal.get() + " and key " + entryPointKey, e);
+                        LOGGER.error("error in consul repository for session " + sessionId + " and key " + entryPointKey, e);
                     }
                 } else {
-                    LOGGER.debug("lock acquired for key {} on session {}", entryPointKey, sessionLocal.get());
+                    LOGGER.debug("lock acquired for key {} on session {}", entryPointKey, sessionId);
                 }
             }
 
         } catch (IOException e) {
-            LOGGER.error("error in consul repository for session " + sessionLocal.get() + " and key " + entryPointKey, e);
+            LOGGER.error("error in consul repository for session " + sessionId + " and key " + entryPointKey, e);
         }
     }
 
-    private Session createSession(EntryPointKey entryPointKey) throws IOException {
+    private Optional<Session> createSession(EntryPointKey entryPointKey) throws IOException {
         return createSession(entryPointKey, 10, CONSUL_BEHAVIOR.RELEASE);
     }
 
-    private Session createSession(EntryPointKey entryPointKey, Integer ttlInSec, CONSUL_BEHAVIOR behavior) throws IOException {
+    private Optional<Session> createSession(EntryPointKey entryPointKey, Integer ttlInSec, CONSUL_BEHAVIOR behavior) throws IOException {
         HttpPut createSessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/create");
         if (ttlInSec != null) {
             String payload = "{\"Behavior\":\"" + behavior.value + "\",\"TTL\":\"" + ttlInSec + "s\", \"Name\":\"" + entryPointKey.getID() + "\"}";
@@ -124,10 +124,8 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             createSessionURI.setEntity(new StringEntity(payload));
         }
         Optional<Session> session = client.execute(createSessionURI, response -> consulReader.parseHttpResponse(response, consulReader::parseSessionFromHttpEntity));
-        if (session.isPresent()) {
-            LOGGER.debug("get session {} for key {}", session.get().ID, entryPointKey);
-        }
-        return session.orElseThrow(() -> new IllegalStateException("can't get session"));
+        session.ifPresent(s -> LOGGER.debug("get session {} for key {}", s.ID, entryPointKey));
+        return session;
     }
 
     @Override
@@ -237,9 +235,9 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                the session and thus the committing config will also be lost,
                TTL cannot be honored in that corner case.
              */
-            Session session = createSession(entryPointKey, ttl, CONSUL_BEHAVIOR.DELETE);
+            String sessionId = createSession(entryPointKey, ttl, CONSUL_BEHAVIOR.DELETE).map(s -> s.ID).get();
 
-            HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/committing?acquire=" + session.ID);
+            HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/committing?acquire=" + sessionId);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             mapper.writeValue(out, new CommittingConfigurationJson(correlationId, configuration));
