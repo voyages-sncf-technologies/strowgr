@@ -1,0 +1,8 @@
+.idea
+bin
+dist
+*.iml
+haproxy-default-name.conf*
+
+/test/hapadm/OCE/Config
+version-1

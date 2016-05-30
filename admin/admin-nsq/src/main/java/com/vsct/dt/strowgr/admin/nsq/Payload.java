@@ -7,24 +7,34 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public abstract class Payload {
 
-    private final long timestamp;
+    private Long timestamp;
 
-    private final String correlationId;
+    private String correlationId;
+
+    protected Payload(){}
 
     public Payload(String correlationId) {
         this(correlationId, System.currentTimeMillis());
     }
 
-    public Payload(String correlationId, long timestamp) {
-        this.correlationId = checkNotNull(correlationId);
-        this.timestamp = checkNotNull(timestamp);
+    public Payload(String correlationId, Long timestamp) {
+        this.correlationId = correlationId;
+        this.timestamp = timestamp;
     }
 
-    public long getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 
     public String getCorrelationId() {
         return correlationId;
+    }
+
+    public void setCorrelationId(String correlationId) {
+        this.correlationId = correlationId;
+    }
+
+    public void setTimestamp(Long timestamp) {
+        this.timestamp = timestamp;
     }
 }

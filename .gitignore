@@ -1,6 +1,9 @@
+/webapp/dist
 .idea
+bin
 *.iml
 **/target
 .DS_Store
 **/strowgr.yaml
-**/dependency-reduced-pom.xml
+**/dependency-reduced-pom.xmlsidekick/haproxy-default-name.conf*
+

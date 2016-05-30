@@ -27,6 +27,12 @@ public class RegisterServerConsumer {
             RegisterServerPayload payload = null;
             try {
                 payload = mapper.readValue(message.getMessage(), RegisterServerPayload.class);
+                if (payload.getCorrelationId() == null) {
+                    payload.setCorrelationId(Arrays.toString(message.getId()));
+                }
+                if (payload.getTimestamp() == null) {
+                    payload.setTimestamp(message.getTimestamp().getTime());
+                }
             } catch (IOException e) {
                 LOGGER.error("can't deserialize the payload of message at " + message.getTimestamp() + ", id=" + Arrays.toString(message.getId()) + ": " + Arrays.toString(message.getMessage()), e);
                 //Avoid republishing message and stop processing

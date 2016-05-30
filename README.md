@@ -1,22 +1,19 @@
 # strowgr
 
-A service discovery around Haproxy.
+A service discovery around Haproxy
 
-# components
 
-## admin
-## daemon
-## aggregator
-## registrator
+## Build
 
-# technical stack
+Build the whole project:
 
-## dropwizard
-## go
-## nsq
-## consul
-## cassandra
+```shell
+$ mvn package
+```
 
-# install
-
+Build additionally docker images of `admin` and `sidekick`:
+                  
+```shell
+$ mvn package -Pdocker
+```
 

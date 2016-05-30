@@ -1,0 +1,119 @@
+version: '2'
+
+services:
+
+  # Single instance of consul
+  consul:
+    image: gliderlabs/consul-server
+    container_name: consul
+    command: -bootstrap
+    ports:
+      - 8500:8500
+
+  # Single instance of nsqlookupd
+  nsqlookupd:
+    image: nsqio/nsq
+    container_name: nsqlookupd
+    command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160
+    ports:
+      - "4160:4160"
+      - "4161:4161"
+
+  # Only one producer
+  nsqd-slave:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-slave  -tcp-address=nsqd-slave:4150
+    ports:
+      - "14150:4150"
+      - "14151:4151"
+    depends_on:
+      - nsqlookupd
+
+  nsqd-master:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-master -tcp-address=nsqd-master:4150
+    ports:
+      - "24150:4150"
+      - "24151:4151"
+    depends_on:
+      - nsqlookupd
+
+  #  HA proxies
+  ha-master:
+    image: strowgr/sidekick:latest
+    volumes:
+      - ./data/master/sidekick.conf:/sidekick.conf
+    ports:
+      - 52000:52000
+      - 50000
+      - 50080:50080
+    extra_hosts:
+      - "larimar:1.2.3.4"
+
+  ha-slave:
+    image: strowgr/sidekick:latest
+    volumes:
+      - ./data/slave/sidekick.conf:/sidekick.conf
+    ports:
+      - 50000
+      - 52001:52000
+    extra_hosts:
+      - "larimar:1.2.3.4"
+
+  # NSQ admin
+  nsq-admin:
+    image: nsqio/nsq
+    ports:
+      - "4171:4171"
+    command: /nsqadmin -http-address="nsq-admin:4171" --lookupd-http-address=nsqlookupd:4161
+    depends_on:
+      - nsqlookupd
+      - nsqd-slave
+      - nsqd-master
+
+  registrator:
+    image: strowgr/registrator:latest
+    command: -url http://192.168.99.100:8080 -address 192.168.99.100 -verbose
+#    privileged: true
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+     - nsq-admin
+
+  admin:
+    image: strowgr/admin:latest
+    ports:
+      - 8080:8080
+    command: server /server.yml
+    volumes:
+      - ./data/admin/server.yml:/server.yml
+
+  nsqd-admin:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-admin  -tcp-address=nsqd-admin:4150
+    ports:
+      - "4150"
+      - "4151"
+    depends_on:
+      - nsqlookupd
+
+  # FANCY STUFF
+
+  webpage:
+    image: nginx
+    ports:
+     - 80:80
+    volumes:
+     - ./static/:/usr/share/nginx/html
+     - ./static/nginx.conf:/etc/nginx/nginx.conf
+
+
+
+#networks:
+#  default:
+#    driver: bridge
+#    ipam:
+#     driver: default
+#     config:
+#       - subnet: 192.168.10.0/24
+#         gateway: 192.168.10.254

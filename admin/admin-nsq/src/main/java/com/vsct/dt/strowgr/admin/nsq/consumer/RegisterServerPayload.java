@@ -24,9 +24,7 @@ public class RegisterServerPayload extends Payload {
     private final Map<String, String> context;
 
     @JsonCreator
-    public RegisterServerPayload(@JsonProperty("correlationId") String correlationId,
-                                 @JsonProperty("timestamp") Long timestamp,
-                                 @JsonProperty("application") String application,
+    public RegisterServerPayload(@JsonProperty("application") String application,
                                  @JsonProperty("platform") String platform,
                                  @JsonProperty("backend") String backend,
                                  @JsonProperty("id") String id,
@@ -34,7 +32,6 @@ public class RegisterServerPayload extends Payload {
                                  @JsonProperty("ip") String ip,
                                  @JsonProperty("port") String port,
                                  @JsonProperty("context") Map<String, String> context) {
-        super(correlationId, timestamp);
         this.context = checkNotNull(context, "context attribute is missing in RegisterServer event consume from NSQ");
         this.application = checkNotNull(application, "application attribute is missing in RegisterServer event consume from NSQ");
         this.platform = checkNotNull(platform, "platform attribute is missing in RegisterServer event consume from NSQ");

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.vsct.dt.strowgr</groupId>
+    <artifactId>strowgr-parent</artifactId>
+    <packaging>pom</packaging>
+    <version>1.0-SNAPSHOT</version>
+
+    <modules>
+        <!--Java modules-->
+        <module>admin</module>
+        <module>aggregator</module>
+        <!--GO modules-->
+        <module>sidekick</module>
+        <module>registrator</module>
+    </modules>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <go.sdk.version>1.6</go.sdk.version>
+        <java.version>1.8</java.version>
+        <docker.registry>dockerregistrydev.socrate.vsct.fr/</docker.registry>
+        <docker.namespace>strowgr</docker.namespace>
+        <docker.image>${project.artifactId}</docker.image>
+        <project.build.finalNameWithExt>${project.build.finalName}</project.build.finalNameWithExt>
+
+    </properties>
+
+    <profiles>
+        <!--Go profile-->
+        <profile>
+            <id>target-linux</id>
+            <properties>
+                <target.os>linux</target.os>
+                <target.arch>amd64</target.arch>
+                <target.ext></target.ext>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+
+        <profile>
+            <id>target-windows</id>
+            <properties>
+                <target.os>windows</target.os>
+                <target.arch>amd64</target.arch>
+                <target.ext>.exe</target.ext>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>target-darwin</id>
+            <properties>
+                <target.os>darwin</target.os>
+                <target.arch>amd64</target.arch>
+                <target.ext></target.ext>
+            </properties>
+        </profile>
+        <profile>
+            <id>docker</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>com.spotify</groupId>
+                            <artifactId>docker-maven-plugin</artifactId>
+                            <version>0.4.10</version>
+                            <configuration>
+                                <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
+                                <imageName>${docker.registry}${docker.namespace}/${docker.image}:${project.version}
+                                </imageName>
+                                <resources>
+                                    <resource>
+                                        <directory>${project.build.directory}</directory>
+                                        <include>${project.build.finalNameWithExt}</include>
+                                    </resource>
+                                </resources>
+                                <imageTags>
+                                    <imageTag>${project.version}</imageTag>
+                                    <imageTag>latest</imageTag>
+                                </imageTags>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <id>default-build</id>
+                                    <goals>
+                                        <goal>build</goal>
+                                    </goals>
+                                    <phase>package</phase>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <inherited>true</inherited>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>2.5.3</version>
+                    <configuration>
+                        <descriptor>src/assembly/assembly.xml</descriptor>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>create-archive</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.6</version>
+                    <configuration>
+
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>default</id>
+                            <goals>
+                                <goal>resources</goal>
+                            </goals>
+                            <phase>process-resources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+
+    </build>
+
+</project>
