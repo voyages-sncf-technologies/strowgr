@@ -31,7 +31,7 @@
 
     <profiles>
         <profile>
-            <id>golang-proxy</id>
+            <id>golang-http-proxy</id>
             <build>
                 <plugins>
                     <plugin>
