@@ -51,6 +51,10 @@
                 <version>2.0.0</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <env>
+                        <http_proxy>bluelagoon-bck:22222</http_proxy>
+                        <https_proxy>bluelagoon-bck:22222</https_proxy>
+                    </env>
                     <goVersion>${go.sdk.version}</goVersion>
                     <command />
                 </configuration>
