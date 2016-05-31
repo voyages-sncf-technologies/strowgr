@@ -31,61 +31,40 @@ class ConsulReader {
         this.mapper = mapper;
     }
 
+    <T> Optional<T> parseHttpResponse(HttpResponse httpResponse, Function<HttpEntity, Optional<T>> method) throws ClientProtocolException {
+        return parseHttpResponse(httpResponse, method, false);
+    }
+
+    <T> Optional<T> parseHttpResponseAccepting404(HttpResponse httpResponse, Function<HttpEntity, Optional<T>> method) throws ClientProtocolException {
+        return parseHttpResponse(httpResponse, method, true);
+    }
+
     /**
      * Read HttpResponse into HttpEntity and apply method with the result.
      * If result http status is not between 200 and 299, an exception is raised
      *
      * @param httpResponse response to read
      * @param method       method to apply to the read result
+     * @param accept404    whether to return or not an empty result if a 404 occurrs
      * @param <T>          Type of the method application
      * @return the result of the method application
      * @throws ClientProtocolException thrown if the http status is not between 200 and 299 including
      */
-    <T> Optional<T> parseHttpResponse(HttpResponse httpResponse, Function<HttpEntity, Optional<T>> method) throws ClientProtocolException {
-        int status = httpResponse.getStatusLine().getStatusCode();
-        HttpEntity entity = httpResponse.getEntity();
-        if (status >= 200 && status < 300) {
-            return method.apply(entity);
-        } else {
-            String content = "no content";
-            if (entity != null) {
-                try {
-                    content = EntityUtils.toString(entity);
-                } catch (IOException e) {
-                    LOGGER.error("can't parse content from consul", e);
-                }
-            }
-            throw new ClientProtocolException("Unexpected response status: " + status + ": " + httpResponse.getStatusLine().getReasonPhrase() + ", entity is " + content);
-        }
-    }
-
-    /**
-     * Read HttpResponse into HttpEntity and apply method with the result.
-     * If result http status is not between 200 and 299 or is 404, an exception is raised.
-     * If the http status is 404, an empty Optional is returned.
-     *
-     * @param httpResponse response to read
-     * @param method       method to apply to the read result
-     * @param <T>          Type of the method application
-     * @return the result of the method application, or Optional.empty() if 404
-     * @throws ClientProtocolException thrown if the http status is not between 200 and 299 including or 404
-     */
-    <T> Optional<T> parseHttpResponseAccepting404(HttpResponse httpResponse, Function<HttpEntity, Optional<T>> method) throws ClientProtocolException {
+    private <T> Optional<T> parseHttpResponse(HttpResponse httpResponse, Function<HttpEntity, Optional<T>> method, boolean accept404) throws ClientProtocolException {
         int status = httpResponse.getStatusLine().getStatusCode();
         HttpEntity entity = httpResponse.getEntity();
         Optional<T> result = Optional.empty();
-
         if (status >= 200 && status < 300) {
             result = method.apply(entity);
-        } else if (status != 404) {
-            String content = "no content";
-            if (entity != null) {
+        } else if (status != 404 || !accept404){
+            String content = Optional.ofNullable(entity).map(myEntity -> {
                 try {
-                    content = EntityUtils.toString(entity);
+                    return EntityUtils.toString(myEntity);
                 } catch (IOException e) {
                     LOGGER.error("can't parse content from consul", e);
+                    return null;
                 }
-            }
+            }).orElse("no content");
             throw new ClientProtocolException("Unexpected response status: " + status + ": " + httpResponse.getStatusLine().getReasonPhrase() + ", entity is " + content);
         }
         return result;
