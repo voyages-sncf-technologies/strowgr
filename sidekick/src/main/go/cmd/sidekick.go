@@ -77,9 +77,8 @@ func main() {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.NodeId(), config)
-		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
-		consumer.SetLogger(log,log.GetLevel())
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), properties.NodeId(), config)
+		consumer.AddHandler(nsq.HandlerFunc(onDeleteRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
 			log.Panic("Could not connect")
