@@ -279,3 +279,17 @@ func (hap *Haproxy) Delete() {
 		}).Info("HAproxy deleted")
 	}
 }
+
+func (hap *Haproxy) Stop() {
+	reloadScript := hap.getReloadScript()
+	output, err := exec.Command("sh", reloadScript, "stop").Output()
+	if err != nil {
+		log.WithFields(hap.Context.Fields()).WithError(err).Error("Error stop")
+	} else {
+		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
+			"reloadScript": reloadScript,
+			"cmd":          string(output[:]),
+		}).Debug("Stop succeeded")
+	}
+	return err
+}

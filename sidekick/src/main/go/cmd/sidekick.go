@@ -273,6 +273,7 @@ func reloadMaster(data *sidekick.EventMessage) error {
 func deleteHaproxy(data *sidekick.EventMessage) error {
 	context := data.Context()
 	hap := sidekick.NewHaproxy("", properties, data.HapVersion, context)
+	hap.Stop();
 	hap.Delete();
 	return nil
 }
