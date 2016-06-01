@@ -28,6 +28,7 @@ var (
 	producer    *nsq.Producer
 	syslog        *sidekick.Syslog
 	reloadChan = make(chan sidekick.ReloadEvent)
+	deleteChan = make(chan sidekick.ReloadEvent)
 	lastSyslogReload = time.Now()
 )
 
@@ -69,6 +70,19 @@ func main() {
 		err := restApi.Start()
 		if err != nil {
 			log.Fatal("Cannot start api")
+		}
+	}()
+
+	// Start delete consumer
+	go func() {
+		defer wg.Done()
+		wg.Add(1)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.NodeId(), config)
+		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
+		consumer.SetLogger(log,log.GetLevel())
+		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		if err != nil {
+			log.Panic("Could not connect")
 		}
 	}()
 
@@ -191,9 +205,15 @@ func loadProperties() {
 
 func filteredHandler(event string, message *nsq.Message, target string, f sidekick.HandlerFunc) error {
 	defer message.Finish()
-	match, err := daemon.Is(target)
-	if err != nil {
-		return err
+	var match bool
+	if target == "any" {
+		match = true
+	} else {
+		var err error
+		match, err = daemon.Is(target)
+		if err != nil {
+			return err
+		}
 	}
 
 	if match {
@@ -205,6 +225,8 @@ func filteredHandler(event string, message *nsq.Message, target string, f sideki
 		}
 
 		switch event {
+		case "delete_requested":
+			deleteChan <- sidekick.ReloadEvent{F: f, Message: data}
 		case "commit_requested":
 			reloadChan <- sidekick.ReloadEvent{F: f, Message: data}
 		case "commit_slave_completed":
@@ -229,6 +251,9 @@ func onCommitSlaveRequested(message *nsq.Message) error {
 func onCommitCompleted(message *nsq.Message) error {
 	return filteredHandler("commit_completed", message, "slave", logAndForget)
 }
+func onDeleteRequested(message *nsq.Message) error {
+	return filteredHandler("delete_requested", message, "any", deleteHaproxy)
+}
 
 // logAndForget is a generic function to just log event
 func logAndForget(data *sidekick.EventMessage) error {
@@ -242,6 +267,13 @@ func reloadSlave(data *sidekick.EventMessage) error {
 
 func reloadMaster(data *sidekick.EventMessage) error {
 	return reloadHaProxy(data, "master", "commit_completed_", data.Context().UpdateTimestamp())
+}
+
+func deleteHaproxy(data *sidekick.EventMessage) error {
+	context := data.Context()
+	hap := sidekick.NewHaproxy("", properties, data.HapVersion, context)
+	hap.Delete();
+	return nil
 }
 
 func reloadHaProxy(data *sidekick.EventMessage, role string, topic string, message interface{}) error {
@@ -278,6 +310,7 @@ func bodyToData(jsonStream []byte) (*sidekick.EventMessage, error) {
 func publishContextMessage(topic_prefix string, context sidekick.Context) error {
 	return publishMessage(topic_prefix, context, context.UpdateTimestamp())
 }
+
 func publishMessage(topic_prefix string, data interface{}, context sidekick.Context) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId

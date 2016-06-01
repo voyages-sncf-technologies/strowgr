@@ -265,3 +265,17 @@ func (hap *Haproxy) getReloadScript() string {
 func (hap *Haproxy) getHapBinary() string {
 	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", hap.Version)
 }
+
+func (hap *Haproxy) Delete() {
+	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
+	err := os.RemoveAll(baseDir)
+	if err != nil {
+		log.WithError(err).WithFields(hap.Context.Fields()).WithFields(log.Fields{
+			"dir": baseDir,
+		}).Error("Failed to delete haproxy")
+	} else {
+		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
+			"dir": baseDir,
+		}).Info("HAproxy deleted")
+	}
+}
