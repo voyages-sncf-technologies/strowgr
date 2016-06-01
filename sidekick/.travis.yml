@@ -1,0 +1,9 @@
+language: go
+
+go:
+  - 1.6
+  - tip
+install:
+  - go get github.com/Sirupsen/logrus
+  - go get github.com/BurntSushi/toml
+  - go get github.com/bitly/go-nsq

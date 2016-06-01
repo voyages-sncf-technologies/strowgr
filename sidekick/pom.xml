@@ -52,6 +52,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <goVersion>${go.sdk.version}</goVersion>
+                    <command />
                 </configuration>
                 <executions>
                     <execution>
@@ -68,6 +69,7 @@
                                 <package>github.com/BurntSushi/toml</package>
                                 <package>github.com/bitly/go-nsq</package>
                             </packages>
+                            <goVersion/>
                         </configuration>
                     </execution>
                     <execution>
@@ -82,6 +84,7 @@
                             <targetOs>${target.os}</targetOs>
                             <targetArch>${target.arch}</targetArch>
                             <resultName>${project.build.finalName}${target.ext}</resultName>
+                            <goVersion/>
                         </configuration>
                     </execution>
                     <execution>
