@@ -22,8 +22,8 @@
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
-            <artifactId>admin-repository</artifactId>
-            <version>${project.parent.version}</version>
+            <artifactId>admin-consul</artifactId>
+            <version>${parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>

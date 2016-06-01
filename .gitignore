@@ -2,5 +2,8 @@
 .idea
 bin
 *.iml
-sidekick/haproxy-default-name.conf*
+**/target
+.DS_Store
+**/strowgr.yaml
+**/dependency-reduced-pom.xmlsidekick/haproxy-default-name.conf*
 
