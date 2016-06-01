@@ -280,7 +280,7 @@ func (hap *Haproxy) Delete() {
 	}
 }
 
-func (hap *Haproxy) Stop() error{
+func (hap *Haproxy) Stop() error {
 	reloadScript := hap.getReloadScript()
 	output, err := exec.Command("sh", reloadScript, "stop").Output()
 	if err != nil {
