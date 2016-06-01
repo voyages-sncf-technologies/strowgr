@@ -279,6 +279,25 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
+    public Boolean removeEntrypoint(EntryPointKey entryPointKey) {
+        Boolean removed = null; // null while consul has not return a response without exception
+        HttpDelete deleteEntrypointUri = new HttpDelete("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "?recurse");
+        Optional<Boolean> repositoryResponse;
+        try {
+            repositoryResponse = client.execute(deleteEntrypointUri, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
+            if (repositoryResponse.isPresent()) {
+                removed = repositoryResponse.get();
+                LOGGER.debug("entrypoint {} has been deleted from consul ? {}", entryPointKey, repositoryResponse.get());
+            } else {
+                LOGGER.error("entrypoint {} can't be deleted on consul. Consul return an empty response");
+            }
+        } catch (IOException e) {
+            LOGGER.error("problem in consul request for deleting entrypoint " + entryPointKey, e);
+        }
+        return removed;
+    }
+
+    @Override
     public void setCurrentConfiguration(EntryPointKey key, EntryPoint configuration) {
         try {
             HttpPut setCurrentURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/current");
