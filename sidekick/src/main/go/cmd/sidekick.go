@@ -130,6 +130,8 @@ func main() {
 			select {
 			case reload := <-reloadChan:
 				reload.Execute()
+			case delete := <-deleteChan:
+				delete.Execute()
 			case <-stopChan:
 				return
 			}
