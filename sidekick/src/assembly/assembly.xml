@@ -40,5 +40,15 @@
             </includes>
         </fileSet>
 
+        <fileSet>
+            <directory>${project.basedir}${file.separator}src${file.separator}main${file.separator}scripts</directory>
+            <outputDirectory>scripts</outputDirectory>
+            <includes>
+                <include>RELOAD</include>
+                <include>BOOT</include>
+                <include>SHUT</include>
+            </includes>
+        </fileSet>
+
     </fileSets>
 </assembly>
