@@ -90,41 +90,49 @@
         </dependency>
     </dependencies>
 
-    <build>
+<profiles>
 
-        <resources>
-            <resource>
-                <directory>src/docker</directory>
-                <targetPath>${project.build.directory}/docker-filtered</targetPath>
-                <includes>
-                    <include>Dockerfile</include>
-                </includes>
-                <filtering>true</filtering>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-        </resources>
+    <profile>
+        <id>docker</id>
+        <build>
 
-        <plugins>
-            <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <configuration>
-                    <imageName>strowgr/admin-gui</imageName>
-                    <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
-                    <resources>
-                        <resource>
-                            <targetPath>/</targetPath>
-                            <directory>${project.build.directory}</directory>
-                            <includes>
-                                <include>${project.build.finalName}.jar</include>
-                            </includes>
-                        </resource>
-                    </resources>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+            <resources>
+                <resource>
+                    <directory>src/docker</directory>
+                    <targetPath>${project.build.directory}/docker-filtered</targetPath>
+                    <includes>
+                        <include>Dockerfile</include>
+                    </includes>
+                    <filtering>true</filtering>
+                </resource>
+                <resource>
+                    <directory>src/main/resources</directory>
+                </resource>
+            </resources>
+
+            <plugins>
+                <plugin>
+                    <groupId>com.spotify</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <configuration>
+                        <imageName>strowgr/admin-gui</imageName>
+                        <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
+                        <resources>
+                            <resource>
+                                <targetPath>/</targetPath>
+                                <directory>${project.build.directory}</directory>
+                                <includes>
+                                    <include>${project.build.finalName}.jar</include>
+                                </includes>
+                            </resource>
+                        </resources>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </build>
+    </profile>
+
+</profiles>
+
 
 </project>
