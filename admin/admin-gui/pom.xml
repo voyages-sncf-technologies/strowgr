@@ -93,7 +93,7 @@
 <profiles>
 
     <profile>
-        <id>docker</id>
+        <id>build-docker</id>
         <build>
 
             <resources>

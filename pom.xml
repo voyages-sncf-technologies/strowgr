@@ -82,7 +82,7 @@
             </properties>
         </profile>
         <profile>
-            <id>docker</id>
+            <id>build-docker</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
