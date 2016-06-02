@@ -23,7 +23,7 @@
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
             <artifactId>admin-consul</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
