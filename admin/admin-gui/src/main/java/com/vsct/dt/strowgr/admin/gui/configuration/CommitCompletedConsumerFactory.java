@@ -1,23 +1,31 @@
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
-import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedConsumer;
-import io.dropwizard.lifecycle.Managed;
-import io.dropwizard.setup.Environment;
+import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedPayload;
+import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 /**
+ * Configuration factory from Dropwizard for CommitCompletedConsumer NSQ.
+ *
  * Created by william_montaz on 16/02/2016.
  */
 public class CommitCompletedConsumerFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumerFactory.class);
+
+    // TODO externalize mapper Jackson for a more controlled use of serialization/deserialization
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @NotEmpty
     private String topic;
@@ -32,22 +40,22 @@ public class CommitCompletedConsumerFactory {
         this.topic = topic;
     }
 
-    public CommitCompletedConsumer build(NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer, Environment environment) {
-        CommitCompletedConsumer commitCompletedConsumer = new CommitCompletedConsumer(getTopic(), lookup, haproxy, consumer);
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                LOGGER.info("Starting CommitCompletedConsumer");
-                commitCompletedConsumer.start();
+    public NSQConsumer build(NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer) {
+        return new NSQConsumer(lookup, topic + haproxy, "admin", (message) -> {
+            CommitCompletedPayload payload = null;
+            try {
+                payload = mapper.readValue(message.getMessage(), CommitCompletedPayload.class);
+            } catch (IOException e) {
+                LOGGER.error("can't deserialize the payload:" + Arrays.toString(message.getMessage()), e);
+                //Avoid republishing message and stop processing
+                message.finished();
+                return;
             }
 
-            @Override
-            public void stop() throws Exception {
-                LOGGER.info("Stopping CommitCompletedConsumer");
-                commitCompletedConsumer.stop();
-            }
+            CommitSuccessEvent event = new CommitSuccessEvent(payload.getCorrelationId(), new EntryPointKeyVsctImpl(payload.getApplication(), payload.getPlatform()));
+            consumer.accept(event);
+            message.finished();
         });
-        return commitCompletedConsumer;
     }
 
 }
