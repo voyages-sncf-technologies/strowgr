@@ -148,7 +148,11 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
 
         /* Exception mappers */
-        environment.jersey().register((ExceptionMapper<IncompleteConfigurationException>) e -> Response.status(500).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build());
-    }
+        environment.jersey().register(new ExceptionMapper<IncompleteConfigurationException>() {
+            @Override
+            public Response toResponse(IncompleteConfigurationException e) {
+                return Response.status(500).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
+            }
+        });    }
 
 }
