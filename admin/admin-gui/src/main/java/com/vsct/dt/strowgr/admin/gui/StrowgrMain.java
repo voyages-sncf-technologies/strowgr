@@ -17,6 +17,8 @@
 
 package com.vsct.dt.strowgr.admin.gui;
 
+import com.github.brainlag.nsq.NSQConsumer;
+import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.*;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
@@ -27,7 +29,7 @@ import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
-import com.vsct.dt.strowgr.admin.nsq.producer.Producer;
+import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
 import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.generator.MustacheTemplateGenerator;
@@ -101,16 +103,27 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         eventBus.register(eventHandler);
 
         /* NSQ Consumers */
-        NSQLookup lookup = configuration.getNsqLookupfactory().build(environment);
-        configuration.getCommitCompletedConsumerFactory().build(lookup, configuration.getDefaultHAPName(), eventBus::post, environment);
-        configuration.getCommitFailedConsumerFactory().build(lookup, configuration.getDefaultHAPName(), eventBus::post, environment);
-        configuration.getRegisterServerMessageConsumerFactory().build(lookup, eventBus::post, environment);
+        // retrieve NSQLookup configuration
+        NSQLookup nsqLookup = configuration.getNsqLookupfactory().build();
+        // initialize NSQConsumer for commit_completed topic which forwards to EventBus
+        NSQConsumer nsqConsumerCommitCompleted = configuration.getCommitCompletedConsumerFactory().build(nsqLookup, configuration.getDefaultHAPName(), eventBus::post);
+        // initialize NSQConsumer for commit_failed topic which forwards to EventBus
+        NSQConsumer nsqConsumerCommitFailed = configuration.getCommitFailedConsumerFactory().build(nsqLookup, configuration.getDefaultHAPName(), eventBus::post);
+        // initialize NSQConsumer for register_server topic which forwards to EventBus
+        NSQConsumer nsqConsumerRegisterServer = configuration.getRegisterServerMessageConsumerFactory().build(nsqLookup, eventBus::post);
+
+        // register NSQ consumers to lifecycle
+        // TODO use a managed ServiceExecutor (environment.lifecycle().executorService()) and share it with all NSQConsumer ({@code NSQConsumer#setExecutor}) ?
+        environment.lifecycle().manage(new NSQConsumerManager(nsqConsumerCommitCompleted));
+        environment.lifecycle().manage(new NSQConsumerManager(nsqConsumerCommitFailed));
+        environment.lifecycle().manage(new NSQConsumerManager(nsqConsumerRegisterServer));
 
         /* NSQ Producers */
-        Producer producer = configuration.getNsqProducerFactory().build(environment);
-
-        CommitBeginEventListener commitBeginEventListener = new CommitBeginEventListener(producer);
-        eventBus.register(commitBeginEventListener);
+        NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();
+        // manage NSQProducer lifecycle by Dropwizard
+        environment.lifecycle().manage(new NSQProducerManager(nsqProducer));
+        // Pipeline from eventbus to NSQ producer
+        eventBus.register(new ToNSQSubscriber(new NSQDispatcher(nsqProducer)));
 
         /* Commit schedulers */
         configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
@@ -135,12 +148,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
 
         /* Exception mappers */
-        environment.jersey().register(new ExceptionMapper<IncompleteConfigurationException>() {
-            @Override
-            public Response toResponse(IncompleteConfigurationException e) {
-                return Response.status(500).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
-            }
-        });
+        environment.jersey().register((ExceptionMapper<IncompleteConfigurationException>) e -> Response.status(500).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build());
     }
 
 }

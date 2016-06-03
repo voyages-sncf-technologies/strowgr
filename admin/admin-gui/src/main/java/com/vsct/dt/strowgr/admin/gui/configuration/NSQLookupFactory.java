@@ -20,13 +20,14 @@ package com.vsct.dt.strowgr.admin.gui.configuration;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.brainlag.nsq.lookup.DefaultNSQLookup;
 import com.github.brainlag.nsq.lookup.NSQLookup;
-import io.dropwizard.setup.Environment;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
 /**
+ * NSQLookupFactory for reading NSQLookupd configuration from dropwizard yaml.
+ *
  * Created by william_montaz on 16/02/2016.
  */
 public class NSQLookupFactory {
@@ -58,7 +59,7 @@ public class NSQLookupFactory {
         this.port = port;
     }
 
-    public NSQLookup build(Environment environment) {
+    public NSQLookup build() {
         NSQLookup lookup = new DefaultNSQLookup();
         lookup.addLookupAddress(getHost(), getPort());
         return lookup;

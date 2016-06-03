@@ -18,9 +18,7 @@
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.vsct.dt.strowgr.admin.nsq.producer.Producer;
-import io.dropwizard.lifecycle.Managed;
-import io.dropwizard.setup.Environment;
+import com.github.brainlag.nsq.NSQProducer;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +27,8 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
 /**
+ * NSQProducerFactory for reading NSQProducer configuration from dropwizard yaml.
+ *
  * Created by william_montaz on 16/02/2016.
  */
 public class NSQProducerFactory {
@@ -41,9 +41,6 @@ public class NSQProducerFactory {
     @Min(1)
     @Max(65535)
     private int port;
-
-    @NotEmpty
-    private String topic;
 
     @JsonProperty
     public String getHost() {
@@ -65,32 +62,11 @@ public class NSQProducerFactory {
         this.port = port;
     }
 
-    @JsonProperty
-    public String getTopic() {
-        return topic;
-    }
-
-    @JsonProperty
-    public void setTopic(String topic) {
-        this.topic = topic;
-    }
-
-    public Producer build(Environment environment) {
-        Producer producer = new Producer(getHost(), getPort(), getTopic());
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                LOGGER.info("Starting NSQProducer");
-                producer.start();
-            }
-
-            @Override
-            public void stop() throws Exception {
-                LOGGER.info("Stopping NSQProducer");
-                producer.stop();
-            }
-        });
-        return producer;
+    public NSQProducer build() {
+        NSQProducer nsqProducer = new NSQProducer();
+        nsqProducer.addAddress(getHost(), getPort());
+        LOGGER.info("read NSQ Producer configuration with host:{}, port: {}", getHost(), getPort());
+        return nsqProducer;
     }
 
 }

@@ -27,7 +27,6 @@ nsqLookup:
 nsqProducer:
   host: parisiancocktail
   port: 54150
-  topic: commit_requested_
 commitCompletedConsumer:
   topic: commit_completed_
 commitFailedConsumer:

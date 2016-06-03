@@ -18,19 +18,22 @@
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
-import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedConsumer;
-import io.dropwizard.lifecycle.Managed;
-import io.dropwizard.setup.Environment;
+import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedPayload;
+import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 /**
- * Created by william_montaz on 16/02/2016.
+ * Configuration factory from Dropwizard for CommitFailedConsumer NSQ.
  */
 public class CommitFailedConsumerFactory {
 
@@ -49,22 +52,24 @@ public class CommitFailedConsumerFactory {
         this.topic = topic;
     }
 
-    public CommitFailedConsumer build(NSQLookup lookup, String haproxy, Consumer<CommitFailureEvent> consumer, Environment environment) {
-        CommitFailedConsumer commitFailedConsumer = new CommitFailedConsumer(getTopic(), lookup, haproxy, consumer);
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                LOGGER.info("Starting CommitFailedConsumer");
-                commitFailedConsumer.start();
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    public NSQConsumer build(NSQLookup lookup, String haproxy, Consumer<CommitFailureEvent> consumer) {
+        return new NSQConsumer(lookup, topic + haproxy, "admin", (message) -> {
+            CommitFailedPayload payload = null;
+            try {
+                payload = mapper.readValue(message.getMessage(), CommitFailedPayload.class);
+            } catch (IOException e) {
+                LOGGER.error("can't deserialize the payload:" + Arrays.toString(message.getMessage()), e);
+                //Avoid republishing message and stop processing
+                message.finished();
+                return;
             }
 
-            @Override
-            public void stop() throws Exception {
-                LOGGER.info("Stopping CommitFailedConsumer");
-                commitFailedConsumer.stop();
-            }
+            CommitFailureEvent event = new CommitFailureEvent(payload.getCorrelationId(), new EntryPointKeyVsctImpl(payload.getApplication(), payload.getPlatform()));
+            consumer.accept(event);
+            message.finished();
         });
-        return commitFailedConsumer;
     }
 
 }
