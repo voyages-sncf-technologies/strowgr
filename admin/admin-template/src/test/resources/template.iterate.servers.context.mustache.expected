@@ -55,8 +55,8 @@ backend OCEREC1WS1
         #http-check disable-on-404
         cookie OCEREC1WS1 insert indirect nocache
 
-        server instance_name1_ws1 10.98.81.74:9090 cookie server_name check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
-        server instance_name2_ws1 10.98.81.74:9091 cookie server_name check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
+        server instance_name1_ws1 10.98.81.74:9090 cookie instance_name1_ws1 check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
+        server instance_name2_ws1 10.98.81.74:9091 cookie instance_name2_ws1 check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
 
 backend OCEREC1WS2
         stats   uri /stats
@@ -65,6 +65,6 @@ backend OCEREC1WS2
         #http-check disable-on-404
         cookie OCEREC1WS2 insert indirect nocache
 
-        server instance_name1_ws2 10.98.81.75:9090 cookie server_name check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
-        server instance_name2_ws2 10.98.81.75:9091 cookie server_name check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
+        server instance_name1_ws2 10.98.81.75:9090 cookie instance_name1_ws2 check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
+        server instance_name2_ws2 10.98.81.75:9091 cookie instance_name2_ws2 check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
 

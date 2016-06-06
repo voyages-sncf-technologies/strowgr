@@ -28,7 +28,7 @@ public class MustacheTemplateTest {
 
         EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
-        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
         EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
@@ -60,13 +60,13 @@ public class MustacheTemplateTest {
         EntryPointFrontend frontend1 = new EntryPointFrontend("OCEREC1WS1", Maps.newHashMap());
         EntryPointFrontend frontend2 = new EntryPointFrontend("OCEREC1WS2", Maps.newHashMap());
 
-        EntryPointBackendServer server11 = new EntryPointBackendServer("instance_name1_ws1", "server_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
-        EntryPointBackendServer server12 = new EntryPointBackendServer("instance_name2_ws1", "server_name", "10.98.81.74", "9091", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server11 = new EntryPointBackendServer("instance_name1_ws1", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server12 = new EntryPointBackendServer("instance_name2_ws1",  "10.98.81.74", "9091", new HashMap<>(), new HashMap<>());
 
         EntryPointBackend backend1 = new EntryPointBackend("OCEREC1WS1", Sets.newHashSet(server11, server12), Maps.newHashMap());
 
-        EntryPointBackendServer server21 = new EntryPointBackendServer("instance_name1_ws2", "server_name", "10.98.81.75", "9090", new HashMap<>(), new HashMap<>());
-        EntryPointBackendServer server22 = new EntryPointBackendServer("instance_name2_ws2", "server_name", "10.98.81.75", "9091", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server21 = new EntryPointBackendServer("instance_name1_ws2",  "10.98.81.75", "9090", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server22 = new EntryPointBackendServer("instance_name2_ws2",  "10.98.81.75", "9091", new HashMap<>(), new HashMap<>());
 
         EntryPointBackend backend2 = new EntryPointBackend("OCEREC1WS2", Sets.newHashSet(server21, server22), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
@@ -107,8 +107,8 @@ public class MustacheTemplateTest {
         Map<String, String> userContext2 = new HashMap<>();
         userContext2.put("key1", "user_value1");
 
-        EntryPointBackendServer server1 = new EntryPointBackendServer("instance_name_1", "server_name_1", "10.98.81.74", "9090", serverContext, userContext1);
-        EntryPointBackendServer server2 = new EntryPointBackendServer("instance_name_2", "server_name_2", "10.98.81.75", "9090", serverContext, userContext2);
+        EntryPointBackendServer server1 = new EntryPointBackendServer("instance_name_1", "10.98.81.74", "9090", serverContext, userContext1);
+        EntryPointBackendServer server2 = new EntryPointBackendServer("instance_name_2", "10.98.81.75", "9090", serverContext, userContext2);
         EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server1, server2), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
@@ -140,13 +140,13 @@ public class MustacheTemplateTest {
         EntryPointFrontend frontend1 = new EntryPointFrontend("OCEREC1WS1", Maps.newHashMap());
         EntryPointFrontend frontend2 = new EntryPointFrontend("OCEREC1WS2", Maps.newHashMap());
 
-        EntryPointBackendServer server11 = new EntryPointBackendServer("instance_name1_ws1", "server_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
-        EntryPointBackendServer server12 = new EntryPointBackendServer("instance_name2_ws1", "server_name", "10.98.81.74", "9091", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server11 = new EntryPointBackendServer("instance_name1_ws1",  "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server12 = new EntryPointBackendServer("instance_name2_ws1",  "10.98.81.74", "9091", new HashMap<>(), new HashMap<>());
 
         EntryPointBackend backend1 = new EntryPointBackend("OCEREC1WS1", Sets.newHashSet(server11, server12), Maps.newHashMap());
 
-        EntryPointBackendServer server21 = new EntryPointBackendServer("instance_name1_ws2", "server_name", "10.98.81.75", "9090", new HashMap<>(), new HashMap<>());
-        EntryPointBackendServer server22 = new EntryPointBackendServer("instance_name2_ws2", "server_name", "10.98.81.75", "9091", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server21 = new EntryPointBackendServer("instance_name1_ws2", "10.98.81.75", "9090", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server22 = new EntryPointBackendServer("instance_name2_ws2", "10.98.81.75", "9091", new HashMap<>(), new HashMap<>());
 
         EntryPointBackend backend2 = new EntryPointBackend("OCEREC1WS2", Sets.newHashSet(server21, server22), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
@@ -171,7 +171,7 @@ public class MustacheTemplateTest {
 
         Map<String, String> serverContext = new HashMap<>();
         serverContext.put("maxconn", "50");
-        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), serverContext);
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "10.98.81.74", "9090", new HashMap<>(), serverContext);
         EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
@@ -203,7 +203,7 @@ public class MustacheTemplateTest {
 
         Map<String, String> serverContext = new HashMap<>();
         serverContext.put("maxconn", "50");
-        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), serverContext);
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name","10.98.81.74", "9090", new HashMap<>(), serverContext);
         EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
@@ -234,7 +234,7 @@ public class MustacheTemplateTest {
 
         Map<String, String> serverContext = new HashMap<>();
         serverContext.put("maxconn", "50");
-        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), serverContext);
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "10.98.81.74", "9090", new HashMap<>(), serverContext);
         EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
@@ -263,7 +263,7 @@ public class MustacheTemplateTest {
     public void should_not_throw_exception_when_variable_is_missing_but_default_behavior_exists() throws IOException {
         EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
-        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "server_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
         EntryPointBackend backend = new EntryPointBackend("OCEREC1WS", Sets.newHashSet(server), Maps.newHashMap());
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
