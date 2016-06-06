@@ -11,16 +11,16 @@ public class IncomingEntryPointBackendServer {
     private final String id;
     private final String hostname;
     private final String ip;
-    private final Integer port;
+    private final String port;
 
     private final HashMap<String, String> context;
 
-    public IncomingEntryPointBackendServer(String id, String ip, Integer port, Map<String, String> context) {
+    public IncomingEntryPointBackendServer(String id, String ip, String port, Map<String, String> context) {
         this.id = checkStringNotEmpty(id, "Backend should have an id");
         this.ip = checkStringNotEmpty(ip, "Backend should have an ip");
         // TODO remove unnecessary hostname attribute
-        this.hostname = this.ip;
-        this.port = checkNotNull(port, "Backend should have a port");
+        this.hostname = this.id;
+        this.port = checkStringNotEmpty(port, "Backend should have a port");
         this.context = new HashMap<>(checkNotNull(context));
     }
 
@@ -36,7 +36,7 @@ public class IncomingEntryPointBackendServer {
         return ip;
     }
 
-    public Integer getPort() {
+    public String getPort() {
         return port;
     }
 

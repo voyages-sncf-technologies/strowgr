@@ -18,10 +18,11 @@ public class EntryPointBackendServer {
     private final HashMap<String, String> context;
     private final HashMap<String, String> contextOverride;
 
-    public EntryPointBackendServer(String id, String hostname, String ip, String port, Map<String, String> context, Map<String, String> contextOverride) {
+    public EntryPointBackendServer(String id, String ip, String port, Map<String, String> context, Map<String, String> contextOverride) {
         this.id = checkStringNotEmpty(id, "Backend should have an id");
-        this.hostname = checkStringNotEmpty(hostname, "Backend should have a hostname");
         this.ip = checkStringNotEmpty(ip, "Backend should have an ip");
+        // TODO Remove hostname attribute
+        this.hostname = this.id;
         this.port = checkStringNotEmpty(port, "Backend should have a port");
         this.context = new HashMap<>(checkNotNull(context));
         this.contextOverride = new HashMap<>(checkNotNull(contextOverride));
@@ -53,7 +54,7 @@ public class EntryPointBackendServer {
 
     public EntryPointBackendServer put(String key, String value) {
         ImmutableMap<String, String> context = ImmutableMap.<String, String>builder().put(key, value).putAll(this.context).build();
-        return new EntryPointBackendServer(this.id, this.hostname, this.ip, this.port, context, contextOverride);
+        return new EntryPointBackendServer(this.id, this.ip, this.port, context, contextOverride);
     }
 
     @Override
