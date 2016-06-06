@@ -22,6 +22,20 @@ public class EntryPointKeyVsctImpl implements EntryPointKey {
         this.platform = platform;
     }
 
+    /**
+     * Build an {@link EntryPointKeyVsctImpl} from an id.
+     *
+     * @param id of the entrypoint (for example: 'PAO/REL1')
+     * @return a new {@link EntryPointKeyVsctImpl}
+     */
+    public static EntryPointKeyVsctImpl fromID(String id) {
+        checkNotNull(id);
+        checkArgument(id.length() > 0, "id should not be empty");
+        checkArgument(id.contains("/"));
+        String[] splitted = id.split("/");
+        return new EntryPointKeyVsctImpl(splitted[0], splitted[1]);
+    }
+
     public String getApplication() {
         return application;
     }

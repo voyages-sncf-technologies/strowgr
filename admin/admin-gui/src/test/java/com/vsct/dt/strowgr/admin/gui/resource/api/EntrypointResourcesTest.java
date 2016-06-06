@@ -7,6 +7,8 @@ import org.junit.Test;
 
 import javax.ws.rs.core.Response;
 
+import java.util.Optional;
+
 import static javax.ws.rs.core.Response.Status.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -20,7 +22,7 @@ public class EntrypointResourcesTest {
         String id = "MY_APP/MY_PLTF";
         EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
         EntrypointResources entrypointResources = new EntrypointResources(null, entryPointRepository);
-        when(entryPointRepository.removeEntrypoint(new EntryPointKeyDefaultImpl(id))).thenReturn(Boolean.TRUE);
+        when(entryPointRepository.removeEntrypoint(new EntryPointKeyDefaultImpl(id))).thenReturn(Optional.of(Boolean.TRUE));
 
         // test
         Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");
@@ -35,7 +37,7 @@ public class EntrypointResourcesTest {
         String id = "MY_APP/MY_PLTF";
         EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
         EntrypointResources entrypointResources = new EntrypointResources(null, entryPointRepository);
-        when(entryPointRepository.removeEntrypoint(new EntryPointKeyDefaultImpl(id))).thenReturn(Boolean.FALSE);
+        when(entryPointRepository.removeEntrypoint(new EntryPointKeyDefaultImpl(id))).thenReturn(Optional.of(Boolean.FALSE));
 
         // test
         Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");
@@ -45,7 +47,7 @@ public class EntrypointResourcesTest {
     }
 
     @Test
-    public void should_return__when_delete_an_non_existing_entrypoint() {
+    public void should_return_when_delete_an_non_existing_entrypoint() {
         // given
         String id = "MY_APP/MY_PLTF";
         EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
