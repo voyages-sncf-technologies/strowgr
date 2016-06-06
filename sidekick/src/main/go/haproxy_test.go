@@ -48,6 +48,13 @@ func AssertFileExists(t *testing.T, file string) {
 	}
 }
 
+func AssertFileNotExists(t *testing.T, file string) {
+	if _, err := os.Stat(file); os.IsExist(err) {
+		t.Logf("File or directory '%s' exists", file)
+		t.Fail()
+	}
+}
+
 func AssertIsSymlink(t *testing.T, file string) {
 	fi, err := os.Lstat(file)
 	if err != nil || (fi.Mode()&os.ModeSymlink != os.ModeSymlink) {
@@ -61,4 +68,16 @@ func AssertEquals(t *testing.T, expected interface{}, result interface{}) {
 		t.Logf("Expected '%s', got '%s'", expected, result)
 		t.Fail()
 	}
+}
+
+func TestDeleteInstance(t *testing.T) {
+	tmpdir, _ := ioutil.TempDir("", "strowgr")
+	defer os.Remove(tmpdir)
+	config.HapHome = tmpdir
+	hap.createSkeleton("mycorrelationid")
+	AssertFileExists(t, tmpdir+"/TST/Config")
+	hap.Delete()
+
+	AssertFileNotExists(t, tmpdir+"/TST")
+	AssertFileExists(t, tmpdir)
 }
