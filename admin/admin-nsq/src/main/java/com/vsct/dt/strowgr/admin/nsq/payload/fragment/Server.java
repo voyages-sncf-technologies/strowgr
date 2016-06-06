@@ -23,7 +23,7 @@ public class Server {
     private String id;
     private String backendId;
     private String ip;
-    private int port;
+    private String port;
     private Map<String,String> context;
 
     public Server() {
@@ -53,11 +53,11 @@ public class Server {
         this.ip = ip;
     }
 
-    public int getPort() {
+    public String getPort() {
         return port;
     }
 
-    public void setPort(int port) {
+    public void setPort(String port) {
         this.port = port;
     }
 
