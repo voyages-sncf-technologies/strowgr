@@ -7,8 +7,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"github.com/bitly/go-nsq"
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitly/go-nsq"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,17 +18,17 @@ import (
 )
 
 var (
-	ip = flag.String("ip", "4.3.2.1", "Node ip address")
-	configFile = flag.String("config", "sidekick.conf", "Configuration file")
-	version = flag.Bool("version", false, "Print current version")
-	verbose = flag.Bool("verbose", false, "Log in verbose mode")
-	config = nsq.NewConfig()
-	properties *sidekick.Config
-	daemon      *sidekick.Daemon
-	producer    *nsq.Producer
-	syslog        *sidekick.Syslog
-	reloadChan = make(chan sidekick.ReloadEvent)
-	deleteChan = make(chan sidekick.ReloadEvent)
+	ip               = flag.String("ip", "4.3.2.1", "Node ip address")
+	configFile       = flag.String("config", "sidekick.conf", "Configuration file")
+	version          = flag.Bool("version", false, "Print current version")
+	verbose          = flag.Bool("verbose", false, "Log in verbose mode")
+	config           = nsq.NewConfig()
+	properties       *sidekick.Config
+	daemon           *sidekick.Daemon
+	producer         *nsq.Producer
+	syslog           *sidekick.Syslog
+	reloadChan       = make(chan sidekick.ReloadEvent)
+	deleteChan       = make(chan sidekick.ReloadEvent)
 	lastSyslogReload = time.Now()
 )
 
@@ -53,7 +53,7 @@ func main() {
 	syslog.Init()
 	log.WithFields(log.Fields{
 		"status": properties.Status,
-		"id":    properties.NodeId(),
+		"id":     properties.NodeId(),
 	}).Info("Starting sidekick")
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
@@ -199,8 +199,8 @@ func loadProperties() {
 	}
 	properties.IpAddr = *ip
 	len := len(properties.HapHome)
-	if properties.HapHome[len - 1] == '/' {
-		properties.HapHome = properties.HapHome[:len - 1]
+	if properties.HapHome[len-1] == '/' {
+		properties.HapHome = properties.HapHome[:len-1]
 	}
 }
 
@@ -273,10 +273,11 @@ func reloadMaster(data *sidekick.EventMessage) error {
 func deleteHaproxy(data *sidekick.EventMessage) error {
 	context := data.Context()
 	hap := sidekick.NewHaproxy("", properties, data.HapVersion, context)
-	err := hap.Stop();
+	err := hap.Stop()
 	if err != nil {
-		hap.Delete();
+		return err
 	}
+	err = hap.Delete()
 	return err
 }
 

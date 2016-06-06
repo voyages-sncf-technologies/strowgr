@@ -266,7 +266,7 @@ func (hap *Haproxy) getHapBinary() string {
 	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", hap.Version)
 }
 
-func (hap *Haproxy) Delete() {
+func (hap *Haproxy) Delete() error {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
 	err := os.RemoveAll(baseDir)
 	if err != nil {
@@ -278,6 +278,8 @@ func (hap *Haproxy) Delete() {
 			"dir": baseDir,
 		}).Info("HAproxy deleted")
 	}
+
+	return err
 }
 
 func (hap *Haproxy) Stop() error {
