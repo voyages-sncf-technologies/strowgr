@@ -1,17 +1,22 @@
 package com.vsct.dt.strowgr.admin.nsq;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
+ * Generic Payload for NSQ message.
+ * <p>
  * Created by william_montaz on 02/02/2016.
  */
 public abstract class Payload {
 
+    @JsonProperty("timestamp")
     private Long timestamp;
 
+    @JsonProperty("correlationId")
     private String correlationId;
 
-    protected Payload(){}
+    protected Payload() {
+    }
 
     public Payload(String correlationId) {
         this(correlationId, System.currentTimeMillis());
