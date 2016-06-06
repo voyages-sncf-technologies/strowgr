@@ -34,7 +34,7 @@ public interface EntryPointRepository {
 
     Set<String> getEntryPointsId();
 
-    void lock(EntryPointKey key);
+    boolean lock(EntryPointKey key);
 
     void release(EntryPointKey key);
 

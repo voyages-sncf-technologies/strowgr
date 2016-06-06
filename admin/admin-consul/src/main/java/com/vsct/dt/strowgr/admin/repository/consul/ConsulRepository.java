@@ -65,7 +65,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         consulReader = new ConsulReader(mapper);
     }
 
-    public ConsulRepository(String host, int port, int minGeneratedPort, int maxGeneratedPort, ObjectMapper mapper, ConsulReader consulReader, CloseableHttpClient client) {
+    ConsulRepository(String host, int port, int minGeneratedPort, int maxGeneratedPort, ObjectMapper mapper, ConsulReader consulReader, CloseableHttpClient client) {
         this.host = host;
         this.port = port;
         this.minGeneratedPort = minGeneratedPort;
@@ -77,24 +77,24 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
 
     @Override
-    public void lock(EntryPointKey entryPointKey) {
+    public boolean lock(EntryPointKey entryPointKey) {
+        boolean locked = false;
         String sessionId = null;
         try {
             if (sessionLocal.get() == null) {
-                sessionId = createSession(entryPointKey).get().ID;
+                sessionId = createSession(entryPointKey).orElseThrow(IllegalStateException::new).ID;
                 sessionLocal.set(sessionId);
             } else {
-                LOGGER.warn("reuse session for key {}, session {}", sessionId);
+                LOGGER.warn("reuse session for key {}");
             }
 
             LOGGER.debug("attempt to acquire lock for key {} on session {}", entryPointKey, sessionId);
             HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey + "/lock?acquire=" + sessionId);
 
             /* TODO, implement wait with a blocking query */
-            boolean locked = true;
             int count = 0;
             while (!locked && (count++ < 10)) {
-                locked = client.execute(acquireEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity)).get();
+                locked = client.execute(acquireEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity)).orElse(Boolean.FALSE);
                 if (!locked) {
                     /* Avoid crazy spinning*/
                     try {
@@ -110,9 +110,10 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         } catch (IOException e) {
             LOGGER.error("error in consul repository for session " + sessionId + " and key " + entryPointKey, e);
         }
+        return locked;
     }
 
-    private Optional<Session> createSession(EntryPointKey entryPointKey) throws IOException {
+    Optional<Session> createSession(EntryPointKey entryPointKey) throws IOException {
         return createSession(entryPointKey, 10, CONSUL_BEHAVIOR.RELEASE);
     }
 
@@ -235,7 +236,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                the session and thus the committing config will also be lost,
                TTL cannot be honored in that corner case.
              */
-            String sessionId = createSession(entryPointKey, ttl, CONSUL_BEHAVIOR.DELETE).map(s -> s.ID).get();
+            String sessionId = createSession(entryPointKey, ttl, CONSUL_BEHAVIOR.DELETE).orElseThrow(IllegalStateException::new).ID;
 
             HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/committing?acquire=" + sessionId);
 
@@ -386,7 +387,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         private String ID;
 
         @JsonCreator
-        public Session(@JsonProperty("ID") String ID) {
+        Session(@JsonProperty("ID") String ID) {
             this.ID = ID;
         }
     }
