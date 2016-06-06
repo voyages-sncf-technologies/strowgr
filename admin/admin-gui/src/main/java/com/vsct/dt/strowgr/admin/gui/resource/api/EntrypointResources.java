@@ -135,9 +135,9 @@ public class EntrypointResources {
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
 
         new CallbackBuilder(event.getCorrelationId()).whenReceive(
-                new AsyncResponseCallback<CommitBeginEvent>(asyncResponse) {
+                new AsyncResponseCallback<CommitRequestedEvent>(asyncResponse) {
                     @Override
-                    void handle(CommitBeginEvent event) throws Exception {
+                    void handle(CommitRequestedEvent event) throws Exception {
                         asyncResponse.resume(event.getConfiguration());
                     }
                 }).timeoutAfter(10, TimeUnit.SECONDS);
@@ -190,8 +190,8 @@ public class EntrypointResources {
     }
 
     @Subscribe
-    public void handle(CommitCompleteEvent commitCompleteEvent) {
-        handleWithCorrelationId(commitCompleteEvent);
+    public void handle(CommitCompletedEvent commitCompletedEvent) {
+        handleWithCorrelationId(commitCompletedEvent);
     }
 
     @Subscribe

@@ -6,10 +6,10 @@ import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 
 import java.util.Optional;
 
-public class CommitCompleteEvent extends EntryPointEvent {
+public class CommitCompletedEvent extends EntryPointEvent {
     private final EntryPoint configuration;
 
-    public CommitCompleteEvent(String correlationId, EntryPointKey key, EntryPoint configuration) {
+    public CommitCompletedEvent(String correlationId, EntryPointKey key, EntryPoint configuration) {
         super(correlationId, key);
         this.configuration = configuration;
     }
