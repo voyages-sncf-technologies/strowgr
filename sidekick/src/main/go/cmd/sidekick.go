@@ -246,7 +246,7 @@ func reloadMaster(data *sidekick.EventMessage) error {
 
 func reloadHaProxy(data *sidekick.EventMessage, role string, topic string, message interface{}) error {
 	context := data.Context()
-	hap := sidekick.NewHaproxy(role, properties, data.HapVersion, context)
+	hap := sidekick.NewHaproxy(role, properties, data.Conf.HapVersion, context)
 
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
@@ -278,6 +278,7 @@ func bodyToData(jsonStream []byte) (*sidekick.EventMessage, error) {
 func publishContextMessage(topic_prefix string, context sidekick.Context) error {
 	return publishMessage(topic_prefix, context, context.UpdateTimestamp())
 }
+
 func publishMessage(topic_prefix string, data interface{}, context sidekick.Context) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
