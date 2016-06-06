@@ -17,3 +17,6 @@ Vip = '127.0.0.1'
 # For now, node status is statically defined.
 # It should be autodetected, then this property would be deprecated
 Status = 'slave'
+
+# haproxy version
+HapVersion = "1.4.22"
