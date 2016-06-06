@@ -30,22 +30,27 @@ func (config *Config) NodeId() string {
 }
 
 type EventMessage struct {
-	CorrelationId  string `json:"correlationId"`
-	Conf           []byte `json:"conf"`
-	Timestamp      int64  `json:"timestamp"`
-	Application    string `json:"application"`
-	Platform       string `json:"platform"`
-	HapVersion     string `json:"hapVersion"`
-	SyslogFragment []byte `json:"syslogConf"`
+	Header struct {
+		       CorrelationId string `json:"correlationId"`
+		       Application   string `json:"application"`
+		       Platform      string `json:"platform"`
+		       Timestamp     int64  `json:"timestamp"`
+		       Source        string `json:"source"`
+	       } `json:"header"`
+	Conf   struct {
+		       Haproxy    []byte `json:"haproxy"`
+		       Syslog     []byte `json:"syslog"`
+		       HapVersion string `json:"hapVersion"`
+	       }`json:"conf"`
 }
 
 // retrieve Context from an EventMessage
 func (em EventMessage) Context() Context {
 	return Context{
-		CorrelationId: em.CorrelationId,
-		Timestamp:     em.Timestamp,
-		Application:   em.Application,
-		Platform:      em.Platform,
+		CorrelationId: em.Header.CorrelationId,
+		Timestamp:     em.Header.Timestamp,
+		Application:   em.Header.Application,
+		Platform:      em.Header.Platform,
 	}
 }
 
