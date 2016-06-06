@@ -11,15 +11,16 @@ public class IncomingEntryPointBackendServer {
     private final String id;
     private final String hostname;
     private final String ip;
-    private final String port;
+    private final Integer port;
 
     private final HashMap<String, String> context;
 
-    public IncomingEntryPointBackendServer(String id, String hostname, String ip, String port, Map<String, String> context) {
+    public IncomingEntryPointBackendServer(String id, String ip, Integer port, Map<String, String> context) {
         this.id = checkStringNotEmpty(id, "Backend should have an id");
-        this.hostname = checkStringNotEmpty(hostname, "Backend should have a hostname");
         this.ip = checkStringNotEmpty(ip, "Backend should have an ip");
-        this.port = checkStringNotEmpty(port, "Backend should have a port");
+        // TODO remove unnecessary hostname attribute
+        this.hostname = this.ip;
+        this.port = checkNotNull(port, "Backend should have a port");
         this.context = new HashMap<>(checkNotNull(context));
     }
 
@@ -35,7 +36,7 @@ public class IncomingEntryPointBackendServer {
         return ip;
     }
 
-    public String getPort() {
+    public Integer getPort() {
         return port;
     }
 
@@ -54,9 +55,8 @@ public class IncomingEntryPointBackendServer {
         if (hostname != null ? !hostname.equals(that.hostname) : that.hostname != null) return false;
         if (ip != null ? !ip.equals(that.ip) : that.ip != null) return false;
         if (port != null ? !port.equals(that.port) : that.port != null) return false;
-        if (context != null ? !context.equals(that.context) : that.context != null) return false;
+        return context != null ? context.equals(that.context) : that.context == null;
 
-        return true;
     }
 
     @Override
