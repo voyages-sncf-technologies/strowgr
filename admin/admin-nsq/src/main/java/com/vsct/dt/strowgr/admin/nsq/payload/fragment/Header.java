@@ -15,16 +15,29 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.core.payload;
+package com.vsct.dt.strowgr.admin.nsq.payload.fragment;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Header {
-    String correlationId;
-    String application;
-    String platform;
-    long timestamp;
-    String source;
+    @JsonProperty("correlationId")
+    private String correlationId;
+    @JsonProperty("application")
+    private final String application;
+    @JsonProperty("platform")
+    private final String platform;
+    @JsonProperty("timestamp")
+    private Long timestamp;
+    @JsonProperty("source")
+    private String source;
 
-    public Header() {
+    public Header(String correlationId, String application, String platform) {
+        this.correlationId = checkNotNull(correlationId);
+        this.application = checkNotNull(application);
+        this.platform = checkNotNull(platform);
+        this.timestamp = System.currentTimeMillis();
     }
 
     public String getCorrelationId() {
@@ -39,23 +52,15 @@ public class Header {
         return application;
     }
 
-    public void setApplication(String application) {
-        this.application = application;
-    }
-
     public String getPlatform() {
         return platform;
     }
 
-    public void setPlatform(String platform) {
-        this.platform = platform;
-    }
-
-    public long getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
+    public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
 

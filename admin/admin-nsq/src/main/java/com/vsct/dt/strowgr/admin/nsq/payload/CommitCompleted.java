@@ -15,28 +15,10 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.core.payload;
+package com.vsct.dt.strowgr.admin.nsq.payload;
 
-public class Conf {
-    String haproxy;
-    String syslog;
-
-    public Conf() {
-    }
-
-    public String getHaproxy() {
-        return haproxy;
-    }
-
-    public void setHaproxy(String haproxy) {
-        this.haproxy = haproxy;
-    }
-
-    public String getSyslog() {
-        return syslog;
-    }
-
-    public void setSyslog(String syslog) {
-        this.syslog = syslog;
+public class CommitCompleted extends AbstractPayload {
+    public CommitCompleted(String correlationId, String application, String platform) {
+        super(correlationId, application, platform);
     }
 }

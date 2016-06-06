@@ -15,7 +15,7 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.core.payload;
+package com.vsct.dt.strowgr.admin.nsq.payload.fragment;
 
 import java.util.Map;
 
