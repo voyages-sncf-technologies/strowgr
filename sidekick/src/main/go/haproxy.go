@@ -11,14 +11,12 @@ import (
 	"time"
 )
 
-func NewHaproxy(role string, properties *Config, version string, context Context) *Haproxy {
-	if version == "" {
-		version = "1.4.22"
-	}
+func NewHaproxy(role string, properties *Config, context Context) *Haproxy {
+
 	return &Haproxy{
 		Role:       role,
 		properties: properties,
-		Version:    version,
+		Version:    properties.HapVersion,
 		Context:    context,
 	}
 }

@@ -15,6 +15,7 @@ type Config struct {
 	HapHome          string
 	IpAddr           string
 	Status           string
+	HapVersion 	 string
 }
 
 func DefaultConfig() *Config {
@@ -40,7 +41,7 @@ type EventMessage struct {
 	Conf   struct {
 		       Haproxy    []byte `json:"haproxy"`
 		       Syslog     []byte `json:"syslog"`
-		       HapVersion string `json:"hapVersion"`
+
 	       }`json:"conf"`
 }
 

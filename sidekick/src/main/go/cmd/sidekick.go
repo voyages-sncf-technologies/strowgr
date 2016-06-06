@@ -246,7 +246,7 @@ func reloadMaster(data *sidekick.EventMessage) error {
 
 func reloadHaProxy(data *sidekick.EventMessage, role string, topic string, message interface{}) error {
 	context := data.Context()
-	hap := sidekick.NewHaproxy(role, properties, data.Conf.HapVersion, context)
+	hap := sidekick.NewHaproxy(role, properties, context)
 
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
