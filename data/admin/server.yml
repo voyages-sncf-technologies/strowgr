@@ -15,8 +15,10 @@ nsqProducer:
   host: nsqd-admin
   port: 4150
   topic: commit_requested_
-commitMessageConsumer:
-  successTopic: commit_completed_
+commitCompletedConsumer:
+  topic: commit_completed_
+commitFailedConsumer:
+  topic: commit_failed_
 registerServerMessageConsumer:
   topic: register_server
 periodicScheduler:
