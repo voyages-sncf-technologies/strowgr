@@ -34,8 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-import static javax.ws.rs.core.Response.Status.NO_CONTENT;
+import static javax.ws.rs.core.Response.Status.*;
 import static javax.ws.rs.core.Response.serverError;
 import static javax.ws.rs.core.Response.status;
 
@@ -72,7 +71,12 @@ public class EntrypointResources {
                 .whenReceive(new AsyncResponseCallback<EntryPointAddedEvent>(asyncResponse) {
                     @Override
                     void handle(EntryPointAddedEvent event) throws Exception {
-                        asyncResponse.resume(status(Response.Status.CREATED).entity(event.getConfiguration().get()).build());
+                        Optional<EntryPoint> entryPointConfiguration = event.getConfiguration();
+                        if(entryPointConfiguration.isPresent()){
+                            asyncResponse.resume(status(CREATED).entity(entryPointConfiguration.get()).build());
+                        } else {
+                            asyncResponse.resume(status(NOT_FOUND).build());
+                        }
                     }
                 })
                 .timeoutAfter(10, TimeUnit.SECONDS);
@@ -80,6 +84,13 @@ public class EntrypointResources {
         eventBus.post(event);
     }
 
+    /**
+     * Update an entrypoint.
+     *
+     * @param asyncResponse response asynchronously
+     * @param id of the entrypoint (ex. PAO/REL1)
+     * @param updatedConfiguration deserialized entrypoint configuration with new values
+     */
     @PATCH
     @Path("/{id : .+}")
     @Timed
@@ -90,7 +101,12 @@ public class EntrypointResources {
                 .whenReceive(new AsyncResponseCallback<EntryPointUpdatedEvent>(asyncResponse) {
                     @Override
                     void handle(EntryPointUpdatedEvent event) throws Exception {
-                        asyncResponse.resume(event.getConfiguration().get());
+                        Optional<EntryPoint> eventConfiguration = event.getConfiguration();
+                        if (eventConfiguration.isPresent()) {
+                            asyncResponse.resume(eventConfiguration.get());
+                        } else {
+                            asyncResponse.resume(status(NOT_FOUND).build());
+                        }
                     }
                 })
                 .timeoutAfter(10, TimeUnit.SECONDS);
@@ -129,7 +145,7 @@ public class EntrypointResources {
             Optional<Boolean> removed = repository.removeEntrypoint(entryPointKey);
             if (removed.isPresent()) {
                 if (removed.get()) {
-                    // entrypoint removed whithout problem
+                    // entrypoint removed without problem
                     response = status(NO_CONTENT).build();
                     // thirdly, propagate the deleted event to other strowgr components
                     eventBus.post(new DeleteEntryPointEvent(UUID.randomUUID().toString(), entryPointKey, configuration.get().getHaproxy(), entryPointKey.getApplication(), entryPointKey.getPlatform()));
