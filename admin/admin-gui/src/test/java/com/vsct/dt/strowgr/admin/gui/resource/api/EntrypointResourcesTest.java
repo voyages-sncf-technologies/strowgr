@@ -33,8 +33,9 @@ public class EntrypointResourcesTest {
         Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");
 
         // check
-        assertThat(response.getStatus()).isEqualTo(NO_CONTENT.getStatusCode());
+        assertThat(response.getStatus()).isEqualTo(OK.getStatusCode());
         verify(eventBus).post(any(DeleteEntryPointEvent.class));
+        verify(entryPointRepository,times(1)).getEntryPointsId();
     }
 
     @Test
@@ -52,6 +53,7 @@ public class EntrypointResourcesTest {
         // check
         assertThat(response.getStatus()).isEqualTo(NOT_FOUND.getStatusCode());
         verify(eventBus, times(0)).post(any(DeleteEntryPointEvent.class));
+        verify(entryPointRepository,times(1)).getEntryPointsId();
     }
 
     @Test
@@ -67,5 +69,6 @@ public class EntrypointResourcesTest {
 
         // check
         assertThat(response.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR.getStatusCode());
+        verify(entryPointRepository,times(1)).getEntryPointsId();
     }
 }

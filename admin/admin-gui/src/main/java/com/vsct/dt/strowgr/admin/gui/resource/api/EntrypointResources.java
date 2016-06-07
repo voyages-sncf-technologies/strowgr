@@ -129,7 +129,7 @@ public class EntrypointResources {
      * Delete an entrypoint in the repository and, after a success confirmation, forwards the event to other strowgr component through the event bus.
      *
      * @param id of the entrypoint
-     * @return {@link javax.ws.rs.core.Response.Status#NO_CONTENT} if success, {@link javax.ws.rs.core.Response.Status#NOT_FOUND} if entrypoint doesn't exists anymore, {@link javax.ws.rs.core.Response.Status#INTERNAL_SERVER_ERROR} otherwise
+     * @return {@link javax.ws.rs.core.Response.Status#OK} if success, {@link javax.ws.rs.core.Response.Status#NOT_FOUND} if entrypoint doesn't exists anymore, {@link javax.ws.rs.core.Response.Status#INTERNAL_SERVER_ERROR} otherwise. HTTP response payload contains the updated entrypoint set.
      */
     @DELETE
     @Path("/{id : .+}")
@@ -156,6 +156,9 @@ public class EntrypointResources {
                     LOGGER.warn("can't removed an entrypoint though its configuration has just been found. May be there are concurrency problem, admin or/and repository are overloaded.");
                     response = status(NOT_FOUND).entity(entryPointsId).build();
                 }
+            } else {
+                Set<String> entryPointsId = repository.getEntryPointsId();
+                response = serverError().entity(entryPointsId).build();
             }
         } else {
             Set<String> entryPointsId = repository.getEntryPointsId();
