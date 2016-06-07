@@ -39,8 +39,8 @@ services:
       - nsqlookupd
 
   #  HA proxies
-  ha-master:
-    image: strowgr/sidekick:latest
+  sidekick-master:
+    image: dockerregistrydev.socrate.vsct.fr/strowgr/sidekick:1.0-SNAPSHOT
     volumes:
       - ./data/master/sidekick.conf:/sidekick.conf
     ports:
@@ -50,8 +50,8 @@ services:
     extra_hosts:
       - "larimar:1.2.3.4"
 
-  ha-slave:
-    image: strowgr/sidekick:latest
+  sidekick-slave:
+    image: dockerregistrydev.socrate.vsct.fr/strowgr/sidekick:1.0-SNAPSHOT
     volumes:
       - ./data/slave/sidekick.conf:/sidekick.conf
     ports:
@@ -72,7 +72,7 @@ services:
       - nsqd-master
 
   registrator:
-    image: strowgr/registrator:latest
+    image: dockerregistrydev.socrate.vsct.fr/strowgr/registrator:1.0-SNAPSHOT
     command: -url http://192.168.99.100:8080 -address 192.168.99.100 -verbose
 #    privileged: true
     volumes:
@@ -81,11 +81,12 @@ services:
      - nsq-admin
 
   admin:
-    image: strowgr/admin:latest
+    image: java:8
     ports:
       - 8080:8080
-    command: server /server.yml
+    command: ['java' ,'-jar' , '/target/admin-gui-1.0-SNAPSHOT.jar', 'server' ,'/server.yml' ]
     volumes:
+      - ./admin/admin-gui/target:/target
       - ./data/admin/server.yml:/server.yml
 
   nsqd-admin:
