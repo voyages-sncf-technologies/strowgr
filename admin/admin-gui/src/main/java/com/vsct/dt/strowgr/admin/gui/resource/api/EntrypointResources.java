@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.Response.ok;
 import static javax.ws.rs.core.Response.serverError;
 import static javax.ws.rs.core.Response.status;
 
@@ -72,7 +73,7 @@ public class EntrypointResources {
                     @Override
                     void handle(EntryPointAddedEvent event) throws Exception {
                         Optional<EntryPoint> entryPointConfiguration = event.getConfiguration();
-                        if(entryPointConfiguration.isPresent()){
+                        if (entryPointConfiguration.isPresent()) {
                             asyncResponse.resume(status(CREATED).entity(entryPointConfiguration.get()).build());
                         } else {
                             asyncResponse.resume(status(NOT_FOUND).build());
@@ -87,8 +88,8 @@ public class EntrypointResources {
     /**
      * Update an entrypoint.
      *
-     * @param asyncResponse response asynchronously
-     * @param id of the entrypoint (ex. PAO/REL1)
+     * @param asyncResponse        response asynchronously
+     * @param id                   of the entrypoint (ex. PAO/REL1)
      * @param updatedConfiguration deserialized entrypoint configuration with new values
      */
     @PATCH
@@ -131,7 +132,7 @@ public class EntrypointResources {
      * @return {@link javax.ws.rs.core.Response.Status#NO_CONTENT} if success, {@link javax.ws.rs.core.Response.Status#NOT_FOUND} if entrypoint doesn't exists anymore, {@link javax.ws.rs.core.Response.Status#INTERNAL_SERVER_ERROR} otherwise
      */
     @DELETE
-    @Path("/{id : .+}/delete")
+    @Path("/{id : .+}")
     @Timed
     public Response deleteEntrypoint(@PathParam("id") String id) {
         Response response = serverError().build();
@@ -145,18 +146,21 @@ public class EntrypointResources {
             Optional<Boolean> removed = repository.removeEntrypoint(entryPointKey);
             if (removed.isPresent()) {
                 if (removed.get()) {
+                    Set<String> entryPointsId = repository.getEntryPointsId();
                     // entrypoint removed without problem
-                    response = status(NO_CONTENT).build();
+                    response = ok().entity(entryPointsId).build();
                     // thirdly, propagate the deleted event to other strowgr components
                     eventBus.post(new DeleteEntryPointEvent(UUID.randomUUID().toString(), entryPointKey, configuration.get().getHaproxy(), entryPointKey.getApplication(), entryPointKey.getPlatform()));
                 } else {
+                    Set<String> entryPointsId = repository.getEntryPointsId();
                     LOGGER.warn("can't removed an entrypoint though its configuration has just been found. May be there are concurrency problem, admin or/and repository are overloaded.");
-                    response = status(NOT_FOUND).build();
+                    response = status(NOT_FOUND).entity(entryPointsId).build();
                 }
             }
         } else {
+            Set<String> entryPointsId = repository.getEntryPointsId();
             LOGGER.warn("can't find entrypoint {} from repository", entryPointKey);
-            response = status(NOT_FOUND).build();
+            response = status(NOT_FOUND).entity(entryPointsId).build();
         }
         return response;
     }

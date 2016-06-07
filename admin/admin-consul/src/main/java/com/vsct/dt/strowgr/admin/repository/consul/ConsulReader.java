@@ -65,7 +65,7 @@ class ConsulReader {
      *
      * @param httpResponse response to read
      * @param method       method to apply to the read result
-     * @param accept404    whether to return or not an empty result if a 404 occurrs
+     * @param accept404    whether to return or not an empty result if a 404 occurs
      * @param <T>          Type of the method application
      * @return the result of the method application. The result is not nullable.
      * @throws ClientProtocolException thrown if the http status is not between 200 and 299 including
@@ -76,7 +76,7 @@ class ConsulReader {
         Optional<T> result = Optional.empty();
         if (status >= 200 && status < 300) {
             result = method.apply(entity);
-        } else if (status != 404 || !accept404){
+        } else if (status != 404 || !accept404) {
             String content = Optional.ofNullable(entity).map(myEntity -> {
                 try {
                     return EntityUtils.toString(myEntity);
@@ -141,7 +141,12 @@ class ConsulReader {
             if (consulItems.size() > 1) {
                 throw new IllegalStateException("get too many ports mapping");
             } else {
-                result = Optional.of(consulItems.get(0));
+                ConsulItem<Map<String, Integer>> consulItem = consulItems.get(0);
+                LOGGER.debug("consul items {}", consulItem);
+                if (consulItem.getValue() == null) {
+                    throw new IllegalStateException("value of " + consulItem.getKey() + " in consul repository is null");
+                }
+                result = Optional.of(consulItem);
             }
         } catch (IOException e) {
             LOGGER.error("can't read ports by haproxy", e);

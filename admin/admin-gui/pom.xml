@@ -133,6 +133,13 @@
                                 <include>${project.build.finalName}.jar</include>
                             </includes>
                         </resource>
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>${project.basedir}/src/docker</directory>
+                            <includes>
+                                <include>server.yaml</include>
+                            </includes>
+                        </resource>
                     </resources>
                 </configuration>
             </plugin>

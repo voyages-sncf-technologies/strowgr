@@ -131,7 +131,7 @@
             }
         }]);
 
-        adminApp.controller('EntrypointsCtrl', ['$scope', '$http', '$interval', '$rootScope', function ($scope, $http, $interval, $rootScope) {
+        adminApp.controller('EntrypointsCtrl', ['$scope', '$http', '$interval', '$rootScope', '$mdDialog', function ($scope, $http, $interval, $rootScope, $mdDialog) {
 
             $http({
                 method: 'GET',
@@ -144,6 +144,39 @@
                 $scope.selectedEntrypoint = id;
                 $rootScope.$broadcast("entrypoint-updated");
             }
+
+            $scope.deleteEntrypoint = function (id) {
+                $scope.selectedEntrypoint = id;
+                console.log("coucou "+id);
+                $http({
+                    method: 'DELETE',
+                    url: '/api/entrypoints/'+escape(id)
+                }).then(function (response) {
+                    $scope.entrypoints = response.data;
+                    $rootScope.$broadcast("entrypoint-updated");
+                });
+            }
+
+              $scope.deleteEntrypoint = function(id,ev) {
+                var confirm = $mdDialog.confirm()
+                    .title('Voulez-vous supprimer cet entrypoint ?')
+                    .textContent("l'entrypoint sera supprimé sur le repository et au niveau des haproxy")
+                    .targetEvent(ev)
+                    .ok('supprime')
+                    .cancel('annule');
+                $mdDialog.show(confirm).then(function() {
+                    $scope.selectedEntrypoint = id;
+                    $http({
+                        method: 'DELETE',
+                        url: '/api/entrypoints/'+escape(id)
+                    }).then(function (response) {
+                        $scope.entrypoints = response.data;
+                        $rootScope.$broadcast("entrypoint-updated");
+                    });
+                }, function() {
+                    console.log('cancel delete of ' + id);
+                });
+              };
 
         }]);
 

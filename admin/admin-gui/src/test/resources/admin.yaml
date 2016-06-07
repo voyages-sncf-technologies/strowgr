@@ -52,3 +52,4 @@ logging:
         timeZone: UTC
         maxFileSize: 10MB
 commitTimeout: 10
+
