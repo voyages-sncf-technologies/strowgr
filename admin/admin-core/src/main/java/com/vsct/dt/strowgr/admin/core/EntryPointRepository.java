@@ -53,7 +53,19 @@ public interface EntryPointRepository {
 
     void release(EntryPointKey key);
 
-    Optional<String> getHaproxyVip(String haproxyName);
+    /**
+     * Get vip for a given haproxy name.
+     * @param name of the haproxy
+     * @return return Optional String of the vip, {@code Optional#empty} if haproxy can't be found.
+     */
+    Optional<String> getHaproxyVip(String name);
+
+    /**
+     * Set the vip for a given haproxy name.
+     * @param name of the haproxy
+     * @param vip to set to this haproxy
+     */
+    void setHaproxyVip(String name, String vip);
 
     Optional<String> getCommitCorrelationId(EntryPointKey key);
 

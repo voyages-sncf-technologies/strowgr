@@ -9,18 +9,29 @@ import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import static javax.ws.rs.core.Response.ok;
 
 @Path("/haproxy")
 public class HaproxyResources {
 
-    private final UriTemplateLocator   templateLocator;
+    private final UriTemplateLocator templateLocator;
     private final EntryPointRepository repository;
-    private final TemplateGenerator    templateGenerator;
+    private final TemplateGenerator templateGenerator;
 
     public HaproxyResources(EntryPointRepository repository, UriTemplateLocator templateLocator, TemplateGenerator templateGenerator) {
         this.repository = repository;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;
+    }
+
+    @PUT
+    @Path("/uri/{haproxyName : .+}/{vip : .+}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response setHaproxyURI(@PathParam("haproxyName") String haproxyName, @PathParam("vip") String vip) {
+        repository.setHaproxyVip(haproxyName, vip);
+        return ok().build();
     }
 
     @GET

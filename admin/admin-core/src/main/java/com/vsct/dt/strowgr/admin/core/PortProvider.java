@@ -22,6 +22,12 @@ public interface PortProvider {
         return newPort(PortProvider.getPortKey(key, portId));
     }
 
+    /**
+     * Initilialize Ports repository structure
+     * @return Optional of TRUE if request succeed, FALSE otherwise
+     */
+    Optional<Boolean> initPorts();
+
     static String getPortKey(EntryPointKey key, String portId) {
         return key.getID() + '-' + portId;
     }
