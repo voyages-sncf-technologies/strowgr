@@ -2,6 +2,7 @@ server:
   type: simple
   rootPath: /api/
   applicationContextPath: /
+  adminContextPath: /admin
   connector:
     type: http
     port: 50090
@@ -22,7 +23,8 @@ nsqLookup:
   port: 4161
 nsqProducer:
   host: localhost
-  port: 4150
+  tcpPort: 4150
+  httpPort: 4151
 commitCompletedConsumer:
   topic: commit_completed_
 commitFailedConsumer:

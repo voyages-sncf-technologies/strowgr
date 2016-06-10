@@ -12,6 +12,8 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
 /**
+ * Consul configuration.
+ * <p>
  * Created by william_montaz on 15/02/2016.
  */
 public class ConsulRepositoryFactory {
@@ -71,8 +73,23 @@ public class ConsulRepositoryFactory {
         this.maxGeneratedPort = maxGeneratedPort;
     }
 
-    public ConsulRepository build(Environment environment) {
-        ConsulRepository repository = new ConsulRepository(getHost(), getPort(), getMinGeneratedPort(), getMaxGeneratedPort());
+    /**
+     * Build a consul repository from configuration file.
+     *
+     * @return Built Consul repository from configuration
+     */
+    public ConsulRepository build() {
+        return new ConsulRepository(getHost(), getPort(), getMinGeneratedPort(), getMaxGeneratedPort());
+    }
+
+    /**
+     * Build a consul repository  and subscribe to dropwizard environment.
+     *
+     * @param environment dropwizard which will manage lifecycle of the
+     * @return Built Consul repository from configuration
+     */
+    public ConsulRepository buildAndManageBy(Environment environment) {
+        ConsulRepository repository = build();
         environment.lifecycle().manage(new Managed() {
             @Override
             public void start() throws Exception {

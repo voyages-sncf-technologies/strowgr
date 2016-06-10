@@ -3,22 +3,17 @@ package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
-import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
-import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackend;
-import com.vsct.dt.strowgr.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
-import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import javax.ws.rs.core.Response;
-
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Optional;
 
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static javax.ws.rs.core.Response.Status.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -29,12 +24,11 @@ public class EntrypointResourcesTest {
     @Test
     public void should_send_delete_entrypoint_event_and_return_204_when_delete_an_entrypoint() {
         // given
-        String id = "MY_APP/MY_PLTF";
         EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
         EventBus eventBus = mock(EventBus.class);
         EntrypointResources entrypointResources = new EntrypointResources(eventBus, entryPointRepository);
-        when(entryPointRepository.removeEntrypoint(any(EntryPointKey.class))).thenReturn(Optional.of(Boolean.TRUE));
-        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", new HashSet<>(), new HashSet<>(), new HashMap<>())));
+        when(entryPointRepository.removeEntrypoint(any(EntryPointKey.class))).thenReturn(of(Boolean.TRUE));
+        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(of(new EntryPoint("default-name", "hapadm", new HashSet<>(), new HashSet<>(), new HashMap<>())));
 
         // test
         Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");
@@ -50,25 +44,24 @@ public class EntrypointResourcesTest {
         EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
         EventBus eventBus = mock(EventBus.class);
         EntrypointResources entrypointResources = new EntrypointResources(eventBus, entryPointRepository);
-        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", new HashSet<>(), new HashSet<>(), new HashMap<>())));
-        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.empty());
+        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(of(new EntryPoint("default-name", "hapadm", new HashSet<>(), new HashSet<>(), new HashMap<>())));
+        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(empty());
 
         // test
         Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");
 
         // check
         assertThat(response.getStatus()).isEqualTo(NOT_FOUND.getStatusCode());
-        verify(eventBus,times(0)).post(any(DeleteEntryPointEvent.class));
+        verify(eventBus, times(0)).post(any(DeleteEntryPointEvent.class));
     }
 
     @Test
     public void should_return_500_when_repository_cannot_remove_entrypoint_delete_entrypoint() {
         // given
-        String id = "MY_APP/MY_PLTF";
         EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
         EntrypointResources entrypointResources = new EntrypointResources(null, entryPointRepository);
-        when(entryPointRepository.removeEntrypoint(new EntryPointKeyDefaultImpl(id))).thenReturn(null);
-        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", new HashSet<>(), new HashSet<>(), new HashMap<>())));
+        when(entryPointRepository.removeEntrypoint(any(EntryPointKey.class))).thenReturn(empty());
+        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(of(new EntryPoint("default-name", "hapadm", new HashSet<>(), new HashSet<>(), new HashMap<>())));
 
         // test
         Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");

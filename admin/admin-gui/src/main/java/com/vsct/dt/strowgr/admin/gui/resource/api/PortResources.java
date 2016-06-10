@@ -36,10 +36,4 @@ public class PortResources {
                 .orElseThrow(NotFoundException::new);
     }
 
-    @PUT
-    @Path("/init")
-    public void initPorts() {
-        portProvider.initPorts();
-    }
-
 }

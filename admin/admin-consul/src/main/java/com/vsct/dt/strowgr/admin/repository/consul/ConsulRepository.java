@@ -299,7 +299,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     public Optional<Map<String, Integer>> getPorts() {
         try {
             HttpGet getPortsById = new HttpGet("http://" + host + ":" + port + "/v1/kv/ports");
-            Optional<ConsulItem<Map<String, Integer>>> result = client.execute(getPortsById, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parsePortsByHaproxyFromHttpEntity));
+            Optional<ConsulItem<Map<String, Integer>>> result = client.execute(getPortsById, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parsePortsByHaproxyFromHttpEntity));
             if (result.isPresent()) {
                 return Optional.of(result.get().value(mapper));
             } else {
@@ -312,13 +312,19 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
     @Override
     public Optional<Boolean> initPorts() {
+        Optional<Boolean> initialized = Optional.of(Boolean.FALSE);
         try {
-            HttpPut putPortsById = new HttpPut("http://" + host + ":" + port + "/v1/kv/ports");
-            putPortsById.setEntity(new StringEntity("{}"));
-            return client.execute(putPortsById, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
+            if (getPorts().isPresent()) {
+                LOGGER.warn("can't init ports in repository because it's not empty");
+            } else {
+                HttpPut putPortsById = new HttpPut("http://" + host + ":" + port + "/v1/kv/ports");
+                putPortsById.setEntity(new StringEntity("{}"));
+                initialized = client.execute(putPortsById, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return initialized;
     }
 
     @Override
@@ -352,7 +358,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                     // Ports map has been already initialized
                     Map<String, Integer> rawPortsByEntrypoint = portsByEntrypoint.get().value(mapper);
                     if (rawPortsByEntrypoint.containsKey(key)) {
-                        throw new IllegalStateException("Port for key " + key + " is already setted. It's port " + rawPortsByEntrypoint.get(key));
+                        throw new IllegalStateException("Port for key " + key + " is already set. It's port " + rawPortsByEntrypoint.get(key));
                     }
 
                     boolean portAlreadyUsed = true;
