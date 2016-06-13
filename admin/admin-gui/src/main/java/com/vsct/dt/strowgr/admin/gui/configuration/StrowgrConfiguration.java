@@ -13,7 +13,6 @@ public class StrowgrConfiguration extends Configuration {
 
     public StrowgrConfiguration(){
         super();
-        System.out.println("configuration");
     }
 
     @Valid

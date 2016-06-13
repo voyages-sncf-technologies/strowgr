@@ -9,6 +9,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
+import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
@@ -45,8 +46,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StrowgrMain.class);
 
-    private StrowgrConfiguration strowgrConfiguration = null;
-
     public static void main(String[] args) throws Exception {
         new StrowgrMain().run(args);
     }
@@ -64,7 +63,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         strowgrConfiguration.addBundle(new AssetsBundle("/META-INF/resources/webjars", "/webjars", null, "webjars"));
 
         strowgrConfiguration.addCommand(new InitializationCommand());
-        System.out.println("bootstrap");
+        strowgrConfiguration.addCommand(new ConfigurationCommand());
     }
 
     @Subscribe
@@ -74,7 +73,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
     @Override
     public void run(StrowgrConfiguration configuration, Environment environment) throws Exception {
-        System.out.println("run");
         LOGGER.info("start dropwizard configuration");
 
         /* Main EventBus */
