@@ -74,7 +74,6 @@
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
                 <artifactId>mvn-golang-wrapper</artifactId>
-                <version>2.0.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <goVersion>${go.sdk.version}</goVersion>
@@ -95,7 +94,7 @@
                                 <package>github.com/BurntSushi/toml</package>
                                 <package>github.com/bitly/go-nsq</package>
                             </packages>
-                            <goVersion/>
+                            <goVersion>${go.sdk.version}</goVersion>
                         </configuration>
                     </execution>
                     <execution>
@@ -110,12 +109,19 @@
                             <targetOs>${target.os}</targetOs>
                             <targetArch>${target.arch}</targetArch>
                             <resultName>${project.build.finalName}${target.ext}</resultName>
-                            <goVersion/>
+                            <goVersion>${go.sdk.version}</goVersion>
                         </configuration>
                     </execution>
                     <execution>
                         <id>default-test</id>
-                        <phase>none</phase>
+                        <phase>test</phase>
+                        <configuration>
+                            <testFlags>
+                                <flag>-x</flag>
+                                <flag>-v</flag>
+                            </testFlags>
+                            <goVersion>${go.sdk.version}</goVersion>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
