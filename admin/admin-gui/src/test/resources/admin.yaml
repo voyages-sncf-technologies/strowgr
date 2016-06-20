@@ -4,7 +4,7 @@ server:
   applicationContextPath: /
   connector:
     type: http
-    port: 50080
+    port: 8080
   requestLog:
     timeZone: UTC
     appenders:
@@ -16,17 +16,16 @@ server:
         archivedFileCount: 14
 threads: 20
 haproxyName: default-name
+commitTimeout: 60
 repository:
-  host: parisiancocktail
-  port: 58500
-  minGeneratedPort: 50000
-  maxGeneratedPort: 54000
+  host: localhost
+  port: 8500
 nsqLookup:
-  host: parisiancocktail
-  port: 54161
+  host: localhost
+  port: 4161
 nsqProducer:
-  host: parisiancocktail
-  port: 54150
+  host: localhost
+  port: 4150
 commitCompletedConsumer:
   topic: commit_completed_
 commitFailedConsumer:
@@ -35,20 +34,8 @@ registerServerMessageConsumer:
   topic: register_server
 periodicScheduler:
   current:
-    periodMilli: 11000
+    periodMilli: 10000
   pending:
-    periodMilli: 7000
+    periodMilli: 10000
 logging:
-    level: INFO
-    loggers:
-      com.vsct.dt: INFO
-    appenders:
-      - type: file
-        threshold: INFO
-        logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
-        currentLogFilename: logs/admin.log
-        archivedLogFilenamePattern: logs/application-%d{yyyy-MM-dd}-%i.log.gz
-        archivedFileCount: 7
-        timeZone: UTC
-        maxFileSize: 10MB
-commitTimeout: 10
+  level: INFO

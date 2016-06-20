@@ -50,7 +50,7 @@ public class CommitFailedConsumer {
                 );
                 consumer.accept(event);
             } catch (IOException e) {
-                LOGGER.error("can't deserialize the payload:" + Arrays.toString(message.getMessage()), e);
+                LOGGER.error("can't deserialize the payload:" + new String(message.getMessage()), e);
             } finally {
                 message.finished();
             }

@@ -17,8 +17,13 @@
 
 package com.vsct.dt.strowgr.admin.nsq.payload;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class CommitCompleted extends AbstractPayload {
-    public CommitCompleted(String correlationId, String application, String platform) {
+
+    @JsonCreator
+    protected CommitCompleted(@JsonProperty("correlationId") String correlationId, @JsonProperty("application") String application, @JsonProperty("platform") String platform, @JsonProperty("timestamp") Long timestamp) {
         super(correlationId, application, platform);
     }
 }

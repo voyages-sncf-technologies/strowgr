@@ -17,12 +17,15 @@
 
 package com.vsct.dt.strowgr.admin.nsq.payload;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Sidekick;
 
-public class RegisterSidekick extends AbstractPayload{
+public class RegisterSidekick extends AbstractPayload {
     Sidekick sidekick;
 
-    public RegisterSidekick(String correlationId, String application, String platform) {
+    @JsonCreator
+    public RegisterSidekick(@JsonProperty("correlationId") String correlationId, @JsonProperty("application") String application, @JsonProperty("platform") String platform, @JsonProperty("timestamp") Long timestamp) {
         super(correlationId, application, platform);
     }
 
