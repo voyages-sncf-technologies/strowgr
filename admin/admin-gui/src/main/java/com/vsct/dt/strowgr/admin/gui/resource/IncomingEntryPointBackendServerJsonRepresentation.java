@@ -23,6 +23,9 @@ import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendSer
 
 import java.util.Map;
 
+/**
+ * Created by william_montaz on 09/02/2016.
+ */
 public class IncomingEntryPointBackendServerJsonRepresentation extends IncomingEntryPointBackendServer {
 
     @JsonCreator

@@ -23,6 +23,11 @@ import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackendServer;
 
 import java.util.Map;
 
+/**
+ * Json mapping of {@code EntryPointBackendServer}.
+ *
+ * Created by william_montaz on 09/02/2016.
+ */
 public class EntryPointBackendServerMappingJson extends EntryPointBackendServer {
 
     @JsonCreator

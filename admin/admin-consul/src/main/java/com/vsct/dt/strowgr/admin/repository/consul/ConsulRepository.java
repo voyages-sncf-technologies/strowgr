@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.repository.consul;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -65,7 +82,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         consulReader = new ConsulReader(mapper);
     }
 
-    public ConsulRepository(String host, int port, int minGeneratedPort, int maxGeneratedPort, ObjectMapper mapper, ConsulReader consulReader, CloseableHttpClient client) {
+    ConsulRepository(String host, int port, int minGeneratedPort, int maxGeneratedPort, ObjectMapper mapper, ConsulReader consulReader, CloseableHttpClient client) {
         this.host = host;
         this.port = port;
         this.minGeneratedPort = minGeneratedPort;
@@ -77,24 +94,24 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
 
     @Override
-    public void lock(EntryPointKey entryPointKey) {
+    public boolean lock(EntryPointKey entryPointKey) {
+        boolean locked = false;
         String sessionId = null;
         try {
             if (sessionLocal.get() == null) {
-                sessionId = createSession(entryPointKey).get().ID;
+                sessionId = createSession(entryPointKey).orElseThrow(IllegalStateException::new).ID;
                 sessionLocal.set(sessionId);
             } else {
-                LOGGER.warn("reuse session for key {}, session {}", sessionId);
+                LOGGER.warn("reuse session for key {}");
             }
 
             LOGGER.debug("attempt to acquire lock for key {} on session {}", entryPointKey, sessionId);
             HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey + "/lock?acquire=" + sessionId);
 
             /* TODO, implement wait with a blocking query */
-            boolean locked = true;
             int count = 0;
             while (!locked && (count++ < 10)) {
-                locked = client.execute(acquireEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity)).get();
+                locked = client.execute(acquireEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity)).orElse(Boolean.FALSE);
                 if (!locked) {
                     /* Avoid crazy spinning*/
                     try {
@@ -110,9 +127,10 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         } catch (IOException e) {
             LOGGER.error("error in consul repository for session " + sessionId + " and key " + entryPointKey, e);
         }
+        return locked;
     }
 
-    private Optional<Session> createSession(EntryPointKey entryPointKey) throws IOException {
+    Optional<Session> createSession(EntryPointKey entryPointKey) throws IOException {
         return createSession(entryPointKey, 10, CONSUL_BEHAVIOR.RELEASE);
     }
 
@@ -235,7 +253,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                the session and thus the committing config will also be lost,
                TTL cannot be honored in that corner case.
              */
-            String sessionId = createSession(entryPointKey, ttl, CONSUL_BEHAVIOR.DELETE).map(s -> s.ID).get();
+            String sessionId = createSession(entryPointKey, ttl, CONSUL_BEHAVIOR.DELETE).orElseThrow(IllegalStateException::new).ID;
 
             HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/committing?acquire=" + sessionId);
 
@@ -258,6 +276,25 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         } catch (IOException e) {
             LOGGER.error("error in consul repository", e);
         }
+    }
+
+    @Override
+    public Boolean removeEntrypoint(EntryPointKey entryPointKey) {
+        Boolean removed = null; // null while consul has not return a response without exception
+        HttpDelete deleteEntrypointUri = new HttpDelete("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "?recurse");
+        Optional<Boolean> repositoryResponse;
+        try {
+            repositoryResponse = client.execute(deleteEntrypointUri, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
+            if (repositoryResponse.isPresent()) {
+                removed = repositoryResponse.get();
+                LOGGER.debug("entrypoint {} has been deleted from consul ? {}", entryPointKey, repositoryResponse.get());
+            } else {
+                LOGGER.error("entrypoint {} can't be deleted on consul. Consul return an empty response");
+            }
+        } catch (IOException e) {
+            LOGGER.error("problem in consul request for deleting entrypoint " + entryPointKey, e);
+        }
+        return removed;
     }
 
     @Override
@@ -386,7 +423,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         private String ID;
 
         @JsonCreator
-        public Session(@JsonProperty("ID") String ID) {
+        Session(@JsonProperty("ID") String ID) {
             this.ID = ID;
         }
     }
