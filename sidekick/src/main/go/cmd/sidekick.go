@@ -31,6 +31,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"math/rand"
+	"errors"
 )
 
 var (
@@ -38,6 +40,7 @@ var (
 	configFile = flag.String("config", "sidekick.conf", "Configuration file")
 	version = flag.Bool("version", false, "Print current version")
 	verbose = flag.Bool("verbose", false, "Log in verbose mode")
+	drunk = flag.Bool("drunk", false, "Random status/errors for entrypoint updates. Just for test purpose.")
 	config = nsq.NewConfig()
 	properties       *sidekick.Config
 	daemon           *sidekick.Daemon
@@ -302,7 +305,18 @@ func reloadHaProxy(data *sidekick.EventMessageWithConf, role string, topic strin
 	context := data.Context()
 	hap := sidekick.NewHaproxy(role, properties, context)
 
-	status, err := hap.ApplyConfiguration(data)
+	var status int
+	var err error
+
+	if (*drunk) {
+		status = rand.Intn(sidekick.MAX_STATUS)
+		log.WithFields(context.Fields()).WithField("status", status).Info("choose a random status")
+		if status <= sidekick.UNCHANGED {
+			err = errors.New("blop, a new error...")
+		}
+	} else {
+		status, err = hap.ApplyConfiguration(data)
+	}
 	if err == nil {
 		if status != sidekick.UNCHANGED {
 			elapsed := time.Now().Sub(lastSyslogReload)
