@@ -74,23 +74,23 @@ public class EntryPoint {
         return new EntryPoint.Builder(haproxy);
     }
 
-    public EntryPoint addOrReplaceBackend(EntryPointBackend backend) {
+    private EntryPoint addOrReplaceBackend(EntryPointBackend backend) {
         checkNotNull(backend);
         HashMap<String, EntryPointBackend> newBackends = new HashMap<>(backends);
         newBackends.put(backend.getId(), backend);
         return new EntryPoint(this.haproxy, this.hapUser, this.frontends, newBackends, this.context);
     }
 
-    public Optional<EntryPointBackend> getBackend(String id) {
+    private Optional<EntryPointBackend> getBackend(String id) {
         return Optional.ofNullable(backends.get(id));
     }
 
-    public EntryPoint addServer(String backendId, IncomingEntryPointBackendServer server) {
+    private EntryPoint addServer(String backendId, IncomingEntryPointBackendServer server) {
         checkNotNull(server);
         Optional<EntryPointBackendServer> existingServer = findServer(server.getId());
         EntryPointBackendServer newServer = existingServer
                 .map(es -> new EntryPointBackendServer(server.getId(), server.getIp(), server.getPort(), server.getContext(), es.getContextOverride()))
-                .orElseGet(() -> new EntryPointBackendServer(server.getId(),  server.getIp(), server.getPort(), server.getContext(), new HashMap<String, String>()));
+                .orElseGet(() -> new EntryPointBackendServer(server.getId(),  server.getIp(), server.getPort(), server.getContext(), new HashMap<>()));
 
         EntryPoint configuration = this.removeServer(server.getId());
 
@@ -161,7 +161,7 @@ public class EntryPoint {
      *  - Updated frontends replace existing ones, without consideration for ports
      *  - Updated backends replace existing ones
      *  - Updated servers just replace overrideConfiguration for existing ones
-     * @param updatedEntryPoint
+     * @param updatedEntryPoint with new values to merge
      * @return A new EntryPoint, result of the merge of this entrypoint and the updatedconfiguration
      */
     public EntryPoint mergeWithUpdate(UpdatedEntryPoint updatedEntryPoint) {
@@ -177,7 +177,7 @@ public class EntryPoint {
                 }
                 newBackends.add(new EntryPointBackend(updatedBackend.getId(), newServers, updatedBackend.getContext()));
             } else {
-                newBackends.add(new EntryPointBackend(updatedBackend.getId(), new HashSet<EntryPointBackendServer>(), updatedBackend.getContext()));
+                newBackends.add(new EntryPointBackend(updatedBackend.getId(), new HashSet<>(), updatedBackend.getContext()));
             }
         }
 
@@ -241,7 +241,6 @@ public class EntryPoint {
         private Set<EntryPointFrontend> frontends;
         private String haproxy;
         private String user;
-        private String syslogPort;
         private Map<String, String> context;
 
         private Builder(String haproxy) {

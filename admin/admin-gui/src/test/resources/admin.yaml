@@ -18,7 +18,7 @@ threads: 20
 haproxyName: default-name
 commitTimeout: 60
 repository:
-  host: localhost
+  host: 127.0.0.1
   port: 8500
 nsqLookup:
   host: localhost

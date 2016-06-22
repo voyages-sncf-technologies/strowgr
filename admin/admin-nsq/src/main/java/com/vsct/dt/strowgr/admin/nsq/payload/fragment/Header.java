@@ -17,6 +17,7 @@
 
 package com.vsct.dt.strowgr.admin.nsq.payload.fragment;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -25,13 +26,17 @@ public class Header {
     @JsonProperty("correlationId")
     private String correlationId;
     @JsonProperty("application")
-    private final String application;
+    private String application;
     @JsonProperty("platform")
-    private final String platform;
+    private String platform;
     @JsonProperty("timestamp")
     private Long timestamp;
     @JsonProperty("source")
     private String source;
+
+    @JsonCreator
+    public Header() {
+    }
 
     public Header(String correlationId, String application, String platform) {
         this.correlationId = checkNotNull(correlationId);
@@ -62,10 +67,6 @@ public class Header {
 
     public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
-    }
-
-    public String getSource() {
-        return source;
     }
 
     public void setSource(String source) {

@@ -17,15 +17,31 @@
 
 package com.vsct.dt.strowgr.admin.nsq.payload.fragment;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * Conf content of an entry point.
+ * Mainly for Haproxy and Syslog configuration content.
+ */
 public class Conf {
+    /**
+     * Haproxy configuration file resolved from template and based64 encoded.
+     */
     @JsonProperty("haproxy")
     private String haproxy;
+
+    /**
+     * Syslog configuration file resolved from template and based64 encoded.
+     */
     @JsonProperty("syslog")
     private String syslog;
+
+    @JsonCreator
+    public Conf() {
+    }
 
     public Conf(String haproxy, String syslog) {
         this.haproxy = checkNotNull(haproxy);
@@ -38,13 +54,5 @@ public class Conf {
 
     public void setHaproxy(String haproxy) {
         this.haproxy = haproxy;
-    }
-
-    public String getSyslog() {
-        return syslog;
-    }
-
-    public void setSyslog(String syslog) {
-        this.syslog = syslog;
     }
 }

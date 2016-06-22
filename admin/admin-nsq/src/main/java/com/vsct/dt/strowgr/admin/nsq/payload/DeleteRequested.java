@@ -19,11 +19,18 @@ package com.vsct.dt.strowgr.admin.nsq.payload;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
-public class DeleteRequested extends AbstractPayload {
+public class DeleteRequested {
+
+    @JsonProperty("header")
+    private Header header;
 
     @JsonCreator
-    public DeleteRequested(@JsonProperty("correlationId") String correlationId, @JsonProperty("application") String application, @JsonProperty("platform") String platform, @JsonProperty("timestamp") Long timestamp) {
-        super(correlationId, application, platform);
+    public DeleteRequested() {
+    }
+
+    public Header getHeader() {
+        return header;
     }
 }

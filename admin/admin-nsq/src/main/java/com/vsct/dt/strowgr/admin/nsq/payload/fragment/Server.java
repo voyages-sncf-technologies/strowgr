@@ -17,15 +17,24 @@
 
 package com.vsct.dt.strowgr.admin.nsq.payload.fragment;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Map;
 
 public class Server {
+    @JsonProperty("id")
     private String id;
+    @JsonProperty("backendId")
     private String backendId;
+    @JsonProperty("ip")
     private String ip;
+    @JsonProperty("port")
     private String port;
-    private Map<String,String> context;
+    @JsonProperty("context")
+    private Map<String, String> context;
 
+    @JsonCreator
     public Server() {
     }
 
@@ -41,16 +50,8 @@ public class Server {
         return backendId;
     }
 
-    public void setBackendId(String backendId) {
-        this.backendId = backendId;
-    }
-
     public String getIp() {
         return ip;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
     }
 
     public String getPort() {

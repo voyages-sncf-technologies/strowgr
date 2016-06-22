@@ -19,23 +19,26 @@ package com.vsct.dt.strowgr.admin.nsq.payload;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Server;
 
-public class RegisterServer extends AbstractPayload {
+public class RegisterServer {
+
+    @JsonProperty("header")
+    private Header header;
 
     @JsonProperty("server")
     Server server;
 
     @JsonCreator
-    public RegisterServer(@JsonProperty("correlationId") String correlationId, @JsonProperty("application") String application, @JsonProperty("platform") String platform, @JsonProperty("timestamp") Long timestamp) {
-        super(correlationId, application, platform);
+    public RegisterServer() {
     }
 
     public Server getServer() {
         return server;
     }
 
-    public void setServer(Server server) {
-        this.server = server;
+    public Header getHeader() {
+        return header;
     }
 }

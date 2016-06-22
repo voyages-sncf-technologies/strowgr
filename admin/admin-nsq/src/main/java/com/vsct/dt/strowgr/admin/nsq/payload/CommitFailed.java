@@ -19,11 +19,18 @@ package com.vsct.dt.strowgr.admin.nsq.payload;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
-public class CommitFailed extends AbstractPayload {
+public class CommitFailed {
+
+    @JsonProperty("header")
+    private Header header;
 
     @JsonCreator
-    public CommitFailed(@JsonProperty("correlationId") String correlationId, @JsonProperty("application") String application, @JsonProperty("platform") String platform, @JsonProperty("timestamp") Long timestamp) {
-        super(correlationId, application, platform);
+    public CommitFailed() {
+    }
+
+    public Header getHeader() {
+        return header;
     }
 }

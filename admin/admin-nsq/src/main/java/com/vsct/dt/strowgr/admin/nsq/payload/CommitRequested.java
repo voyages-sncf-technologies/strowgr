@@ -20,22 +20,22 @@ package com.vsct.dt.strowgr.admin.nsq.payload;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Conf;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
-public class CommitRequested extends AbstractPayload{
+public class CommitRequested {
     @JsonProperty("conf")
     private Conf conf;
 
+    @JsonProperty("header")
+    private Header header;
+
     @JsonCreator
     public CommitRequested(String correlationId, String application, String platform, String confBase64, String syslogConfBase64) {
-        super(correlationId,application,platform);
-        conf = new Conf(confBase64,syslogConfBase64);
+        header = new Header(correlationId, application, platform);
+        conf = new Conf(confBase64, syslogConfBase64);
     }
 
-    public Conf getConf() {
-        return conf;
-    }
-
-    public void setConf(Conf conf) {
-        this.conf = conf;
+    public Header getHeader() {
+        return header;
     }
 }

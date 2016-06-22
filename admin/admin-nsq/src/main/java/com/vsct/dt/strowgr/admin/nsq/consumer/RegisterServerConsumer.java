@@ -51,7 +51,7 @@ public class RegisterServerConsumer {
                     payload.getHeader().setTimestamp(message.getTimestamp().getTime());
                 }
 
-            /* TODO Use some conflation to prevent dispatching all event */
+                // TODO Use some conflation to prevent dispatching all event
                 RegisterServerEvent event = new RegisterServerEvent(payload.getHeader().getCorrelationId(),
                         new EntryPointKeyVsctImpl(payload.getHeader().getApplication(), payload.getHeader().getPlatform()),
                         payload.getServer().getBackendId(),

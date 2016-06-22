@@ -126,7 +126,7 @@ public class EntryPointEventHandler {
                             LOGGER.debug("post to event bus event {}", serverRegisteredEvent);
                             outputBus.post(serverRegisteredEvent);
                         } else {
-                            LOGGER.warn("can't prepare configurtion on key {}", key);
+                            LOGGER.warn("can't prepare configuration on key {}", key);
                         }
                     });
 

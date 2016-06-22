@@ -66,7 +66,7 @@ public class RegisterServerMessageConsumerFactory {
                 registerServer = mapper.readValue(message.getMessage(), RegisterServer.class);
                 header = registerServer.getHeader();
                 if (header.getCorrelationId() == null) {
-                    header.setCorrelationId(Arrays.toString(message.getId()));
+                    header.setCorrelationId(new String(message.getId()));
                 }
                 if (header.getTimestamp() == null) {
                     header.setTimestamp(message.getTimestamp().getTime());

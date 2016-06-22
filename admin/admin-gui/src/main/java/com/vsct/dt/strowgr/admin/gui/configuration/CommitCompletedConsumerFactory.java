@@ -29,12 +29,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.function.Consumer;
 
 /**
  * Configuration factory from Dropwizard for CommitCompletedConsumer NSQ.
- * <p>
+ *
  * Created by william_montaz on 16/02/2016.
  */
 public class CommitCompletedConsumerFactory {
@@ -64,7 +63,7 @@ public class CommitCompletedConsumerFactory {
                 commitCompleted = mapper.readValue(message.getMessage(), CommitCompleted.class);
             } catch (IOException e) {
                 LOGGER.error("can't deserialize the commitCompleted:" + new String(message.getMessage()), e);
-                //Avoid republishing message and stop processing
+                // Avoid republishing message and stop processing
                 message.finished();
                 return;
             }

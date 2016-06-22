@@ -17,13 +17,22 @@
 
 package com.vsct.dt.strowgr.admin.nsq.payload.fragment;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Sidekick {
+    @JsonProperty("id")
     String id;
+    @JsonProperty("host")
     String host;
+    @JsonProperty("vip")
     String vip;
+    @JsonProperty("version")
     String version;
+    @JsonProperty("role")
     String role;
 
+    @JsonCreator
     public Sidekick() {
     }
 
