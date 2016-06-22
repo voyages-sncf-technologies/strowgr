@@ -46,18 +46,28 @@ func (config *Config) NodeId() string {
 	return config.ClusterId + "-" + config.Status
 }
 
+type Header struct {
+	CorrelationId string `json:"correlationId"`
+	Application   string `json:"application"`
+	Platform      string `json:"platform"`
+	Timestamp     int64  `json:"timestamp"`
+	Source        string `json:"source"`
+}
+
+type Conf struct {
+	Haproxy []byte `json:"haproxy"`
+	Syslog  []byte `json:"syslog"`
+}
+
+// main type for messages
 type EventMessage struct {
-	Header struct {
-		CorrelationId string `json:"correlationId"`
-		Application   string `json:"application"`
-		Platform      string `json:"platform"`
-		Timestamp     int64  `json:"timestamp"`
-		Source        string `json:"source"`
-	} `json:"header"`
-	Conf struct {
-		Haproxy []byte `json:"haproxy"`
-		Syslog  []byte `json:"syslog"`
-	} `json:"conf"`
+	Header Header `json:"header"`
+}
+
+// type of messages with Conf type additionally
+type EventMessageWithConf struct {
+	EventMessage
+	Conf Conf `json:"conf,omitempty"`
 }
 
 // retrieve Context from an EventMessage
@@ -70,7 +80,17 @@ func (em EventMessage) Context() Context {
 	}
 }
 
-// context for tracing current process
+// clone an EventMessage with just the header, a new source and a new timestamp
+func (eventMessage EventMessage) Clone(source string) EventMessage {
+	newMessage := EventMessage{
+		Header: eventMessage.Header,
+	}
+	newMessage.Header.Source = source
+	newMessage.Header.Timestamp = time.Now().UnixNano() / int64(time.Millisecond)
+	return newMessage
+}
+
+// context for tracing current process and local processing
 type Context struct {
 	CorrelationId string `json:"correlationId"`
 	Timestamp     int64  `json:"timestamp"`
@@ -95,8 +115,8 @@ func (ctx Context) Fields() log.Fields {
 }
 
 type ReloadEvent struct {
-	Message *EventMessage
-	F       func(data *EventMessage) error
+	Message *EventMessageWithConf
+	F       func(data *EventMessageWithConf) error
 }
 
 func (re *ReloadEvent) Execute() error {
@@ -104,10 +124,10 @@ func (re *ReloadEvent) Execute() error {
 }
 
 type EventHandler interface {
-	HandleMessage(data *EventMessage) error
+	HandleMessage(data *EventMessageWithConf) error
 }
-type HandlerFunc func(data *EventMessage) error
+type HandlerFunc func(data *EventMessageWithConf) error
 
-func (h HandlerFunc) HandleMessage(m *EventMessage) error {
+func (h HandlerFunc) HandleMessage(m *EventMessageWithConf) error {
 	return h(m)
 }

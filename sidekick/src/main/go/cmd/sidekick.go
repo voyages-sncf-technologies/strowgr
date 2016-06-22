@@ -273,20 +273,20 @@ func onDeleteRequested(message *nsq.Message) error {
 }
 
 // logAndForget is a generic function to just log event
-func logAndForget(data *sidekick.EventMessage) error {
+func logAndForget(data *sidekick.EventMessageWithConf) error {
 	log.WithFields(data.Context().Fields()).Debug("Commit completed")
 	return nil
 }
 
-func reloadSlave(data *sidekick.EventMessage) error {
-	return reloadHaProxy(data, "slave", "commit_slave_completed_", data)
+func reloadSlave(data *sidekick.EventMessageWithConf) error {
+	return reloadHaProxy(data, "slave", "commit_slave_completed_")
 }
 
-func reloadMaster(data *sidekick.EventMessage) error {
-	return reloadHaProxy(data, "master", "commit_completed_", data.Context().UpdateTimestamp())
+func reloadMaster(data *sidekick.EventMessageWithConf) error {
+	return reloadHaProxy(data, "master", "commit_completed_")
 }
 
-func deleteHaproxy(data *sidekick.EventMessage) error {
+func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
 	context := data.Context()
 	hap := sidekick.NewHaproxy("", properties, context)
 	err := hap.Stop()
@@ -297,7 +297,8 @@ func deleteHaproxy(data *sidekick.EventMessage) error {
 	return err
 }
 
-func reloadHaProxy(data *sidekick.EventMessage, role string, topic string, message interface{}) error {
+// reload an haproxy with content of data in according to role (slave or master)
+func reloadHaProxy(data *sidekick.EventMessageWithConf, role string, topic string) error {
 	context := data.Context()
 	hap := sidekick.NewHaproxy(role, properties, context)
 
@@ -312,24 +313,20 @@ func reloadHaProxy(data *sidekick.EventMessage, role string, topic string, messa
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		publishMessage(topic, message, context)
+		publishMessage(topic, data.Clone("sidekick-" + properties.ClusterId + "-" + role), context)
 	} else {
 		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
-		publishContextMessage("commit_failed_", context)
+		publishMessage("commit_failed_", data.Clone("sidekick-" + properties.ClusterId + "-" + role), context)
 	}
 	return nil
 }
 
 // Unmarshal json to EventMessage
-func bodyToData(jsonStream []byte) (*sidekick.EventMessage, error) {
+func bodyToData(jsonStream []byte) (*sidekick.EventMessageWithConf, error) {
 	dec := json.NewDecoder(bytes.NewReader(jsonStream))
-	var message sidekick.EventMessage
+	var message sidekick.EventMessageWithConf
 	err := dec.Decode(&message)
 	return &message, err
-}
-
-func publishContextMessage(topic_prefix string, context sidekick.Context) error {
-	return publishMessage(topic_prefix, context, context.UpdateTimestamp())
 }
 
 func publishMessage(topic_prefix string, data interface{}, context sidekick.Context) error {

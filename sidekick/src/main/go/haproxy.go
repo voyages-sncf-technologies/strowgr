@@ -55,7 +55,7 @@ const (
 
 // ApplyConfiguration write the new configuration and reload
 // A rollback is called on failure
-func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
+func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) {
 	hap.createSkeleton(data.Header.CorrelationId)
 
 	newConf := data.Conf.Haproxy
@@ -125,7 +125,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 }
 
 // dumpConfiguration dumps the new configuration file with context for debugging purpose
-func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *EventMessage) {
+func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *EventMessageWithConf) {
 	f, err2 := os.Create(filename)
 	defer f.Close()
 	if err2 == nil {
