@@ -1,7 +1,6 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.github.brainlag.nsq.NSQConsumer;
-import com.github.brainlag.nsq.NSQProducer;
 import io.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

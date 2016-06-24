@@ -1,3 +1,19 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
 package main
 
 import (
@@ -7,8 +23,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"github.com/bitly/go-nsq"
 	log "github.com/Sirupsen/logrus"
+	"github.com/bitly/go-nsq"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,16 +34,17 @@ import (
 )
 
 var (
-	ip = flag.String("ip", "4.3.2.1", "Node ip address")
-	configFile = flag.String("config", "sidekick.conf", "Configuration file")
-	version = flag.Bool("version", false, "Print current version")
-	verbose = flag.Bool("verbose", false, "Log in verbose mode")
-	config = nsq.NewConfig()
-	properties *sidekick.Config
-	daemon      *sidekick.Daemon
-	producer    *nsq.Producer
-	syslog        *sidekick.Syslog
-	reloadChan = make(chan sidekick.ReloadEvent)
+	ip               = flag.String("ip", "4.3.2.1", "Node ip address")
+	configFile       = flag.String("config", "sidekick.conf", "Configuration file")
+	version          = flag.Bool("version", false, "Print current version")
+	verbose          = flag.Bool("verbose", false, "Log in verbose mode")
+	config           = nsq.NewConfig()
+	properties       *sidekick.Config
+	daemon           *sidekick.Daemon
+	producer         *nsq.Producer
+	syslog           *sidekick.Syslog
+	reloadChan       = make(chan sidekick.ReloadEvent)
+	deleteChan       = make(chan sidekick.ReloadEvent)
 	lastSyslogReload = time.Now()
 )
 
@@ -52,7 +69,7 @@ func main() {
 	syslog.Init()
 	log.WithFields(log.Fields{
 		"status": properties.Status,
-		"id":    properties.NodeId(),
+		"id":     properties.NodeId(),
 	}).Info("Starting sidekick")
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
@@ -69,6 +86,18 @@ func main() {
 		err := restApi.Start()
 		if err != nil {
 			log.Fatal("Cannot start api")
+		}
+	}()
+
+	// Start delete consumer
+	go func() {
+		defer wg.Done()
+		wg.Add(1)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), properties.NodeId(), config)
+		consumer.AddHandler(nsq.HandlerFunc(onDeleteRequested))
+		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		if err != nil {
+			log.Panic("Could not connect")
 		}
 	}()
 
@@ -117,6 +146,8 @@ func main() {
 			select {
 			case reload := <-reloadChan:
 				reload.Execute()
+			case delete := <-deleteChan:
+				delete.Execute()
 			case <-stopChan:
 				return
 			}
@@ -184,16 +215,22 @@ func loadProperties() {
 	}
 	properties.IpAddr = *ip
 	len := len(properties.HapHome)
-	if properties.HapHome[len - 1] == '/' {
-		properties.HapHome = properties.HapHome[:len - 1]
+	if properties.HapHome[len-1] == '/' {
+		properties.HapHome = properties.HapHome[:len-1]
 	}
 }
 
 func filteredHandler(event string, message *nsq.Message, target string, f sidekick.HandlerFunc) error {
 	defer message.Finish()
-	match, err := daemon.Is(target)
-	if err != nil {
-		return err
+	var match bool
+	if target == "any" {
+		match = true
+	} else {
+		var err error
+		match, err = daemon.Is(target)
+		if err != nil {
+			return err
+		}
 	}
 
 	if match {
@@ -205,6 +242,8 @@ func filteredHandler(event string, message *nsq.Message, target string, f sideki
 		}
 
 		switch event {
+		case "delete_requested":
+			deleteChan <- sidekick.ReloadEvent{F: f, Message: data}
 		case "commit_requested":
 			reloadChan <- sidekick.ReloadEvent{F: f, Message: data}
 		case "commit_slave_completed":
@@ -229,6 +268,9 @@ func onCommitSlaveRequested(message *nsq.Message) error {
 func onCommitCompleted(message *nsq.Message) error {
 	return filteredHandler("commit_completed", message, "slave", logAndForget)
 }
+func onDeleteRequested(message *nsq.Message) error {
+	return filteredHandler("delete_requested", message, "any", deleteHaproxy)
+}
 
 // logAndForget is a generic function to just log event
 func logAndForget(data *sidekick.EventMessage) error {
@@ -242,6 +284,17 @@ func reloadSlave(data *sidekick.EventMessage) error {
 
 func reloadMaster(data *sidekick.EventMessage) error {
 	return reloadHaProxy(data, "master", "commit_completed_", data.Context().UpdateTimestamp())
+}
+
+func deleteHaproxy(data *sidekick.EventMessage) error {
+	context := data.Context()
+	hap := sidekick.NewHaproxy("", properties, data.HapVersion, context)
+	err := hap.Stop()
+	if err != nil {
+		return err
+	}
+	err = hap.Delete()
+	return err
 }
 
 func reloadHaProxy(data *sidekick.EventMessage, role string, topic string, message interface{}) error {
@@ -278,6 +331,7 @@ func bodyToData(jsonStream []byte) (*sidekick.EventMessage, error) {
 func publishContextMessage(topic_prefix string, context sidekick.Context) error {
 	return publishMessage(topic_prefix, context, context.UpdateTimestamp())
 }
+
 func publishMessage(topic_prefix string, data interface{}, context sidekick.Context) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId

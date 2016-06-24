@@ -6,4 +6,4 @@ bin
 .DS_Store
 **/strowgr.yaml
 **/dependency-reduced-pom.xmlsidekick/haproxy-default-name.conf*
-
+**/admin.yaml

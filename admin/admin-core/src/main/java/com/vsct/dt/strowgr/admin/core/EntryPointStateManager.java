@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.core;
 
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
@@ -88,9 +105,8 @@ public class EntryPointStateManager {
     /**
      * Put the pending configuration in committing state, only if there is not already a configuration in committing state
      *
-     *
      * @param correlationId
-     * @param key of the entrypoint
+     * @param key           of the entrypoint
      * @return the new committing configuration (optional)
      */
     Optional<EntryPoint> tryCommitPending(String correlationId, EntryPointKey key) {
@@ -114,9 +130,8 @@ public class EntryPointStateManager {
     /**
      * Put the current configuration in committing state, only if there is not already a configuration in committing state
      *
-     *
      * @param correlationId
-     * @param key of the entrypoint
+     * @param key           of the entrypoint
      * @return the new committing configuration (optional)
      */
     Optional<EntryPoint> tryCommitCurrent(String correlationId, EntryPointKey key) {
@@ -154,6 +169,7 @@ public class EntryPointStateManager {
 
     /**
      * Removes the committing configuration
+     *
      * @param key of the entrypoint
      * @return the current configuration, if available
      */
@@ -164,6 +180,7 @@ public class EntryPointStateManager {
 
     /**
      * Returns the correlation id that led to a commit action
+     *
      * @param key of the entrypoint
      * @return an Optional of String. The Optional is empty if there is no committing configuration at all
      */

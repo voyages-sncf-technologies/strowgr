@@ -1,3 +1,19 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
 package sidekick
 
 import (
@@ -264,4 +280,34 @@ func (hap *Haproxy) getReloadScript() string {
 // It returns the full path to the haproxy binary
 func (hap *Haproxy) getHapBinary() string {
 	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", hap.Version)
+}
+
+func (hap *Haproxy) Delete() error {
+	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
+	err := os.RemoveAll(baseDir)
+	if err != nil {
+		log.WithError(err).WithFields(hap.Context.Fields()).WithFields(log.Fields{
+			"dir": baseDir,
+		}).Error("Failed to delete haproxy")
+	} else {
+		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
+			"dir": baseDir,
+		}).Info("HAproxy deleted")
+	}
+
+	return err
+}
+
+func (hap *Haproxy) Stop() error {
+	reloadScript := hap.getReloadScript()
+	output, err := exec.Command("sh", reloadScript, "stop").Output()
+	if err != nil {
+		log.WithFields(hap.Context.Fields()).WithError(err).Error("Error stop")
+	} else {
+		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
+			"reloadScript": reloadScript,
+			"cmd":          string(output[:]),
+		}).Debug("Stop succeeded")
+	}
+	return err
 }

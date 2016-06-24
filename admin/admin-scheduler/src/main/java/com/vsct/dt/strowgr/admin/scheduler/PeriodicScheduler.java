@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.scheduler;
 
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
@@ -13,16 +30,16 @@ import java.util.function.Function;
 
 /**
  * Schedule entrypoint lifecycles.
- *
+ * <p>
  * Created by william_montaz on 11/02/2016.
  */
 public class PeriodicScheduler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicScheduler.class);
 
     private final EntryPointRepository repository;
-    private final Consumer<T>          consumer;
-    private final Function<String, T>  provider;
-    private final long                 periodMilli;
+    private final Consumer<T> consumer;
+    private final Function<String, T> provider;
+    private final long periodMilli;
     private volatile boolean stop = false;
 
     private final Thread automaticScheduler = new Thread(new Runnable() {
@@ -39,7 +56,7 @@ public class PeriodicScheduler<T> {
                     for (String ep : repository.getEntryPointsId()) {
                         consumer.accept(provider.apply(ep));
                     }
-                } catch (Throwable t){
+                } catch (Throwable t) {
                     t.printStackTrace();
                     LOGGER.error("PeriodicScheduler failed. Reason {}", t.getMessage());
                 }

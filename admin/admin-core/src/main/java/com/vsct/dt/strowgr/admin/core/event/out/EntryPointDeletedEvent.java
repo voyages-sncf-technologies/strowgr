@@ -1,6 +1,5 @@
 package com.vsct.dt.strowgr.admin.core.event.out;
 
-import com.google.common.collect.ImmutableSet;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
