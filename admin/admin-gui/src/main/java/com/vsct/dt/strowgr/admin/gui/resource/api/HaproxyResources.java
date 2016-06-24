@@ -30,9 +30,9 @@ import javax.ws.rs.core.MediaType;
 @Path("/haproxy")
 public class HaproxyResources {
 
-    private final UriTemplateLocator   templateLocator;
+    private final UriTemplateLocator templateLocator;
     private final EntryPointRepository repository;
-    private final TemplateGenerator    templateGenerator;
+    private final TemplateGenerator templateGenerator;
 
     public HaproxyResources(EntryPointRepository repository, UriTemplateLocator templateLocator, TemplateGenerator templateGenerator) {
         this.repository = repository;

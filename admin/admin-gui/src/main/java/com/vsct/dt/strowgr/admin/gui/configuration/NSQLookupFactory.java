@@ -27,7 +27,7 @@ import javax.validation.constraints.Min;
 
 /**
  * NSQLookupFactory for reading NSQLookupd configuration from dropwizard yaml.
- *
+ * <p>
  * Created by william_montaz on 16/02/2016.
  */
 public class NSQLookupFactory {

@@ -32,7 +32,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Subscribes for events from eventbus and dispatch them to NSQDispatcher.
- *
+ * <p>
  * Created by william_montaz on 15/02/2016.
  */
 class ToNSQSubscriber {

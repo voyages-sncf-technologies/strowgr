@@ -29,7 +29,7 @@ import static java.util.function.Function.identity;
 
 /**
  * Json mapping of {@code EntryPoint}.
- *
+ * <p>
  * Created by william_montaz on 09/02/2016.
  */
 public class EntryPointMappingJson extends EntryPoint {

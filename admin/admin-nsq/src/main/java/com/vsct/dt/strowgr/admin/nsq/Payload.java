@@ -17,18 +17,14 @@
 
 package com.vsct.dt.strowgr.admin.nsq;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * Created by william_montaz on 02/02/2016.
- */
 public abstract class Payload {
 
     private Long timestamp;
 
     private String correlationId;
 
-    protected Payload(){}
+    protected Payload() {
+    }
 
     public Payload(String correlationId) {
         this(correlationId, System.currentTimeMillis());

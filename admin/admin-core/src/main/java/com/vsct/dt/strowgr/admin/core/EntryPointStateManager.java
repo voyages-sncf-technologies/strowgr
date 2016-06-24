@@ -105,9 +105,8 @@ public class EntryPointStateManager {
     /**
      * Put the pending configuration in committing state, only if there is not already a configuration in committing state
      *
-     *
      * @param correlationId
-     * @param key of the entrypoint
+     * @param key           of the entrypoint
      * @return the new committing configuration (optional)
      */
     Optional<EntryPoint> tryCommitPending(String correlationId, EntryPointKey key) {
@@ -131,9 +130,8 @@ public class EntryPointStateManager {
     /**
      * Put the current configuration in committing state, only if there is not already a configuration in committing state
      *
-     *
      * @param correlationId
-     * @param key of the entrypoint
+     * @param key           of the entrypoint
      * @return the new committing configuration (optional)
      */
     Optional<EntryPoint> tryCommitCurrent(String correlationId, EntryPointKey key) {
@@ -171,6 +169,7 @@ public class EntryPointStateManager {
 
     /**
      * Removes the committing configuration
+     *
      * @param key of the entrypoint
      * @return the current configuration, if available
      */
@@ -181,6 +180,7 @@ public class EntryPointStateManager {
 
     /**
      * Returns the correlation id that led to a commit action
+     *
      * @param key of the entrypoint
      * @return an Optional of String. The Optional is empty if there is no committing configuration at all
      */

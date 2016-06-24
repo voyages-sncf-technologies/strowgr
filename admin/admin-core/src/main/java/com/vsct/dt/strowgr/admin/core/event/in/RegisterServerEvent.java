@@ -28,7 +28,7 @@ import java.util.Set;
  */
 public class RegisterServerEvent extends EntryPointEvent {
 
-    private final String                                        backend;
+    private final String backend;
     private final ImmutableSet<IncomingEntryPointBackendServer> servers;
 
     public RegisterServerEvent(String correlationId, EntryPointKey key, String backend, Set<IncomingEntryPointBackendServer> servers) {

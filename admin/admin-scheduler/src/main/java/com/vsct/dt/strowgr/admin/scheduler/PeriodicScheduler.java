@@ -30,16 +30,16 @@ import java.util.function.Function;
 
 /**
  * Schedule entrypoint lifecycles.
- *
+ * <p>
  * Created by william_montaz on 11/02/2016.
  */
 public class PeriodicScheduler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicScheduler.class);
 
     private final EntryPointRepository repository;
-    private final Consumer<T>          consumer;
-    private final Function<String, T>  provider;
-    private final long                 periodMilli;
+    private final Consumer<T> consumer;
+    private final Function<String, T> provider;
+    private final long periodMilli;
     private volatile boolean stop = false;
 
     private final Thread automaticScheduler = new Thread(new Runnable() {
@@ -56,7 +56,7 @@ public class PeriodicScheduler<T> {
                     for (String ep : repository.getEntryPointsId()) {
                         consumer.accept(provider.apply(ep));
                     }
-                } catch (Throwable t){
+                } catch (Throwable t) {
                     t.printStackTrace();
                     LOGGER.error("PeriodicScheduler failed. Reason {}", t.getMessage());
                 }

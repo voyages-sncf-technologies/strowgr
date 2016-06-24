@@ -30,7 +30,7 @@ public class NsqHealthcheck extends HealthCheck {
 
     public NsqHealthcheck(String host, int port) {
         httpClient = HttpClients.createDefault();
-        httpGet = new HttpGet("http://" + host + ":" + port+"/ping");
+        httpGet = new HttpGet("http://" + host + ":" + port + "/ping");
 
     }
 

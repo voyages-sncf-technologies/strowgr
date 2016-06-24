@@ -19,7 +19,7 @@ package com.vsct.dt.strowgr.admin.core;
 
 /**
  * Interface for each entrypoint key implementation.
- *
+ * <p>
  * Created by william_montaz on 08/02/2016.
  */
 public interface EntryPointKey {

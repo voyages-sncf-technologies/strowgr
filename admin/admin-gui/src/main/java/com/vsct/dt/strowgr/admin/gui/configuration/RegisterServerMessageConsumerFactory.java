@@ -56,7 +56,7 @@ public class RegisterServerMessageConsumerFactory {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public NSQConsumer build(NSQLookup lookup, Consumer<RegisterServerEvent> consumer){
+    public NSQConsumer build(NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
         return new NSQConsumer(lookup, topic, "admin", (message) -> {
 
             RegisterServerPayload payload = null;

@@ -20,7 +20,10 @@ package com.vsct.dt.strowgr.admin.gui;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
-import com.google.common.eventbus.*;
+import com.google.common.eventbus.AsyncEventBus;
+import com.google.common.eventbus.DeadEvent;
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
@@ -153,6 +156,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
             public Response toResponse(IncompleteConfigurationException e) {
                 return Response.status(500).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
             }
-        });    }
+        });
+    }
 
 }

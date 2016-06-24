@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 
 /**
  * Configuration factory from Dropwizard for CommitCompletedConsumer NSQ.
- *
+ * <p>
  * Created by william_montaz on 16/02/2016.
  */
 public class CommitCompletedConsumerFactory {

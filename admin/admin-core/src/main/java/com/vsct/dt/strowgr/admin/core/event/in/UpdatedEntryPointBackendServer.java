@@ -17,7 +17,8 @@
 
 package com.vsct.dt.strowgr.admin.core.event.in;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
 

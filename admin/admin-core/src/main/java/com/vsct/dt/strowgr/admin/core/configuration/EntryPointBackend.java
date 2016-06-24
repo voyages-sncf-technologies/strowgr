@@ -20,7 +20,7 @@ package com.vsct.dt.strowgr.admin.core.configuration;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.vsct.dt.strowgr.admin.Preconditions.*;
+import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
 
 public class EntryPointBackend {
 

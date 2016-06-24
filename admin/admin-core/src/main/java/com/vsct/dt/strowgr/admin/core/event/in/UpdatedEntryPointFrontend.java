@@ -28,7 +28,7 @@ import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
  */
 public class UpdatedEntryPointFrontend {
 
-    private final String                  id;
+    private final String id;
     private final HashMap<String, String> context;
 
     public UpdatedEntryPointFrontend(String id, Map<String, String> context) {

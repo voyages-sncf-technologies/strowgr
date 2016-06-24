@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.vsct.dt.strowgr.admin.Preconditions.*;
+import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
 
 public class EntryPoint {
 
@@ -155,22 +155,23 @@ public class EntryPoint {
 
     /**
      * Merging rules :
-     *  - Updated global context replaces existing one
-     *  - Updated syslog user replaces existing one
-     *  - Updated frontends replace existing ones, without consideration for ports
-     *  - Updated backends replace existing ones
-     *  - Updated servers just replace overrideConfiguration for existing ones
+     * - Updated global context replaces existing one
+     * - Updated syslog user replaces existing one
+     * - Updated frontends replace existing ones, without consideration for ports
+     * - Updated backends replace existing ones
+     * - Updated servers just replace overrideConfiguration for existing ones
+     *
      * @param updatedEntryPoint
      * @return A new EntryPoint, result of the merge of this entrypoint and the updatedconfiguration
      */
     public EntryPoint mergeWithUpdate(UpdatedEntryPoint updatedEntryPoint) {
 
         Set<EntryPointBackend> newBackends = new HashSet<>();
-        for(UpdatedEntryPointBackend updatedBackend : updatedEntryPoint.getBackends()){
+        for (UpdatedEntryPointBackend updatedBackend : updatedEntryPoint.getBackends()) {
             EntryPointBackend thisBackend = this.backends.get(updatedBackend.getId());
-            if(thisBackend != null){
+            if (thisBackend != null) {
                 Set<EntryPointBackendServer> newServers = new HashSet<>();
-                for(EntryPointBackendServer s : thisBackend.getServers()){
+                for (EntryPointBackendServer s : thisBackend.getServers()) {
                     Map<String, String> contextOverride = updatedBackend.getServer(s.getId()).map(updatedServer -> updatedServer.getContextOverride()).orElse(new HashMap<>());
                     newServers.add(new EntryPointBackendServer(s.getId(), s.getHostname(), s.getIp(), s.getPort(), s.getContext(), contextOverride));
                 }

@@ -73,7 +73,7 @@ class ConsulReader {
         Optional<T> result = Optional.empty();
         if (status >= 200 && status < 300) {
             result = method.apply(entity);
-        } else if (status != 404 || !accept404){
+        } else if (status != 404 || !accept404) {
             String content = Optional.ofNullable(entity).map(myEntity -> {
                 try {
                     return EntityUtils.toString(myEntity);
