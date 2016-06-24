@@ -1,0 +1,24 @@
+#!/bin/sh
+
+HOMEAPP=$(cd $(dirname $0);pwd)
+
+APP=$(basename $HOMEAPP)
+
+ERR_PARAM=9
+
+ARGV="$@"
+if [ "x$ARGV" = "x" ] ; then
+  echo "Merci de preciser la plateforme. Exemple: ./RELOAD REL1" >&2
+  exit $ERR_PARAM
+else
+  PLATEFORME=$1
+fi
+
+if [ -f $HOMEAPP/Config/hap$APP$PLATEFORME.conf ]; then
+  $HOMEAPP/Config/haproxy -V -D -f $HOMEAPP/Config/hap$APP$PLATEFORME.conf -p $HOMEAPP/logs/$APP$PLATEFORME/haproxy.pid -sf $(cat $HOMEAPP/logs/$APP$PLATEFORME/haproxy.pid)
+else
+  echo "La plateforme $APP$PLATEFORME n'existe pas." >&2
+  exit $ERR_PARAM
+fi
+
+exit 0

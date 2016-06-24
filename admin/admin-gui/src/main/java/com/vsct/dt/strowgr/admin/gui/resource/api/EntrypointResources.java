@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.codahale.metrics.annotation.Timed;
@@ -6,6 +23,7 @@ import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
+import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
@@ -13,7 +31,6 @@ import com.vsct.dt.strowgr.admin.core.event.out.*;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
-import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
 import io.dropwizard.jersey.PATCH;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +49,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.NO_CONTENT;
+import static javax.ws.rs.core.Response.serverError;
+import static javax.ws.rs.core.Response.status;
+
 @Path("/entrypoints")
 @Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
 @Consumes(MediaType.APPLICATION_JSON + ";charset=utf-8")
@@ -39,10 +61,10 @@ public class EntrypointResources {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntrypointResources.class);
 
-    private final EventBus             eventBus;
+    private final EventBus eventBus;
     private final EntryPointRepository repository;
-    private Map<String, AsyncResponseCallback> callbacks       = new ConcurrentHashMap<>();
-    private ScheduledExecutorService           timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
+    private Map<String, AsyncResponseCallback> callbacks = new ConcurrentHashMap<>();
+    private ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
     public EntrypointResources(EventBus eventBus, EntryPointRepository repository) {
         this.eventBus = eventBus;
@@ -65,7 +87,7 @@ public class EntrypointResources {
                 .whenReceive(new AsyncResponseCallback<EntryPointAddedEvent>(asyncResponse) {
                     @Override
                     void handle(EntryPointAddedEvent event) throws Exception {
-                        asyncResponse.resume(Response.status(Response.Status.CREATED).entity(event.getConfiguration().get()).build());
+                        asyncResponse.resume(status(Response.Status.CREATED).entity(event.getConfiguration().get()).build());
                     }
                 })
                 .timeoutAfter(10, TimeUnit.SECONDS);
@@ -98,6 +120,26 @@ public class EntrypointResources {
         Optional<EntryPoint> configuration = repository.getCurrentConfiguration(new EntryPointKeyDefaultImpl(id));
 
         return new EntryPointMappingJson(configuration.orElseThrow(NotFoundException::new));
+    }
+
+
+    @DELETE
+    @Path("/{id : .+}/delete")
+    @Timed
+    public Response deleteEntrypoint(@PathParam("id") String id) {
+        Response response;
+        Boolean removed = repository.removeEntrypoint(new EntryPointKeyDefaultImpl(id));
+        if (removed == null) {
+            response = serverError().build();
+        } else {
+            if (removed) {
+                // entrypoint removed whithout problems
+                response = status(NO_CONTENT).build();
+            } else {
+                response = status(NOT_FOUND).build();
+            }
+        }
+        return response;
     }
 
     @GET
@@ -220,13 +262,13 @@ public class EntrypointResources {
         abstract void handle(T event) throws Exception;
 
         public void whenTimedOut() {
-            asyncResponse.resume(Response.status(Response.Status.GATEWAY_TIMEOUT).build());
+            asyncResponse.resume(status(Response.Status.GATEWAY_TIMEOUT).build());
         }
     }
 
     private class CallbackBuilder {
 
-        String                eventId;
+        String eventId;
         AsyncResponseCallback callback;
 
         CallbackBuilder(String eventId) {
