@@ -27,9 +27,9 @@ import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
  */
 public class UpdatedEntryPointBackend {
 
-    private final String                                   id;
+    private final String id;
     private final HashMap<String, UpdatedEntryPointBackendServer> servers;
-    private final HashMap<String, String>                  context;
+    private final HashMap<String, String> context;
 
     public UpdatedEntryPointBackend(String id, Set<UpdatedEntryPointBackendServer> servers, Map<String, String> context) {
         this.id = checkStringNotEmpty(id, "Updated Backend should have an id");
@@ -50,7 +50,9 @@ public class UpdatedEntryPointBackend {
         return new HashSet<>(servers.values());
     }
 
-    public Optional<UpdatedEntryPointBackendServer> getServer(String id) { return Optional.ofNullable(servers.get(id)); }
+    public Optional<UpdatedEntryPointBackendServer> getServer(String id) {
+        return Optional.ofNullable(servers.get(id));
+    }
 
     public HashMap<String, String> getContext() {
         return new HashMap<>(context);

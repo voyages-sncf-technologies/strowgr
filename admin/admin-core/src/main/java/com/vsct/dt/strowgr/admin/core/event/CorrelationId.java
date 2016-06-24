@@ -17,7 +17,6 @@
 
 package com.vsct.dt.strowgr.admin.core.event;
 
-import java.util.Random;
 import java.util.UUID;
 
 /**

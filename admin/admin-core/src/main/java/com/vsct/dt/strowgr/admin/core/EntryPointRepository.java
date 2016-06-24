@@ -19,7 +19,6 @@ package com.vsct.dt.strowgr.admin.core;
 
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 

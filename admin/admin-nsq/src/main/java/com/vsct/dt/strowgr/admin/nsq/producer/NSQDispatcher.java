@@ -11,7 +11,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Dispatcher of events to NSQ.
- *
+ * <p>
  * WARNING: NSQProducer is not managed by this dispatcher. For instance the start/shutdown should be done outside this
  * object.
  */

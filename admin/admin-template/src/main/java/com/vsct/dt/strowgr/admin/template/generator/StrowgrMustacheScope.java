@@ -17,9 +17,9 @@
 
 package com.vsct.dt.strowgr.admin.template.generator;
 
+import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackendServer;
-import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointFrontend;
 
 import java.util.*;

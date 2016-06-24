@@ -25,7 +25,7 @@ import java.util.Map;
 
 /**
  * Json mapping of {@code EntryPointBackendServer}.
- *
+ * <p>
  * Created by william_montaz on 09/02/2016.
  */
 public class EntryPointBackendServerMappingJson extends EntryPointBackendServer {

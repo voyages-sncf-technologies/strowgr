@@ -35,7 +35,7 @@ public class IncompleteConfigurationException extends MustacheException {
     @Override
     public String getMessage() {
         StringBuilder s = new StringBuilder("Template valorization requires missing entries : \n");
-        for(String e : missingEntries){
+        for (String e : missingEntries) {
             s.append("\t- ").append(e).append("\n");
         }
         return s.toString();

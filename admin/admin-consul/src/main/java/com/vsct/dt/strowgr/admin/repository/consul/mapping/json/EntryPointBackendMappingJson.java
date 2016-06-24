@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 /**
  * Json mapping of {@code EntryPointBackend}.
- *
+ * <p>
  * Created by william_montaz on 09/02/2016.
  */
 public class EntryPointBackendMappingJson extends EntryPointBackend {

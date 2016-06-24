@@ -43,6 +43,7 @@
         width: 200px;
         padding-left: 10px;
     }
+
 </style>
 
 <div layout="row" flex="100">
@@ -53,11 +54,13 @@
                 <input ng-model="searchTerm">
             </md-input-container>
         </div>
-        <div flex ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout layout-align="start center" ng-cloack>
+        <div flex ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout
+             layout-align="start center" ng-cloack>
             <md-button flex id="{{entrypointId}}-select-btn"
                        md-ink-ripple="false"
                        ng-class="{selected: selectedEntrypoint == entrypointId, 'md-hue-3': selectedEntrypoint == entrypointId}"
-                       class="md-raised md-primary" ng-click="loadEntrypoint(entrypointId)">{{entrypointId}}</md-button>
+                       class="md-raised md-primary" ng-click="loadEntrypoint(entrypointId)">{{entrypointId}}
+            </md-button>
         </div>
     </div>
     <div flex>

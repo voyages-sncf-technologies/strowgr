@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.vsct.dt.strowgr.admin.Preconditions.*;
+import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
 
 public class EntryPointFrontend {
 

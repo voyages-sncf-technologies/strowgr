@@ -73,7 +73,7 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
-    public void handle(UpdateEntryPointEvent event){
+    public void handle(UpdateEntryPointEvent event) {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
@@ -141,9 +141,9 @@ public class EntryPointEventHandler {
         try {
             this.stateManager.lock(key);
             Optional<EntryPoint> committingConfiguration = stateManager.tryCommitCurrent(event.getCorrelationId(), key);
-            if(committingConfiguration.isPresent()) {
+            if (committingConfiguration.isPresent()) {
                 EntryPoint configuration = committingConfiguration.get();
-                String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration "+key));
+                String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + key));
                 Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, configuration);
                 String conf = templateGenerator.generate(template, configuration, portsMapping);
                 String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
@@ -183,7 +183,7 @@ public class EntryPointEventHandler {
         try {
             this.stateManager.lock(key);
             Optional<String> optionalCorrelationId = stateManager.getCommitCorrelationId(key);
-            if(optionalCorrelationId.isPresent() && optionalCorrelationId.get().equals(event.getCorrelationId())) {
+            if (optionalCorrelationId.isPresent() && optionalCorrelationId.get().equals(event.getCorrelationId())) {
                 Optional<EntryPoint> currentConfiguration = stateManager.commit(key);
                 if (currentConfiguration.isPresent()) {
                     LOGGER.info("Configuration for EntryPoint {} has been committed", event.getKey().getID());
@@ -212,10 +212,10 @@ public class EntryPointEventHandler {
     @Subscribe
     public void handle(CommitFailureEvent event) {
         EntryPointKey key = event.getKey();
-        try{
+        try {
             this.stateManager.lock(key);
             Optional<String> commitCorrelationId = stateManager.getCommitCorrelationId(key);
-            if(commitCorrelationId.isPresent() && commitCorrelationId.get().equals(event.getCorrelationId())){
+            if (commitCorrelationId.isPresent() && commitCorrelationId.get().equals(event.getCorrelationId())) {
                 LOGGER.info("Configuration for EntryPoint {} failed. Commit is canceled.", key);
                 stateManager.cancelCommit(key);
             } else {

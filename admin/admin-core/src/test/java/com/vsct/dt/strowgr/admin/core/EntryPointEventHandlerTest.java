@@ -35,9 +35,9 @@ public class EntryPointEventHandlerTest {
 
     EntryPointStateManager stateManager;
     EntryPointEventHandler handler;
-    TemplateLocator        templateLocator;
-    TemplateGenerator      templateGenerator;
-    PortProvider           portProvider;
+    TemplateLocator templateLocator;
+    TemplateGenerator templateGenerator;
+    PortProvider portProvider;
 
     @Before
     public void setUp() {
