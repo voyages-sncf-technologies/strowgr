@@ -165,7 +165,6 @@
 
             $scope.deleteEntrypoint = function (id) {
                 $scope.selectedEntrypoint = id;
-                console.log("coucou "+id);
                 $http({
                     method: 'DELETE',
                     url: '/api/entrypoints/'+escape(id)

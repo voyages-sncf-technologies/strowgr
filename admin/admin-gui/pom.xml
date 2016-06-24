@@ -138,33 +138,34 @@
                         <directory>src/main/resources</directory>
                     </resource>
                 </resources>
-
-        <plugins>
-            <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-                <configuration>
-                    <imageName>strowgr/admin-gui</imageName>
-                    <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
-                    <resources>
-                        <resource>
-                            <targetPath>/</targetPath>
-                            <directory>${project.build.directory}</directory>
-                            <includes>
-                                <include>${project.build.finalName}.jar</include>
-                            </includes>
-                        </resource>
-                        <resource>
-                            <targetPath>/</targetPath>
-                            <directory>${project.basedir}/src/docker</directory>
-                            <includes>
-                                <include>server.yaml</include>
-                            </includes>
-                        </resource>
-                    </resources>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imageName>strowgr/admin-gui</imageName>
+                            <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
+                            <resources>
+                                <resource>
+                                    <targetPath>/</targetPath>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>${project.build.finalName}.jar</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <targetPath>/</targetPath>
+                                    <directory>${project.basedir}/src/docker</directory>
+                                    <includes>
+                                        <include>server.yaml</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
