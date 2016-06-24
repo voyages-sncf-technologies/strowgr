@@ -48,10 +48,30 @@ class ConsulReader {
         this.mapper = mapper;
     }
 
+    /**
+     * Read HttpResponse into HttpEntity and apply method with the result.
+     * If result http status is not between 200 and 299, an exception is raised
+     *
+     * @param httpResponse response to read
+     * @param method       method to apply to the read result
+     * @param <T>          Type of the method application
+     * @return the result of the method application. The result is not nullable.
+     * @throws ClientProtocolException thrown if the http status is not between 200 and 299 including
+     */
     <T> Optional<T> parseHttpResponse(HttpResponse httpResponse, Function<HttpEntity, Optional<T>> method) throws ClientProtocolException {
         return parseHttpResponse(httpResponse, method, false);
     }
 
+    /**
+     * Read HttpResponse into HttpEntity and apply method with the result.
+     * If result http status is not between 200 and 299 or equals to 404, an exception is raised
+     *
+     * @param httpResponse response to read
+     * @param method       method to apply to the read result
+     * @param <T>          Type of the method application
+     * @return the result of the method application. The result is not nullable.
+     * @throws ClientProtocolException thrown if the http status is not between 200 and 299 including
+     */
     <T> Optional<T> parseHttpResponseAccepting404(HttpResponse httpResponse, Function<HttpEntity, Optional<T>> method) throws ClientProtocolException {
         return parseHttpResponse(httpResponse, method, true);
     }
@@ -62,9 +82,9 @@ class ConsulReader {
      *
      * @param httpResponse response to read
      * @param method       method to apply to the read result
-     * @param accept404    whether to return or not an empty result if a 404 occurrs
+     * @param accept404    whether to return or not an empty result if a 404 occurs
      * @param <T>          Type of the method application
-     * @return the result of the method application
+     * @return the result of the method application. The result is not nullable.
      * @throws ClientProtocolException thrown if the http status is not between 200 and 299 including
      */
     private <T> Optional<T> parseHttpResponse(HttpResponse httpResponse, Function<HttpEntity, Optional<T>> method, boolean accept404) throws ClientProtocolException {
@@ -138,7 +158,12 @@ class ConsulReader {
             if (consulItems.size() > 1) {
                 throw new IllegalStateException("get too many ports mapping");
             } else {
-                result = Optional.of(consulItems.get(0));
+                ConsulItem<Map<String, Integer>> consulItem = consulItems.get(0);
+                LOGGER.debug("consul items {}", consulItem);
+                if (consulItem.getValue() == null) {
+                    throw new IllegalStateException("value of " + consulItem.getKey() + " in consul repository is null");
+                }
+                result = Optional.of(consulItem);
             }
         } catch (IOException e) {
             LOGGER.error("can't read ports by haproxy", e);

@@ -22,6 +22,7 @@ import com.github.brainlag.nsq.exceptions.NSQException;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitBeginEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,5 +54,10 @@ class ToNSQSubscriber {
         /* TODO test application and platform nullity */
         LOGGER.debug("send to nsq a CommitRequested from CommitBeginEvent {}", commitBeginEvent);
         this.nsqDispatcher.sendCommitRequested(commitBeginEvent.getCorrelationId(), configuration.getHaproxy(), application, platform, commitBeginEvent.getConf(), commitBeginEvent.getSyslogConf());
+    }
+
+    @Subscribe
+    public void handle(DeleteEntryPointEvent deleteEntryPointEvent) throws NSQException, TimeoutException, JsonProcessingException {
+        this.nsqDispatcher.sendDeleteRequested(deleteEntryPointEvent.getCorrelationId(), deleteEntryPointEvent.getHaproxyName(), deleteEntryPointEvent.getApplication(), deleteEntryPointEvent.getPlatform());
     }
 }

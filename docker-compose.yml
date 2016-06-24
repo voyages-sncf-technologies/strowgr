@@ -40,7 +40,7 @@ services:
 
   #  HA proxies
   ha-master:
-    image: strowgr/sidekick:latest
+    image: dockerregistrydev.socrate.vsct.fr/strowgr/sidekick:latest
     volumes:
       - ./data/master/sidekick.conf:/sidekick.conf
     ports:
@@ -51,7 +51,7 @@ services:
       - "larimar:1.2.3.4"
 
   ha-slave:
-    image: strowgr/sidekick:latest
+    image: dockerregistrydev.socrate.vsct.fr/strowgr/sidekick:latest
     volumes:
       - ./data/slave/sidekick.conf:/sidekick.conf
     ports:
@@ -72,7 +72,7 @@ services:
       - nsqd-master
 
   registrator:
-    image: strowgr/registrator:latest
+    image: dockerregistrydev.socrate.vsct.fr/strowgr/registrator:latest
     command: -url http://192.168.99.100:8080 -address 192.168.99.100 -verbose
 #    privileged: true
     volumes:
@@ -81,10 +81,10 @@ services:
      - nsq-admin
 
   admin:
-    image: strowgr/admin:latest
+    image: strowgr/admin-gui:latest
     ports:
       - 8080:8080
-    command: server /server.yml
+   # command: server /server.yml
     volumes:
       - ./data/admin/server.yml:/server.yml
 

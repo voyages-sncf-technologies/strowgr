@@ -8,5 +8,6 @@ LABEL service.8080_tcp.desc "Strowgr web ui"
 EXPOSE 8080
 
 COPY admin-gui-${version}.jar /app.jar
+COPY server.yaml /server.yaml
 
-CMD ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app.jar","server", "/server.yaml"]

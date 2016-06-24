@@ -31,6 +31,7 @@ import com.vsct.dt.strowgr.admin.core.event.out.*;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
+import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
 import io.dropwizard.jersey.PATCH;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,13 +45,14 @@ import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-import static javax.ws.rs.core.Response.Status.NO_CONTENT;
+import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.Response.ok;
 import static javax.ws.rs.core.Response.serverError;
 import static javax.ws.rs.core.Response.status;
 
@@ -87,7 +89,12 @@ public class EntrypointResources {
                 .whenReceive(new AsyncResponseCallback<EntryPointAddedEvent>(asyncResponse) {
                     @Override
                     void handle(EntryPointAddedEvent event) throws Exception {
-                        asyncResponse.resume(status(Response.Status.CREATED).entity(event.getConfiguration().get()).build());
+                        Optional<EntryPoint> entryPointConfiguration = event.getConfiguration();
+                        if (entryPointConfiguration.isPresent()) {
+                            asyncResponse.resume(status(CREATED).entity(entryPointConfiguration.get()).build());
+                        } else {
+                            asyncResponse.resume(status(NOT_FOUND).build());
+                        }
                     }
                 })
                 .timeoutAfter(10, TimeUnit.SECONDS);
@@ -95,6 +102,13 @@ public class EntrypointResources {
         eventBus.post(event);
     }
 
+    /**
+     * Update an entrypoint.
+     *
+     * @param asyncResponse        response asynchronously
+     * @param id                   of the entrypoint (ex. PAO/REL1)
+     * @param updatedConfiguration deserialized entrypoint configuration with new values
+     */
     @PATCH
     @Path("/{id : .+}")
     @Timed
@@ -105,7 +119,12 @@ public class EntrypointResources {
                 .whenReceive(new AsyncResponseCallback<EntryPointUpdatedEvent>(asyncResponse) {
                     @Override
                     void handle(EntryPointUpdatedEvent event) throws Exception {
-                        asyncResponse.resume(event.getConfiguration().get());
+                        Optional<EntryPoint> eventConfiguration = event.getConfiguration();
+                        if (eventConfiguration.isPresent()) {
+                            asyncResponse.resume(eventConfiguration.get());
+                        } else {
+                            asyncResponse.resume(status(NOT_FOUND).build());
+                        }
                     }
                 })
                 .timeoutAfter(10, TimeUnit.SECONDS);
@@ -123,21 +142,45 @@ public class EntrypointResources {
     }
 
 
+    /**
+     * Delete an entrypoint in the repository and, after a success confirmation, forwards the event to other strowgr component through the event bus.
+     *
+     * @param id of the entrypoint
+     * @return {@link javax.ws.rs.core.Response.Status#OK} if success, {@link javax.ws.rs.core.Response.Status#NOT_FOUND} if entrypoint doesn't exists anymore, {@link javax.ws.rs.core.Response.Status#INTERNAL_SERVER_ERROR} otherwise. HTTP response payload contains the updated entrypoint set.
+     */
     @DELETE
-    @Path("/{id : .+}/delete")
+    @Path("/{id : .+}")
     @Timed
     public Response deleteEntrypoint(@PathParam("id") String id) {
-        Response response;
-        Boolean removed = repository.removeEntrypoint(new EntryPointKeyDefaultImpl(id));
-        if (removed == null) {
-            response = serverError().build();
-        } else {
-            if (removed) {
-                // entrypoint removed whithout problems
-                response = status(NO_CONTENT).build();
+        Response response = serverError().build();
+
+        // first get the current entrypoint configuration, if exists
+        EntryPointKeyVsctImpl entryPointKey = EntryPointKeyVsctImpl.fromID(id);
+        Optional<EntryPoint> configuration = repository.getCurrentConfiguration(entryPointKey);
+
+        if (configuration.isPresent()) {
+            // secondly remove the entrypoint from repository
+            Optional<Boolean> removed = repository.removeEntrypoint(entryPointKey);
+            if (removed.isPresent()) {
+                if (removed.get()) {
+                    Set<String> entryPointsId = repository.getEntryPointsId();
+                    // entrypoint removed without problem
+                    response = ok().entity(entryPointsId).build();
+                    // thirdly, propagate the deleted event to other strowgr components
+                    eventBus.post(new DeleteEntryPointEvent(UUID.randomUUID().toString(), entryPointKey, configuration.get().getHaproxy(), entryPointKey.getApplication(), entryPointKey.getPlatform()));
+                } else {
+                    Set<String> entryPointsId = repository.getEntryPointsId();
+                    LOGGER.warn("can't removed an entrypoint though its configuration has just been found. May be there are concurrency problem, admin or/and repository are overloaded.");
+                    response = status(NOT_FOUND).entity(entryPointsId).build();
+                }
             } else {
-                response = status(NOT_FOUND).build();
+                Set<String> entryPointsId = repository.getEntryPointsId();
+                response = serverError().entity(entryPointsId).build();
             }
+        } else {
+            Set<String> entryPointsId = repository.getEntryPointsId();
+            LOGGER.warn("can't find entrypoint {} from repository", entryPointKey);
+            response = status(NOT_FOUND).entity(entryPointsId).build();
         }
         return response;
     }

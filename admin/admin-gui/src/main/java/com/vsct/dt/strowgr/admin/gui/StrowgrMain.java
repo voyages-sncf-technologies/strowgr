@@ -83,7 +83,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         /* Main EventBus */
         ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(new ArrayBlockingQueue<>(100)).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
         EventBus eventBus = new AsyncEventBus(executor, (exception, context) -> {
-            LOGGER.error("exception on main event bus. Context: " + context, exception);
+            LOGGER.error("exception on main event bus. Subscriber: " + context.getSubscriber() + ", method: " + context.getSubscriberMethod().getName(), exception);
         });
         eventBus.register(this); // for dead events
 

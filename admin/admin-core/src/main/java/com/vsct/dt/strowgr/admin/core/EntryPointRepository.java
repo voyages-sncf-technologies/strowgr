@@ -27,6 +27,12 @@ import java.util.Set;
  */
 public interface EntryPointRepository {
 
+    /**
+     * Get current configuration for a given entrypoint from the repository.
+     *
+     * @param key of the entrypoint
+     * @return the optional of the entrypoint, Optional.empty() if the query has failed. Must not be null.
+     */
     Optional<EntryPoint> getCurrentConfiguration(EntryPointKey key);
 
     Optional<EntryPoint> getPendingConfiguration(EntryPointKey key);
@@ -52,9 +58,9 @@ public interface EntryPointRepository {
      * Remove this entrypoint from Strowgr. This command must be forward to all Strowgr components (sidekick, database...)
      *
      * @param entryPointKey of the entrypoint to delete (ex. MY_APP/PROD1)
-     * @return {@link Boolean#TRUE} if entrypoint has been removed from repository, {@link Boolean#FALSE} if entrypoint has not been found, null otherwise
+     * @return {@code Optional#of(Boolean#TRUE)} if entrypoint has been removed from repository, {@code Optional#of(Boolean#TRUE)} if entrypoint has not been found, Optional.empty() otherwise
      */
-    Boolean removeEntrypoint(EntryPointKey entryPointKey);
+    Optional<Boolean> removeEntrypoint(EntryPointKey entryPointKey);
 
     void setCurrentConfiguration(EntryPointKey key, EntryPoint configuration);
 

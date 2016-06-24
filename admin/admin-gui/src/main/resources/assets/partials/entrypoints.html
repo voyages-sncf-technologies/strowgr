@@ -44,6 +44,9 @@
         padding-left: 10px;
     }
 
+    .md-button {
+        min-width: 0px;
+    }
 </style>
 
 <div layout="row" flex="100">
@@ -54,13 +57,17 @@
                 <input ng-model="searchTerm">
             </md-input-container>
         </div>
-        <div flex ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" layout
-             layout-align="start center" ng-cloack>
-            <md-button flex id="{{entrypointId}}-select-btn"
-                       md-ink-ripple="false"
-                       ng-class="{selected: selectedEntrypoint == entrypointId, 'md-hue-3': selectedEntrypoint == entrypointId}"
-                       class="md-raised md-primary" ng-click="loadEntrypoint(entrypointId)">{{entrypointId}}
-            </md-button>
+        <div ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" ng-cloack>
+            <div layout="row">
+                <md-button flex="80" id="{{entrypointId}}-select-btn"
+                           md-ink-ripple="false"
+                           ng-class="{selected: selectedEntrypoint == entrypointId, 'md-hue-3': selectedEntrypoint == entrypointId}"
+                           class="md-raised md-primary" ng-click="loadEntrypoint(entrypointId)"  style="margin-right:1px; padding-right:1px" >{{entrypointId}}</md-button>
+                <md-button flex="20" id="{{entrypointId}}-delete-entrypoint-btn"
+                           ng-click="deleteEntrypoint(entrypointId,$event)" style="margin-left:1px; padding-left:1px">
+                    <md-icon class="material-icons" ng-style="{color: 'red', height:'24px'}" style="margin-left:1px; padding-left:1px">delete</md-icon>
+                </md-button>
+            </div>
         </div>
     </div>
     <div flex>

@@ -185,4 +185,17 @@
 
     </build>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>dt-snapshots</id>
+            <name>DT Snapshots</name>
+            <url>http://nexus/content/repositories/dt-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>dt-releases</id>
+            <name>DT Releases</name>
+            <url>http://nexus/content/repositories/dt-releases/</url>
+        </repository>
+    </distributionManagement>
+
 </project>
