@@ -73,7 +73,7 @@ public class InitializationCommand extends ConfiguredCommand<StrowgrConfiguratio
         }
 
         // initialize haproxy producer queue
-        for (String prefix : Arrays.asList("commit_requested_", "deleted_requested_")) {
+        for (String prefix : Arrays.asList("commit_requested_", "delete_requested_")) {
             String topicName = prefix + namespace.getString("haproxy-name");
             if (nsqHttpClient.createTopic(topicName)) {
                 LOGGER.info("topic {} has been initialized on nsqd", topicName);

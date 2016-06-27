@@ -160,7 +160,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     public Set<String> getEntryPointsId() {
         try {
             HttpGet listKeysURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin?keys");
-            Optional<Set<String>> allKeys = client.execute(listKeysURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseKeysFromHttpEntity));
+            Optional<Set<String>> allKeys = client.execute(listKeysURI, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parseKeysFromHttpEntity));
             return allKeys.orElse(new HashSet<>()).stream()
                     .filter(s -> !s.contains("lock"))
                     .map(s -> s.replace("admin/", ""))
