@@ -20,25 +20,16 @@ package com.vsct.dt.strowgr.admin.gui.cli;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-import com.github.mustachejava.MustacheParser;
-import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
-import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
-import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
 import io.dropwizard.cli.Command;
-import io.dropwizard.cli.ConfiguredCommand;
 import io.dropwizard.setup.Bootstrap;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.PrintWriter;
-import java.util.Arrays;
+import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 public class ConfigurationCommand extends Command {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationCommand.class);
@@ -76,8 +67,12 @@ public class ConfigurationCommand extends Command {
     public void run(Bootstrap bootstrap, Namespace namespace) throws Exception {
         String outputFile = namespace.getString("output-file");
         MustacheFactory mf = new DefaultMustacheFactory();
-        Mustache mustache = mf.compile("configuration.mustache");
-        defaultValues().putAll(System.getenv());
-        mustache.execute(new PrintWriter(System.out), defaultValues());
+        Mustache mustache = mf.compile("admin.yaml.mustach");
+        Map<String, String> properties = defaultValues();
+        for (Map.Entry<Object, Object> value : System.getProperties().entrySet()) {
+            properties.put((String) value.getKey(), (String) value.getValue());
+            LOGGER.debug("add property {} with value {}", value.getKey(), value.getValue());
+        }
+        mustache.execute(new FileWriter(outputFile), properties).flush();
     }
 }
