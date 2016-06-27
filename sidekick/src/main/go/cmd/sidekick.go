@@ -31,8 +31,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"math/rand"
-	"errors"
 )
 
 var (
@@ -49,6 +47,7 @@ var (
 	reloadChan = make(chan sidekick.ReloadEvent)
 	deleteChan = make(chan sidekick.ReloadEvent)
 	lastSyslogReload = time.Now()
+	haFactory *sidekick.LoadbalancerFactory
 )
 
 func main() {
@@ -66,6 +65,10 @@ func main() {
 	}
 
 	loadProperties()
+
+	haFactory = sidekick.NewLoadbalancerFactory()
+	haFactory.Drunk = *drunk
+	haFactory.Properties = properties
 
 	daemon = sidekick.NewDaemon(properties)
 	syslog = sidekick.NewSyslog(properties)
@@ -303,20 +306,9 @@ func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
 // reload an haproxy with content of data in according to role (slave or master)
 func reloadHaProxy(data *sidekick.EventMessageWithConf, role string, topic string) error {
 	context := data.Context()
-	hap := sidekick.NewHaproxy(role, properties, context)
+	var hap sidekick.Loadbalancer = haFactory.CreateHaproxy(role, context)
 
-	var status int
-	var err error
-
-	if (*drunk) {
-		status = rand.Intn(sidekick.MAX_STATUS)
-		log.WithFields(context.Fields()).WithField("status", status).Info("choose a random status")
-		if status <= sidekick.UNCHANGED {
-			err = errors.New("blop, a new error...")
-		}
-	} else {
-		status, err = hap.ApplyConfiguration(data)
-	}
+	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != sidekick.UNCHANGED {
 			elapsed := time.Now().Sub(lastSyslogReload)

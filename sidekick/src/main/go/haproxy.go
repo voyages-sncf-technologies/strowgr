@@ -46,10 +46,10 @@ type Haproxy struct {
 }
 
 const (
-	SUCCESS int = iota
-	UNCHANGED int = iota
+	SUCCESS    int = iota
+	UNCHANGED  int = iota
 	ERR_SYSLOG int = iota
-	ERR_CONF int = iota
+	ERR_CONF   int = iota
 	ERR_RELOAD int = iota
 	MAX_STATUS int = iota
 )
@@ -205,15 +205,15 @@ func (hap *Haproxy) rollback(correlationId string) error {
 func (hap *Haproxy) createSkeleton(correlationId string) error {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
 
-	createDirectory(hap.Context, correlationId, baseDir + "/Config")
-	createDirectory(hap.Context, correlationId, baseDir + "/logs/" + hap.Context.Application + hap.Context.Platform)
-	createDirectory(hap.Context, correlationId, baseDir + "/scripts")
-	createDirectory(hap.Context, correlationId, baseDir + "/version-1")
-	createDirectory(hap.Context, correlationId, baseDir + "/errors")
-	createDirectory(hap.Context, correlationId, baseDir + "/dump")
+	createDirectory(hap.Context, correlationId, baseDir+"/Config")
+	createDirectory(hap.Context, correlationId, baseDir+"/logs/"+hap.Context.Application+hap.Context.Platform)
+	createDirectory(hap.Context, correlationId, baseDir+"/scripts")
+	createDirectory(hap.Context, correlationId, baseDir+"/version-1")
+	createDirectory(hap.Context, correlationId, baseDir+"/errors")
+	createDirectory(hap.Context, correlationId, baseDir+"/dump")
 
 	updateSymlink(hap.Context, correlationId, hap.getHapctlFilename(), hap.getReloadScript())
-	updateSymlink(hap.Context, correlationId, hap.getHapBinary(), baseDir + "/Config/haproxy")
+	updateSymlink(hap.Context, correlationId, hap.getHapBinary(), baseDir+"/Config/haproxy")
 
 	return nil
 }
