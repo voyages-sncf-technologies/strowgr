@@ -1,10 +1,27 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.brainlag.nsq.exceptions.NSQException;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
-import com.vsct.dt.strowgr.admin.core.event.out.CommitBeginEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import org.slf4j.Logger;
@@ -16,7 +33,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Subscribes for events from eventbus and dispatch them to NSQDispatcher.
- * <p>
+ *
  * Created by william_montaz on 15/02/2016.
  */
 class ToNSQSubscriber {
@@ -29,14 +46,14 @@ class ToNSQSubscriber {
     }
 
     @Subscribe
-    public void handle(CommitBeginEvent commitBeginEvent) throws NSQException, TimeoutException, JsonProcessingException, UnsupportedEncodingException {
-        EntryPoint configuration = commitBeginEvent.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + commitBeginEvent));
+    public void handle(CommitRequestedEvent commitRequestedEvent) throws NSQException, TimeoutException, JsonProcessingException, UnsupportedEncodingException {
+        EntryPoint configuration = commitRequestedEvent.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + commitRequestedEvent));
         Map<String, String> context = configuration.getContext();
         String application = context.get("application");
         String platform = context.get("platform");
         /* TODO test application and platform nullity */
-        LOGGER.debug("send to nsq a CommitRequested from CommitBeginEvent {}", commitBeginEvent);
-        this.nsqDispatcher.sendCommitRequested(commitBeginEvent.getCorrelationId(), configuration.getHaproxy(), application, platform, commitBeginEvent.getConf(), commitBeginEvent.getSyslogConf());
+        LOGGER.debug("send to nsq a CommitRequested from CommitRequestedEvent {}", commitRequestedEvent);
+        this.nsqDispatcher.sendCommitRequested(commitRequestedEvent.getCorrelationId(), configuration.getHaproxy(), application, platform, commitRequestedEvent.getConf(), commitRequestedEvent.getSyslogConf());
     }
 
     @Subscribe
