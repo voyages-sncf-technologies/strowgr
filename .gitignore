@@ -7,3 +7,4 @@ bin
 **/strowgr.yaml
 **/dependency-reduced-pom.xml
 sidekick/haproxy-default-name.conf*
+**/admin.yaml

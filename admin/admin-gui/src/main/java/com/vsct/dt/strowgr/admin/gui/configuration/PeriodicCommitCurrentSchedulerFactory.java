@@ -49,7 +49,7 @@ public class PeriodicCommitCurrentSchedulerFactory {
         this.periodMilli = periodMilli;
     }
 
-    public PeriodicScheduler build(EntryPointRepository repository, Consumer<TryCommitCurrentConfigurationEvent> consumer, Environment environment){
+    public PeriodicScheduler build(EntryPointRepository repository, Consumer<TryCommitCurrentConfigurationEvent> consumer, Environment environment) {
         PeriodicScheduler scheduler = PeriodicScheduler.newPeriodicCommitCurrentScheduler(repository, consumer, getPeriodMilli());
         environment.lifecycle().manage(new Managed() {
             @Override

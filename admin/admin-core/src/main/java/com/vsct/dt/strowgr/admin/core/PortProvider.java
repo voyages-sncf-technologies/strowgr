@@ -29,13 +29,13 @@ public interface PortProvider {
 
     Optional<Integer> getPort(String key);
 
-    default Optional<Integer> getPort(EntryPointKey key, String portId){
+    default Optional<Integer> getPort(EntryPointKey key, String portId) {
         return getPort(PortProvider.getPortKey(key, portId));
     }
 
     Integer newPort(String key);
 
-    default Integer newPort(EntryPointKey key, String portId){
+    default Integer newPort(EntryPointKey key, String portId) {
         return newPort(PortProvider.getPortKey(key, portId));
     }
 

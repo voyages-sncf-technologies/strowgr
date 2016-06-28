@@ -20,11 +20,9 @@ package com.vsct.dt.strowgr.admin.core.event.in;
 
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 
-import java.util.Optional;
-
 /**
  * Generic entrypoint event.
- *
+ * <p>
  * Created by william_montaz on 05/02/2016.
  */
 public class EntryPointEvent {

@@ -17,28 +17,32 @@
 
 package com.vsct.dt.strowgr.admin.core.event.out;
 
-import com.google.common.collect.ImmutableSet;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
-import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 
-import java.util.Set;
+/**
+ * Event from admin which is triggered when admin has removed an entrypoint from its repository.
+ */
+public class DeleteEntryPointEvent extends EntryPointEvent {
 
-public class ServerRegisteredEvent extends EntryPointEvent {
-    private final String backend;
-    private final ImmutableSet<IncomingEntryPointBackendServer> servers;
+    private final String haproxyName, application, platform;
 
-    public ServerRegisteredEvent(String correlationId, EntryPointKey key, String backend, Set<IncomingEntryPointBackendServer> servers) {
+    public DeleteEntryPointEvent(String correlationId, EntryPointKey key, String haproxyName, String application, String platform) {
         super(correlationId, key);
-        this.backend = backend;
-        this.servers = ImmutableSet.copyOf(servers);
+        this.haproxyName = haproxyName;
+        this.application = application;
+        this.platform = platform;
     }
 
-    public String getBackend() {
-        return backend;
+    public String getPlatform() {
+        return platform;
     }
 
-    public Set<IncomingEntryPointBackendServer> getServers() {
-        return servers;
+    public String getApplication() {
+        return application;
+    }
+
+    public String getHaproxyName() {
+        return haproxyName;
     }
 }

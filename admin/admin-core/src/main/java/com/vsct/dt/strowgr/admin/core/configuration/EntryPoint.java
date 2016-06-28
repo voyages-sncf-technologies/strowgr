@@ -26,7 +26,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.vsct.dt.strowgr.admin.Preconditions.*;
+import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
 
 public class EntryPoint {
 
@@ -74,18 +74,18 @@ public class EntryPoint {
         return new EntryPoint.Builder(haproxy);
     }
 
-    private EntryPoint addOrReplaceBackend(EntryPointBackend backend) {
+    public EntryPoint addOrReplaceBackend(EntryPointBackend backend) {
         checkNotNull(backend);
         HashMap<String, EntryPointBackend> newBackends = new HashMap<>(backends);
         newBackends.put(backend.getId(), backend);
         return new EntryPoint(this.haproxy, this.hapUser, this.frontends, newBackends, this.context);
     }
 
-    private Optional<EntryPointBackend> getBackend(String id) {
+    public Optional<EntryPointBackend> getBackend(String id) {
         return Optional.ofNullable(backends.get(id));
     }
 
-    private EntryPoint addServer(String backendId, IncomingEntryPointBackendServer server) {
+    public EntryPoint addServer(String backendId, IncomingEntryPointBackendServer server) {
         checkNotNull(server);
         Optional<EntryPointBackendServer> existingServer = findServer(server.getId());
         EntryPointBackendServer newServer = existingServer
@@ -156,12 +156,13 @@ public class EntryPoint {
 
     /**
      * Merging rules :
-     *  - Updated global context replaces existing one
-     *  - Updated syslog user replaces existing one
-     *  - Updated frontends replace existing ones, without consideration for ports
-     *  - Updated backends replace existing ones
-     *  - Updated servers just replace overrideConfiguration for existing ones
-     * @param updatedEntryPoint with new values to merge
+     * - Updated global context replaces existing one
+     * - Updated syslog user replaces existing one
+     * - Updated frontends replace existing ones, without consideration for ports
+     * - Updated backends replace existing ones
+     * - Updated servers just replace overrideConfiguration for existing ones
+     *
+     * @param updatedEntryPoint
      * @return A new EntryPoint, result of the merge of this entrypoint and the updatedconfiguration
      */
     public EntryPoint mergeWithUpdate(UpdatedEntryPoint updatedEntryPoint) {
@@ -241,6 +242,7 @@ public class EntryPoint {
         private Set<EntryPointFrontend> frontends;
         private String haproxy;
         private String user;
+        private String syslogPort;
         private Map<String, String> context;
 
         private Builder(String haproxy) {

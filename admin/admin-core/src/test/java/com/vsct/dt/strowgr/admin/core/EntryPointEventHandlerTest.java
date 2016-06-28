@@ -33,10 +33,11 @@ import static org.mockito.Mockito.*;
 
 public class EntryPointEventHandlerTest {
 
-    private EntryPointStateManager stateManager;
-    private EntryPointEventHandler handler;
-    private TemplateLocator templateLocator;
-    private PortProvider portProvider;
+    EntryPointStateManager stateManager;
+    EntryPointEventHandler handler;
+    TemplateLocator templateLocator;
+    TemplateGenerator templateGenerator;
+    PortProvider portProvider;
 
     @Before
     public void setUp() {
