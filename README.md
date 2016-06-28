@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/voyages-sncf-technologies/strowgr.svg?branch=develop)](https://travis-ci.org/voyages-sncf-technologies/strowgr)
+
 # strowgr
 
 A service discovery around Haproxy
