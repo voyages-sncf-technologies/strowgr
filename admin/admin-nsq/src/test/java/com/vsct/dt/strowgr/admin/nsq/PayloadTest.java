@@ -83,9 +83,8 @@ public class PayloadTest {
 
     @Test
     public void testDeleteRequested() throws IOException, URISyntaxException {
-        DeleteRequested message = new DeleteRequested("test-id", "TST", "REL1");
+        DeleteRequested message = new DeleteRequested("test-id", "TST", "REL1","test");
         message.getHeader().setTimestamp(1L);
-        message.getHeader().setSource("test");
         assertMapper(message, "deleteRequested.expected.json");
     }
 

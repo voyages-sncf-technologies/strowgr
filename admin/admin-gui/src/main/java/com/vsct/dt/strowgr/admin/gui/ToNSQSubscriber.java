@@ -22,7 +22,6 @@ import com.github.brainlag.nsq.exceptions.NSQException;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
-import com.vsct.dt.strowgr.admin.core.event.out.CommitBeginEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import org.slf4j.Logger;

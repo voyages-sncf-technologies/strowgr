@@ -27,8 +27,9 @@ public class DeleteRequested {
     private Header header;
 
     @JsonCreator
-    public DeleteRequested(String correlationId, String application, String platform) {
+    public DeleteRequested(String correlationId, String application, String platform,String source) {
         header = new Header(correlationId, application, platform);
+        header.setSource(source);
     }
 
     @JsonCreator

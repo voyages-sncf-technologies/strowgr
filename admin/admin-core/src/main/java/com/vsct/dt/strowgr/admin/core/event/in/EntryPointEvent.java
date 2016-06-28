@@ -22,7 +22,7 @@ import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 
 /**
  * Generic entrypoint event.
- * <p>
+ *
  * Created by william_montaz on 05/02/2016.
  */
 public class EntryPointEvent {

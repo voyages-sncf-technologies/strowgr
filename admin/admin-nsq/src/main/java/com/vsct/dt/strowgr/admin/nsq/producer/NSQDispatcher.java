@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.exceptions.NSQException;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitRequested;
+import com.vsct.dt.strowgr.admin.nsq.payload.DeleteRequested;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Base64;
@@ -45,7 +46,7 @@ public class NSQDispatcher {
     }
 
     /**
-     * Send a {@link CommitBeginPayload} message to commit_requested_[haproxyName] NSQ topic.
+     * Send a {@link CommitRequested} message to commit_requested_[haproxyName] NSQ topic.
      *
      * @param correlationId from initial request
      * @param haproxyName   name of the targeted entrypoint
@@ -68,7 +69,7 @@ public class NSQDispatcher {
     }
 
     /**
-     * Send a {@link DeleteRequestedPayload} message to delete_requested_[haproxyName] NSQ topic.
+     * Send a {@link DeleteRequested} message to delete_requested_[haproxyName] NSQ topic.
      *
      * @param correlationId from initial request
      * @param haproxyName   name of the targeted entrypoint
@@ -79,7 +80,7 @@ public class NSQDispatcher {
      * @throws TimeoutException        during a too long response from NSQ
      */
     public void sendDeleteRequested(String correlationId, String haproxyName, String application, String platform) throws JsonProcessingException, NSQException, TimeoutException {
-        DeleteRequestedPayload deleteRequestedPayload = new DeleteRequestedPayload(correlationId, application, platform, "admin"); // TODO find a better source information than 'admin'
+        DeleteRequested deleteRequestedPayload = new DeleteRequested(correlationId, application, platform, "admin"); // TODO find a better source information than 'admin'
         nsqProducer.produce("delete_requested_" + haproxyName, mapper.writeValueAsBytes(deleteRequestedPayload));
     }
 }

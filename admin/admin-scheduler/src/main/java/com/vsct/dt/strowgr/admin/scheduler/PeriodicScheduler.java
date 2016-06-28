@@ -30,7 +30,7 @@ import java.util.function.Function;
 
 /**
  * Schedule entrypoint lifecycles.
- * <p>
+ *
  * Created by william_montaz on 11/02/2016.
  */
 public class PeriodicScheduler<T> {
