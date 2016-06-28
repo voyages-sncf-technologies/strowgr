@@ -33,11 +33,20 @@ public class RegisterSidekick {
     public RegisterSidekick() {
     }
 
+    @JsonCreator
+    public RegisterSidekick(String correlationId, String application, String platform) {
+        header = new Header(correlationId, application, platform);
+    }
+
     public Sidekick getSidekick() {
         return sidekick;
     }
 
     public Header getHeader() {
         return header;
+    }
+
+    public void setSidekick(Sidekick sidekick) {
+        this.sidekick = sidekick;
     }
 }

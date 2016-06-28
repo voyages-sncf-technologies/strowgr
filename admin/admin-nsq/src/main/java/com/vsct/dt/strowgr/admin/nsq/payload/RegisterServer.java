@@ -31,7 +31,16 @@ public class RegisterServer {
     Server server;
 
     @JsonCreator
+    public RegisterServer(String correlationId, String application, String platform) {
+        header = new Header(correlationId, application, platform);
+    }
+
+    @JsonCreator
     public RegisterServer() {
+    }
+
+    public void setServer(Server server) {
+        this.server = server;
     }
 
     public Server getServer() {

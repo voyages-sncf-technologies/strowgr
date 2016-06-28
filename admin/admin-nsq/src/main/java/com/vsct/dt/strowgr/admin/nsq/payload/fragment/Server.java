@@ -69,4 +69,12 @@ public class Server {
     public void setContext(Map<String, String> context) {
         this.context = context;
     }
+
+    public void setBackendId(String backendId) {
+        this.backendId = backendId;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
 }

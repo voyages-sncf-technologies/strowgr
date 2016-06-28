@@ -27,6 +27,11 @@ public class CommitFailed {
     private Header header;
 
     @JsonCreator
+    public CommitFailed(String correlationId, String application, String platform) {
+        header = new Header(correlationId, application, platform);
+    }
+
+    @JsonCreator
     public CommitFailed() {
     }
 

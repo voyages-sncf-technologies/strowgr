@@ -1,0 +1,16 @@
+{
+  "header" : {
+    "correlationId" : "test-id",
+    "application" : "TST",
+    "platform" : "REL1",
+    "timestamp" : 1,
+    "source" : "test"
+  },
+  "sidekick" : {
+    "id" : "sidekcik-id",
+    "host" : "host",
+    "vip" : "2.3.4.5",
+    "version" : "1.0",
+    "role" : "master"
+  }
+}
