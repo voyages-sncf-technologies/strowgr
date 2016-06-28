@@ -1,0 +1,37 @@
+{
+  "haproxy": "default-name",
+  "hapUser": "hapadm",
+  "context": {
+    "templateUri": "http://gitlab.socrate.vsct.fr/dt/haproxy-templates-horsprod/raw/master/DEM/haproxy_template.conf",
+    "application": "DEM",
+    "platform": "REL2"
+  },
+  "frontends": [
+    {
+      "id": "FRONT",
+      "context": {}
+    }
+  ],
+  "backends": [
+    {
+      "id": "JARBOOKING",
+      "servers": [],
+      "context": {}
+    },
+    {
+      "id": "JARORDER",
+      "servers": [],
+      "context": {}
+    },
+    {
+      "id": "JARSEARCH",
+      "servers": [],
+      "context": {}
+    },
+    {
+      "id": "JARCONFIRMATION",
+      "servers": [],
+      "context": {}
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+version: '2'
+
+services:
+
+  # Single instance of consul
+  consul:
+    image: gliderlabs/consul-server
+    command: -bootstrap
+    ports:
+    - 8500:8500
+
+  # Single instance of nsqlookupd
+  nsqlookupd:
+    image: nsqio/nsq
+    command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160
+
+  # Only one producer
+  sidekick-slave:
+    image: dockerregistrydev.socrate.vsct.fr/strowgr/sidekick:latest
+    volumes:
+    - ./conf/sidekick-slave.conf:/sidekick.conf
+    - ./files/hapctl:/HOME/uxwadm/scripts/hapctl_unif
+    command: "-config /sidekick.conf -verbose"
+
+  nsqd-slave:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-slave --tcp-address=nsqd-slave:4150
+    depends_on:
+    - nsqlookupd
+
+  #  HA proxies
+  sidekick-master:
+    image: dockerregistrydev.socrate.vsct.fr/strowgr/sidekick:latest
+    volumes:
+    - ./conf/sidekick-master.conf:/sidekick.conf
+    - ./files/hapctl:/HOME/uxwadm/scripts/hapctl_unif
+    command: "-config /sidekick.conf -verbose"
+
+  nsqd-master:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-master --tcp-address=nsqd-master:4150
+    depends_on:
+    - nsqlookupd
+
+  admin:
+    image: dockerregistrydev.socrate.vsct.fr/strowgr/admin:latest
+    command: ["java", "-jar", "/app.jar" , 'server' ,'/server.yml' ]
+    volumes:
+    - ./conf/admin.yml:/server.yml
+    - ./logs/:/var/log/strowgr/
+    ports:
+    - 8080:8080
+
+  nsqd-admin:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-admin  --tcp-address=nsqd-admin:4150
+    depends_on:
+    - nsqlookupd
+    ports:
+    - 4151:4151
+
+  admin-init:
+      image: dockerregistrydev.socrate.vsct.fr/strowgr/admin:latest
+      command: ["java", "-jar", "/app.jar" , 'init' , '--haproxy-name' , 'default-name' , '--vip' , 'localhost', '/server.yml' ]
+      volumes:
+      - ./conf/admin.yml:/server.yml
+      depends_on:
+      - nsqd-admin
+
+#  tests:
+#    image: java:8
+#    command: java -jar /workspace/${project.build.finalNameWithExt}
+#    volumes:
+#     - ${project.build.directory}:/workspace

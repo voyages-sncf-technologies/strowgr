@@ -1,20 +1,3 @@
-/*
- *  Copyright (C) 2016 VSCT
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- */
-
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,7 +11,7 @@ import javax.validation.constraints.Min;
 
 /**
  * NSQProducerFactory for reading NSQProducer configuration from dropwizard yaml.
- *
+ * <p>
  * Created by william_montaz on 16/02/2016.
  */
 public class NSQProducerFactory {
@@ -38,9 +21,15 @@ public class NSQProducerFactory {
     @NotEmpty
     private String host;
 
+    @JsonProperty
     @Min(1)
     @Max(65535)
-    private int port;
+    private int tcpPort;
+
+    @JsonProperty
+    @Min(1)
+    @Max(65535)
+    private int httpPort;
 
     @JsonProperty
     public String getHost() {
@@ -52,20 +41,50 @@ public class NSQProducerFactory {
         this.host = host;
     }
 
+    /**
+     * Get TCP port.
+     *
+     * @deprecated use {@link NSQProducerFactory#getTcpPort}
+     */
     @JsonProperty
     public int getPort() {
-        return port;
+        LOGGER.warn("Seems 'port' parameter is used for NSQ Producer. It's deprecated, use 'tcp_port' instead of.");
+        return tcpPort;
     }
 
+    /**
+     * Set TCP port.
+     *
+     * @param port tcp port
+     * @deprecated use {@link NSQProducerFactory#setTcpPort}
+     */
+    @Deprecated
     @JsonProperty
     public void setPort(int port) {
-        this.port = port;
+        LOGGER.warn("Seems 'port' parameter is used for NSQ Producer. It's deprecated, use 'tcp_port' instead of.");
+        this.tcpPort = port;
+    }
+
+    public int getTcpPort() {
+        return tcpPort;
+    }
+
+    public void setTcpPort(int tcpPort) {
+        this.tcpPort = tcpPort;
+    }
+
+    public int getHttpPort() {
+        return httpPort;
+    }
+
+    public void setHttpPort(int httpPort) {
+        this.httpPort = httpPort;
     }
 
     public NSQProducer build() {
         NSQProducer nsqProducer = new NSQProducer();
-        nsqProducer.addAddress(getHost(), getPort());
-        LOGGER.info("read NSQ Producer configuration with host:{}, port: {}", getHost(), getPort());
+        nsqProducer.addAddress(getHost(), getTcpPort());
+        LOGGER.info("read NSQ Producer configuration with host:{}, port: {}", getHost(), getTcpPort());
         return nsqProducer;
     }
 

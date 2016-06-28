@@ -2,27 +2,29 @@ server:
   type: simple
   rootPath: /api/
   applicationContextPath: /
-  adminContextPath: /admin
   connector:
     type: http
-    port: 50090
+    port: 8080
   requestLog:
     timeZone: UTC
     appenders:
-      - type: console
+      - type: file
+        currentLogFilename: logs/access.log
         threshold: INFO
+        archive: true
+        archivedLogFilenamePattern: logs/access.%d.log.gz
+        archivedFileCount: 14
 threads: 20
 haproxyName: default-name
+commitTimeout: 60
 repository:
-  host: localhost
+  host: consul
   port: 8500
-  minGeneratedPort: 50000
-  maxGeneratedPort: 54000
 nsqLookup:
-  host: localhost
+  host: nsqlookupd
   port: 4161
 nsqProducer:
-  host: localhost
+  host: nsqd-admin
   tcpPort: 4150
   httpPort: 4151
 commitCompletedConsumer:
@@ -33,15 +35,17 @@ registerServerMessageConsumer:
   topic: register_server
 periodicScheduler:
   current:
-    periodMilli: 11000
+    periodMilli: 10000
   pending:
-    periodMilli: 7000
+    periodMilli: 10000
 logging:
-    level: INFO
-    loggers:
-      com.vsct.dt: INFO
-    appenders:
+  level: INFO
+  appenders:
       - type: console
+      - type: file
         threshold: INFO
         logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
-commitTimeout: 10
+        currentLogFilename: "/var/log/strowgr/admin.log"
+        archivedLogFilenamePattern: "/var/log/strowgr/admin-%d{yyyy-MM-dd}-%i.log.gz"
+        timeZone: CEST
+        maxFileSize: 10MB
