@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.core;
 
 import com.google.common.eventbus.EventBus;
@@ -56,7 +73,7 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
-    public void handle(UpdateEntryPointEvent event){
+    public void handle(UpdateEntryPointEvent event) {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
@@ -109,7 +126,7 @@ public class EntryPointEventHandler {
                             LOGGER.debug("post to event bus event {}", serverRegisteredEvent);
                             outputBus.post(serverRegisteredEvent);
                         } else {
-                            LOGGER.warn("can't prepare configurtion on key {}", key);
+                            LOGGER.warn("can't prepare configuration on key {}", key);
                         }
                     });
 
@@ -124,15 +141,15 @@ public class EntryPointEventHandler {
         try {
             this.stateManager.lock(key);
             Optional<EntryPoint> committingConfiguration = stateManager.tryCommitCurrent(event.getCorrelationId(), key);
-            if(committingConfiguration.isPresent()) {
+            if (committingConfiguration.isPresent()) {
                 EntryPoint configuration = committingConfiguration.get();
-                String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration "+key));
+                String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + key));
                 Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, configuration);
                 String conf = templateGenerator.generate(template, configuration, portsMapping);
                 String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                CommitBeginEvent commitBeginEvent = new CommitBeginEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
-                LOGGER.debug("from handle -> post to event bus event {}", commitBeginEvent);
-                outputBus.post(commitBeginEvent);
+                CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
+                LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
+                outputBus.post(commitRequestedEvent);
             }
         } finally {
             this.stateManager.release(key);
@@ -151,9 +168,9 @@ public class EntryPointEventHandler {
                 Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, configuration);
                 String conf = templateGenerator.generate(template, configuration, portsMapping);
                 String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                CommitBeginEvent commitBeginEvent = new CommitBeginEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
-                LOGGER.debug("from handle -> post to event bus event {}", commitBeginEvent);
-                outputBus.post(commitBeginEvent);
+                CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
+                LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
+                outputBus.post(commitRequestedEvent);
             }
         } finally {
             this.stateManager.release(key);
@@ -166,11 +183,11 @@ public class EntryPointEventHandler {
         try {
             this.stateManager.lock(key);
             Optional<String> optionalCorrelationId = stateManager.getCommitCorrelationId(key);
-            if(optionalCorrelationId.isPresent() && optionalCorrelationId.get().equals(event.getCorrelationId())) {
+            if (optionalCorrelationId.isPresent() && optionalCorrelationId.get().equals(event.getCorrelationId())) {
                 Optional<EntryPoint> currentConfiguration = stateManager.commit(key);
                 if (currentConfiguration.isPresent()) {
                     LOGGER.info("Configuration for EntryPoint {} has been committed", event.getKey().getID());
-                    outputBus.post(new CommitCompleteEvent(event.getCorrelationId(), key, currentConfiguration.get()));
+                    outputBus.post(new CommitCompletedEvent(event.getCorrelationId(), key, currentConfiguration.get()));
                 }
             }
         } finally {
@@ -195,10 +212,10 @@ public class EntryPointEventHandler {
     @Subscribe
     public void handle(CommitFailureEvent event) {
         EntryPointKey key = event.getKey();
-        try{
+        try {
             this.stateManager.lock(key);
             Optional<String> commitCorrelationId = stateManager.getCommitCorrelationId(key);
-            if(commitCorrelationId.isPresent() && commitCorrelationId.get().equals(event.getCorrelationId())){
+            if (commitCorrelationId.isPresent() && commitCorrelationId.get().equals(event.getCorrelationId())) {
                 LOGGER.info("Configuration for EntryPoint {} failed. Commit is canceled.", key);
                 stateManager.cancelCommit(key);
             } else {

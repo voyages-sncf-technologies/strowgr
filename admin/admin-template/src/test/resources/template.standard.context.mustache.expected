@@ -43,4 +43,4 @@ backend OCEREC1WS # serveurs de gestion
         #http-check disable-on-404
         cookie OCEREC1WS insert indirect nocache
 
-        server instance_name 10.98.81.74:9090 cookie server_name check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s
+        server instance_name 10.98.81.74:9090 cookie instance_name check inter 5s fall 3 rise 2 maxconn 70 slowstart 30s

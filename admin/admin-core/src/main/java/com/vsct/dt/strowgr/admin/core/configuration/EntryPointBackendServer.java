@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.core.configuration;
 
 import com.google.common.collect.ImmutableMap;
@@ -18,10 +35,11 @@ public class EntryPointBackendServer {
     private final HashMap<String, String> context;
     private final HashMap<String, String> contextOverride;
 
-    public EntryPointBackendServer(String id, String hostname, String ip, String port, Map<String, String> context, Map<String, String> contextOverride) {
+    public EntryPointBackendServer(String id, String ip, String port, Map<String, String> context, Map<String, String> contextOverride) {
         this.id = checkStringNotEmpty(id, "Backend should have an id");
-        this.hostname = checkStringNotEmpty(hostname, "Backend should have a hostname");
         this.ip = checkStringNotEmpty(ip, "Backend should have an ip");
+        // TODO Remove hostname attribute
+        this.hostname = this.id;
         this.port = checkStringNotEmpty(port, "Backend should have a port");
         this.context = new HashMap<>(checkNotNull(context));
         this.contextOverride = new HashMap<>(checkNotNull(contextOverride));
@@ -53,7 +71,7 @@ public class EntryPointBackendServer {
 
     public EntryPointBackendServer put(String key, String value) {
         ImmutableMap<String, String> context = ImmutableMap.<String, String>builder().put(key, value).putAll(this.context).build();
-        return new EntryPointBackendServer(this.id, this.hostname, this.ip, this.port, context, contextOverride);
+        return new EntryPointBackendServer(this.id, this.ip, this.port, context, contextOverride);
     }
 
     @Override

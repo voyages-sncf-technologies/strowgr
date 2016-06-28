@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,7 +25,8 @@ import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
-import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerPayload;
+import com.vsct.dt.strowgr.admin.nsq.payload.RegisterServer;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,32 +57,33 @@ public class RegisterServerMessageConsumerFactory {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public NSQConsumer build(NSQLookup lookup, Consumer<RegisterServerEvent> consumer){
+    public NSQConsumer build(NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
         return new NSQConsumer(lookup, topic, "admin", (message) -> {
 
-            RegisterServerPayload payload = null;
+            RegisterServer registerServer = null;
+            Header header;
             try {
-                payload = mapper.readValue(message.getMessage(), RegisterServerPayload.class);
-                if (payload.getCorrelationId() == null) {
-                    payload.setCorrelationId(Arrays.toString(message.getId()));
+                registerServer = mapper.readValue(message.getMessage(), RegisterServer.class);
+                header = registerServer.getHeader();
+                if (header.getCorrelationId() == null) {
+                    header.setCorrelationId(new String(message.getId()));
                 }
-                if (payload.getTimestamp() == null) {
-                    payload.setTimestamp(message.getTimestamp().getTime());
+                if (header.getTimestamp() == null) {
+                    header.setTimestamp(message.getTimestamp().getTime());
                 }
+                // TODO Use some conflation to prevent dispatching all event
+                RegisterServerEvent event = new RegisterServerEvent(header.getCorrelationId(),
+                        new EntryPointKeyVsctImpl(header.getApplication(), header.getPlatform()),
+                        registerServer.getServer().getBackendId(),
+                        Sets.newHashSet(new IncomingEntryPointBackendServer(registerServer.getServer().getId(), registerServer.getServer().getIp(), registerServer.getServer().getPort(), registerServer.getServer().getContext())));
+                consumer.accept(event);
+
             } catch (IOException e) {
-                LOGGER.error("can't deserialize the payload of message at " + message.getTimestamp() + ", id=" + Arrays.toString(message.getId()) + ": " + Arrays.toString(message.getMessage()), e);
+                LOGGER.error("can't deserialize the registerServer of message at " + message.getTimestamp() + ", id=" + Arrays.toString(message.getId()) + ": " + Arrays.toString(message.getMessage()), e);
                 //Avoid republishing message and stop processing
                 message.finished();
                 return;
             }
-
-            /* TODO Use some conflation to prevent dispatching all event */
-            RegisterServerEvent event = new RegisterServerEvent(payload.getCorrelationId(),
-                    new EntryPointKeyVsctImpl(payload.getApplication(), payload.getPlatform()),
-                    payload.getBackend(),
-                    Sets.newHashSet(new IncomingEntryPointBackendServer(payload.getId(), payload.getHostname(), payload.getIp(), payload.getPort(), payload.getContext())));
-
-            consumer.accept(event);
 
             message.finished();
         });

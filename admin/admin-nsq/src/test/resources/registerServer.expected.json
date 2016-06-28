@@ -1,0 +1,19 @@
+{
+  "header" : {
+    "correlationId" : "test-id",
+    "application" : "TST",
+    "platform" : "REL1",
+    "timestamp" : 1,
+    "source" : "test"
+  },
+  "server" : {
+    "id" : "server-id",
+    "backendId" : "backend-id",
+    "ip" : "1.2.3.4",
+    "port" : "1234",
+    "context" : {
+      "key1" : "val1",
+      "key2" : "val2"
+    }
+  }
+}

@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.codahale.metrics.annotation.Timed;
@@ -34,8 +51,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
-import static javax.ws.rs.core.Response.Status.NO_CONTENT;
+import static javax.ws.rs.core.Response.Status.*;
+import static javax.ws.rs.core.Response.ok;
 import static javax.ws.rs.core.Response.serverError;
 import static javax.ws.rs.core.Response.status;
 
@@ -72,7 +89,12 @@ public class EntrypointResources {
                 .whenReceive(new AsyncResponseCallback<EntryPointAddedEvent>(asyncResponse) {
                     @Override
                     void handle(EntryPointAddedEvent event) throws Exception {
-                        asyncResponse.resume(status(Response.Status.CREATED).entity(event.getConfiguration().get()).build());
+                        Optional<EntryPoint> entryPointConfiguration = event.getConfiguration();
+                        if (entryPointConfiguration.isPresent()) {
+                            asyncResponse.resume(status(CREATED).entity(entryPointConfiguration.get()).build());
+                        } else {
+                            asyncResponse.resume(status(NOT_FOUND).build());
+                        }
                     }
                 })
                 .timeoutAfter(10, TimeUnit.SECONDS);
@@ -80,6 +102,13 @@ public class EntrypointResources {
         eventBus.post(event);
     }
 
+    /**
+     * Update an entrypoint.
+     *
+     * @param asyncResponse        response asynchronously
+     * @param id                   of the entrypoint (ex. PAO/REL1)
+     * @param updatedConfiguration deserialized entrypoint configuration with new values
+     */
     @PATCH
     @Path("/{id : .+}")
     @Timed
@@ -90,7 +119,12 @@ public class EntrypointResources {
                 .whenReceive(new AsyncResponseCallback<EntryPointUpdatedEvent>(asyncResponse) {
                     @Override
                     void handle(EntryPointUpdatedEvent event) throws Exception {
-                        asyncResponse.resume(event.getConfiguration().get());
+                        Optional<EntryPoint> eventConfiguration = event.getConfiguration();
+                        if (eventConfiguration.isPresent()) {
+                            asyncResponse.resume(eventConfiguration.get());
+                        } else {
+                            asyncResponse.resume(status(NOT_FOUND).build());
+                        }
                     }
                 })
                 .timeoutAfter(10, TimeUnit.SECONDS);
@@ -112,10 +146,10 @@ public class EntrypointResources {
      * Delete an entrypoint in the repository and, after a success confirmation, forwards the event to other strowgr component through the event bus.
      *
      * @param id of the entrypoint
-     * @return {@link javax.ws.rs.core.Response.Status#NO_CONTENT} if success, {@link javax.ws.rs.core.Response.Status#NOT_FOUND} if entrypoint doesn't exists anymore, {@link javax.ws.rs.core.Response.Status#INTERNAL_SERVER_ERROR} otherwise
+     * @return {@link javax.ws.rs.core.Response.Status#OK} if success, {@link javax.ws.rs.core.Response.Status#NOT_FOUND} if entrypoint doesn't exists anymore, {@link javax.ws.rs.core.Response.Status#INTERNAL_SERVER_ERROR} otherwise. HTTP response payload contains the updated entrypoint set.
      */
     @DELETE
-    @Path("/{id : .+}/delete")
+    @Path("/{id : .+}")
     @Timed
     public Response deleteEntrypoint(@PathParam("id") String id) {
         Response response = serverError().build();
@@ -129,18 +163,24 @@ public class EntrypointResources {
             Optional<Boolean> removed = repository.removeEntrypoint(entryPointKey);
             if (removed.isPresent()) {
                 if (removed.get()) {
-                    // entrypoint removed whithout problem
-                    response = status(NO_CONTENT).build();
+                    Set<String> entryPointsId = repository.getEntryPointsId();
+                    // entrypoint removed without problem
+                    response = ok().entity(entryPointsId).build();
                     // thirdly, propagate the deleted event to other strowgr components
                     eventBus.post(new DeleteEntryPointEvent(UUID.randomUUID().toString(), entryPointKey, configuration.get().getHaproxy(), entryPointKey.getApplication(), entryPointKey.getPlatform()));
                 } else {
+                    Set<String> entryPointsId = repository.getEntryPointsId();
                     LOGGER.warn("can't removed an entrypoint though its configuration has just been found. May be there are concurrency problem, admin or/and repository are overloaded.");
-                    response = status(NOT_FOUND).build();
+                    response = status(NOT_FOUND).entity(entryPointsId).build();
                 }
+            } else {
+                Set<String> entryPointsId = repository.getEntryPointsId();
+                response = serverError().entity(entryPointsId).build();
             }
         } else {
+            Set<String> entryPointsId = repository.getEntryPointsId();
             LOGGER.warn("can't find entrypoint {} from repository", entryPointKey);
-            response = status(NOT_FOUND).build();
+            response = status(NOT_FOUND).entity(entryPointsId).build();
         }
         return response;
     }
@@ -180,9 +220,9 @@ public class EntrypointResources {
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
 
         new CallbackBuilder(event.getCorrelationId()).whenReceive(
-                new AsyncResponseCallback<CommitBeginEvent>(asyncResponse) {
+                new AsyncResponseCallback<CommitRequestedEvent>(asyncResponse) {
                     @Override
-                    void handle(CommitBeginEvent event) throws Exception {
+                    void handle(CommitRequestedEvent event) throws Exception {
                         asyncResponse.resume(event.getConfiguration());
                     }
                 }).timeoutAfter(10, TimeUnit.SECONDS);
@@ -235,8 +275,8 @@ public class EntrypointResources {
     }
 
     @Subscribe
-    public void handle(CommitCompleteEvent commitCompleteEvent) {
-        handleWithCorrelationId(commitCompleteEvent);
+    public void handle(CommitCompletedEvent commitCompletedEvent) {
+        handleWithCorrelationId(commitCompletedEvent);
     }
 
     @Subscribe

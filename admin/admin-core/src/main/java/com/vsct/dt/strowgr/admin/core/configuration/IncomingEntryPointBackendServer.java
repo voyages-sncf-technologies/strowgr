@@ -1,3 +1,20 @@
+/*
+ *  Copyright (C) 2016 VSCT
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package com.vsct.dt.strowgr.admin.core.configuration;
 
 import java.util.HashMap;
@@ -15,10 +32,11 @@ public class IncomingEntryPointBackendServer {
 
     private final HashMap<String, String> context;
 
-    public IncomingEntryPointBackendServer(String id, String hostname, String ip, String port, Map<String, String> context) {
+    public IncomingEntryPointBackendServer(String id, String ip, String port, Map<String, String> context) {
         this.id = checkStringNotEmpty(id, "Backend should have an id");
-        this.hostname = checkStringNotEmpty(hostname, "Backend should have a hostname");
         this.ip = checkStringNotEmpty(ip, "Backend should have an ip");
+        // TODO remove unnecessary hostname attribute
+        this.hostname = this.id;
         this.port = checkStringNotEmpty(port, "Backend should have a port");
         this.context = new HashMap<>(checkNotNull(context));
     }
@@ -54,9 +72,8 @@ public class IncomingEntryPointBackendServer {
         if (hostname != null ? !hostname.equals(that.hostname) : that.hostname != null) return false;
         if (ip != null ? !ip.equals(that.ip) : that.ip != null) return false;
         if (port != null ? !port.equals(that.port) : that.port != null) return false;
-        if (context != null ? !context.equals(that.context) : that.context != null) return false;
+        return context != null ? context.equals(that.context) : that.context == null;
 
-        return true;
     }
 
     @Override
