@@ -24,7 +24,7 @@ import java.util.Map;
 
 /**
  * Json mapping of {@code EntryPointFrontend}.
- * <p>
+ *
  * Created by william_montaz on 09/02/2016.
  */
 public class EntryPointFrontendWithPortMappingJson extends EntryPointFrontendMappingJson {

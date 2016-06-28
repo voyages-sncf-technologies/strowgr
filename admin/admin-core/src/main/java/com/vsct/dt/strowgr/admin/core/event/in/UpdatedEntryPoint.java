@@ -25,9 +25,6 @@ import java.util.Set;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
 
-/**
- * Created by william_montaz on 12/04/2016.
- */
 public class UpdatedEntryPoint {
 
     private final String hapUser;

@@ -21,7 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.brainlag.nsq.exceptions.NSQException;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
-import com.vsct.dt.strowgr.admin.core.event.out.CommitBeginEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import org.slf4j.Logger;
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Subscribes for events from eventbus and dispatch them to NSQDispatcher.
- * <p>
+ *
  * Created by william_montaz on 15/02/2016.
  */
 class ToNSQSubscriber {
@@ -46,14 +46,14 @@ class ToNSQSubscriber {
     }
 
     @Subscribe
-    public void handle(CommitBeginEvent commitBeginEvent) throws NSQException, TimeoutException, JsonProcessingException, UnsupportedEncodingException {
-        EntryPoint configuration = commitBeginEvent.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + commitBeginEvent));
+    public void handle(CommitRequestedEvent commitRequestedEvent) throws NSQException, TimeoutException, JsonProcessingException, UnsupportedEncodingException {
+        EntryPoint configuration = commitRequestedEvent.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + commitRequestedEvent));
         Map<String, String> context = configuration.getContext();
         String application = context.get("application");
         String platform = context.get("platform");
         /* TODO test application and platform nullity */
-        LOGGER.debug("send to nsq a CommitRequested from CommitBeginEvent {}", commitBeginEvent);
-        this.nsqDispatcher.sendCommitRequested(commitBeginEvent.getCorrelationId(), configuration.getHaproxy(), application, platform, commitBeginEvent.getConf(), commitBeginEvent.getSyslogConf());
+        LOGGER.debug("send to nsq a CommitRequested from CommitRequestedEvent {}", commitRequestedEvent);
+        this.nsqDispatcher.sendCommitRequested(commitRequestedEvent.getCorrelationId(), configuration.getHaproxy(), application, platform, commitRequestedEvent.getConf(), commitRequestedEvent.getSyslogConf());
     }
 
     @Subscribe

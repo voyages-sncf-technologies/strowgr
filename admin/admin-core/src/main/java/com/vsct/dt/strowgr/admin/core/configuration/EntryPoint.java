@@ -20,6 +20,7 @@ package com.vsct.dt.strowgr.admin.core.configuration;
 import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackend;
+import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackendServer;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -88,8 +89,8 @@ public class EntryPoint {
         checkNotNull(server);
         Optional<EntryPointBackendServer> existingServer = findServer(server.getId());
         EntryPointBackendServer newServer = existingServer
-                .map(es -> new EntryPointBackendServer(server.getId(), server.getHostname(), server.getIp(), server.getPort(), server.getContext(), es.getContextOverride()))
-                .orElseGet(() -> new EntryPointBackendServer(server.getId(), server.getHostname(), server.getIp(), server.getPort(), server.getContext(), new HashMap<String, String>()));
+                .map(es -> new EntryPointBackendServer(server.getId(), server.getIp(), server.getPort(), server.getContext(), es.getContextOverride()))
+                .orElseGet(() -> new EntryPointBackendServer(server.getId(),  server.getIp(), server.getPort(), server.getContext(), new HashMap<>()));
 
         EntryPoint configuration = this.removeServer(server.getId());
 
@@ -167,17 +168,17 @@ public class EntryPoint {
     public EntryPoint mergeWithUpdate(UpdatedEntryPoint updatedEntryPoint) {
 
         Set<EntryPointBackend> newBackends = new HashSet<>();
-        for (UpdatedEntryPointBackend updatedBackend : updatedEntryPoint.getBackends()) {
+        for(UpdatedEntryPointBackend updatedBackend : updatedEntryPoint.getBackends()){
             EntryPointBackend thisBackend = this.backends.get(updatedBackend.getId());
-            if (thisBackend != null) {
+            if(thisBackend != null){
                 Set<EntryPointBackendServer> newServers = new HashSet<>();
-                for (EntryPointBackendServer s : thisBackend.getServers()) {
-                    Map<String, String> contextOverride = updatedBackend.getServer(s.getId()).map(updatedServer -> updatedServer.getContextOverride()).orElse(new HashMap<>());
-                    newServers.add(new EntryPointBackendServer(s.getId(), s.getHostname(), s.getIp(), s.getPort(), s.getContext(), contextOverride));
+                for(EntryPointBackendServer s : thisBackend.getServers()){
+                    Map<String, String> contextOverride = updatedBackend.getServer(s.getId()).map(UpdatedEntryPointBackendServer::getContextOverride).orElse(new HashMap<>());
+                    newServers.add(new EntryPointBackendServer(s.getId(), s.getIp(), s.getPort(), s.getContext(), contextOverride));
                 }
                 newBackends.add(new EntryPointBackend(updatedBackend.getId(), newServers, updatedBackend.getContext()));
             } else {
-                newBackends.add(new EntryPointBackend(updatedBackend.getId(), new HashSet<EntryPointBackendServer>(), updatedBackend.getContext()));
+                newBackends.add(new EntryPointBackend(updatedBackend.getId(), new HashSet<>(), updatedBackend.getContext()));
             }
         }
 
@@ -216,7 +217,7 @@ public class EntryPoint {
     }
 
     public interface IHapUSer {
-        public IFrontends withUser(String user);
+        IFrontends withUser(String user);
     }
 
     public interface IFrontends {
