@@ -26,21 +26,30 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
+import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
+import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
+import com.vsct.dt.strowgr.admin.gui.manager.NSQConsumerManager;
+import com.vsct.dt.strowgr.admin.gui.manager.NSQProducerManager;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
+import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
+import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
+import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
 import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +78,9 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         strowgrConfiguration.addBundle(new AssetsBundle("/assets", "/", "index.html"));
         strowgrConfiguration.addBundle(new AssetsBundle("/META-INF/resources/webjars", "/webjars", null, "webjars"));
+
+        strowgrConfiguration.addCommand(new InitializationCommand());
+        strowgrConfiguration.addCommand(new ConfigurationCommand());
     }
 
     @Subscribe
@@ -83,7 +95,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         /* Main EventBus */
         ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(new ArrayBlockingQueue<>(100)).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
         EventBus eventBus = new AsyncEventBus(executor, (exception, context) -> {
-            LOGGER.error("exception on main event bus. Subscriber: " + context.getSubscriber() + ", method: " + context.getSubscriberMethod().getName(), exception);
+            LOGGER.error("exception on main event bus. Context: " + context, exception);
         });
         eventBus.register(this); // for dead events
 
@@ -92,7 +104,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         UriTemplateLocator templateLocator = new UriTemplateLocator();
 
         /* Repository */
-        ConsulRepository repository = configuration.getConsulRepositoryFactory().build(environment);
+        ConsulRepository repository = configuration.getConsulRepositoryFactory().buildAndManageBy(environment);
 
         /* EntryPoint State Machine */
         EntryPointEventHandler eventHandler = EntryPointEventHandler
@@ -128,6 +140,13 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         // Pipeline from eventbus to NSQ producer
         eventBus.register(new ToNSQSubscriber(new NSQDispatcher(nsqProducer)));
 
+        /* Http Client */
+        final CloseableHttpClient httpClient = new HttpClientBuilder(environment)
+                .using(configuration.getHttpClientConfiguration())
+                .build("http-client");
+        NSQHttpClient nsqdHttpClient = new NSQHttpClient("http://" + configuration.getNsqProducerFactory().getHost() + ":" + configuration.getNsqProducerFactory().getHttpPort(), httpClient);
+        NSQHttpClient nsqLookupdHttpClient = new NSQHttpClient("http://" + configuration.getNsqLookupfactory().getHost() + ":" + configuration.getNsqLookupfactory().getPort(), httpClient);
+
         /* Commit schedulers */
         configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
         configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
@@ -145,10 +164,13 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         eventBus.register(restApiResource);
 
         /* Healthchecks */
-        environment.healthChecks().register("nsqlookup", new NsqHealthcheck(configuration.getNsqLookupfactory().getHost(), configuration.getNsqLookupfactory().getPort()));
-        // the healthcheck on producer is done on http port which is by convention tcp port + 1
-        environment.healthChecks().register("nsqproducer", new NsqHealthcheck(configuration.getNsqProducerFactory().getHost(), configuration.getNsqProducerFactory().getPort() + 1));
+        environment.healthChecks().register("nsqlookup", new NsqHealthcheck(nsqLookupdHttpClient));
+        environment.healthChecks().register("nsqproducer", new NsqHealthcheck(nsqdHttpClient));
         environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
+
+        /* admin */
+        environment.admin().addTask(new InitPortsTask(repository));
+        environment.admin().addTask(new HaproxyVipTask(repository));
 
         /* Exception mappers */
         environment.jersey().register(new ExceptionMapper<IncompleteConfigurationException>() {

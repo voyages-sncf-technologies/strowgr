@@ -1,9 +1,8 @@
 FROM busybox
 
-LABEL application.name "StrowgrRegistrator"
-LABEL application.desc "Strowgr docker registrator"
+LABEL application.name "StrowgrSidekick"
+LABEL application.desc "Strowgr docker sidekick"
 
 COPY ${project.build.finalNameWithExt} /app
-RUN chmod 700 /app
-
+RUN chmod +x /app
 ENTRYPOINT [ "/app" ]

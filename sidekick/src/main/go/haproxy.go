@@ -27,14 +27,12 @@ import (
 	"time"
 )
 
-func NewHaproxy(role string, properties *Config, version string, context Context) *Haproxy {
-	if version == "" {
-		version = "1.4.22"
-	}
+func NewHaproxy(role string, properties *Config, context Context) *Haproxy {
+
 	return &Haproxy{
 		Role:       role,
 		properties: properties,
-		Version:    version,
+		Version:    properties.HapVersion,
 		Context:    context,
 	}
 }
@@ -53,14 +51,15 @@ const (
 	ERR_SYSLOG int = iota
 	ERR_CONF   int = iota
 	ERR_RELOAD int = iota
+	MAX_STATUS int = iota
 )
 
 // ApplyConfiguration write the new configuration and reload
 // A rollback is called on failure
-func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
-	hap.createSkeleton(data.CorrelationId)
+func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) {
+	hap.createSkeleton(data.Header.CorrelationId)
 
-	newConf := data.Conf
+	newConf := data.Conf.Haproxy
 	path := hap.confPath()
 
 	// Check conf diff
@@ -93,13 +92,13 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	}).Info("New configuration written")
 
 	// Reload haproxy
-	err = hap.reload(data.CorrelationId)
+	err = hap.reload(data.Header.CorrelationId)
 	if err != nil {
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 			"role": hap.Role,
 		}).WithError(err).Error("Reload failed")
 		hap.dumpConfiguration(hap.NewErrorPath(), newConf, data)
-		errRollback := hap.rollback(data.CorrelationId)
+		errRollback := hap.rollback(data.Header.CorrelationId)
 		if errRollback != nil {
 			log.WithError(errRollback).Error("error in rollback in addition to error of the reload")
 		} else {
@@ -109,7 +108,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	}
 	// Write syslog fragment
 	fragmentPath := hap.syslogFragmentPath()
-	err = ioutil.WriteFile(fragmentPath, data.SyslogFragment, 0644)
+	err = ioutil.WriteFile(fragmentPath, data.Conf.Syslog, 0644)
 	if err != nil {
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 			"role": hap.Role,
@@ -119,7 +118,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 	}
 	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 		"role":     hap.Role,
-		"content":  string(data.SyslogFragment),
+		"content":  string(data.Conf.Syslog),
 		"filename": fragmentPath,
 	}).Debug("Write syslog fragment")
 
@@ -127,14 +126,14 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessage) (int, error) {
 }
 
 // dumpConfiguration dumps the new configuration file with context for debugging purpose
-func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *EventMessage) {
+func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *EventMessageWithConf) {
 	f, err2 := os.Create(filename)
 	defer f.Close()
 	if err2 == nil {
 		f.WriteString("================================================================\n")
-		f.WriteString(fmt.Sprintf("application: %s\n", data.Application))
-		f.WriteString(fmt.Sprintf("platform: %s\n", data.Platform))
-		f.WriteString(fmt.Sprintf("correlationId: %s\n", data.CorrelationId))
+		f.WriteString(fmt.Sprintf("application: %s\n", data.Header.Application))
+		f.WriteString(fmt.Sprintf("platform: %s\n", data.Header.Platform))
+		f.WriteString(fmt.Sprintf("correlationId: %s\n", data.Header.CorrelationId))
 		f.WriteString("================================================================\n")
 		f.Write(newConf)
 		f.Sync()

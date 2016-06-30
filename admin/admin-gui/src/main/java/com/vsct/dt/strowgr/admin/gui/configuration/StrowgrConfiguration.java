@@ -19,6 +19,7 @@ package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
+import io.dropwizard.client.HttpClientConfiguration;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.Valid;
@@ -26,6 +27,10 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 public class StrowgrConfiguration extends Configuration {
+
+    public StrowgrConfiguration(){
+        super();
+    }
 
     @Valid
     @NotNull
@@ -63,6 +68,10 @@ public class StrowgrConfiguration extends Configuration {
 
     @Min(10)
     private int commitTimeout;
+
+    @Valid
+    @NotNull
+    private HttpClientConfiguration httpClient = new HttpClientConfiguration();
 
     @JsonProperty("repository")
     public ConsulRepositoryFactory getConsulRepositoryFactory() {
@@ -162,5 +171,16 @@ public class StrowgrConfiguration extends Configuration {
     @JsonProperty("commitTimeout")
     public void setCommitTimeout(int commitTimeout) {
         this.commitTimeout = commitTimeout;
+    }
+
+
+    @JsonProperty("httpClient")
+    public HttpClientConfiguration getHttpClientConfiguration() {
+        return httpClient;
+    }
+
+    @JsonProperty("httpClient")
+    public void setHttpClientConfiguration(HttpClientConfiguration httpClient) {
+        this.httpClient = httpClient;
     }
 }

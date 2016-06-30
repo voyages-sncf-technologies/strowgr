@@ -177,7 +177,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     public Set<String> getEntryPointsId() {
         try {
             HttpGet listKeysURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin?keys");
-            Optional<Set<String>> allKeys = client.execute(listKeysURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseKeysFromHttpEntity));
+            Optional<Set<String>> allKeys = client.execute(listKeysURI, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parseKeysFromHttpEntity));
             return allKeys.orElse(new HashSet<>()).stream()
                     .filter(s -> !s.contains("lock"))
                     .map(s -> s.replace("admin/", ""))
@@ -316,7 +316,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     public Optional<Map<String, Integer>> getPorts() {
         try {
             HttpGet getPortsById = new HttpGet("http://" + host + ":" + port + "/v1/kv/ports");
-            Optional<ConsulItem<Map<String, Integer>>> result = client.execute(getPortsById, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parsePortsByHaproxyFromHttpEntity));
+            Optional<ConsulItem<Map<String, Integer>>> result = client.execute(getPortsById, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parsePortsByHaproxyFromHttpEntity));
             if (result.isPresent()) {
                 return Optional.of(result.get().value(mapper));
             } else {
@@ -328,11 +328,28 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
+    public Optional<Boolean> initPorts() {
+        Optional<Boolean> initialized = Optional.of(Boolean.FALSE);
+        try {
+            if (getPorts().isPresent()) {
+                LOGGER.warn("can't init ports in repository because it's not empty");
+            } else {
+                HttpPut putPortsById = new HttpPut("http://" + host + ":" + port + "/v1/kv/ports");
+                putPortsById.setEntity(new StringEntity("{}"));
+                initialized = client.execute(putPortsById, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return initialized;
+    }
+
+    @Override
     public Optional<Integer> getPort(String key) {
         try {
             // TODO should use ?raw with a different handler
             HttpGet getPortsById = new HttpGet("http://" + host + ":" + port + "/v1/kv/ports");
-            Optional<ConsulItem<Map<String, Integer>>> portsByEntrypoint = client.execute(getPortsById, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parsePortsByHaproxyFromHttpEntity));
+            Optional<ConsulItem<Map<String, Integer>>> portsByEntrypoint = client.execute(getPortsById, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parsePortsByHaproxyFromHttpEntity));
             if (portsByEntrypoint.isPresent()) {
                 Map<String, Integer> portsByEntrypointRaw = portsByEntrypoint.get().value(mapper);
                 if (portsByEntrypointRaw.containsKey(key)) {
@@ -358,7 +375,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                     // Ports map has been already initialized
                     Map<String, Integer> rawPortsByEntrypoint = portsByEntrypoint.get().value(mapper);
                     if (rawPortsByEntrypoint.containsKey(key)) {
-                        throw new IllegalStateException("Port for key " + key + " is already setted. It's port " + rawPortsByEntrypoint.get(key));
+                        throw new IllegalStateException("Port for key " + key + " is already set. It's port " + rawPortsByEntrypoint.get(key));
                     }
 
                     boolean portAlreadyUsed = true;
@@ -391,10 +408,22 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public Optional<String> getHaproxyVip(String haproxyName) {
+    public Optional<String> getHaproxyVip(String name) {
         try {
-            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName + "/vip?raw");
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + name + "/vip?raw");
             return client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::readRawContentFromHttpEntity));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void setHaproxyVip(String haproxyName, String vip) {
+        try {
+            HttpPut getHaproxyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName + "/vip");
+            getHaproxyURI.setEntity(new StringEntity(vip));
+
+            client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::readRawContentFromHttpEntity));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

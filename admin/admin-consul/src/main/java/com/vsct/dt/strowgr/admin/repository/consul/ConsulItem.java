@@ -38,7 +38,7 @@ public class ConsulItem<T> {
     public ConsulItem(@JsonProperty("LockIndex") int lockIndex,
                       @JsonProperty("Key") String key,
                       @JsonProperty("Flags") Long flags,
-                      @JsonProperty("Value") String value,
+                      @JsonProperty(value = "Value",defaultValue = "{}") String value,
                       @JsonProperty("CreateIndex") Integer createIndex,
                       @JsonProperty("ModifyIndex") Integer modifyIndex) {
         this.lockIndex = lockIndex;

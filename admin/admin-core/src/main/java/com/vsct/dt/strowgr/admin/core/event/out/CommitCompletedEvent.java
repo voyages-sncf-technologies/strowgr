@@ -23,38 +23,15 @@ import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 
 import java.util.Optional;
 
-public class CommitBeginEvent extends EntryPointEvent {
+public class CommitCompletedEvent extends EntryPointEvent {
     private final EntryPoint configuration;
-    private final String conf;
-    private final String syslogConf;
 
-    public CommitBeginEvent(String correlationId, EntryPointKey key, EntryPoint configuration, String conf, String syslogConf) {
+    public CommitCompletedEvent(String correlationId, EntryPointKey key, EntryPoint configuration) {
         super(correlationId, key);
         this.configuration = configuration;
-        this.conf = conf;
-        this.syslogConf = syslogConf;
     }
 
     public Optional<EntryPoint> getConfiguration() {
         return Optional.ofNullable(configuration);
-    }
-
-    public String getConf() {
-        return conf;
-    }
-
-    public String getSyslogConf() {
-        return syslogConf;
-    }
-
-    @Override
-    public String toString() {
-        return "CommitBeginEvent{" +
-                "correlationId=" + getCorrelationId() +
-                "key=" + getKey() +
-                "configuration=" + configuration +
-                ", conf='" + conf + '\'' +
-                ", syslogConf='" + syslogConf + '\'' +
-                '}';
     }
 }

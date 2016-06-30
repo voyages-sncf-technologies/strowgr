@@ -1,0 +1,9 @@
+{
+  "header" : {
+    "correlationId" : "test-id",
+    "application" : "TST",
+    "platform" : "REL1",
+    "timestamp" : 1,
+    "source" : "test"
+  }
+}

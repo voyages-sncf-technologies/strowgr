@@ -22,19 +22,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
-import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedPayload;
 import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
+import com.vsct.dt.strowgr.admin.nsq.payload.CommitCompleted;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.function.Consumer;
 
 /**
  * Configuration factory from Dropwizard for CommitCompletedConsumer NSQ.
- * <p>
+ *
  * Created by william_montaz on 16/02/2016.
  */
 public class CommitCompletedConsumerFactory {
@@ -59,17 +58,17 @@ public class CommitCompletedConsumerFactory {
 
     public NSQConsumer build(NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer) {
         return new NSQConsumer(lookup, topic + haproxy, "admin", (message) -> {
-            CommitCompletedPayload payload = null;
+            CommitCompleted commitCompleted = null;
             try {
-                payload = mapper.readValue(message.getMessage(), CommitCompletedPayload.class);
+                commitCompleted = mapper.readValue(message.getMessage(), CommitCompleted.class);
             } catch (IOException e) {
-                LOGGER.error("can't deserialize the payload:" + Arrays.toString(message.getMessage()), e);
-                //Avoid republishing message and stop processing
+                LOGGER.error("can't deserialize the commitCompleted:" + new String(message.getMessage()), e);
+                // Avoid republishing message and stop processing
                 message.finished();
                 return;
             }
 
-            CommitSuccessEvent event = new CommitSuccessEvent(payload.getCorrelationId(), new EntryPointKeyVsctImpl(payload.getApplication(), payload.getPlatform()));
+            CommitSuccessEvent event = new CommitSuccessEvent(commitCompleted.getHeader().getCorrelationId(), new EntryPointKeyVsctImpl(commitCompleted.getHeader().getApplication(), commitCompleted.getHeader().getPlatform()));
             consumer.accept(event);
             message.finished();
         });
