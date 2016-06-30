@@ -123,6 +123,10 @@
                             <goVersion>${go.sdk.version}</goVersion>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>default-install</id>
+                        <phase>none</phase>
+                    </execution>
                 </executions>
             </plugin>
 
