@@ -29,7 +29,7 @@
     </parent>
 
     <artifactId>sidekick</artifactId>
-    <packaging>mvn-golang</packaging>
+    <packaging>pom</packaging>
 
     <profiles>
         <profile>
@@ -123,13 +123,8 @@
                             <goVersion>${go.sdk.version}</goVersion>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>default-install</id>
-                        <phase>none</phase>
-                    </execution>
                 </executions>
             </plugin>
-
         </plugins>
     </build>
 </project>
