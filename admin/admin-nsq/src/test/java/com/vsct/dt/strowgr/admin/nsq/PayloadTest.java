@@ -19,7 +19,6 @@ package com.vsct.dt.strowgr.admin.nsq;
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.vsct.dt.strowgr.admin.nsq.payload.*;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Server;
@@ -31,7 +30,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +44,7 @@ public class PayloadTest {
         mapper = new ObjectMapper();
     }
 
-    private void assertMapper(Object message, String file) throws IOException, URISyntaxException {
+    private void assertSerialization(Object message, String file) throws IOException, URISyntaxException {
         String result = mapper.writer(
                 new DefaultPrettyPrinter()
                         .withArrayIndenter(new DefaultPrettyPrinter.FixedSpaceIndenter())
@@ -62,38 +60,35 @@ public class PayloadTest {
         CommitRequested message = new CommitRequested("test-id", "TST", "REL1", "abcde", "fghij");
         message.getHeader().setTimestamp(1L);
         message.getHeader().setSource("test");
-        assertMapper(message, "commitRequested.expected.json");
+        assertSerialization(message, "commitRequested.expected.json");
     }
 
     @Test
     public void testCommitCompleted() throws IOException, URISyntaxException {
-        CommitCompleted message = new CommitCompleted("test-id", "TST", "REL1");
+        CommitCompleted message = new CommitCompleted(new Header("test-id", "TST", "REL1"));
         message.getHeader().setTimestamp(1L);
         message.getHeader().setSource("test");
-        assertMapper(message, "commitCompleted.expected.json");
+        assertSerialization(message, "commitCompleted.expected.json");
     }
 
     @Test
     public void testCommitFailed() throws IOException, URISyntaxException {
-        CommitFailed message = new CommitFailed("test-id", "TST", "REL1");
+        CommitFailed message = new CommitFailed(new Header("test-id", "TST", "REL1"));
         message.getHeader().setTimestamp(1L);
         message.getHeader().setSource("test");
-        assertMapper(message, "commitFailed.expected.json");
+        assertSerialization(message, "commitFailed.expected.json");
     }
 
     @Test
     public void testDeleteRequested() throws IOException, URISyntaxException {
-        DeleteRequested message = new DeleteRequested("test-id", "TST", "REL1","test");
+        DeleteRequested message = new DeleteRequested("test-id", "TST", "REL1", "test");
         message.getHeader().setTimestamp(1L);
-        assertMapper(message, "deleteRequested.expected.json");
+        assertSerialization(message, "deleteRequested.expected.json");
     }
 
     @Test
-    public void registerServer() throws IOException, URISyntaxException {
-        RegisterServer message = new RegisterServer("test-id", "TST", "REL1");
-        message.getHeader().setTimestamp(1L);
-        message.getHeader().setSource("test");
-
+    public void should_serialize_register_server_with_expected_format() throws IOException, URISyntaxException {
+        // given
         Server server = new Server();
         server.setId("server-id");
         server.setPort("1234");
@@ -103,9 +98,12 @@ public class PayloadTest {
         context.put("key1", "val1");
         context.put("key2", "val2");
         server.setContext(context);
-        message.setServer(server);
+        RegisterServer message = new RegisterServer(new Header("test-id", "TST", "REL1"), server);
+        message.getHeader().setTimestamp(1L);
+        message.getHeader().setSource("test");
 
-        assertMapper(message, "registerServer.expected.json");
+        // test and check
+        assertSerialization(message, "registerServer.expected.json");
     }
 
     @Test
@@ -121,6 +119,20 @@ public class PayloadTest {
         sidekick.setVip("2.3.4.5");
         sidekick.setVersion("1.0");
         message.setSidekick(sidekick);
-        assertMapper(message, "registerSidekick.expected.json");
+        assertSerialization(message, "registerSidekick.expected.json");
+    }
+
+    @Test
+    public void should_deserialized_commit_completed_message() throws IOException {
+        // given
+        String payload = "{\"header\":{\"correlationId\":\"16f484b9-3935-415b-bd8e-aaeaaf1020ac\",\"application\":\"STR\",\"platform\":\"REL1\",\"timestamp\":1467824168749,\"source\":\"sidekick-default-name-master\"}}";
+
+        // test
+        CommitCompleted commitCompleted = new ObjectMapper().readValue(payload.getBytes(), CommitCompleted.class);
+
+        // check
+        assertNotNull(commitCompleted);
+        assertNotNull(commitCompleted.getHeader());
+        assertEquals("16f484b9-3935-415b-bd8e-aaeaaf1020ac", commitCompleted.getHeader().getCorrelationId());
     }
 }

@@ -14,17 +14,17 @@ server:
 threads: 20
 haproxyName: default-name
 repository:
-  host: localhost
-  port: 8500
+  host: parisiancocktail
+  port: 58500
   minGeneratedPort: 50000
   maxGeneratedPort: 54000
 nsqLookup:
-  host: localhost
-  port: 4161
+  host: parisiancocktail
+  port: 54161
 nsqProducer:
-  host: localhost
-  tcpPort: 4150
-  httpPort: 4151
+  host: parisiancoctail
+  tcpPort: 54150
+  httpPort: 54151
 commitCompletedConsumer:
   topic: commit_completed_
 commitFailedConsumer:

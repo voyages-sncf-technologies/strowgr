@@ -46,10 +46,10 @@ type Haproxy struct {
 }
 
 const (
-	SUCCESS    int = iota
-	UNCHANGED  int = iota
+	SUCCESS int = iota
+	UNCHANGED int = iota
 	ERR_SYSLOG int = iota
-	ERR_CONF   int = iota
+	ERR_CONF int = iota
 	ERR_RELOAD int = iota
 	MAX_STATUS int = iota
 )
@@ -178,12 +178,12 @@ func (hap *Haproxy) reload(correlationId string) error {
 	reloadScript := hap.getReloadScript()
 	output, err := exec.Command("sh", reloadScript, "reload", "-y").Output()
 	if err != nil {
-		log.WithFields(hap.Context.Fields()).WithError(err).Error("Error reloading")
+		log.WithFields(hap.Context.Fields()).WithField("output", string(output[:])).WithError(err).Error("Error reloading")
 	} else {
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 			"role":         hap.Role,
 			"reloadScript": reloadScript,
-			"cmd":          string(output[:]),
+			"output":          string(output[:]),
 		}).Debug("Reload succeeded")
 	}
 	return err
@@ -205,15 +205,15 @@ func (hap *Haproxy) rollback(correlationId string) error {
 func (hap *Haproxy) createSkeleton(correlationId string) error {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
 
-	createDirectory(hap.Context, correlationId, baseDir+"/Config")
-	createDirectory(hap.Context, correlationId, baseDir+"/logs/"+hap.Context.Application+hap.Context.Platform)
-	createDirectory(hap.Context, correlationId, baseDir+"/scripts")
-	createDirectory(hap.Context, correlationId, baseDir+"/version-1")
-	createDirectory(hap.Context, correlationId, baseDir+"/errors")
-	createDirectory(hap.Context, correlationId, baseDir+"/dump")
+	createDirectory(hap.Context, correlationId, baseDir + "/Config")
+	createDirectory(hap.Context, correlationId, baseDir + "/logs/" + hap.Context.Application + hap.Context.Platform)
+	createDirectory(hap.Context, correlationId, baseDir + "/scripts")
+	createDirectory(hap.Context, correlationId, baseDir + "/version-1")
+	createDirectory(hap.Context, correlationId, baseDir + "/errors")
+	createDirectory(hap.Context, correlationId, baseDir + "/dump")
 
 	updateSymlink(hap.Context, correlationId, hap.getHapctlFilename(), hap.getReloadScript())
-	updateSymlink(hap.Context, correlationId, hap.getHapBinary(), baseDir+"/Config/haproxy")
+	updateSymlink(hap.Context, correlationId, hap.getHapBinary(), baseDir + "/Config/haproxy")
 
 	return nil
 }

@@ -70,6 +70,17 @@ type EventMessageWithConf struct {
 	Conf Conf `json:"conf,omitempty"`
 }
 
+// clone an EventMessage with he header, a new source and a new timestamp and the conf
+func (eventMessage EventMessageWithConf) CloneWithConf(source string) EventMessageWithConf {
+	newMessage := EventMessageWithConf{
+		Conf: eventMessage.Conf,
+	}
+	newMessage.Header = eventMessage.Header
+	newMessage.Header.Source = source
+	newMessage.Header.Timestamp = time.Now().UnixNano() / int64(time.Millisecond)
+	return newMessage
+}
+
 // retrieve Context from an EventMessage
 func (em EventMessage) Context() Context {
 	return Context{

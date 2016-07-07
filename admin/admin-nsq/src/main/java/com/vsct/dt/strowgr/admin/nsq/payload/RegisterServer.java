@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.nsq.payload;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonCreator.Mode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Server;
@@ -30,13 +31,10 @@ public class RegisterServer {
     @JsonProperty("server")
     Server server;
 
-    @JsonCreator
-    public RegisterServer(String correlationId, String application, String platform) {
-        header = new Header(correlationId, application, platform);
-    }
-
-    @JsonCreator
-    public RegisterServer() {
+    @JsonCreator(mode = Mode.PROPERTIES)
+    public RegisterServer(@JsonProperty("header") Header header, @JsonProperty("server") Server server) {
+        this.header = header;
+        this.server = server;
     }
 
     public void setServer(Server server) {

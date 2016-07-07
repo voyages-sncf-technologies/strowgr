@@ -240,7 +240,7 @@ func filteredHandler(event string, message *nsq.Message, target string, f sideki
 	}
 
 	if match {
-		log.WithField("event", event).Debug("Handle event")
+		log.WithField("event", event).WithField("raw", string(message.Body)).Debug("Handle event")
 		data, err := bodyToData(message.Body)
 		if err != nil {
 			log.WithError(err).Error("Unable to read data")
@@ -285,11 +285,11 @@ func logAndForget(data *sidekick.EventMessageWithConf) error {
 }
 
 func reloadSlave(data *sidekick.EventMessageWithConf) error {
-	return reloadHaProxy(data, "slave", "commit_slave_completed_")
+	return reloadHaProxy(data, true)
 }
 
 func reloadMaster(data *sidekick.EventMessageWithConf) error {
-	return reloadHaProxy(data, "master", "commit_completed_")
+	return reloadHaProxy(data, false)
 }
 
 func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
@@ -304,9 +304,17 @@ func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
 }
 
 // reload an haproxy with content of data in according to role (slave or master)
-func reloadHaProxy(data *sidekick.EventMessageWithConf, role string, topic string) error {
+func reloadHaProxy(data *sidekick.EventMessageWithConf, isMaster bool) error {
 	context := data.Context()
-	var hap sidekick.Loadbalancer = haFactory.CreateHaproxy(role, context)
+	var hap sidekick.Loadbalancer
+	var source string
+	if(isMaster) {
+		hap = haFactory.CreateHaproxy("master", context)
+		source = "sidekick-" + properties.ClusterId + "-master"
+	} else {
+		hap = haFactory.CreateHaproxy("slave", context)
+		source = "sidekick-" + properties.ClusterId + "-slave"
+	}
 
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
@@ -319,10 +327,14 @@ func reloadHaProxy(data *sidekick.EventMessageWithConf, role string, topic strin
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		publishMessage(topic, data.Clone("sidekick-" + properties.ClusterId + "-" + role), context)
+		if (isMaster) {
+			publishMessage("commit_completed_", data.Clone(source), context)
+		} else {
+			publishMessage("commit_slave_completed_", data.CloneWithConf(source), context)
+		}
 	} else {
 		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", data.Clone("sidekick-" + properties.ClusterId + "-" + role), context)
+		publishMessage("commit_failed_", data.Clone(source), context)
 	}
 	return nil
 }

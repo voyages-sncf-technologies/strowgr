@@ -23,12 +23,11 @@ import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
 public class CommitFailed {
 
-    @JsonProperty("header")
     private Header header;
 
-    @JsonCreator
-    public CommitFailed(String correlationId, String application, String platform) {
-        header = new Header(correlationId, application, platform);
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public CommitFailed(@JsonProperty("header") Header header) {
+        this.header = header;
     }
 
     @JsonCreator

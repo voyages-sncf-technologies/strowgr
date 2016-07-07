@@ -19,21 +19,15 @@ package com.vsct.dt.strowgr.admin.nsq.payload;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Conf;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
 public class CommitCompleted {
 
-    @JsonProperty("header")
     private Header header;
 
-    @JsonCreator
-    public CommitCompleted() {
-    }
-
-    @JsonCreator
-    public CommitCompleted(String correlationId, String application, String platform) {
-        header = new Header(correlationId, application, platform);
+    @JsonCreator(mode= JsonCreator.Mode.PROPERTIES)
+    public CommitCompleted(@JsonProperty("header") Header header) {
+        this.header = header;
     }
 
     public Header getHeader() {
