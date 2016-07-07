@@ -1,0 +1,16 @@
+#!/bin/sh
+
+dir="$(dirname $0)"
+cwd=$(cd $dir; pwd)
+VERSION=0.1.0-SNAPSHOT
+GROUP=com.vsct.dt.strowgr
+ARTIFACT=sidekick
+if [[ $VERSION == *-SNAPSHOT ]];then
+    REPO=dt-snapshots
+else
+    REPO=dt-releases
+fi
+
+curl -L http://nexus/service/local/artifact/maven/redirect?r=$REPO\&g=$GROUP\&a=$ARTIFACT\&v=$VERSION\&p=tar.gz\&c=dist | tar xzvC ./
+
+$cwd/RESTART 2>&1

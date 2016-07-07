@@ -1,0 +1,7 @@
+#!/bin/sh
+
+CWD=$(cd $(dirname $0);pwd)
+export HAP_INTERACTIVE=0
+
+nohup $CWD/sidekick $@ -config sidekick.conf -ip $(hostname -i) > $CWD/sidekick.log &
+echo $! > $CWD/sidekick.pid
