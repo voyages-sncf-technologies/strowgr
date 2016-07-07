@@ -285,11 +285,11 @@ func logAndForget(data *sidekick.EventMessageWithConf) error {
 }
 
 func reloadSlave(data *sidekick.EventMessageWithConf) error {
-	return reloadHaProxy(data, true)
+	return reloadHaProxy(data, false)
 }
 
 func reloadMaster(data *sidekick.EventMessageWithConf) error {
-	return reloadHaProxy(data, false)
+	return reloadHaProxy(data, true)
 }
 
 func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
