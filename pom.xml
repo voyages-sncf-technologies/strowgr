@@ -47,7 +47,7 @@
         <docker.namespace>strowgr</docker.namespace>
         <docker.image>${project.artifactId}</docker.image>
         <project.build.finalNameWithExt>${project.build.finalName}</project.build.finalNameWithExt>
-
+        <maven.javadoc.skip>true</maven.javadoc.skip>
     </properties>
 
     <profiles>
