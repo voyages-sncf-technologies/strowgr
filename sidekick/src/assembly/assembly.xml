@@ -60,10 +60,12 @@
         <fileSet>
             <directory>${project.basedir}${file.separator}src${file.separator}main${file.separator}scripts</directory>
             <outputDirectory>scripts</outputDirectory>
+            <filtered>true</filtered>
             <includes>
-                <include>RELOAD</include>
+                <include>UPDATE</include>
                 <include>BOOT</include>
                 <include>SHUT</include>
+                <include>RESTART</include>
             </includes>
         </fileSet>
 

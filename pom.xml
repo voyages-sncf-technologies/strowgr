@@ -24,7 +24,7 @@
     <groupId>com.vsct.dt.strowgr</groupId>
     <artifactId>strowgr-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.1.0</version>
+    <version>0.1.1-SNAPSHOT</version>
 
     <modules>
         <!--Java modules-->
@@ -182,15 +182,6 @@
                             <phase>process-resources</phase>
                         </execution>
                     </executions>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>2.5.3</version>
-                    <configuration>
-                        <autoVersionSubmodules>true</autoVersionSubmodules>
-                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
