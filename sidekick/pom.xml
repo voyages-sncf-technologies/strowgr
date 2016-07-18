@@ -82,6 +82,9 @@
                 <executions>
                     <execution>
                         <id>default-get</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
                         <configuration>
                             <targetOs>${target.os}</targetOs>
                             <targetArch>${target.arch}</targetArch>
