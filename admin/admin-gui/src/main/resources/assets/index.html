@@ -76,6 +76,12 @@
 
     <script type="text/javascript">
         var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages', 'ngSanitize']);
+        adminApp.constant("libelle",{"entrypoint":"platforme",
+                                     "un_entrypoint":"une platforme",
+                                     "l_entrypoint":"la plateforme"});
+        adminApp.run(['$rootScope','libelle', function ($rootScope,libelle) {
+            $rootScope.libelle = libelle;
+        }]);
 
         adminApp.config(['$routeProvider', '$mdThemingProvider', function ($routeProvider, $mdThemingProvider) {
             $routeProvider.
@@ -362,7 +368,7 @@
                     conf: '=conf'
                 },
                 link: function (scope, element, attrs) {
-
+                    scope.libelle = $rootScope.libelle;
                     scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
                     scope.forbiddenFrontendKeys = ['id', 'port'];
                     scope.forbiddenBackendKeys = ['id'];
@@ -708,7 +714,7 @@
                     </h1>
                     <span flex></span>
                     <md-button class="md-raised md-accent" ng-href="/#/add-entrypoint">
-                        Ajouter un entrypoint
+                        Ajouter {{libelle.un_entrypoint}}
                     </md-button>
                 </div>
             </md-toolbar>
