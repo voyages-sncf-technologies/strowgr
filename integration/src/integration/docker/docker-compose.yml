@@ -44,7 +44,7 @@ services:
 
   admin:
     image: dockerregistrydev.socrate.vsct.fr/strowgr/admin:latest
-    command: ["java", "-jar", "/app.jar" , 'server' ,'/server.yml' ]
+    entrypoint: ["java", "-jar", "/app.jar" , 'server' ,'/server.yml' ]
     volumes:
     - ./conf/admin.yml:/server.yml
     - ./logs/:/var/log/strowgr/
@@ -61,7 +61,7 @@ services:
 
   admin-init:
       image: dockerregistrydev.socrate.vsct.fr/strowgr/admin:latest
-      command: ["java", "-jar", "/app.jar" , 'init' , '--haproxy-name' , 'default-name' , '--vip' , 'localhost', '/server.yml' ]
+      entrypoint: ["java", "-jar", "/app.jar" , 'init' , '--haproxy-name' , 'default-name' , '--vip' , 'localhost', '/server.yml' ]
       volumes:
       - ./conf/admin.yml:/server.yml
       depends_on:
