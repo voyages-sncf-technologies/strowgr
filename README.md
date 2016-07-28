@@ -16,6 +16,6 @@ $ mvn package
 Build additionally docker images of `admin` and `sidekick`:
                   
 ```shell
-$ mvn package -Pbuild-docker
+$ mvn package -Pbuild-docker -Ptarget-linux
 ```
 
