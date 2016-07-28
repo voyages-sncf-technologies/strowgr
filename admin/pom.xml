@@ -15,7 +15,6 @@
   ~  limitations under the License.
   ~
   -->
-
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -49,22 +48,13 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.3</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
             </plugin>
         </plugins>
-
     </build>
 
     <dependencyManagement>
         <dependencies>
-
             <dependency>
                 <groupId>com.github.brainlag</groupId>
                 <artifactId>nsq-client</artifactId>
@@ -206,5 +196,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
 </project>

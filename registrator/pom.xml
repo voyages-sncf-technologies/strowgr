@@ -15,7 +15,6 @@
   ~  limitations under the License.
   ~
   -->
-
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -57,7 +56,6 @@
     </profiles>
 
     <build>
-
         <finalName>${project.artifactId}-${target.os}-${target.arch}-${project.version}</finalName>
         <sourceDirectory>${project.basedir}${file.separator}src${file.separator}main${file.separator}go
         </sourceDirectory>
@@ -99,6 +97,7 @@
                     <execution>
                         <id>default-build</id>
                         <configuration>
+                            <env><CGO_ENABLED>0</CGO_ENABLED></env>
                             <targetOs>${target.os}</targetOs>
                             <targetArch>${target.arch}</targetArch>
                             <packages>
@@ -125,5 +124,4 @@
 
         </plugins>
     </build>
-
 </project>
