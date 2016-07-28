@@ -72,7 +72,6 @@
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
                 <artifactId>mvn-golang-wrapper</artifactId>
-                <version>2.0.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <goVersion>${go.sdk.version}</goVersion>
