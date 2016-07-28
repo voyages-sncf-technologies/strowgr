@@ -84,7 +84,7 @@ services:
     image: java:8
     ports:
       - 8080:8080
-    command: ['java' ,'-jar' , '/target/admin-gui-1.0-SNAPSHOT.jar', 'server' ,'/server.yml' ]
+    entrypoint: ['java' ,'-jar' , '/target/admin-gui-1.0-SNAPSHOT.jar', 'server' ,'/server.yml' ]
     volumes:
       - ./admin/admin-gui/target:/target
       - ./data/admin/server.yml:/server.yml
