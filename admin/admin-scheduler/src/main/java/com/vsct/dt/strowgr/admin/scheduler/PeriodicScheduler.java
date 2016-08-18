@@ -30,7 +30,7 @@ import java.util.function.Function;
 
 /**
  * Schedule entrypoint lifecycles.
- *
+ * <p>
  * Created by william_montaz on 11/02/2016.
  */
 public class PeriodicScheduler<T> {
@@ -57,8 +57,7 @@ public class PeriodicScheduler<T> {
                         consumer.accept(provider.apply(ep));
                     }
                 } catch (Throwable t) {
-                    t.printStackTrace();
-                    LOGGER.error("PeriodicScheduler failed. Reason {}", t.getMessage());
+                    LOGGER.error("PeriodicScheduler failed.", t);
                 }
             }
         }
