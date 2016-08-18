@@ -20,10 +20,7 @@ package com.vsct.dt.strowgr.admin.gui;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.DeadEvent;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
+import com.google.common.eventbus.*;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
@@ -95,7 +92,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         /* Main EventBus */
         ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(new ArrayBlockingQueue<>(100)).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
         EventBus eventBus = new AsyncEventBus(executor, (exception, context) -> {
-            LOGGER.error("exception on main event bus. Context: " + context, exception);
+            LOGGER.error("exception on main event bus. Context: " + subscriberExceptionContextToString(context), exception);
         });
         eventBus.register(this); // for dead events
 
@@ -179,6 +176,13 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 return Response.status(500).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
             }
         });
+    }
+
+    private String subscriberExceptionContextToString(SubscriberExceptionContext subscriberExceptionContext) {
+        return "event: " + subscriberExceptionContext.getEvent() +
+                ", eventbus identifier: " + subscriberExceptionContext.getEventBus().identifier() +
+                ", subscriber: " + subscriberExceptionContext.getSubscriber() +
+                ", subscriber method name: " + subscriberExceptionContext.getSubscriberMethod().getName();
     }
 
 }
