@@ -28,6 +28,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.Map;
+
 import static javax.ws.rs.core.Response.ok;
 
 @Path("/haproxy")
@@ -44,18 +46,25 @@ public class HaproxyResources {
     }
 
     @PUT
-    @Path("/uri/{haproxyName : .+}/{vip : .+}")
+    @Path("/{haproxyId : .+}/{key: .+}/{value : .+}")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response setHaproxyURI(@PathParam("haproxyName") String haproxyName, @PathParam("vip") String vip) {
-        repository.setHaproxyVip(haproxyName, vip);
+    public Response setHaproxyVip(@PathParam("haproxyId") String haproxyId, @PathParam("key") String key, @PathParam("value") String value) {
+        repository.setHaproxyProperty(haproxyId, key, value);
         return ok().build();
     }
 
     @GET
-    @Path("/uri/{haproxyName : .+}")
+    @Path("/{haproxyId : .+}/vip")
     @Produces(MediaType.TEXT_PLAIN)
-    public String getHaproxyURI(@PathParam("haproxyName") String haproxyName) {
-        return repository.getHaproxyVip(haproxyName).orElseThrow(() -> new RuntimeException("can't get haproxy uri of " + haproxyName));
+    public String getHaproxyVip(@PathParam("haproxyId") String haproxyId) {
+        return repository.getHaproxyVip(haproxyId).orElseThrow(() -> new RuntimeException("can't get haproxy uri of " + haproxyId));
+    }
+
+    @GET
+    @Path("{haproxyId : .+}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String,Map<String,String>> getHaproxy(@PathParam("haproxyId") String haproxyId) {
+        return repository.getHaproxyProperties(haproxyId).orElseThrow(() -> new RuntimeException("can't get haproxy uri of " + haproxyId));
     }
 
     @GET

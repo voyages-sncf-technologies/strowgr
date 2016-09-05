@@ -84,7 +84,7 @@ public class InitializationCommand extends ConfiguredCommand<StrowgrConfiguratio
 
         // initialize vip of an haproxy cluster
         if (namespace.get("vip") != null) {
-            consulRepository.setHaproxyVip(namespace.get("haproxy-name"), namespace.get("vip"));
+            consulRepository.setHaproxyProperty(namespace.get("haproxy-name"), "vip", namespace.get("vip"));
         }
     }
 }

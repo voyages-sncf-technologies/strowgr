@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Base64;
 
 public class ConsulItem<T> {
@@ -38,7 +39,7 @@ public class ConsulItem<T> {
     public ConsulItem(@JsonProperty("LockIndex") int lockIndex,
                       @JsonProperty("Key") String key,
                       @JsonProperty("Flags") Long flags,
-                      @JsonProperty(value = "Value",defaultValue = "{}") String value,
+                      @JsonProperty(value = "Value", defaultValue = "{}") String value,
                       @JsonProperty("CreateIndex") Integer createIndex,
                       @JsonProperty("ModifyIndex") Integer modifyIndex) {
         this.lockIndex = lockIndex;
@@ -56,6 +57,10 @@ public class ConsulItem<T> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    String valueFromBase64() {
+        return new String(Base64.getDecoder().decode(value));
     }
 
     public int getLockIndex() {

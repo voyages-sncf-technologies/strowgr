@@ -37,6 +37,6 @@ public class HaproxyVipTask extends Task {
 
     @Override
     public void execute(ImmutableMultimap<String, String> parameters, PrintWriter printWriter) throws Exception {
-        repository.setHaproxyVip(parameters.get("haproxy").asList().get(0), parameters.get("vip").asList().get(0));
+        repository.setHaproxyProperty(parameters.get("haproxy").asList().get(0), "vip", parameters.get("vip").asList().get(0));
     }
 }

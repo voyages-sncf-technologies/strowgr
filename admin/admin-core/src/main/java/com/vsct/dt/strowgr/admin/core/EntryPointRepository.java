@@ -19,6 +19,7 @@ package com.vsct.dt.strowgr.admin.core;
 
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -71,19 +72,27 @@ public interface EntryPointRepository {
     void release(EntryPointKey key);
 
     /**
-     * Get vip for a given haproxy name.
-     * @param name of the haproxy
+     * Get vip for a given haproxy id.
+     * @param id of the haproxy
      * @return return Optional String of the vip, {@code Optional#empty} if haproxy can't be found.
      */
-    Optional<String> getHaproxyVip(String name);
+    Optional<String> getHaproxyVip(String id);
 
     /**
-     * Set the vip for a given haproxy name.
-     * @param name of the haproxy
-     * @param vip to set to this haproxy
+     * Set a property for haproxy. For instance a vip, a haproxyId etc...
+     *
+     * @param haproxyId of the haproxy
+     * @param key to set for this haproxy
+     * @param value for this key
      */
-    void setHaproxyVip(String name, String vip);
+    void setHaproxyProperty(String haproxyId, String key, String value);
 
     Optional<String> getCommitCorrelationId(EntryPointKey key);
 
+    /**
+     * Get haproxy properties (vip, name, etc...)
+     * @param haproxyId id of the haproxy
+     * @return haproxy properties map
+     */
+    Optional<Map<String, Map<String, String>>> getHaproxyProperties(String haproxyId);
 }

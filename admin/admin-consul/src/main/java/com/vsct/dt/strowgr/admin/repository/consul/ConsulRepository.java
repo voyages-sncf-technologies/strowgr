@@ -408,9 +408,9 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public Optional<String> getHaproxyVip(String name) {
+    public Optional<String> getHaproxyVip(String haproxyId) {
         try {
-            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + name + "/vip?raw");
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyId + "/vip?raw");
             return client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::readRawContentFromHttpEntity));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -418,10 +418,32 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     @Override
-    public void setHaproxyVip(String haproxyName, String vip) {
+    public Optional<Map<String, Map<String, String>>> getHaproxyProperties(String haproxyId) {
+        Optional<Map<String, Map<String, String>>> result;
         try {
-            HttpPut getHaproxyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyName + "/vip");
-            getHaproxyURI.setEntity(new StringEntity(vip));
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyId + "/?raw&recurse=true");
+            List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity).get());
+            Map<String, List<ConsulItem<String>>> consulItemsById = consulItems.stream().collect(Collectors.groupingBy(consulItem -> consulItem.getKey().split("/")[1]));
+            Map<String, Map<String, String>> propertiesById = new HashMap<>(consulItemsById.size());
+            for (Map.Entry<String, List<ConsulItem<String>>> entry : consulItemsById.entrySet()) {
+                Map<String, String> haproxyItem = new HashMap<>(entry.getValue().size());
+                for (ConsulItem<String> consulItem : entry.getValue()) {
+                    haproxyItem.put(consulItem.getKey().split("/")[2], consulItem.valueFromBase64());
+                }
+                propertiesById.put(entry.getKey(), haproxyItem);
+            }
+            result = Optional.of(propertiesById);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    @Override
+    public void setHaproxyProperty(String haproxyId, String key, String value) {
+        try {
+            HttpPut getHaproxyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyId + "/" + key);
+            getHaproxyURI.setEntity(new StringEntity(value));
 
             client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::readRawContentFromHttpEntity));
         } catch (IOException e) {
