@@ -17,6 +17,7 @@
 
 package com.vsct.dt.strowgr.admin.gui;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
@@ -118,14 +119,16 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         eventBus.register(eventHandler);
 
         /* NSQ Consumers */
+        //Object mapper used for NSQ messages
+        ObjectMapper objectMapper = new ObjectMapper();
         // retrieve NSQLookup configuration
         NSQLookup nsqLookup = configuration.getNsqLookupfactory().build();
         // initialize NSQConsumer for commit_completed topic which forwards to EventBus
-        NSQConsumer nsqConsumerCommitCompleted = new CommitCompletedConsumerFactory().build(nsqLookup, configuration.getDefaultHAPName(), eventBus::post);
+        NSQConsumer nsqConsumerCommitCompleted = new CommitCompletedConsumerFactory(nsqLookup, objectMapper, eventBus::post).build(configuration.getDefaultHAPName());
         // initialize NSQConsumer for commit_failed topic which forwards to EventBus
-        NSQConsumer nsqConsumerCommitFailed = new CommitFailedConsumerFactory().build(nsqLookup, configuration.getDefaultHAPName(), eventBus::post);
+        NSQConsumer nsqConsumerCommitFailed = new CommitFailedConsumerFactory(nsqLookup, objectMapper, eventBus::post).build(configuration.getDefaultHAPName());
         // initialize NSQConsumer for register_server topic which forwards to EventBus
-        NSQConsumer nsqConsumerRegisterServer = new RegisterServerMessageConsumerFactory().build(nsqLookup, eventBus::post);
+        NSQConsumer nsqConsumerRegisterServer = new RegisterServerMessageConsumerFactory(nsqLookup, objectMapper, eventBus::post).build();
 
         // register NSQ consumers to lifecycle
         // TODO use a managed ServiceExecutor (environment.lifecycle().executorService()) and share it with all NSQConsumer ({@code NSQConsumer#setExecutor}) ?
