@@ -42,23 +42,12 @@ public class RegisterServerMessageConsumerFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServerMessageConsumerFactory.class);
 
-    @NotEmpty
-    private String topic;
-
-    @JsonProperty("topic")
-    public String getTopic() {
-        return topic;
-    }
-
-    @JsonProperty("topic")
-    public void setTopic(String topic) {
-        this.topic = topic;
-    }
+    private static final String TOPIC = "register_server";
 
     private final ObjectMapper mapper = new ObjectMapper();
 
     public NSQConsumer build(NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
-        return new NSQConsumer(lookup, topic, "admin", (message) -> {
+        return new NSQConsumer(lookup, TOPIC, "admin", (message) -> {
 
             RegisterServer registerServer = null;
             Header header;

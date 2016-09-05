@@ -38,23 +38,12 @@ public class CommitFailedConsumerFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitFailedConsumerFactory.class);
 
-    @NotEmpty
-    private String topic;
-
-    @JsonProperty("topic")
-    public String getTopic() {
-        return topic;
-    }
-
-    @JsonProperty("topic")
-    public void setTopic(String topic) {
-        this.topic = topic;
-    }
+    private static final String TOPIC_PREFIX = "commit_failed_";
 
     private final ObjectMapper mapper = new ObjectMapper();
 
     public NSQConsumer build(NSQLookup lookup, String haproxy, Consumer<CommitFailureEvent> consumer) {
-        return new NSQConsumer(lookup, topic + haproxy, "admin", (message) -> {
+        return new NSQConsumer(lookup, TOPIC_PREFIX + haproxy, "admin", (message) -> {
             CommitFailed commitFailed = null;
             try {
                 commitFailed = mapper.readValue(message.getMessage(), CommitFailed.class);
