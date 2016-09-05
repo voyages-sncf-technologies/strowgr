@@ -17,7 +17,6 @@
 
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
@@ -27,7 +26,6 @@ import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
 import com.vsct.dt.strowgr.admin.nsq.payload.RegisterServer;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,15 +42,23 @@ public class RegisterServerMessageConsumerFactory {
 
     private static final String TOPIC = "register_server";
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final NSQLookup                     nsqLookup;
+    private final ObjectMapper                  objectMapper;
+    private final Consumer<RegisterServerEvent> consumer;
 
-    public NSQConsumer build(NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
-        return new NSQConsumer(lookup, TOPIC, "admin", (message) -> {
+    public RegisterServerMessageConsumerFactory(NSQLookup nsqLookup, ObjectMapper objectMapper, Consumer<RegisterServerEvent> consumer) {
+        this.nsqLookup = nsqLookup;
+        this.objectMapper = objectMapper;
+        this.consumer = consumer;
+    }
+
+    public NSQConsumer build() {
+        return new NSQConsumer(nsqLookup, TOPIC, "admin", (message) -> {
 
             RegisterServer registerServer = null;
             Header header;
             try {
-                registerServer = mapper.readValue(message.getMessage(), RegisterServer.class);
+                registerServer = objectMapper.readValue(message.getMessage(), RegisterServer.class);
                 header = registerServer.getHeader();
                 if (header.getCorrelationId() == null) {
                     header.setCorrelationId(new String(message.getId()));

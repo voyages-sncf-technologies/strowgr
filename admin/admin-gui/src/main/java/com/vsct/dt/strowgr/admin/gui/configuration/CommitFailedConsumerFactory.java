@@ -17,14 +17,12 @@
 
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
 import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitFailed;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,13 +38,21 @@ public class CommitFailedConsumerFactory {
 
     private static final String TOPIC_PREFIX = "commit_failed_";
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final NSQLookup                    nsqLookup;
+    private final ObjectMapper                 objectMapper;
+    private final Consumer<CommitFailureEvent> consumer;
 
-    public NSQConsumer build(NSQLookup lookup, String haproxy, Consumer<CommitFailureEvent> consumer) {
-        return new NSQConsumer(lookup, TOPIC_PREFIX + haproxy, "admin", (message) -> {
+    public CommitFailedConsumerFactory(NSQLookup nsqLookup, ObjectMapper objectMapper, Consumer<CommitFailureEvent> consumer) {
+        this.nsqLookup = nsqLookup;
+        this.objectMapper = objectMapper;
+        this.consumer = consumer;
+    }
+
+    public NSQConsumer build(String haproxy) {
+        return new NSQConsumer(nsqLookup, TOPIC_PREFIX + haproxy, "admin", (message) -> {
             CommitFailed commitFailed = null;
             try {
-                commitFailed = mapper.readValue(message.getMessage(), CommitFailed.class);
+                commitFailed = objectMapper.readValue(message.getMessage(), CommitFailed.class);
             } catch (IOException e) {
                 LOGGER.error("can't deserialize the commitFailed:" + new String(message.getMessage()), e);
                 //Avoid republishing message and stop processing

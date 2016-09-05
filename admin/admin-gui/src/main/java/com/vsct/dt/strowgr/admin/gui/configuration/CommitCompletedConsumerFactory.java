@@ -42,14 +42,21 @@ public class CommitCompletedConsumerFactory {
 
     private static final String TOPIC_PREFIX = "commit_completed_";
 
-    // TODO externalize mapper Jackson for a more controlled use of serialization/deserialization
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final NSQLookup nsqLookup;
+    private final ObjectMapper objectMapper;
+    private final Consumer<CommitSuccessEvent> consumer;
 
-    public NSQConsumer build(NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer) {
-        return new NSQConsumer(lookup, TOPIC_PREFIX + haproxy, "admin", (message) -> {
+    public CommitCompletedConsumerFactory(NSQLookup nsqLookup, ObjectMapper objectMapper, Consumer<CommitSuccessEvent> consumer){
+        this.nsqLookup = nsqLookup;
+        this.objectMapper = objectMapper;
+        this.consumer = consumer;
+    }
+
+    public NSQConsumer build(String haproxy) {
+        return new NSQConsumer(nsqLookup, TOPIC_PREFIX + haproxy, "admin", (message) -> {
             CommitCompleted commitCompleted = null;
             try {
-                commitCompleted = mapper.readValue(message.getMessage(), CommitCompleted.class);
+                commitCompleted = objectMapper.readValue(message.getMessage(), CommitCompleted.class);
             } catch (IOException e) {
                 LOGGER.error("can't deserialize the commitCompleted:" + new String(message.getMessage()), e);
                 // Avoid republishing message and stop processing
