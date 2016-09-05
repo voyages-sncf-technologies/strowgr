@@ -2,16 +2,17 @@
 LookupdAddr = 'nsqlookupd:4161'
 
 # NSQ Producer
-;ProducerAddr = 'localhost:4150'
+ProducerAddr = 'localhost:4150'
+ProducerRestAddr = 'localhost:4151'
 
 # Cluster name
-;ClusterId = 'default-name'
+ClusterId = 'default-name'
 
 # Cluster VIP
 Vip = '127.0.0.1'
 
 # hapadm directory
-;HapHome = './'
+HapHome = './'
 
 # Sidekick node status
 # For now, node status is statically defined.

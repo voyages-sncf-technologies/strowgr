@@ -191,6 +191,7 @@ func createTopicsAndChannels() {
 		url := fmt.Sprintf("%s/topic/create?topic=%s_%s", properties.ProducerRestAddr, topic, properties.ClusterId)
 		resp, err := http.PostForm(url, nil)
 		if err != nil || resp.StatusCode != 200 {
+			log.WithField("topic", topic).WithField("clusterid", properties.ClusterId).WithError(err).Error("topic can't be create")
 			// retry to create this topic
 			topicChan <- topic
 			continue
@@ -308,7 +309,7 @@ func reloadHaProxy(data *sidekick.EventMessageWithConf, isMaster bool) error {
 	context := data.Context()
 	var hap sidekick.Loadbalancer
 	var source string
-	if(isMaster) {
+	if (isMaster) {
 		hap = haFactory.CreateHaproxy("master", context)
 		source = "sidekick-" + properties.ClusterId + "-master"
 	} else {
