@@ -25,6 +25,9 @@ import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
+import com.vsct.dt.strowgr.admin.gui.configuration.CommitCompletedConsumerFactory;
+import com.vsct.dt.strowgr.admin.gui.configuration.CommitFailedConsumerFactory;
+import com.vsct.dt.strowgr.admin.gui.configuration.RegisterServerMessageConsumerFactory;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
@@ -118,11 +121,11 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         // retrieve NSQLookup configuration
         NSQLookup nsqLookup = configuration.getNsqLookupfactory().build();
         // initialize NSQConsumer for commit_completed topic which forwards to EventBus
-        NSQConsumer nsqConsumerCommitCompleted = configuration.getCommitCompletedConsumerFactory().build(nsqLookup, configuration.getDefaultHAPName(), eventBus::post);
+        NSQConsumer nsqConsumerCommitCompleted = new CommitCompletedConsumerFactory().build(nsqLookup, configuration.getDefaultHAPName(), eventBus::post);
         // initialize NSQConsumer for commit_failed topic which forwards to EventBus
-        NSQConsumer nsqConsumerCommitFailed = configuration.getCommitFailedConsumerFactory().build(nsqLookup, configuration.getDefaultHAPName(), eventBus::post);
+        NSQConsumer nsqConsumerCommitFailed = new CommitFailedConsumerFactory().build(nsqLookup, configuration.getDefaultHAPName(), eventBus::post);
         // initialize NSQConsumer for register_server topic which forwards to EventBus
-        NSQConsumer nsqConsumerRegisterServer = configuration.getRegisterServerMessageConsumerFactory().build(nsqLookup, eventBus::post);
+        NSQConsumer nsqConsumerRegisterServer = new RegisterServerMessageConsumerFactory().build(nsqLookup, eventBus::post);
 
         // register NSQ consumers to lifecycle
         // TODO use a managed ServiceExecutor (environment.lifecycle().executorService()) and share it with all NSQConsumer ({@code NSQConsumer#setExecutor}) ?

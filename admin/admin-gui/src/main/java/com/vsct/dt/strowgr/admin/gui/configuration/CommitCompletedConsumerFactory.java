@@ -40,24 +40,13 @@ public class CommitCompletedConsumerFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumerFactory.class);
 
+    private static final String TOPIC_PREFIX = "commit_completed_";
+
     // TODO externalize mapper Jackson for a more controlled use of serialization/deserialization
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @NotEmpty
-    private String topic;
-
-    @JsonProperty("topic")
-    public String getTopic() {
-        return topic;
-    }
-
-    @JsonProperty("topic")
-    public void setTopic(String topic) {
-        this.topic = topic;
-    }
-
     public NSQConsumer build(NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer) {
-        return new NSQConsumer(lookup, topic + haproxy, "admin", (message) -> {
+        return new NSQConsumer(lookup, TOPIC_PREFIX + haproxy, "admin", (message) -> {
             CommitCompleted commitCompleted = null;
             try {
                 commitCompleted = mapper.readValue(message.getMessage(), CommitCompleted.class);

@@ -25,12 +25,6 @@ nsqProducer:
   host: parisiancoctail
   tcpPort: 54150
   httpPort: 54151
-commitCompletedConsumer:
-  topic: commit_completed_
-commitFailedConsumer:
-  topic: commit_failed_
-registerServerMessageConsumer:
-  topic: register_server
 periodicScheduler:
   current:
     periodMilli: 11000

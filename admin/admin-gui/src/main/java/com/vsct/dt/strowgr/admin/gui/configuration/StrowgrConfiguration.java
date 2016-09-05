@@ -48,18 +48,6 @@ public class StrowgrConfiguration extends Configuration {
     @NotNull
     private PeriodicSchedulerFactory periodicSchedulerFactory;
 
-    @Valid
-    @NotNull
-    private CommitCompletedConsumerFactory commitCompletedConsumerFactory;
-
-    @Valid
-    @NotNull
-    private CommitFailedConsumerFactory commitFailedConsumerFactory;
-
-    @Valid
-    @NotNull
-    private RegisterServerMessageConsumerFactory registerServerMessageConsumerFactory;
-
     @NotEmpty
     private String defaultHAPName;
 
@@ -111,36 +99,6 @@ public class StrowgrConfiguration extends Configuration {
     @JsonProperty("periodicScheduler")
     public void setPeriodicSchedulerFactory(PeriodicSchedulerFactory periodicSchedulerFactory) {
         this.periodicSchedulerFactory = periodicSchedulerFactory;
-    }
-
-    @JsonProperty("commitCompletedConsumer")
-    public CommitCompletedConsumerFactory getCommitCompletedConsumerFactory() {
-        return commitCompletedConsumerFactory;
-    }
-
-    @JsonProperty("commitCompletedConsumer")
-    public void setCommitCompletedConsumerFactory(CommitCompletedConsumerFactory commitCompletedConsumerFactory) {
-        this.commitCompletedConsumerFactory = commitCompletedConsumerFactory;
-    }
-
-    @JsonProperty("commitFailedConsumer")
-    public CommitFailedConsumerFactory getCommitFailedConsumerFactory() {
-        return commitFailedConsumerFactory;
-    }
-
-    @JsonProperty("commitFailedConsumer")
-    public void setCommitFailedConsumerFactory(CommitFailedConsumerFactory commitFailedConsumerFactory) {
-        this.commitFailedConsumerFactory = commitFailedConsumerFactory;
-    }
-
-    @JsonProperty("registerServerMessageConsumer")
-    public RegisterServerMessageConsumerFactory getRegisterServerMessageConsumerFactory() {
-        return registerServerMessageConsumerFactory;
-    }
-
-    @JsonProperty("registerServerMessageConsumer")
-    public void setRegisterServerMessageConsumerFactory(RegisterServerMessageConsumerFactory registerServerMessageConsumerFactory) {
-        this.registerServerMessageConsumerFactory = registerServerMessageConsumerFactory;
     }
 
     @JsonProperty("haproxyName")
