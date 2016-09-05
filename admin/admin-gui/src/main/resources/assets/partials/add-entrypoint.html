@@ -36,8 +36,8 @@
         <md-input-container flex="10">
             <label>HAproxy cible</label>
             <md-select name="haproxy" ng-model="conf.haproxy" required>
-                <md-option ng-repeat="haproxy in availableHaproxy" value="{{haproxy}}" ng-selected="$first">
-                    {{haproxy}}
+                <md-option ng-repeat="haproxy in availableHaproxy" value="{{id}}" ng-selected="$first">
+                    {{name}}
                 </md-option>
             </md-select>
             <div ng-messages="newEntrypointForm.haproxy.$error">

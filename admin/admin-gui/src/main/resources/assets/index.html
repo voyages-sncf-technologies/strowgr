@@ -126,6 +126,13 @@
 
         adminApp.factory('Haproxy', ['$http', function ($http) {
             return {
+                all: function(){
+                    return $http.get('/api/haproxy/').then(function(response) {
+                        return response.data;
+                    }, function(error) {
+                        console.error("Can't load list of haproxies. Response  is " + response.data);
+                    });
+                },
                 getUri: function (id) {
                     return $http.get('/api/haproxy/uri/' + id).then(function (response) {
                         return response.data;
@@ -296,7 +303,7 @@
                 filename: "haproxy_template.conf"
             };
 
-            $scope.availableHaproxy = ['default-name'];
+            $scope.availableHaproxy = Haproxy.all();
 
             $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
             $scope.forbiddenFrontendKeys = ['id', 'port'];
