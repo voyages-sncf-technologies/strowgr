@@ -87,10 +87,18 @@ public interface EntryPointRepository {
      */
     void setHaproxyProperty(String haproxyId, String key, String value);
 
+    /**
+     * Get a property for haproxy.
+     *
+     * @param haproxyId of the haproxy
+     * @param key to set for this haproxy
+     */
+    Optional<String> getHaproxyProperty(String haproxyId, String key);
+
     Optional<String> getCommitCorrelationId(EntryPointKey key);
 
     /**
-     * Get haproxy properties (vip, name, etc...)
+     * Get haproxy properties (vip, name, etc...) for an given id.
      * @param haproxyId id of the haproxy
      * @return haproxy properties map
      */
