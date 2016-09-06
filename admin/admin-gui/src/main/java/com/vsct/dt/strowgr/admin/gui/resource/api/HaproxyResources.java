@@ -65,8 +65,14 @@ public class HaproxyResources {
     @GET
     @Path("{haproxyId : .+}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String,Map<String,String>> getHaproxy(@PathParam("haproxyId") String haproxyId) {
-        return repository.getHaproxyProperties(haproxyId).orElseThrow(() -> new RuntimeException("can't get haproxy uri of " + haproxyId));
+    public Map<String, String> getHaproxy(@PathParam("haproxyId") String haproxyId) {
+        return repository.getHaproxyProperties(haproxyId).orElseThrow(() -> new RuntimeException("can't get haproxy properties of " + haproxyId));
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Map<String, String>> getHaproxy() {
+        return repository.getHaproxyProperties().orElseThrow(() -> new RuntimeException("can't get haproxy"));
     }
 
     @GET

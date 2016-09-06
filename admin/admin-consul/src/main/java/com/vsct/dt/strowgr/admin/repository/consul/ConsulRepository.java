@@ -419,10 +419,34 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
 
 
     @Override
-    public Optional<Map<String, Map<String, String>>> getHaproxyProperties(String haproxyId) {
-        Optional<Map<String, Map<String, String>>> result;
+    public Optional<Map<String, String>> getHaproxyProperties(String haproxyId) {
+        Optional<Map<String, String>> result;
         try {
             HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyId + "/?raw&recurse=true");
+            List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
+                    consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
+                            .orElse(new ArrayList<>()));
+            Map<String, String> haproxyItems = consulItemsToMap(consulItems);
+            result = Optional.of(haproxyItems);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    private Map<String, String> consulItemsToMap(List<ConsulItem<String>> consulItems) {
+        Map<String, String> haproxyItems = new HashMap<>(consulItems.size());
+        for (ConsulItem<String> consulItem : consulItems) {
+            haproxyItems.put(consulItem.getKey().split("/")[2], consulItem.valueFromBase64());
+        }
+        return haproxyItems;
+    }
+
+    @Override
+    public Optional<Map<String, Map<String, String>>> getHaproxyProperties() {
+        Optional<Map<String, Map<String, String>>> result;
+        try {
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + "/?raw&recurse=true");
             List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
                     consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
                             .orElse(new ArrayList<>()));
@@ -430,10 +454,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                     .collect(Collectors.groupingBy(consulItem -> consulItem.getKey().split("/")[1]));
             Map<String, Map<String, String>> propertiesById = new HashMap<>(consulItemsById.size());
             for (Map.Entry<String, List<ConsulItem<String>>> entry : consulItemsById.entrySet()) {
-                Map<String, String> haproxyItem = new HashMap<>(entry.getValue().size());
-                for (ConsulItem<String> consulItem : entry.getValue()) {
-                    haproxyItem.put(consulItem.getKey().split("/")[2], consulItem.valueFromBase64());
-                }
+                Map<String, String> haproxyItem = consulItemsToMap(entry.getValue());
                 propertiesById.put(entry.getKey(), haproxyItem);
             }
             result = Optional.of(propertiesById);

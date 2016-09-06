@@ -79,6 +79,12 @@ public interface EntryPointRepository {
     Optional<String> getHaproxyVip(String id);
 
     /**
+     * Get all haproxy properties for each haproxy
+     * @return Map with haproxy properties by haproxy id
+     */
+    Optional<Map<String, Map<String, String>>> getHaproxyProperties();
+
+    /**
      * Get haproxy ids stored in repository.
      * @return Set of haproxy ids
      */
@@ -108,5 +114,5 @@ public interface EntryPointRepository {
      * @param haproxyId id of the haproxy
      * @return haproxy properties map
      */
-    Optional<Map<String, Map<String, String>>> getHaproxyProperties(String haproxyId);
+    Optional<Map<String, String>> getHaproxyProperties(String haproxyId);
 }
