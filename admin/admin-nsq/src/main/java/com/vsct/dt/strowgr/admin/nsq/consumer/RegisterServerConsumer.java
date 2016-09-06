@@ -26,6 +26,8 @@ import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.RegisterServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.exceptions.Exceptions;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -35,24 +37,24 @@ public class RegisterServerConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServerConsumer.class);
 
     private static final String CHANNEL = "admin";
-    private final NSQConsumer registerServerConsumer;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final String TOPIC = "register_server";
 
-    public RegisterServerConsumer(String topic, NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
+    private final ObservableNSQConsumer nsqConsumer;
+    private final Observable<RegisterServerEvent> observable;
 
-        registerServerConsumer = new NSQConsumer(lookup, topic, CHANNEL, (message) -> {
-
+    public RegisterServerConsumer(NSQLookup lookup, ObjectMapper mapper) {
+        nsqConsumer = new ObservableNSQConsumer(lookup, TOPIC, CHANNEL);
+        observable = nsqConsumer.observe().map(nsqMessage -> {
             try {
-                RegisterServer payload = mapper.readValue(message.getMessage(), RegisterServer.class);
+                RegisterServer payload = mapper.readValue(nsqMessage.getMessage(), RegisterServer.class);
                 if (payload.getHeader().getCorrelationId() == null) {
-                    payload.getHeader().setCorrelationId(Arrays.toString(message.getId()));
+                    payload.getHeader().setCorrelationId(Arrays.toString(nsqMessage.getId()));
                 }
                 if (payload.getHeader().getTimestamp() == null) {
-                    payload.getHeader().setTimestamp(message.getTimestamp().getTime());
+                    payload.getHeader().setTimestamp(nsqMessage.getTimestamp().getTime());
                 }
 
-                // TODO Use some conflation to prevent dispatching all event
-                RegisterServerEvent event = new RegisterServerEvent(payload.getHeader().getCorrelationId(),
+                return new RegisterServerEvent(payload.getHeader().getCorrelationId(),
                         new EntryPointKeyVsctImpl(payload.getHeader().getApplication(), payload.getHeader().getPlatform()),
                         payload.getServer().getBackendId(),
                         Sets.newHashSet(new IncomingEntryPointBackendServer(
@@ -61,24 +63,21 @@ public class RegisterServerConsumer {
                                 payload.getServer().getPort(),
                                 payload.getServer().getContext()
                         )));
-
-                consumer.accept(event);
             } catch (IOException e) {
-                LOGGER.error("can't deserialize the payload of message at " + message.getTimestamp() + ", id=" + Arrays.toString(message.getId()) + ": " + Arrays.toString(message.getMessage()), e);
+                LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + Arrays.toString(nsqMessage.getId()) + ": " + Arrays.toString(nsqMessage.getMessage()), e);
+                throw Exceptions.propagate(e);
             } finally {
-                message.finished();
+                nsqMessage.finished();
             }
-
         });
-
     }
 
-    public void start() {
-        registerServerConsumer.start();
+    public Observable<RegisterServerEvent> observe(){
+        return observable;
     }
 
-    public void stop() {
-        registerServerConsumer.shutdown();
+    public void shutdown() {
+        nsqConsumer.shutdown();
     }
 
 }

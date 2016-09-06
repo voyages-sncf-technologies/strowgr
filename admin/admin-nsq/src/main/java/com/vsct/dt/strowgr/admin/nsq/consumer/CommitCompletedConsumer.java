@@ -24,6 +24,8 @@ import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitCompleted;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.exceptions.Exceptions;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -33,37 +35,37 @@ public class CommitCompletedConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumer.class);
 
     private static final String CHANNEL = "admin";
-    private final NSQConsumer nsqConsumer;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final String TOPIC_PREFIX = "commit_completed_";
 
-    public CommitCompletedConsumer(String topic, NSQLookup lookup, String haproxy, Consumer<CommitSuccessEvent> consumer) {
-        nsqConsumer = new NSQConsumer(lookup, topic + haproxy, CHANNEL, (message) -> {
+    private final ObservableNSQConsumer nsqConsumer;
+    private final Observable<CommitSuccessEvent> observable;
 
+    public CommitCompletedConsumer(NSQLookup lookup, String haproxy, ObjectMapper mapper) {
+        nsqConsumer = new ObservableNSQConsumer(lookup, TOPIC_PREFIX + haproxy, CHANNEL);
+        observable = nsqConsumer.observe().map(nsqMessage -> {
             try {
-                CommitCompleted payload = null;
-                payload = mapper.readValue(message.getMessage(), CommitCompleted.class);
-                CommitSuccessEvent event = new CommitSuccessEvent(
+                CommitCompleted payload = mapper.readValue(nsqMessage.getMessage(), CommitCompleted.class);
+                return new CommitSuccessEvent(
                         payload.getHeader().getCorrelationId(),
                         new EntryPointKeyVsctImpl(
                                 payload.getHeader().getApplication(),
                                 payload.getHeader().getPlatform()
                         )
                 );
-                consumer.accept(event);
             } catch (IOException e) {
-                LOGGER.error("can't deserialize the payload:" + Arrays.toString(message.getMessage()), e);
+                LOGGER.error("can't deserialize the payload:" + Arrays.toString(nsqMessage.getMessage()), e);
+                throw Exceptions.propagate(e);
             } finally {
-                message.finished();
+                nsqMessage.finished();
             }
-
         });
     }
 
-    public void start() {
-        nsqConsumer.start();
+    public Observable<CommitSuccessEvent> observe(){
+        return observable;
     }
 
-    public void stop() {
+    public void shutdown() {
         nsqConsumer.shutdown();
     }
 

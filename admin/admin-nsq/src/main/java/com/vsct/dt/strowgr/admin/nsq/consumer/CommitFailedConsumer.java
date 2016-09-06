@@ -18,51 +18,50 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitFailed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.exceptions.Exceptions;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.function.Consumer;
 
 public class CommitFailedConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitFailedConsumer.class);
 
-    private static final String CHANNEL = "admin";
-    private final NSQConsumer nsqConsumer;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final String CHANNEL      = "admin";
+    private static final String TOPIC_PREFIX = "commit_failed_";
 
-    public CommitFailedConsumer(String topic, NSQLookup lookup, String haproxy, Consumer<CommitFailureEvent> consumer) {
-        nsqConsumer = new NSQConsumer(lookup, topic + haproxy, CHANNEL, (message) -> {
+    private final ObservableNSQConsumer          nsqConsumer;
+    private final Observable<CommitFailureEvent> observable;
 
-            CommitFailed payload = null;
+    public CommitFailedConsumer(NSQLookup lookup, String haproxy, ObjectMapper mapper) {
+        nsqConsumer = new ObservableNSQConsumer(lookup, TOPIC_PREFIX + haproxy, CHANNEL);
+        observable = nsqConsumer.observe().map(nsqMessage -> {
             try {
-                payload = mapper.readValue(message.getMessage(), CommitFailed.class);
-                CommitFailureEvent event = new CommitFailureEvent(
+                CommitFailed payload = mapper.readValue(nsqMessage.getMessage(), CommitFailed.class);
+                return new CommitFailureEvent(
                         payload.getHeader().getCorrelationId(),
                         new EntryPointKeyVsctImpl(
                                 payload.getHeader().getApplication(),
                                 payload.getHeader().getPlatform())
                 );
-                consumer.accept(event);
             } catch (IOException e) {
-                LOGGER.error("can't deserialize the payload:" + new String(message.getMessage()), e);
+                LOGGER.error("can't deserialize the payload:" + new String(nsqMessage.getMessage()), e);
+                throw Exceptions.propagate(e);
             } finally {
-                message.finished();
+                nsqMessage.finished();
             }
-
         });
     }
 
-    public void start() {
-        nsqConsumer.start();
+    public Observable<CommitFailureEvent> observe() {
+        return observable;
     }
 
-    public void stop() {
+    public void shutdown() {
         nsqConsumer.shutdown();
     }
 
