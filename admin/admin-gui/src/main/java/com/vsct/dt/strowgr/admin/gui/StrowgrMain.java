@@ -18,12 +18,12 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.*;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
+import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.CommitCompletedConsumerFactory;
@@ -32,13 +32,15 @@ import com.vsct.dt.strowgr.admin.gui.configuration.RegisterServerMessageConsumer
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
-import com.vsct.dt.strowgr.admin.gui.manager.NSQConsumerManager;
+import com.vsct.dt.strowgr.admin.gui.manager.ConsumableTopics;
 import com.vsct.dt.strowgr.admin.gui.manager.NSQProducerManager;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
 import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
 import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
+import com.vsct.dt.strowgr.admin.nsq.consumer.ObservableNSQConsumer;
+import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
@@ -48,11 +50,14 @@ import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
+import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.*;
+import rx.internal.schedulers.ExecutorScheduler;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -95,6 +100,10 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* Main EventBus */
         ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(new ArrayBlockingQueue<>(100)).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
+
+        /* Executor wrapper for RXjava */
+        Scheduler executorScheduler = new ExecutorScheduler(executor);
+
         EventBus eventBus = new AsyncEventBus(executor, (exception, context) -> {
             LOGGER.error("exception on main event bus. Context: " + subscriberExceptionContextToString(context), exception);
         });
@@ -123,18 +132,34 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ObjectMapper objectMapper = new ObjectMapper();
         // retrieve NSQLookup configuration
         NSQLookup nsqLookup = configuration.getNsqLookupfactory().build();
-        // initialize NSQConsumer for commit_completed topic which forwards to EventBus
-        NSQConsumer nsqConsumerCommitCompleted = new CommitCompletedConsumerFactory(nsqLookup, objectMapper, eventBus::post).build(configuration.getDefaultHAPName());
-        // initialize NSQConsumer for commit_failed topic which forwards to EventBus
-        NSQConsumer nsqConsumerCommitFailed = new CommitFailedConsumerFactory(nsqLookup, objectMapper, eventBus::post).build(configuration.getDefaultHAPName());
-        // initialize NSQConsumer for register_server topic which forwards to EventBus
-        NSQConsumer nsqConsumerRegisterServer = new RegisterServerMessageConsumerFactory(nsqLookup, objectMapper, eventBus::post).build();
 
-        // register NSQ consumers to lifecycle
-        // TODO use a managed ServiceExecutor (environment.lifecycle().executorService()) and share it with all NSQConsumer ({@code NSQConsumer#setExecutor}) ?
-        environment.lifecycle().manage(new NSQConsumerManager(nsqConsumerCommitCompleted));
-        environment.lifecycle().manage(new NSQConsumerManager(nsqConsumerCommitFailed));
-        environment.lifecycle().manage(new NSQConsumerManager(nsqConsumerRegisterServer));
+        RegisterServerConsumer registerServerConsumer = new RegisterServerConsumer(nsqLookup, objectMapper);
+        registerServerConsumer.observe().subscribe(event -> {
+            eventBus.post(event);
+        }, error -> {
+            eventBus.post(error);
+        });
+
+        // This managed resource will properly handle consumers and their related observables depending on repository configuration
+        ConsumableTopics consumableTopics = new ConsumableTopics(repository, nsqLookup, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
+        consumableTopics.observe().subscribe(event -> {
+            eventBus.post(event);
+        }, error -> {
+            eventBus.post(error);
+        });
+
+        /* Manage resources */
+        environment.lifecycle().manage(consumableTopics);
+        environment.lifecycle().manage(new Managed() {
+            @Override
+            public void start() throws Exception {
+            }
+
+            @Override
+            public void stop() throws Exception {
+                registerServerConsumer.shutdown();
+            }
+        });
 
         /* NSQ Producers */
         NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();
@@ -142,13 +167,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         environment.lifecycle().manage(new NSQProducerManager(nsqProducer));
         // Pipeline from eventbus to NSQ producer
         eventBus.register(new ToNSQSubscriber(new NSQDispatcher(nsqProducer)));
-
-        /* Http Client */
-        final CloseableHttpClient httpClient = new HttpClientBuilder(environment)
-                .using(configuration.getHttpClientConfiguration())
-                .build("http-client");
-        NSQHttpClient nsqdHttpClient = new NSQHttpClient("http://" + configuration.getNsqProducerFactory().getHost() + ":" + configuration.getNsqProducerFactory().getHttpPort(), httpClient);
-        NSQHttpClient nsqLookupdHttpClient = new NSQHttpClient("http://" + configuration.getNsqLookupfactory().getHost() + ":" + configuration.getNsqLookupfactory().getPort(), httpClient);
 
         /* Commit schedulers */
         configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
@@ -165,6 +183,13 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         environment.jersey().register(portResources);
 
         eventBus.register(restApiResource);
+
+        /* Http Client */
+        final CloseableHttpClient httpClient = new HttpClientBuilder(environment)
+                .using(configuration.getHttpClientConfiguration())
+                .build("http-client");
+        NSQHttpClient nsqdHttpClient = new NSQHttpClient("http://" + configuration.getNsqProducerFactory().getHost() + ":" + configuration.getNsqProducerFactory().getHttpPort(), httpClient);
+        NSQHttpClient nsqLookupdHttpClient = new NSQHttpClient("http://" + configuration.getNsqLookupfactory().getHost() + ":" + configuration.getNsqLookupfactory().getPort(), httpClient);
 
         /* Healthchecks */
         environment.healthChecks().register("nsqlookup", new NsqHealthcheck(nsqLookupdHttpClient));

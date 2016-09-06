@@ -32,6 +32,9 @@ public class StrowgrConfiguration extends Configuration {
         super();
     }
 
+    @Min(1)
+    private long handledHaproxyRefreshPeriodSecond;
+
     @Valid
     @NotNull
     private ConsulRepositoryFactory consulRepositoryFactory;
@@ -140,5 +143,13 @@ public class StrowgrConfiguration extends Configuration {
     @JsonProperty("httpClient")
     public void setHttpClientConfiguration(HttpClientConfiguration httpClient) {
         this.httpClient = httpClient;
+    }
+
+    public long getHandledHaproxyRefreshPeriodSecond() {
+        return handledHaproxyRefreshPeriodSecond;
+    }
+
+    public void setHandledHaproxyRefreshPeriodSecond(long handledHaproxyRefreshPeriodSecond) {
+        this.handledHaproxyRefreshPeriodSecond = handledHaproxyRefreshPeriodSecond;
     }
 }

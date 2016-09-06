@@ -19,6 +19,7 @@ package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQConsumer;
+import com.github.brainlag.nsq.NSQMessage;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
@@ -26,59 +27,49 @@ import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.RegisterServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.exceptions.Exceptions;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
-public class RegisterServerConsumer {
+public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServerEvent> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServerConsumer.class);
 
     private static final String CHANNEL = "admin";
-    private final NSQConsumer registerServerConsumer;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final String TOPIC = "register_server";
 
-    public RegisterServerConsumer(String topic, NSQLookup lookup, Consumer<RegisterServerEvent> consumer) {
+    private final ObjectMapper objectMapper;
 
-        registerServerConsumer = new NSQConsumer(lookup, topic, CHANNEL, (message) -> {
+    public RegisterServerConsumer(NSQLookup lookup, ObjectMapper objectMapper) {
+        super(lookup, TOPIC, CHANNEL);
+        this.objectMapper = objectMapper;
+    }
 
-            try {
-                RegisterServer payload = mapper.readValue(message.getMessage(), RegisterServer.class);
-                if (payload.getHeader().getCorrelationId() == null) {
-                    payload.getHeader().setCorrelationId(Arrays.toString(message.getId()));
-                }
-                if (payload.getHeader().getTimestamp() == null) {
-                    payload.getHeader().setTimestamp(message.getTimestamp().getTime());
-                }
-
-                // TODO Use some conflation to prevent dispatching all event
-                RegisterServerEvent event = new RegisterServerEvent(payload.getHeader().getCorrelationId(),
-                        new EntryPointKeyVsctImpl(payload.getHeader().getApplication(), payload.getHeader().getPlatform()),
-                        payload.getServer().getBackendId(),
-                        Sets.newHashSet(new IncomingEntryPointBackendServer(
-                                payload.getServer().getId(),
-                                payload.getServer().getIp(),
-                                payload.getServer().getPort(),
-                                payload.getServer().getContext()
-                        )));
-
-                consumer.accept(event);
-            } catch (IOException e) {
-                LOGGER.error("can't deserialize the payload of message at " + message.getTimestamp() + ", id=" + Arrays.toString(message.getId()) + ": " + Arrays.toString(message.getMessage()), e);
-            } finally {
-                message.finished();
+    @Override
+    protected RegisterServerEvent transform(NSQMessage nsqMessage) {
+        try {
+            RegisterServer payload = objectMapper.readValue(nsqMessage.getMessage(), RegisterServer.class);
+            if (payload.getHeader().getCorrelationId() == null) {
+                payload.getHeader().setCorrelationId(Arrays.toString(nsqMessage.getId()));
+            }
+            if (payload.getHeader().getTimestamp() == null) {
+                payload.getHeader().setTimestamp(nsqMessage.getTimestamp().getTime());
             }
 
-        });
-
+            return new RegisterServerEvent(payload.getHeader().getCorrelationId(),
+                    new EntryPointKeyVsctImpl(payload.getHeader().getApplication(), payload.getHeader().getPlatform()),
+                    payload.getServer().getBackendId(),
+                    Sets.newHashSet(new IncomingEntryPointBackendServer(
+                            payload.getServer().getId(),
+                            payload.getServer().getIp(),
+                            payload.getServer().getPort(),
+                            payload.getServer().getContext()
+                    )));
+        } catch (IOException e) {
+            LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + Arrays.toString(nsqMessage.getId()) + ": " + Arrays.toString(nsqMessage.getMessage()), e);
+            throw Exceptions.propagate(e);
+        }
     }
-
-    public void start() {
-        registerServerConsumer.start();
-    }
-
-    public void stop() {
-        registerServerConsumer.shutdown();
-    }
-
 }

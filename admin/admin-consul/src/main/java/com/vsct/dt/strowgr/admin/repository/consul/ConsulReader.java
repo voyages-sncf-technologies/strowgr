@@ -171,6 +171,19 @@ class ConsulReader {
         return result;
     }
 
+
+    Optional<List<ConsulItem<String>>> parseConsulItemsFromHttpEntity(HttpEntity httpEntity) {
+        Optional<List<ConsulItem<String>>> result = Optional.empty();
+        try {
+            List<ConsulItem<String>> consulItems = mapper.readValue(httpEntity.getContent(), new TypeReference<List<ConsulItem<String>>>() {
+            });
+            result = Optional.of(consulItems);
+        } catch (IOException e) {
+            LOGGER.error("can't read ports by haproxy", e);
+        }
+        return result;
+    }
+
     Optional<String> readRawContentFromHttpEntity(HttpEntity httpEntity) {
         Optional<String> result = Optional.empty();
         try {
