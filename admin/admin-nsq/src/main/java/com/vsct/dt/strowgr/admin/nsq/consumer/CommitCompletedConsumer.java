@@ -57,7 +57,7 @@ public class CommitCompletedConsumer extends ObservableNSQConsumer<CommitSuccess
                     )
             );
         } catch (IOException e) {
-            LOGGER.error("can't deserialize the payload:" + Arrays.toString(nsqMessage.getMessage()), e);
+            LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + new String(nsqMessage.getId()) + ", payload=" + new String(nsqMessage.getMessage()), e);
             throw Exceptions.propagate(e);
         }
     }

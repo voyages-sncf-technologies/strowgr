@@ -53,7 +53,7 @@ public class CommitFailedConsumer extends ObservableNSQConsumer<CommitFailureEve
                             payload.getHeader().getPlatform())
             );
         } catch (IOException e) {
-            LOGGER.error("can't deserialize the payload:" + new String(nsqMessage.getMessage()), e);
+            LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + new String(nsqMessage.getId()) + ", payload=" + new String(nsqMessage.getMessage()), e);
             throw Exceptions.propagate(e);
         }
     }

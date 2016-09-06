@@ -68,7 +68,7 @@ public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServer
                             payload.getServer().getContext()
                     )));
         } catch (IOException e) {
-            LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + Arrays.toString(nsqMessage.getId()) + ": " + Arrays.toString(nsqMessage.getMessage()), e);
+            LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + new String(nsqMessage.getId()) + ", payload=" + new String(nsqMessage.getMessage()), e);
             throw Exceptions.propagate(e);
         }
     }
