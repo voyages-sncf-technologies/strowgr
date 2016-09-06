@@ -71,7 +71,7 @@ public class HaproxyResources {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Map<String, String>> getHaproxy() {
+    public Map<String, Map<String, String>> getAll() {
         return repository.getHaproxyProperties().orElseThrow(() -> new RuntimeException("can't get haproxy"));
     }
 

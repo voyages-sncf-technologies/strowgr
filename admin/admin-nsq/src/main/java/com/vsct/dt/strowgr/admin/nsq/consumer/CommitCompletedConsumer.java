@@ -19,8 +19,10 @@ package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQConsumer;
+import com.github.brainlag.nsq.NSQMessage;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
+import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitCompleted;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,42 +33,33 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
-public class CommitCompletedConsumer {
+public class CommitCompletedConsumer extends ObservableNSQConsumer<CommitSuccessEvent> {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumer.class);
 
-    private static final String CHANNEL = "admin";
     private static final String TOPIC_PREFIX = "commit_completed_";
 
-    private final ObservableNSQConsumer nsqConsumer;
-    private final Observable<CommitSuccessEvent> observable;
+    private final ObjectMapper objectMapper;
 
-    public CommitCompletedConsumer(NSQLookup lookup, String haproxy, ObjectMapper mapper) {
-        nsqConsumer = new ObservableNSQConsumer(lookup, TOPIC_PREFIX + haproxy, CHANNEL);
-        observable = nsqConsumer.observe().map(nsqMessage -> {
-            try {
-                CommitCompleted payload = mapper.readValue(nsqMessage.getMessage(), CommitCompleted.class);
-                return new CommitSuccessEvent(
-                        payload.getHeader().getCorrelationId(),
-                        new EntryPointKeyVsctImpl(
-                                payload.getHeader().getApplication(),
-                                payload.getHeader().getPlatform()
-                        )
-                );
-            } catch (IOException e) {
-                LOGGER.error("can't deserialize the payload:" + Arrays.toString(nsqMessage.getMessage()), e);
-                throw Exceptions.propagate(e);
-            } finally {
-                nsqMessage.finished();
-            }
-        });
+    public CommitCompletedConsumer(NSQLookup lookup, String haproxy, ObjectMapper objectMapper) {
+        super(lookup, TOPIC_PREFIX + haproxy, NSQ.CHANNEL);
+        this.objectMapper = objectMapper;
     }
 
-    public Observable<CommitSuccessEvent> observe(){
-        return observable;
-    }
-
-    public void shutdown() {
-        nsqConsumer.shutdown();
+    @Override
+    protected CommitSuccessEvent transform(NSQMessage nsqMessage) {
+        try {
+            CommitCompleted payload = objectMapper.readValue(nsqMessage.getMessage(), CommitCompleted.class);
+            return new CommitSuccessEvent(
+                    payload.getHeader().getCorrelationId(),
+                    new EntryPointKeyVsctImpl(
+                            payload.getHeader().getApplication(),
+                            payload.getHeader().getPlatform()
+                    )
+            );
+        } catch (IOException e) {
+            LOGGER.error("can't deserialize the payload:" + Arrays.toString(nsqMessage.getMessage()), e);
+            throw Exceptions.propagate(e);
+        }
     }
 
 }

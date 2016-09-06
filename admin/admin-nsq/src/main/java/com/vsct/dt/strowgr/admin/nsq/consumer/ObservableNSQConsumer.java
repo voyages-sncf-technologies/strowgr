@@ -23,7 +23,7 @@ import rx.Observable;
  * ~  limitations under the License.
  * ~
  */
-public class ObservableNSQConsumer {
+public abstract class ObservableNSQConsumer<T> {
 
     private final Observable<NSQMessage> observable;
 
@@ -33,10 +33,10 @@ public class ObservableNSQConsumer {
      * We keep reference to consumer and to emitter to allow shutdown
      * and emission of onComplete. Make these reference volatile since they can be set in a different thread
      */
-    private volatile NSQConsumer consumer;
+    private volatile NSQConsumer              consumer;
     private volatile AsyncEmitter<NSQMessage> emitter;
 
-    public ObservableNSQConsumer(NSQLookup lookup, String topic, String channel){
+    public ObservableNSQConsumer(NSQLookup lookup, String topic, String channel) {
         observable = Observable.fromEmitter(emitter -> {
             this.emitter = emitter;
 
@@ -44,25 +44,30 @@ public class ObservableNSQConsumer {
 
             consumer.start();
 
-            emitter.setCancellation(new AsyncEmitter.Cancellable() {
-                @Override
-                public void cancel() throws Exception {
-                    consumer.shutdown();
-                }
-            });
+            emitter.setCancellation(() -> consumer.shutdown());
 
         }, AsyncEmitter.BackpressureMode.ERROR);
     }
 
-    public Observable<NSQMessage> observe(){
-        return observable;
+    public Observable<T> observe() {
+        return observable.map(this::transformSafe);
     }
 
-    public void shutdown(){
-        if(consumer != null) {
+    private T transformSafe(NSQMessage nsqMessage) {
+        try {
+            return transform(nsqMessage);
+        } finally {
+            nsqMessage.finished();
+        }
+    }
+
+    protected abstract T transform(NSQMessage nsqMessage);
+
+    public void shutdown() {
+        if (consumer != null) {
             consumer.shutdown();
         }
-        if(emitter != null) {
+        if (emitter != null) {
             emitter.onCompleted();
         }
     }
