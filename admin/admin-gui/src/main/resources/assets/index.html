@@ -133,8 +133,8 @@
                         console.error("Can't load list of haproxies. Response  is " + response.data);
                     });
                 },
-                getUri: function (id) {
-                    return $http.get('/api/haproxy/uri/' + id).then(function (response) {
+                getVIP: function (id) {
+                    return $http.get('/api/haproxy/' + id + '/vip/').then(function (response) {
                         return response.data;
                     }, function (error) {
                         console.error("can't load haproxyName " + haproxyName + ". Response is " + response.data);
@@ -303,7 +303,9 @@
                 filename: "haproxy_template.conf"
             };
 
-            $scope.availableHaproxy = Haproxy.all();
+            Haproxy.all().then(function(data){
+                $scope.availableHaproxy = data;
+            });
 
             $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
             $scope.forbiddenFrontendKeys = ['id', 'port'];
@@ -482,7 +484,7 @@
                     link: function (scope, element, attrs) {
                         scope.$watch('conf', function (newConf, oldConf) {
                             if (newConf != undefined) {
-                                Haproxy.getUri(newConf.haproxy).then(function (uri) {
+                                Haproxy.getVIP(newConf.haproxy).then(function (uri) {
                                     scope.haproxyUri = uri;
                                 });
                             }
