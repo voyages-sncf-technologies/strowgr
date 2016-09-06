@@ -18,7 +18,6 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.NSQMessage;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.collect.Sets;
@@ -27,12 +26,10 @@ import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.RegisterServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
 import rx.exceptions.Exceptions;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.function.Consumer;
 
 public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServerEvent> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServerConsumer.class);

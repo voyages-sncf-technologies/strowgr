@@ -23,12 +23,8 @@ import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.*;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
-import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
-import com.vsct.dt.strowgr.admin.gui.configuration.CommitCompletedConsumerFactory;
-import com.vsct.dt.strowgr.admin.gui.configuration.CommitFailedConsumerFactory;
-import com.vsct.dt.strowgr.admin.gui.configuration.RegisterServerMessageConsumerFactory;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
@@ -39,7 +35,6 @@ import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
 import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
 import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
-import com.vsct.dt.strowgr.admin.nsq.consumer.ObservableNSQConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
@@ -56,7 +51,7 @@ import io.dropwizard.setup.Environment;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.*;
+import rx.Scheduler;
 import rx.internal.schedulers.ExecutorScheduler;
 
 import javax.ws.rs.core.MediaType;
@@ -134,19 +129,11 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         NSQLookup nsqLookup = configuration.getNsqLookupfactory().build();
 
         RegisterServerConsumer registerServerConsumer = new RegisterServerConsumer(nsqLookup, objectMapper);
-        registerServerConsumer.observe().subscribe(event -> {
-            eventBus.post(event);
-        }, error -> {
-            eventBus.post(error);
-        });
+        registerServerConsumer.observe().subscribe(eventBus::post, eventBus::post);
 
         // This managed resource will properly handle consumers and their related observables depending on repository configuration
         ConsumableTopics consumableTopics = new ConsumableTopics(repository, nsqLookup, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
-        consumableTopics.observe().subscribe(event -> {
-            eventBus.post(event);
-        }, error -> {
-            eventBus.post(error);
-        });
+        consumableTopics.observe().subscribe(eventBus::post, eventBus::post);
 
         /* Manage resources */
         environment.lifecycle().manage(consumableTopics);

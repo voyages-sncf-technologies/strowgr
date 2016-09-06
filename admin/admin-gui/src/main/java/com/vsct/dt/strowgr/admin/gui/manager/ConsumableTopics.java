@@ -46,16 +46,13 @@ import java.util.stream.Collectors;
 public class ConsumableTopics implements Managed {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumableTopics.class);
 
-    private final ConsulRepository repository;
-
     /* A single thread will perform the IO action */
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-    private final NSQLookup    lookup;
+    private final NSQLookup lookup;
     private final ObjectMapper objectMapper;
-    private final long         periodSecond;
 
-    /* Reference to emitter to properlly stop the manager and advice subscribers */
+    /* Reference to emitter to properly stop the manager and advice subscribers */
     private volatile AsyncEmitter emitter;
 
     /* This map is always called from a single thread (either the scheduledServiceExecutor or the shutdown thread of dropwizard, no need to synchronize */
@@ -63,8 +60,6 @@ public class ConsumableTopics implements Managed {
     private final ConnectableObservable<? extends EntryPointEvent> observable;
 
     public ConsumableTopics(ConsulRepository repository, NSQLookup lookup, ObjectMapper objectMapper, long periodSecond) {
-        this.repository = repository;
-        this.periodSecond = periodSecond;
         this.lookup = lookup;
         this.objectMapper = objectMapper;
         this.observable = Observable.<ObservableNSQConsumer>fromEmitter(emitter -> {
@@ -73,7 +68,7 @@ public class ConsumableTopics implements Managed {
             /* Do the business */
             scheduledExecutorService.scheduleAtFixedRate(() -> refreshHaproxyTopicsConsumers(repository, emitter), 0, periodSecond, TimeUnit.SECONDS);
             /* Stop when cancelled */
-            emitter.setCancellation(() -> stop());
+            emitter.setCancellation(this::stop);
         }, AsyncEmitter.BackpressureMode.BUFFER).flatMap(consumer -> consumer.observe()).publish();//We dont want to loose any subscription (they wont happen a lot !)
     }
 
@@ -82,29 +77,26 @@ public class ConsumableTopics implements Managed {
     }
 
     private void refreshHaproxyTopicsConsumers(ConsulRepository repository, AsyncEmitter<ObservableNSQConsumer> emitter) {
-        Set<String> ids = repository.getHaproxyIds().orElseGet(() -> new HashSet<String>());
+        Set<String> ids = repository.getHaproxyIds().orElseGet(HashSet::new);
 
-                /* Find all removed haproxies */
+        //Find all removed haproxies
         Set<String> removedHaproxies = consumers.keySet()
                 .stream()
                 .filter(k -> !ids.contains(k))
                 .collect(Collectors.toSet());
 
-                /* Stop consumers and remove them from store map */
-        removedHaproxies.forEach(id -> {
-            shutdownAndRemoveConsumers(id);
-        });
+        // Stop consumers and remove them from store map
+        // TODO Could be more RXJava compliant to do the shutdown during unsubscription/cancellation of the subscriber
+        removedHaproxies.forEach(this::shutdownAndRemoveConsumers);
 
-                /* Find all new haproxies */
+        // Find all new haproxies
         Set<String> newHaproxies = ids
                 .stream()
                 .filter(k -> !consumers.containsKey(k))
                 .collect(Collectors.toSet());
 
-                /* Register thoose haproxies in store map and emit them */
-        newHaproxies.forEach(id -> {
-            storeAndEmitConsumers(id, emitter);
-        });
+        // Register those haproxies in store map and emit them
+        newHaproxies.forEach(id -> storeAndEmitConsumers(id, emitter));
     }
 
     private void shutdownAndRemoveConsumers(String id) {
@@ -112,11 +104,11 @@ public class ConsumableTopics implements Managed {
         consumers.remove(id);
     }
 
-    private void storeAndEmitConsumers(String id, AsyncEmitter emitter) {
+    private void storeAndEmitConsumers(String id, AsyncEmitter<ObservableNSQConsumer> emitter) {
         CommitCompletedConsumer commitCompletedConsumer = new CommitCompletedConsumer(lookup, id, objectMapper);
         CommitFailedConsumer commitFailedConsumer = new CommitFailedConsumer(lookup, id, objectMapper);
 
-        ArrayList<ObservableNSQConsumer> list = new ArrayList<ObservableNSQConsumer>();
+        ArrayList<ObservableNSQConsumer> list = new ArrayList<>();
         list.add(commitCompletedConsumer);
         list.add(commitFailedConsumer);
         consumers.put(id, list);
