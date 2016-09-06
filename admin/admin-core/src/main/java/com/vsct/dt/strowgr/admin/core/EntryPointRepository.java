@@ -79,6 +79,12 @@ public interface EntryPointRepository {
     Optional<String> getHaproxyVip(String id);
 
     /**
+     * Get haproxy ids stored in repository.
+     * @return Set of haproxy ids
+     */
+    Optional<Set<String>> getHaproxyIds();
+
+    /**
      * Set a property for haproxy. For instance a vip, a haproxyId etc...
      *
      * @param haproxyId of the haproxy

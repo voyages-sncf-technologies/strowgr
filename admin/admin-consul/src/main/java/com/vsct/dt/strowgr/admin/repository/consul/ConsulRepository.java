@@ -423,8 +423,11 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         Optional<Map<String, Map<String, String>>> result;
         try {
             HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyId + "/?raw&recurse=true");
-            List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity).get());
-            Map<String, List<ConsulItem<String>>> consulItemsById = consulItems.stream().collect(Collectors.groupingBy(consulItem -> consulItem.getKey().split("/")[1]));
+            List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
+                    consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
+                            .orElse(new ArrayList<>()));
+            Map<String, List<ConsulItem<String>>> consulItemsById = consulItems.stream()
+                    .collect(Collectors.groupingBy(consulItem -> consulItem.getKey().split("/")[1]));
             Map<String, Map<String, String>> propertiesById = new HashMap<>(consulItemsById.size());
             for (Map.Entry<String, List<ConsulItem<String>>> entry : consulItemsById.entrySet()) {
                 Map<String, String> haproxyItem = new HashMap<>(entry.getValue().size());
@@ -434,6 +437,24 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                 propertiesById.put(entry.getKey(), haproxyItem);
             }
             result = Optional.of(propertiesById);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    @Override
+    public Optional<Set<String>> getHaproxyIds() {
+        Optional<Set<String>> result;
+        try {
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/?raw&recurse=true");
+            List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
+                    consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
+                            .orElse(new ArrayList<>()));
+            Set<String> haproxyId = consulItems.stream()
+                    .map(consulItem -> consulItem.getKey().split("/")[1])
+                    .collect(Collectors.toSet());
+            result = Optional.of(haproxyId);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

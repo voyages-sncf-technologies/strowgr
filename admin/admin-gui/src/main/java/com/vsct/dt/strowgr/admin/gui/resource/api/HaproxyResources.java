@@ -28,7 +28,9 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static javax.ws.rs.core.Response.ok;
 
@@ -65,6 +67,13 @@ public class HaproxyResources {
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String,Map<String,String>> getHaproxy(@PathParam("haproxyId") String haproxyId) {
         return repository.getHaproxyProperties(haproxyId).orElseThrow(() -> new RuntimeException("can't get haproxy uri of " + haproxyId));
+    }
+
+    @GET
+    @Path("/ids")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<String> getHaproxyIds() {
+        return repository.getHaproxyIds().orElse(new HashSet<>());
     }
 
     @GET
