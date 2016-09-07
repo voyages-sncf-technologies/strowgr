@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.core;
 
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

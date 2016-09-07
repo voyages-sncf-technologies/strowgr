@@ -18,8 +18,9 @@
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
+import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.scheduler.PeriodicScheduler;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Environment;
@@ -49,8 +50,8 @@ public class PeriodicCommitPendingSchedulerFactory {
         this.periodMilli = periodMilli;
     }
 
-    public PeriodicScheduler build(EntryPointRepository repository, Consumer<TryCommitPendingConfigurationEvent> consumer, Environment environment) {
-        PeriodicScheduler scheduler = PeriodicScheduler.newPeriodicCommitPendingScheduler(repository, consumer, getPeriodMilli());
+    public PeriodicScheduler build(EntryPointRepository entryPointRepository, HaproxyRepository haproxyRepository, Consumer<TryCommitPendingConfigurationEvent> consumer, Environment environment) {
+        PeriodicScheduler scheduler = PeriodicScheduler.newPeriodicCommitPendingScheduler(entryPointRepository, haproxyRepository, consumer, getPeriodMilli());
         environment.lifecycle().manage(new Managed() {
             @Override
             public void start() throws Exception {

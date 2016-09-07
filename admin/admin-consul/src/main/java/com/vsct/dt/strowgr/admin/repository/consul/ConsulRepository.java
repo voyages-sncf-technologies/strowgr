@@ -22,8 +22,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
-import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
-import com.vsct.dt.strowgr.admin.core.PortProvider;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
+import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.repository.consul.mapping.json.CommittingConfigurationJson;
 import org.apache.http.client.methods.HttpDelete;
@@ -42,7 +43,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class ConsulRepository implements EntryPointRepository, PortProvider {
+public class ConsulRepository implements EntryPointRepository, PortRepository, HaproxyRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsulRepository.class);
 
     /**
@@ -462,6 +463,16 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
             throw new RuntimeException(e);
         }
         return result;
+    }
+
+    @Override
+    public Optional<Set<String>> getDisabledHaproxyIds() {
+        Optional<Map<String, Map<String, String>>> haproxyProperties = getHaproxyProperties();
+        return Optional.of(haproxyProperties.orElseGet(HashMap::new)
+                .entrySet().stream()
+                .filter(haproxyPropertiesEntry -> haproxyPropertiesEntry.getValue().containsKey("enable") && !Boolean.getBoolean(haproxyPropertiesEntry.getValue().get("enable")))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet()));
     }
 
     @Override

@@ -17,7 +17,7 @@
 
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
-import com.vsct.dt.strowgr.admin.core.PortProvider;
+import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -27,28 +27,28 @@ import java.util.Map;
 @Path("/ports")
 public class PortResources {
 
-    private final PortProvider portProvider;
+    private final PortRepository portRepository;
 
-    public PortResources(PortProvider portProvider) {
-        this.portProvider = portProvider;
+    public PortResources(PortRepository portRepository) {
+        this.portRepository = portRepository;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Integer> getPorts() {
-        return portProvider.getPorts().orElseGet(HashMap::new);
+        return portRepository.getPorts().orElseGet(HashMap::new);
     }
 
     @PUT
     @Path("/{id : .+}")
     public String setPort(@PathParam("id") String id) {
-        return String.valueOf(portProvider.newPort(id));
+        return String.valueOf(portRepository.newPort(id));
     }
 
     @GET
     @Path("/{id : .+}")
     public String getPort(@PathParam("id") String id) {
-        return portProvider.getPort(id)
+        return portRepository.getPort(id)
                 .map(String::valueOf)
                 .orElseThrow(NotFoundException::new);
     }

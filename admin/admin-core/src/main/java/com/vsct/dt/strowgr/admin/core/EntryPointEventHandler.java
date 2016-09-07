@@ -24,6 +24,8 @@ import com.vsct.dt.strowgr.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.*;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,12 +41,12 @@ public class EntryPointEventHandler {
     private final EventBus outputBus;
     private final TemplateGenerator templateGenerator;
     private final TemplateLocator templateLocator;
-    private final PortProvider portProvider;
+    private final PortRepository portRepository;
 
-    EntryPointEventHandler(EntryPointStateManager stateManager, PortProvider portProvider, TemplateLocator templateLocator, TemplateGenerator templateGenerator, EventBus outputBus) {
+    EntryPointEventHandler(EntryPointStateManager stateManager, PortRepository portRepository, TemplateLocator templateLocator, TemplateGenerator templateGenerator, EventBus outputBus) {
         this.stateManager = stateManager;
         this.outputBus = outputBus;
-        this.portProvider = portProvider;
+        this.portRepository = portRepository;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;
     }
@@ -198,11 +200,11 @@ public class EntryPointEventHandler {
     private Map<String, Integer> getOrCreatePortsMapping(EntryPointKey key, EntryPoint entryPoint) {
         Map<String, Integer> portsMapping = new HashMap<>();
 
-        int syslogPort = portProvider.getPort(key, entryPoint.syslogPortId()).orElseGet(() -> portProvider.newPort(key, entryPoint.syslogPortId()));
+        int syslogPort = portRepository.getPort(key, entryPoint.syslogPortId()).orElseGet(() -> portRepository.newPort(key, entryPoint.syslogPortId()));
         portsMapping.put(entryPoint.syslogPortId(), syslogPort);
 
         for (EntryPointFrontend frontend : entryPoint.getFrontends()) {
-            int frontendPort = portProvider.getPort(key, frontend.portId()).orElseGet(() -> portProvider.newPort(key, frontend.portId()));
+            int frontendPort = portRepository.getPort(key, frontend.portId()).orElseGet(() -> portRepository.newPort(key, frontend.portId()));
             portsMapping.put(frontend.portId(), frontendPort);
         }
 
@@ -230,7 +232,7 @@ public class EntryPointEventHandler {
         private EntryPointRepository repository;
         private TemplateGenerator templateGenerator;
         private TemplateLocator templateLocator;
-        private PortProvider portProvider;
+        private PortRepository portRepository;
         private int commitTimeout;
 
         private EntryPointEventHandlerBuilder(EntryPointRepository repository) {
@@ -239,7 +241,7 @@ public class EntryPointEventHandler {
 
         public EntryPointEventHandler outputMessagesTo(EventBus eventBus) {
             EntryPointStateManager stateManager = new EntryPointStateManager(commitTimeout, repository);
-            return new EntryPointEventHandler(stateManager, portProvider, templateLocator, templateGenerator, eventBus);
+            return new EntryPointEventHandler(stateManager, portRepository, templateLocator, templateGenerator, eventBus);
         }
 
         public EntryPointEventHandlerBuilder findTemplatesWith(TemplateLocator templateLocator) {
@@ -252,8 +254,8 @@ public class EntryPointEventHandler {
             return this;
         }
 
-        public EntryPointEventHandlerBuilder getPortsWith(PortProvider portProvider) {
-            this.portProvider = portProvider;
+        public EntryPointEventHandlerBuilder getPortsWith(PortRepository portRepository) {
+            this.portRepository = portRepository;
             return this;
         }
 

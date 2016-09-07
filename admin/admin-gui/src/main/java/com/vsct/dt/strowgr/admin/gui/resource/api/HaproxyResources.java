@@ -17,8 +17,8 @@
 
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
-import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
+import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
@@ -38,10 +38,10 @@ import static javax.ws.rs.core.Response.ok;
 public class HaproxyResources {
 
     private final UriTemplateLocator templateLocator;
-    private final EntryPointRepository repository;
+    private final HaproxyRepository repository;
     private final TemplateGenerator templateGenerator;
 
-    public HaproxyResources(EntryPointRepository repository, UriTemplateLocator templateLocator, TemplateGenerator templateGenerator) {
+    public HaproxyResources(HaproxyRepository repository, UriTemplateLocator templateLocator, TemplateGenerator templateGenerator) {
         this.repository = repository;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;

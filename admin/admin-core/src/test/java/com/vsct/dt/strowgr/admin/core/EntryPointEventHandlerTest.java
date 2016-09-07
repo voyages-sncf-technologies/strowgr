@@ -24,6 +24,7 @@ import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.configuration.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
+import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,15 +38,15 @@ public class EntryPointEventHandlerTest {
     EntryPointEventHandler handler;
     TemplateLocator templateLocator;
     TemplateGenerator templateGenerator;
-    PortProvider portProvider;
+    PortRepository portRepository;
 
     @Before
     public void setUp() {
         stateManager = mock(EntryPointStateManager.class);
         templateLocator = mock(TemplateLocator.class);
         TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
-        portProvider = mock(PortProvider.class);
-        handler = new EntryPointEventHandler(stateManager, portProvider, templateLocator, templateGenerator, new EventBus());
+        portRepository = mock(PortRepository.class);
+        handler = new EntryPointEventHandler(stateManager, portRepository, templateLocator, templateGenerator, new EventBus());
     }
 
     @Test
@@ -345,7 +346,7 @@ public class EntryPointEventHandlerTest {
                 .build();
 
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
-        when(portProvider.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
+        when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
 
         // Test
@@ -369,7 +370,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
-        when(portProvider.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
+        when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
 
         // Test

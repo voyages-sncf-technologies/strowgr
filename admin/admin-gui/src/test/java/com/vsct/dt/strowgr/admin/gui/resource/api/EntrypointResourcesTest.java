@@ -3,7 +3,7 @@ package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
-import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import org.junit.Test;

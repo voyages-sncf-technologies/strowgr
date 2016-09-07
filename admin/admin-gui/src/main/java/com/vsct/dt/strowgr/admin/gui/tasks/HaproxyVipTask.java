@@ -18,7 +18,7 @@
 package com.vsct.dt.strowgr.admin.gui.tasks;
 
 import com.google.common.collect.ImmutableMultimap;
-import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import io.dropwizard.servlets.tasks.Task;
 
 import java.io.PrintWriter;

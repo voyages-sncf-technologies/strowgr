@@ -23,6 +23,7 @@ import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import org.junit.Before;
 import org.junit.Test;
 

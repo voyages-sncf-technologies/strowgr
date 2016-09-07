@@ -18,22 +18,22 @@
 package com.vsct.dt.strowgr.admin.gui.tasks;
 
 import com.google.common.collect.ImmutableMultimap;
-import com.vsct.dt.strowgr.admin.core.PortProvider;
+import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import io.dropwizard.servlets.tasks.Task;
 
 import java.io.PrintWriter;
 
 public class InitPortsTask extends Task {
 
-    private final PortProvider portProvider;
+    private final PortRepository portRepository;
 
-    public InitPortsTask(PortProvider portProvider) {
+    public InitPortsTask(PortRepository portRepository) {
         super("initports");
-        this.portProvider = portProvider;
+        this.portRepository = portRepository;
     }
 
     @Override
     public void execute(ImmutableMultimap<String, String> immutableMultimap, PrintWriter printWriter) throws Exception {
-        portProvider.initPorts();
+        portRepository.initPorts();
     }
 }
