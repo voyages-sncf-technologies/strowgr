@@ -28,7 +28,7 @@ import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
-import com.vsct.dt.strowgr.admin.gui.manager.ConsumableTopics;
+import com.vsct.dt.strowgr.admin.gui.manager.ConsumableHAPTopics;
 import com.vsct.dt.strowgr.admin.gui.manager.NSQProducerManager;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
@@ -132,7 +132,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         registerServerConsumer.observe().subscribe(eventBus::post, eventBus::post);
 
         // This managed resource will properly handle consumers and their related observables depending on repository configuration
-        ConsumableTopics consumableTopics = new ConsumableTopics(repository, nsqLookup, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
+        ConsumableHAPTopics consumableTopics = new ConsumableHAPTopics(repository, nsqLookup, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
         consumableTopics.observe().subscribe(eventBus::post, eventBus::post);
 
         /* Manage resources */

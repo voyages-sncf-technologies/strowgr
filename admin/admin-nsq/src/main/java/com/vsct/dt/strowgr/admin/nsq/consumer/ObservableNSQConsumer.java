@@ -35,6 +35,9 @@ public abstract class ObservableNSQConsumer<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ObservableNSQConsumer.class);
 
+    private final String topic;
+    private final String channel;
+    /* The observable created by this consumer */
     private final Observable<NSQMessage> observable;
 
     /* Since we can pass the callback to NSQConsumer only through its constructor we must
@@ -47,12 +50,16 @@ public abstract class ObservableNSQConsumer<T> {
     private volatile AsyncEmitter<NSQMessage> emitter;
 
     public ObservableNSQConsumer(NSQLookup lookup, String topic, String channel) {
-        observable = Observable.fromEmitter(emitter -> {
+        this.topic = topic;
+        this.channel = channel;
+        this.observable = Observable.fromEmitter(emitter -> {
             this.emitter = emitter;
 
             consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, new NSQConfig(), emitter::onError);
 
             consumer.start();
+
+            LOGGER.info("new subscription for ObservableNSQConsumer on topic {}, channel {}", topic, channel);
 
             emitter.setCancellation(() -> consumer.shutdown());
 
@@ -80,6 +87,7 @@ public abstract class ObservableNSQConsumer<T> {
      * Shutsdown this consumer and advice subscriber
      */
     public void shutdown() {
+        LOGGER.info("stopping ObservableNSQConsumer on topic {}, channel {}", topic, channel);
         if (consumer != null) {
             consumer.shutdown();
         }

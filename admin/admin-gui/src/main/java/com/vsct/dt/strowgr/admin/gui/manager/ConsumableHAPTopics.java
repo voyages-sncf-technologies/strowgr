@@ -43,17 +43,17 @@ import java.util.stream.Collectors;
 /**
  * This class listens on consul repository to find which haproxies are suceptible to produce messages
  * Once repository is queries it will
- *      - determine which haproxies are no more listened to and shutsdown there related consumers
- *      - determine which haproxies are new and have to be listened to, creates their related consumers and emit their observables
+ * - determine which haproxies are no more listened to and shutsdown there related consumers
+ * - determine which haproxies are new and have to be listened to, creates their related consumers and emit their observables
  * Thanks to observable semantics, this class provides an observable of all events that will be produced by the haproxies supposed to be managed
  */
-public class ConsumableTopics implements Managed {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConsumableTopics.class);
+public class ConsumableHAPTopics implements Managed {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsumableHAPTopics.class);
 
     /* A single thread will perform the IO action */
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-    private final NSQLookup lookup;
+    private final NSQLookup    lookup;
     private final ObjectMapper objectMapper;
 
     /* Reference to emitter to properly stop the manager and advice subscribers */
@@ -63,7 +63,7 @@ public class ConsumableTopics implements Managed {
     private final HashMap<String, ArrayList<ObservableNSQConsumer>> consumers = new HashMap<>();
     private final ConnectableObservable<? extends EntryPointEvent> observable;
 
-    public ConsumableTopics(ConsulRepository repository, NSQLookup lookup, ObjectMapper objectMapper, long periodSecond) {
+    public ConsumableHAPTopics(ConsulRepository repository, NSQLookup lookup, ObjectMapper objectMapper, long periodSecond) {
         this.lookup = lookup;
         this.objectMapper = objectMapper;
         this.observable = Observable.<ObservableNSQConsumer>fromEmitter(emitter -> {
@@ -103,11 +103,13 @@ public class ConsumableTopics implements Managed {
     }
 
     private void shutdownAndRemoveConsumers(String id) {
+        LOGGER.info("deregister haproxy {}", id);
         consumers.get(id).forEach(ObservableNSQConsumer::shutdown);
         consumers.remove(id);
     }
 
     private void storeAndEmitConsumers(String id, AsyncEmitter<ObservableNSQConsumer> emitter) {
+        LOGGER.info("register new haproxy {}", id);
         CommitCompletedConsumer commitCompletedConsumer = new CommitCompletedConsumer(lookup, id, objectMapper);
         CommitFailedConsumer commitFailedConsumer = new CommitFailedConsumer(lookup, id, objectMapper);
 
@@ -122,20 +124,23 @@ public class ConsumableTopics implements Managed {
 
     /**
      * Since ConsumableTopics exposes a ConnectableObservable, this method connects it
+     *
      * @throws Exception
      */
     @Override
     public void start() throws Exception {
+        LOGGER.info("starting ConsumableTopics observable");
         observable.connect();
     }
 
     /**
      * Stop watching repository and advice subscribers
+     *
      * @throws Exception
      */
     @Override
     public void stop() throws Exception {
-        LOGGER.info("stop all nsqconsumers");
+        LOGGER.info("stopping ConsumableTopics observable and all related nsqconsumers");
         scheduledExecutorService.shutdown();
         if (emitter != null) {
             //onCompleted will cascade on nsqconsumers
