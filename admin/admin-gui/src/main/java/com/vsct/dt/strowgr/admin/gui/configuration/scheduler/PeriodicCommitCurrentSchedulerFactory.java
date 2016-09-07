@@ -15,12 +15,11 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.gui.configuration;
+package com.vsct.dt.strowgr.admin.gui.configuration.scheduler;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
-import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
-import com.vsct.dt.strowgr.admin.scheduler.PeriodicScheduler;
+import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Environment;
 import org.slf4j.Logger;
@@ -32,9 +31,9 @@ import java.util.function.Consumer;
 /**
  * Created by william_montaz on 16/02/2016.
  */
-public class PeriodicCommitPendingSchedulerFactory {
+public class PeriodicCommitCurrentSchedulerFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicCommitPendingSchedulerFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicCommitCurrentSchedulerFactory.class);
 
     @Min(1)
     private long periodMilli;
@@ -49,18 +48,18 @@ public class PeriodicCommitPendingSchedulerFactory {
         this.periodMilli = periodMilli;
     }
 
-    public PeriodicScheduler build(EntryPointRepository entryPointRepository, Consumer<TryCommitPendingConfigurationEvent> consumer, Environment environment) {
-        PeriodicScheduler scheduler = PeriodicScheduler.newPeriodicCommitPendingScheduler(entryPointRepository, consumer, getPeriodMilli());
+    public PeriodicScheduler build(EntryPointRepository entryPointRepository, Consumer<TryCommitCurrentConfigurationEvent> consumer, Environment environment) {
+        PeriodicScheduler scheduler = PeriodicScheduler.newPeriodicCommitCurrentScheduler(entryPointRepository, consumer, getPeriodMilli());
         environment.lifecycle().manage(new Managed() {
             @Override
             public void start() throws Exception {
-                LOGGER.info("Starting CommitPendingScheduler");
+                LOGGER.info("Starting CommitCurrentScheduler");
                 scheduler.start();
             }
 
             @Override
             public void stop() throws Exception {
-                LOGGER.info("Stopping CommitPendingScheduler");
+                LOGGER.info("Stopping CommitCurrentScheduler");
                 scheduler.stop();
             }
         });

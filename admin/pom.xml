@@ -35,7 +35,6 @@
         <module>admin-gui</module>
         <module>admin-nsq</module>
         <module>admin-template</module>
-        <module>admin-scheduler</module>
     </modules>
 
     <properties>

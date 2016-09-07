@@ -145,9 +145,9 @@ public class EntryPointEventHandler {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPoint> committingConfiguration = stateManager.tryCommitCurrent(event.getCorrelationId(), key);
-            if (committingConfiguration.isPresent()) {
-                EntryPoint configuration = committingConfiguration.get();
+            Optional<EntryPoint> entryPoint = stateManager.tryCommitCurrent(event.getCorrelationId(), key);
+            if (entryPoint.isPresent()) {
+                EntryPoint configuration = entryPoint.get();
                 // TODO use cache for retrieving disabled haproxy
                 if (haproxyRepository.getDisabledHaproxyIds()
                         .orElseThrow(() -> new IllegalStateException("can't retrieve haproxy ids for entrypoint " + key))
@@ -174,9 +174,9 @@ public class EntryPointEventHandler {
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
-            Optional<EntryPoint> committingConfiguration = stateManager.tryCommitPending(event.getCorrelationId(), key);
-            if (committingConfiguration.isPresent()) {
-                EntryPoint configuration = committingConfiguration.get();
+            Optional<EntryPoint> entryPoint = stateManager.tryCommitPending(event.getCorrelationId(), key);
+            if (entryPoint.isPresent()) {
+                EntryPoint configuration = entryPoint.get();
                 // TODO use cache for retrieving disabled haproxy
                 if (haproxyRepository.getDisabledHaproxyIds()
                         .orElseThrow(() -> new IllegalStateException("can't retrieve haproxy ids for entrypoint " + key))

@@ -15,7 +15,7 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.scheduler;
+package com.vsct.dt.strowgr.admin.gui.configuration.scheduler;
 
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
