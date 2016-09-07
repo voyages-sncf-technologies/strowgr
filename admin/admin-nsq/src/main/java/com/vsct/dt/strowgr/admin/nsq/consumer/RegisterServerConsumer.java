@@ -24,6 +24,7 @@ import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
+import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.RegisterServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,13 +38,12 @@ public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServer
 
     private static final Logger LOGGER  = LoggerFactory.getLogger(RegisterServerConsumer.class);
 
-    private static final String CHANNEL = "admin";
     private static final String TOPIC   = "register_server";
 
     private final ObjectMapper objectMapper;
 
     public RegisterServerConsumer(NSQLookup lookup, ObjectMapper objectMapper, NSQConfig config) {
-        super(lookup, TOPIC, CHANNEL, config);
+        super(lookup, TOPIC, NSQ.CHANNEL, config);
         this.objectMapper = objectMapper;
     }
 
