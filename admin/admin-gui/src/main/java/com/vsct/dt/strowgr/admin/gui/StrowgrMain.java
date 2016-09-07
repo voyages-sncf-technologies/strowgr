@@ -34,6 +34,7 @@ import com.vsct.dt.strowgr.admin.gui.manager.NSQProducerManager;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
+import com.vsct.dt.strowgr.admin.gui.subscribers.NSQToEventBusSubscriber;
 import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
 import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
@@ -53,13 +54,17 @@ import io.dropwizard.setup.Environment;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
 import rx.Scheduler;
 import rx.internal.schedulers.ExecutorScheduler;
+import rx.schedulers.Schedulers;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 
 public class StrowgrMain extends Application<StrowgrConfiguration> {
@@ -101,7 +106,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         }
 
         /* Main EventBus */
-        ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(new ArrayBlockingQueue<>(100)).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
+        BlockingQueue eventBusQueue = new ArrayBlockingQueue<>(100);
+        ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(eventBusQueue).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
 
         /* Executor wrapper for RXjava */
         Scheduler executorScheduler = new ExecutorScheduler(executor);
@@ -138,11 +144,18 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         NSQConfig consumerNsqConfig = configuration.getNsqConsumerConfigFactory().build();
 
         RegisterServerConsumer registerServerConsumer = new RegisterServerConsumer(nsqLookup, objectMapper, consumerNsqConfig);
-        registerServerConsumer.observe().subscribe(eventBus::post, eventBus::post);
+        Observable registerServerObservable = registerServerConsumer.observe();
 
         // This managed resource will properly handle consumers and their related observables depending on repository configuration
         ConsumableHAPTopics consumableTopics = new ConsumableHAPTopics(repository, nsqLookup, consumerNsqConfig, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
-        consumableTopics.observe().subscribe(eventBus::post, eventBus::post);
+        Observable hapTopicsObservable = consumableTopics.observe();
+
+        Observable nsqEventsObservable = registerServerObservable.mergeWith(registerServerObservable);
+
+        //Push all nsq events to eventBus
+        //We observeOn a single thread to avoid blocking nio eventloops
+        //NSQToEventBusSubscriber applies backpressure in regard to the eventBusQueue
+        nsqEventsObservable.observeOn(Schedulers.newThread()).subscribe(new NSQToEventBusSubscriber(eventBus, eventBusQueue));
 
         /* Manage resources */
         environment.lifecycle().manage(consumableTopics);
