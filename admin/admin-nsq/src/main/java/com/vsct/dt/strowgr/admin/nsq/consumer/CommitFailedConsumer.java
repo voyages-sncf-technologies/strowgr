@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQConfig;
 import com.github.brainlag.nsq.NSQMessage;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
@@ -35,8 +36,8 @@ public class CommitFailedConsumer extends ObservableNSQConsumer<CommitFailureEve
 
     private final ObjectMapper objectMapper;
 
-    public CommitFailedConsumer(NSQLookup lookup, String haproxy, ObjectMapper objectMapper) {
-        super(lookup, TOPIC_PREFIX + haproxy, NSQ.CHANNEL);
+    public CommitFailedConsumer(NSQLookup lookup, String haproxy, ObjectMapper objectMapper, NSQConfig config) {
+        super(lookup, TOPIC_PREFIX + haproxy, NSQ.CHANNEL, config);
         this.objectMapper = objectMapper;
     }
 

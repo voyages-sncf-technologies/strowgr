@@ -12,7 +12,6 @@ server:
       - type: console
         threshold: INFO
 threads: 20
-haproxyName: default-name
 repository:
   host: parisiancocktail
   port: 58500

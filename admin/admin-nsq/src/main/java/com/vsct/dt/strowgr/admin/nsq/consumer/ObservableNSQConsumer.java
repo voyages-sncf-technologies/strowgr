@@ -49,13 +49,13 @@ public abstract class ObservableNSQConsumer<T> {
     private volatile NSQConsumer              consumer;
     private volatile AsyncEmitter<NSQMessage> emitter;
 
-    public ObservableNSQConsumer(NSQLookup lookup, String topic, String channel) {
+    public ObservableNSQConsumer(NSQLookup lookup, String topic, String channel, NSQConfig config) {
         this.topic = topic;
         this.channel = channel;
         this.observable = Observable.fromEmitter(emitter -> {
             this.emitter = emitter;
 
-            consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, new NSQConfig(), emitter::onError);
+            consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
 
             consumer.start();
 

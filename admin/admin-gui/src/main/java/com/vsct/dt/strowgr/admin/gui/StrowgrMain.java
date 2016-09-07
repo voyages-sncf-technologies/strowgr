@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQConfig;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.*;
@@ -127,12 +128,14 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ObjectMapper objectMapper = new ObjectMapper();
         // retrieve NSQLookup configuration
         NSQLookup nsqLookup = configuration.getNsqLookupfactory().build();
+        //NSQConsumers configuration
+        NSQConfig consumerNsqConfig = configuration.getNsqConsumerConfigFactory().build();
 
-        RegisterServerConsumer registerServerConsumer = new RegisterServerConsumer(nsqLookup, objectMapper);
+        RegisterServerConsumer registerServerConsumer = new RegisterServerConsumer(nsqLookup, objectMapper, consumerNsqConfig);
         registerServerConsumer.observe().subscribe(eventBus::post, eventBus::post);
 
         // This managed resource will properly handle consumers and their related observables depending on repository configuration
-        ConsumableHAPTopics consumableTopics = new ConsumableHAPTopics(repository, nsqLookup, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
+        ConsumableHAPTopics consumableTopics = new ConsumableHAPTopics(repository, nsqLookup, consumerNsqConfig, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
         consumableTopics.observe().subscribe(eventBus::post, eventBus::post);
 
         /* Manage resources */

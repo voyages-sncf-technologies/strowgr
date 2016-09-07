@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.gui.manager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQConfig;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedConsumer;
@@ -54,6 +55,7 @@ public class ConsumableHAPTopics implements Managed {
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     private final NSQLookup    lookup;
+    private final NSQConfig    consumerConfig;
     private final ObjectMapper objectMapper;
 
     /* Reference to emitter to properly stop the manager and advice subscribers */
@@ -63,8 +65,9 @@ public class ConsumableHAPTopics implements Managed {
     private final HashMap<String, ArrayList<ObservableNSQConsumer>> consumers = new HashMap<>();
     private final ConnectableObservable<? extends EntryPointEvent> observable;
 
-    public ConsumableHAPTopics(ConsulRepository repository, NSQLookup lookup, ObjectMapper objectMapper, long periodSecond) {
+    public ConsumableHAPTopics(ConsulRepository repository, NSQLookup lookup, NSQConfig consumerConfig, ObjectMapper objectMapper, long periodSecond) {
         this.lookup = lookup;
+        this.consumerConfig = consumerConfig;
         this.objectMapper = objectMapper;
         this.observable = Observable.<ObservableNSQConsumer>fromEmitter(emitter -> {
             /* Keep reference to emitter for proper shutdown */
@@ -110,8 +113,8 @@ public class ConsumableHAPTopics implements Managed {
 
     private void storeAndEmitConsumers(String id, AsyncEmitter<ObservableNSQConsumer> emitter) {
         LOGGER.info("register new haproxy {}", id);
-        CommitCompletedConsumer commitCompletedConsumer = new CommitCompletedConsumer(lookup, id, objectMapper);
-        CommitFailedConsumer commitFailedConsumer = new CommitFailedConsumer(lookup, id, objectMapper);
+        CommitCompletedConsumer commitCompletedConsumer = new CommitCompletedConsumer(lookup, id, objectMapper, consumerConfig);
+        CommitFailedConsumer commitFailedConsumer = new CommitFailedConsumer(lookup, id, objectMapper, consumerConfig);
 
         ArrayList<ObservableNSQConsumer> list = new ArrayList<>();
         list.add(commitCompletedConsumer);

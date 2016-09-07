@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQConfig;
 import com.github.brainlag.nsq.NSQMessage;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.collect.Sets;
@@ -37,8 +38,8 @@ public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServer
 
     private final ObjectMapper objectMapper;
 
-    public RegisterServerConsumer(NSQLookup lookup, ObjectMapper objectMapper) {
-        super(lookup, TOPIC, CHANNEL);
+    public RegisterServerConsumer(NSQLookup lookup, ObjectMapper objectMapper, NSQConfig config) {
+        super(lookup, TOPIC, CHANNEL, config);
         this.objectMapper = objectMapper;
     }
 

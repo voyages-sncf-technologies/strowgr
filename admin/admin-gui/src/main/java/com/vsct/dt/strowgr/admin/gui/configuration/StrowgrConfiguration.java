@@ -20,8 +20,8 @@ package com.vsct.dt.strowgr.admin.gui.configuration;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
-import org.hibernate.validator.constraints.NotEmpty;
 
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -60,6 +60,40 @@ public class StrowgrConfiguration extends Configuration {
     @Valid
     @NotNull
     private HttpClientConfiguration httpClient = new HttpClientConfiguration();
+
+    @Valid
+    @Nullable
+    private NSQConfigFactory nsqConsumerConfigFactory;
+
+    @Valid
+    @Nullable
+    private NSQConfigFactory nsqProducerConfigFactory;
+
+    @JsonProperty("nsqConsumerConfigFactory")
+    public NSQConfigFactory getNsqConsumerConfigFactory() {
+        if(nsqProducerConfigFactory == null){
+            return new NSQConfigFactory();
+        }
+        return nsqConsumerConfigFactory;
+    }
+
+    @JsonProperty("nsqConsumerConfigFactory")
+    public void setNsqConsumerConfigFactory(NSQConfigFactory nsqConsumerConfigFactory) {
+        this.nsqConsumerConfigFactory = nsqConsumerConfigFactory;
+    }
+
+    @JsonProperty("nsqProducerConfigFactory")
+    public NSQConfigFactory getNsqProducerConfigFactory() {
+        if(nsqProducerConfigFactory == null){
+            return new NSQConfigFactory();
+        }
+        return nsqProducerConfigFactory;
+    }
+
+    @JsonProperty("nsqProducerConfigFactory")
+    public void setNsqProducerConfigFactory(NSQConfigFactory nsqProducerConfigFactory) {
+        this.nsqProducerConfigFactory = nsqProducerConfigFactory;
+    }
 
     @JsonProperty("repository")
     public ConsulRepositoryFactory getConsulRepositoryFactory() {
