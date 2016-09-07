@@ -18,21 +18,15 @@
 package com.vsct.dt.strowgr.admin.scheduler;
 
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
-import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
-import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
-import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Schedule entrypoint lifecycles.
@@ -43,7 +37,6 @@ public class PeriodicScheduler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicScheduler.class);
 
     private final EntryPointRepository entryPointRepository;
-    private HaproxyRepository haproxyRepository;
     private final Consumer<T> consumer;
     private final Function<String, T> provider;
     private final long periodMilli;
@@ -60,17 +53,8 @@ public class PeriodicScheduler<T> {
                     return;
                 }
                 try {
-                    Set<String> disabledHaproxy = haproxyRepository.getDisabledHaproxyIds().orElseThrow(() -> new RuntimeException("can't retrieve disabled haproxy, entry point configuration can't sent to sidekicks."));
-                    for (String entryPointId : entryPointRepository.getEntryPointsId()) {
-                        Optional<EntryPoint> currentConfiguration = entryPointRepository.getCurrentConfiguration(new EntryPointKeyDefaultImpl(entryPointId));
-                        if (currentConfiguration.isPresent()) {
-                            if( disabledHaproxy.contains(currentConfiguration.get().getHaproxy())){
-                                // skip
-                            } else {
-
-                            }
-                        }
-                        consumer.accept(provider.apply(entryPointId));
+                    for (String ep : entryPointRepository.getEntryPointsId()) {
+                        consumer.accept(provider.apply(ep));
                     }
                 } catch (Throwable t) {
                     LOGGER.error("PeriodicScheduler failed.", t);
@@ -79,9 +63,8 @@ public class PeriodicScheduler<T> {
         }
     });
 
-    public PeriodicScheduler(EntryPointRepository entryPointRepository, HaproxyRepository haproxyRepository, Function<String, T> provider, Consumer<T> consumer, long periodMilli) {
+    public PeriodicScheduler(EntryPointRepository entryPointRepository, Function<String, T> provider, Consumer<T> consumer, long periodMilli) {
         this.entryPointRepository = entryPointRepository;
-        this.haproxyRepository = haproxyRepository;
         this.consumer = consumer;
         this.provider = provider;
         this.periodMilli = periodMilli;
@@ -96,12 +79,12 @@ public class PeriodicScheduler<T> {
         stop = true;
     }
 
-    public static PeriodicScheduler<TryCommitPendingConfigurationEvent> newPeriodicCommitPendingScheduler(EntryPointRepository repository, HaproxyRepository haproxyRepository, Consumer<TryCommitPendingConfigurationEvent> consumer, long period) {
-        return new PeriodicScheduler<>(repository, haproxyRepository, ep -> new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)), consumer, period);
+    public static PeriodicScheduler<TryCommitPendingConfigurationEvent> newPeriodicCommitPendingScheduler(EntryPointRepository repository, Consumer<TryCommitPendingConfigurationEvent> consumer, long period) {
+        return new PeriodicScheduler<>(repository, ep -> new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)), consumer, period);
     }
 
-    public static PeriodicScheduler<TryCommitCurrentConfigurationEvent> newPeriodicCommitCurrentScheduler(EntryPointRepository entryPointRepository, Consumer<TryCommitCurrentConfigurationEvent> consumer, long period, HaproxyRepository haproxyRepository) {
-        return new PeriodicScheduler<>(entryPointRepository, haproxyRepository, ep -> new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)), consumer, period);
+    public static PeriodicScheduler<TryCommitCurrentConfigurationEvent> newPeriodicCommitCurrentScheduler(EntryPointRepository entryPointRepository, Consumer<TryCommitCurrentConfigurationEvent> consumer, long period) {
+        return new PeriodicScheduler<>(entryPointRepository, ep -> new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)), consumer, period);
     }
 
 }

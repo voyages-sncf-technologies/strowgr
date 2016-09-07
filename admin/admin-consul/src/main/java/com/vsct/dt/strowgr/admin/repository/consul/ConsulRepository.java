@@ -470,7 +470,8 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         Optional<Map<String, Map<String, String>>> haproxyProperties = getHaproxyProperties();
         return Optional.of(haproxyProperties.orElseGet(HashMap::new)
                 .entrySet().stream()
-                .filter(haproxyPropertiesEntry -> haproxyPropertiesEntry.getValue().containsKey("enable") && !Boolean.getBoolean(haproxyPropertiesEntry.getValue().get("enable")))
+                .filter(haproxyPropertiesEntry -> haproxyPropertiesEntry.getValue().containsKey("enable")
+                        && "false".equals(haproxyPropertiesEntry.getValue().get("enable")))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet()));
     }

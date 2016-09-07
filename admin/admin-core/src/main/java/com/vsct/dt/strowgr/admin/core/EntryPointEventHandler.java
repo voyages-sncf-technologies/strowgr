@@ -25,6 +25,7 @@ import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendSer
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.*;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,21 +39,23 @@ public class EntryPointEventHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(EntryPointEventHandler.class);
 
     private final EntryPointStateManager stateManager;
+    private HaproxyRepository haproxyRepository;
     private final EventBus outputBus;
     private final TemplateGenerator templateGenerator;
     private final TemplateLocator templateLocator;
     private final PortRepository portRepository;
 
-    EntryPointEventHandler(EntryPointStateManager stateManager, PortRepository portRepository, TemplateLocator templateLocator, TemplateGenerator templateGenerator, EventBus outputBus) {
+    EntryPointEventHandler(EntryPointStateManager stateManager, PortRepository portRepository, HaproxyRepository haproxyRepository, TemplateLocator templateLocator, TemplateGenerator templateGenerator, EventBus outputBus) {
         this.stateManager = stateManager;
         this.outputBus = outputBus;
         this.portRepository = portRepository;
+        this.haproxyRepository = haproxyRepository;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;
     }
 
-    public static EntryPointEventHandlerBuilder backedBy(EntryPointRepository repository) {
-        return new EntryPointEventHandlerBuilder(repository);
+    public static EntryPointEventHandlerBuilder backedBy(EntryPointRepository entryPointRepository, HaproxyRepository haproxyRepository) {
+        return new EntryPointEventHandlerBuilder(entryPointRepository, haproxyRepository);
     }
 
     @Subscribe
@@ -145,13 +148,21 @@ public class EntryPointEventHandler {
             Optional<EntryPoint> committingConfiguration = stateManager.tryCommitCurrent(event.getCorrelationId(), key);
             if (committingConfiguration.isPresent()) {
                 EntryPoint configuration = committingConfiguration.get();
-                String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + key));
-                Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, configuration);
-                String conf = templateGenerator.generate(template, configuration, portsMapping);
-                String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
-                LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
-                outputBus.post(commitRequestedEvent);
+                // TODO use cache for retrieving disabled haproxy
+                if (haproxyRepository.getDisabledHaproxyIds()
+                        .orElseThrow(() -> new IllegalStateException("can't retrieve haproxy ids for entrypoint " + key))
+                        .contains(configuration.getHaproxy())) {
+                    stateManager.cancelCommit(key);
+                    LOGGER.info("skip tryCommitCurrent for event {} because haproxy {} is disabled", event, configuration.getHaproxy());
+                } else {
+                    String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + key));
+                    Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, configuration);
+                    String conf = templateGenerator.generate(template, configuration, portsMapping);
+                    String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
+                    CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
+                    LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
+                    outputBus.post(commitRequestedEvent);
+                }
             }
         } finally {
             this.stateManager.release(key);
@@ -166,13 +177,21 @@ public class EntryPointEventHandler {
             Optional<EntryPoint> committingConfiguration = stateManager.tryCommitPending(event.getCorrelationId(), key);
             if (committingConfiguration.isPresent()) {
                 EntryPoint configuration = committingConfiguration.get();
-                String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + key));
-                Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, configuration);
-                String conf = templateGenerator.generate(template, configuration, portsMapping);
-                String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
-                LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
-                outputBus.post(commitRequestedEvent);
+                // TODO use cache for retrieving disabled haproxy
+                if (haproxyRepository.getDisabledHaproxyIds()
+                        .orElseThrow(() -> new IllegalStateException("can't retrieve haproxy ids for entrypoint " + key))
+                        .contains(configuration.getHaproxy())) {
+                    stateManager.cancelCommit(key);
+                    LOGGER.info("skip tryCommitPending for event {} because haproxy {} is disabled", event, configuration.getHaproxy());
+                } else {
+                    String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + key));
+                    Map<String, Integer> portsMapping = getOrCreatePortsMapping(key, configuration);
+                    String conf = templateGenerator.generate(template, configuration, portsMapping);
+                    String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
+                    CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), key, configuration, conf, syslogConf);
+                    LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
+                    outputBus.post(commitRequestedEvent);
+                }
             }
         } finally {
             this.stateManager.release(key);
@@ -229,19 +248,21 @@ public class EntryPointEventHandler {
     }
 
     public static class EntryPointEventHandlerBuilder {
-        private EntryPointRepository repository;
+        private EntryPointRepository entryPointRepository;
+        private HaproxyRepository haproxyRepository;
         private TemplateGenerator templateGenerator;
         private TemplateLocator templateLocator;
         private PortRepository portRepository;
         private int commitTimeout;
 
-        private EntryPointEventHandlerBuilder(EntryPointRepository repository) {
-            this.repository = repository;
+        private EntryPointEventHandlerBuilder(EntryPointRepository entryPointRepository, HaproxyRepository haproxyRepository) {
+            this.entryPointRepository = entryPointRepository;
+            this.haproxyRepository = haproxyRepository;
         }
 
         public EntryPointEventHandler outputMessagesTo(EventBus eventBus) {
-            EntryPointStateManager stateManager = new EntryPointStateManager(commitTimeout, repository);
-            return new EntryPointEventHandler(stateManager, portRepository, templateLocator, templateGenerator, eventBus);
+            EntryPointStateManager stateManager = new EntryPointStateManager(commitTimeout, entryPointRepository);
+            return new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, eventBus);
         }
 
         public EntryPointEventHandlerBuilder findTemplatesWith(TemplateLocator templateLocator) {

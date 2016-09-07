@@ -43,4 +43,11 @@ public class EntryPointEvent {
         return correlationId;
     }
 
+    @Override
+    public String toString() {
+        return "EntryPointEvent{" +
+                "correlationId='" + correlationId + '\'' +
+                ", key=" + key +
+                '}';
+    }
 }

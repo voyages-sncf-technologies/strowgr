@@ -24,6 +24,7 @@ import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.configuration.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
+import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,8 +38,8 @@ public class EntryPointEventHandlerTest {
     EntryPointStateManager stateManager;
     EntryPointEventHandler handler;
     TemplateLocator templateLocator;
-    TemplateGenerator templateGenerator;
     PortRepository portRepository;
+    HaproxyRepository haproxyRepository;
 
     @Before
     public void setUp() {
@@ -46,7 +47,8 @@ public class EntryPointEventHandlerTest {
         templateLocator = mock(TemplateLocator.class);
         TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
         portRepository = mock(PortRepository.class);
-        handler = new EntryPointEventHandler(stateManager, portRepository, templateLocator, templateGenerator, new EventBus());
+        haproxyRepository = mock(HaproxyRepository.class);
+        handler = new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, new EventBus());
     }
 
     @Test
@@ -611,7 +613,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
-        EntryPointBackendServer bs = new EntryPointBackendServer("ijklm",  "10.98.71.1", "9090", new HashMap<>(), new HashMap<>());
+        EntryPointBackendServer bs = new EntryPointBackendServer("ijklm", "10.98.71.1", "9090", new HashMap<>(), new HashMap<>());
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(bs), new HashMap<>());
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
@@ -635,7 +637,7 @@ public class EntryPointEventHandlerTest {
     public void server_registration_should_not_erase_backend_context_if_backend_already_exists() {
 
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
-        IncomingEntryPointBackendServer server = new IncomingEntryPointBackendServer("ijklm","10.98.71.1", "9090", new HashMap<>());
+        IncomingEntryPointBackendServer server = new IncomingEntryPointBackendServer("ijklm", "10.98.71.1", "9090", new HashMap<>());
         Map<String, String> backendContext = new HashMap<>();
         backendContext.put("key1", "value1");
         backendContext.put("key2", "value2");
@@ -677,7 +679,7 @@ public class EntryPointEventHandlerTest {
         Map<String, String> oldServerContext = new HashMap<>();
         oldServerContext.put("key1", "value1");
         oldServerContext.put("key2", "value2");
-        EntryPointBackendServer oldServer = new EntryPointBackendServer("ijklm",  "10.98.71.1", "9090", oldServerContext, new HashMap<>());
+        EntryPointBackendServer oldServer = new EntryPointBackendServer("ijklm", "10.98.71.1", "9090", oldServerContext, new HashMap<>());
 
         Map<String, String> newServerContext = new HashMap<>();
         newServerContext.put("key1", "value1bis");
@@ -697,7 +699,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
-        EntryPointBackendServer bs = new EntryPointBackendServer("ijklm","10.98.71.2", "9092", newServerContext, new HashMap<>());
+        EntryPointBackendServer bs = new EntryPointBackendServer("ijklm", "10.98.71.2", "9092", newServerContext, new HashMap<>());
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", Sets.newHashSet(bs), new HashMap<>());
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
@@ -775,7 +777,7 @@ public class EntryPointEventHandlerTest {
         Map<String, String> serverUserContext = new HashMap<>();
         serverUserContext.put("key1", "value3");
         serverUserContext.put("key2", "value4");
-        EntryPointBackendServer server = new EntryPointBackendServer("ijklm",  "10.98.71.1", "9090", serverContext, serverUserContext);
+        EntryPointBackendServer server = new EntryPointBackendServer("ijklm", "10.98.71.1", "9090", serverContext, serverUserContext);
 
         Map<String, String> backendContext = new HashMap<>();
         backendContext.put("key1", "value1");
@@ -790,7 +792,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
-        IncomingEntryPointBackendServer newServerInEvent = new IncomingEntryPointBackendServer("ijklm",  "10.98.71.2", "9092", new HashMap<>());
+        IncomingEntryPointBackendServer newServerInEvent = new IncomingEntryPointBackendServer("ijklm", "10.98.71.2", "9092", new HashMap<>());
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "NEWBACKEND", ImmutableSet.of(newServerInEvent));
 
         EntryPointBackendServer expectedServer = new EntryPointBackendServer("ijklm", "10.98.71.2", "9092", new HashMap<>(), serverUserContext);

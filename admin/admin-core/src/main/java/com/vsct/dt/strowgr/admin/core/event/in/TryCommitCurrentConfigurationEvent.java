@@ -21,7 +21,7 @@ import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 
 /**
  * Event triggered when current configuration is commiting.
- *
+ * <p>
  * Created by william_montaz on 05/02/2016.
  */
 public class TryCommitCurrentConfigurationEvent extends EntryPointEvent {
@@ -30,4 +30,8 @@ public class TryCommitCurrentConfigurationEvent extends EntryPointEvent {
         super(correlationId, key);
     }
 
+    @Override
+    public String toString() {
+        return "TryCommitCurrentConfigurationEvent " + super.toString();
+    }
 }

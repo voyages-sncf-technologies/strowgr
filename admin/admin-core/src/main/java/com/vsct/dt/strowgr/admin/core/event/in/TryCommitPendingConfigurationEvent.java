@@ -28,4 +28,8 @@ public class TryCommitPendingConfigurationEvent extends EntryPointEvent {
         super(correlationId, key);
     }
 
+    @Override
+    public String toString() {
+        return "TryCommitPendingConfigurationEvent " + super.toString();
+    }
 }

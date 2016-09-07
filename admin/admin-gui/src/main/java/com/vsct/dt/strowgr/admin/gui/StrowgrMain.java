@@ -113,7 +113,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* EntryPoint State Machine */
         EntryPointEventHandler eventHandler = EntryPointEventHandler
-                .backedBy(repository)
+                .backedBy(repository, repository)
                 .getPortsWith(repository)
                 .findTemplatesWith(templateLocator)
                 .generatesTemplatesWith(templateGenerator)
@@ -156,8 +156,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         eventBus.register(new ToNSQSubscriber(new NSQDispatcher(nsqProducer)));
 
         /* Commit schedulers */
-        configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, repository, eventBus::post, environment);
-        configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, repository, eventBus::post, environment);
+        configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
+        configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
 
         /* REST Resources */
         EntrypointResources restApiResource = new EntrypointResources(eventBus, repository);
