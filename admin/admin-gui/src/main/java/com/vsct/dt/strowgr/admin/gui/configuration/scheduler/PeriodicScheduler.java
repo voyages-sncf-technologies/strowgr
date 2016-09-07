@@ -25,6 +25,9 @@ import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -36,47 +39,36 @@ import java.util.function.Function;
 public class PeriodicScheduler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicScheduler.class);
 
+    private final ScheduledExecutorService scheduledExecutorService;
     private final EntryPointRepository entryPointRepository;
     private final Consumer<T> consumer;
     private final Function<String, T> provider;
     private final long periodMilli;
-    private volatile boolean stop = false;
-
-    private final Thread automaticScheduler = new Thread(new Runnable() {
-        @Override
-        public void run() {
-            while (!stop) {
-                try {
-                    Thread.sleep(periodMilli);
-                } catch (InterruptedException e) {
-                    LOGGER.error("a sleep interruption", e);
-                    return;
-                }
-                try {
-                    for (String ep : entryPointRepository.getEntryPointsId()) {
-                        consumer.accept(provider.apply(ep));
-                    }
-                } catch (Throwable t) {
-                    LOGGER.error("PeriodicScheduler failed.", t);
-                }
-            }
-        }
-    });
 
     public PeriodicScheduler(EntryPointRepository entryPointRepository, Function<String, T> provider, Consumer<T> consumer, long periodMilli) {
         this.entryPointRepository = entryPointRepository;
         this.consumer = consumer;
         this.provider = provider;
         this.periodMilli = periodMilli;
+        scheduledExecutorService = Executors.newScheduledThreadPool(1);
     }
 
     public void start() {
-        automaticScheduler.setDaemon(true);
-        automaticScheduler.start();
+        scheduledExecutorService.scheduleAtFixedRate(
+                () -> {
+                    try {
+                        for (String ep : entryPointRepository.getEntryPointsId()) {
+                            consumer.accept(provider.apply(ep));
+                        }
+                    } catch (Throwable t) {
+                        LOGGER.error("PeriodicScheduler failed.", t);
+                    }
+                }
+                , 0, periodMilli, TimeUnit.SECONDS);
     }
 
     public void stop() {
-        stop = true;
+        scheduledExecutorService.shutdown();
     }
 
     public static PeriodicScheduler<TryCommitPendingConfigurationEvent> newPeriodicCommitPendingScheduler(EntryPointRepository repository, Consumer<TryCommitPendingConfigurationEvent> consumer, long period) {
