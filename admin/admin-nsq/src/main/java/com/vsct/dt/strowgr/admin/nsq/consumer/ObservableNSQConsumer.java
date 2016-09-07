@@ -56,7 +56,7 @@ public abstract class ObservableNSQConsumer<T> {
 
             emitter.setCancellation(() -> consumer.shutdown());
 
-        }, AsyncEmitter.BackpressureMode.ERROR);
+        }, AsyncEmitter.BackpressureMode.BUFFER);
     }
 
     public Observable<T> observe() {
