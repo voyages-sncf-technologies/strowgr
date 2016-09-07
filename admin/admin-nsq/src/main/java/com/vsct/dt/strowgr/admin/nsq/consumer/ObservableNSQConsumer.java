@@ -10,6 +10,9 @@ import rx.AsyncEmitter;
 import rx.Observable;
 import rx.exceptions.Exceptions;
 
+import java.util.Optional;
+import java.util.function.Function;
+
 /**
  * ~  Copyright (C) 2016 VSCT
  * ~
@@ -76,15 +79,15 @@ public abstract class ObservableNSQConsumer<T> {
     }
 
     public Observable<T> observe() {
-        return observable.map(this::transformSafe);
+        return observable.map(this::transformSafe).filter(Optional::isPresent).map(Optional::get); //We don't want to stop the observable on error
     }
 
-    private T transformSafe(NSQMessage nsqMessage) {
+    private Optional<T> transformSafe(NSQMessage nsqMessage) {
         try {
-            return transform(nsqMessage);
+            return Optional.ofNullable(transform(nsqMessage));
         } catch (Exception e) {
-            LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + new String(nsqMessage.getId()) + ", payload=" + new String(nsqMessage.getMessage()), e);
-            throw Exceptions.propagate(e);
+            LOGGER.error("can't deserialize the payload of message at {}, id={}, payload={}", nsqMessage.getTimestamp(), new String(nsqMessage.getId()), new String(nsqMessage.getMessage()), e);
+            return Optional.empty();
         } finally {
             nsqMessage.finished();
         }

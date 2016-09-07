@@ -55,7 +55,7 @@ public class NSQToEventBusSubscriber extends Subscriber {
 
     @Override
     public void onError(Throwable e) {
-        LOGGER.error("An error happened while observing nsq events", e);
+        LOGGER.error("An unexpected error happened while observing nsq events", e);
     }
 
     @Override
