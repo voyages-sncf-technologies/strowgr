@@ -36,6 +36,7 @@ import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
 import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
 import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
+import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
@@ -93,6 +94,11 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
     @Override
     public void run(StrowgrConfiguration configuration, Environment environment) throws Exception {
         LOGGER.info("start dropwizard configuration");
+
+        /* Allow the use of another NSQ channel for development purposes */
+        if(configuration.getNsqChannel() != null){
+            NSQ.CHANNEL = configuration.getNsqChannel();
+        }
 
         /* Main EventBus */
         ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(new ArrayBlockingQueue<>(100)).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
@@ -175,7 +181,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         eventBus.register(restApiResource);
 
         /* Http Client */
-        final CloseableHttpClient httpClient = new HttpClientBuilder(environment)
+        CloseableHttpClient httpClient = new HttpClientBuilder(environment)
                 .using(configuration.getHttpClientConfiguration())
                 .build("http-client");
         NSQHttpClient nsqdHttpClient = new NSQHttpClient("http://" + configuration.getNsqProducerFactory().getHost() + ":" + configuration.getNsqProducerFactory().getHttpPort(), httpClient);

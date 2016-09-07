@@ -18,6 +18,6 @@ package com.vsct.dt.strowgr.admin.nsq;
  */
 public class NSQ {
 
-    public static final String CHANNEL      = "admin";
+    public static String CHANNEL = "admin";
 
 }

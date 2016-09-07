@@ -69,6 +69,19 @@ public class StrowgrConfiguration extends Configuration {
     @Nullable
     private NSQConfigFactory nsqProducerConfigFactory;
 
+    @Nullable
+    private String nsqChannel;
+
+    @JsonProperty("nsqChannel")
+    public String getNsqChannel() {
+        return nsqChannel;
+    }
+
+    @JsonProperty("nsqChannel")
+    public void setNsqChannel(String nsqChannel) {
+        this.nsqChannel = nsqChannel;
+    }
+
     @JsonProperty("nsqConsumerConfigFactory")
     public NSQConfigFactory getNsqConsumerConfigFactory() {
         if(nsqProducerConfigFactory == null){
