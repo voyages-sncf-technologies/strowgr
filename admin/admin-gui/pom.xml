@@ -49,11 +49,6 @@
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
-            <artifactId>admin-scheduler</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.vsct.dt.strowgr</groupId>
             <artifactId>admin-template</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
