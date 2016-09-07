@@ -51,9 +51,6 @@ public class StrowgrConfiguration extends Configuration {
     @NotNull
     private PeriodicSchedulerFactory periodicSchedulerFactory;
 
-    @NotEmpty
-    private String defaultHAPName;
-
     @Min(1)
     private int threads;
 
@@ -102,16 +99,6 @@ public class StrowgrConfiguration extends Configuration {
     @JsonProperty("periodicScheduler")
     public void setPeriodicSchedulerFactory(PeriodicSchedulerFactory periodicSchedulerFactory) {
         this.periodicSchedulerFactory = periodicSchedulerFactory;
-    }
-
-    @JsonProperty("haproxyName")
-    public String getDefaultHAPName() {
-        return defaultHAPName;
-    }
-
-    @JsonProperty("haproxyName")
-    public void setDefaultHAPName(String defaultHAPName) {
-        this.defaultHAPName = defaultHAPName;
     }
 
     @JsonProperty("threads")
