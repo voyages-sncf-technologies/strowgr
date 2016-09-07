@@ -22,6 +22,11 @@ import rx.Observable;
  * ~  See the License for the specific language governing permissions and
  * ~  limitations under the License.
  * ~
+ *
+ *
+ * This class is intended to expose an NSQCOnsumer as an RXJava Observable
+ * It handles the emission of new messages, complete on shutdown and shutdown on subscriber cancellation
+ * The implementing classes just have to implement the transform method, to provided a domain oriented message instead of a raw NSQMessage
  */
 public abstract class ObservableNSQConsumer<T> {
 
@@ -63,6 +68,9 @@ public abstract class ObservableNSQConsumer<T> {
 
     protected abstract T transform(NSQMessage nsqMessage);
 
+    /**
+     * Shutsdown this consumer and advice subscriber
+     */
     public void shutdown() {
         if (consumer != null) {
             consumer.shutdown();

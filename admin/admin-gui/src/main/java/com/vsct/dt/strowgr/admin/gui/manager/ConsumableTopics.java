@@ -41,7 +41,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * NSQ client manager by Dropwizard.
+ * This class listens on consul repository to find which haproxies are suceptible to produce messages
+ * Once repository is queries it will
+ *      - determine which haproxies are no more listened to and shutsdown there related consumers
+ *      - determine which haproxies are new and have to be listened to, creates their related consumers and emit their observables
+ * Thanks to observable semantics, this class provides an observable of all events that will be produced by the haproxies supposed to be managed
  */
 public class ConsumableTopics implements Managed {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumableTopics.class);
@@ -69,7 +73,7 @@ public class ConsumableTopics implements Managed {
             scheduledExecutorService.scheduleAtFixedRate(() -> refreshHaproxyTopicsConsumers(repository, emitter), 0, periodSecond, TimeUnit.SECONDS);
             /* Stop when cancelled */
             emitter.setCancellation(this::stop);
-        }, AsyncEmitter.BackpressureMode.BUFFER).flatMap(consumer -> consumer.observe()).publish();//We dont want to loose any subscription (they wont happen a lot !)
+        }, AsyncEmitter.BackpressureMode.BUFFER).flatMap(consumer -> consumer.observe()).publish();//We dont want to loose any message (they wont happen a lot !)
     }
 
     public ConnectableObservable<? extends EntryPointEvent> observe() {
@@ -117,16 +121,25 @@ public class ConsumableTopics implements Managed {
         emitter.onNext(commitFailedConsumer);
     }
 
+    /**
+     * Since ConsumableTopics exposes a ConnectableObservable, this method connects it
+     * @throws Exception
+     */
     @Override
     public void start() throws Exception {
         observable.connect();
     }
 
+    /**
+     * Stop watching repository and advice subscribers
+     * @throws Exception
+     */
     @Override
     public void stop() throws Exception {
         LOGGER.info("stop all nsqconsumers");
         scheduledExecutorService.shutdown();
         if (emitter != null) {
+            //onCompleted will cascade on nsqconsumers
             emitter.onCompleted();
         }
     }

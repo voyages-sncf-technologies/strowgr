@@ -33,6 +33,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Consumer;
 
+/**
+ * This consumer listens to the commit_completed events for a specific haproxy
+ */
 public class CommitCompletedConsumer extends ObservableNSQConsumer<CommitSuccessEvent> {
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumer.class);
 

@@ -31,6 +31,9 @@ import rx.exceptions.Exceptions;
 import java.io.IOException;
 import java.util.Arrays;
 
+/**
+ * This consumer listens to the register_server events
+ */
 public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServerEvent> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServerConsumer.class);
 
