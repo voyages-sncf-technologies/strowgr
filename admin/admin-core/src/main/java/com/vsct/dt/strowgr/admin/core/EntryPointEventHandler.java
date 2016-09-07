@@ -179,6 +179,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(CommitSuccessEvent event) {
+        LOGGER.debug("Handle CommitSuccessEvent");
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);

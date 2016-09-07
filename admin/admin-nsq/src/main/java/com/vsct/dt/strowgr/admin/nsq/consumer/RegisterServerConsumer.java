@@ -25,6 +25,8 @@ import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.RegisterServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
@@ -32,6 +34,8 @@ import java.util.Arrays;
  * This consumer listens to the register_server events
  */
 public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServerEvent> {
+
+    private static final Logger LOGGER  = LoggerFactory.getLogger(RegisterServerConsumer.class);
 
     private static final String CHANNEL = "admin";
     private static final String TOPIC   = "register_server";
@@ -46,12 +50,15 @@ public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServer
     @Override
     protected RegisterServerEvent transform(NSQMessage nsqMessage) throws Exception {
         RegisterServer payload = objectMapper.readValue(nsqMessage.getMessage(), RegisterServer.class);
+
         if (payload.getHeader().getCorrelationId() == null) {
             payload.getHeader().setCorrelationId(Arrays.toString(nsqMessage.getId()));
         }
         if (payload.getHeader().getTimestamp() == null) {
             payload.getHeader().setTimestamp(nsqMessage.getTimestamp().getTime());
         }
+
+        LOGGER.debug("received an new RegisterServerEvent with cid {}", payload.getHeader().getCorrelationId());
 
         return new RegisterServerEvent(payload.getHeader().getCorrelationId(),
                 new EntryPointKeyVsctImpl(payload.getHeader().getApplication(), payload.getHeader().getPlatform()),

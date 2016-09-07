@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
  */
 public class CommitCompletedConsumer extends ObservableNSQConsumer<CommitSuccessEvent> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumer.class);
+
     private static final String TOPIC_PREFIX = "commit_completed_";
 
     private final ObjectMapper objectMapper;
@@ -44,6 +46,9 @@ public class CommitCompletedConsumer extends ObservableNSQConsumer<CommitSuccess
     @Override
     protected CommitSuccessEvent transform(NSQMessage nsqMessage) throws Exception {
         CommitCompleted payload = objectMapper.readValue(nsqMessage.getMessage(), CommitCompleted.class);
+
+        LOGGER.debug("received an new CommitSuccesEvent with cid {}", payload.getHeader().getCorrelationId());
+
         return new CommitSuccessEvent(
                 payload.getHeader().getCorrelationId(),
                 new EntryPointKeyVsctImpl(

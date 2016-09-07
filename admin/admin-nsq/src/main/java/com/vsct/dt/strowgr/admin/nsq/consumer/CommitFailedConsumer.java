@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
  */
 public class CommitFailedConsumer extends ObservableNSQConsumer<CommitFailureEvent> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumer.class);
+
     private static final String TOPIC_PREFIX = "commit_failed_";
 
     private final ObjectMapper objectMapper;
@@ -44,6 +46,9 @@ public class CommitFailedConsumer extends ObservableNSQConsumer<CommitFailureEve
     @Override
     protected CommitFailureEvent transform(NSQMessage nsqMessage) throws Exception {
         CommitFailed payload = objectMapper.readValue(nsqMessage.getMessage(), CommitFailed.class);
+
+        LOGGER.debug("received an new CommitFailureEvent with cid {}", payload.getHeader().getCorrelationId());
+
         return new CommitFailureEvent(
                 payload.getHeader().getCorrelationId(),
                 new EntryPointKeyVsctImpl(
