@@ -4,8 +4,11 @@ import com.github.brainlag.nsq.NSQConfig;
 import com.github.brainlag.nsq.NSQConsumer;
 import com.github.brainlag.nsq.NSQMessage;
 import com.github.brainlag.nsq.lookup.NSQLookup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.AsyncEmitter;
 import rx.Observable;
+import rx.exceptions.Exceptions;
 
 /**
  * ~  Copyright (C) 2016 VSCT
@@ -22,13 +25,15 @@ import rx.Observable;
  * ~  See the License for the specific language governing permissions and
  * ~  limitations under the License.
  * ~
- *
- *
+ * <p>
+ * <p>
  * This class is intended to expose an NSQCOnsumer as an RXJava Observable
  * It handles the emission of new messages, complete on shutdown and shutdown on subscriber cancellation
  * The implementing classes just have to implement the transform method, to provided a domain oriented message instead of a raw NSQMessage
  */
 public abstract class ObservableNSQConsumer<T> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ObservableNSQConsumer.class);
 
     private final Observable<NSQMessage> observable;
 
@@ -61,12 +66,15 @@ public abstract class ObservableNSQConsumer<T> {
     private T transformSafe(NSQMessage nsqMessage) {
         try {
             return transform(nsqMessage);
+        } catch (Exception e) {
+            LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + new String(nsqMessage.getId()) + ", payload=" + new String(nsqMessage.getMessage()), e);
+            throw Exceptions.propagate(e);
         } finally {
             nsqMessage.finished();
         }
     }
 
-    protected abstract T transform(NSQMessage nsqMessage);
+    protected abstract T transform(NSQMessage nsqMessage) throws Exception;
 
     /**
      * Shutsdown this consumer and advice subscriber

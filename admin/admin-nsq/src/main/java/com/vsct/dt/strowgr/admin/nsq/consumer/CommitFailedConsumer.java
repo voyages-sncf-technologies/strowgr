@@ -25,16 +25,11 @@ import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitFailed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.exceptions.Exceptions;
-
-import java.io.IOException;
 
 /**
  * This consumer listens to the commit_failed events for a specific haproxy
  */
 public class CommitFailedConsumer extends ObservableNSQConsumer<CommitFailureEvent> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommitFailedConsumer.class);
 
     private static final String TOPIC_PREFIX = "commit_failed_";
 
@@ -46,18 +41,13 @@ public class CommitFailedConsumer extends ObservableNSQConsumer<CommitFailureEve
     }
 
     @Override
-    protected CommitFailureEvent transform(NSQMessage nsqMessage) {
-        try {
-            CommitFailed payload = objectMapper.readValue(nsqMessage.getMessage(), CommitFailed.class);
-            return new CommitFailureEvent(
-                    payload.getHeader().getCorrelationId(),
-                    new EntryPointKeyVsctImpl(
-                            payload.getHeader().getApplication(),
-                            payload.getHeader().getPlatform())
-            );
-        } catch (IOException e) {
-            LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + new String(nsqMessage.getId()) + ", payload=" + new String(nsqMessage.getMessage()), e);
-            throw Exceptions.propagate(e);
-        }
+    protected CommitFailureEvent transform(NSQMessage nsqMessage) throws Exception {
+        CommitFailed payload = objectMapper.readValue(nsqMessage.getMessage(), CommitFailed.class);
+        return new CommitFailureEvent(
+                payload.getHeader().getCorrelationId(),
+                new EntryPointKeyVsctImpl(
+                        payload.getHeader().getApplication(),
+                        payload.getHeader().getPlatform())
+        );
     }
 }

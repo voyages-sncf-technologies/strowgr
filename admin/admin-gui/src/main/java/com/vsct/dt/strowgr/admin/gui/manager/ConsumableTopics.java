@@ -90,7 +90,6 @@ public class ConsumableTopics implements Managed {
                 .collect(Collectors.toSet());
 
         // Stop consumers and remove them from store map
-        // TODO Could be more RXJava compliant to do the shutdown during unsubscription/cancellation of the subscriber
         removedHaproxies.forEach(this::shutdownAndRemoveConsumers);
 
         // Find all new haproxies
