@@ -20,10 +20,14 @@ package com.vsct.dt.strowgr.admin.repository.consul;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.io.IOException;
+import java.util.Optional;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -81,5 +85,64 @@ public class ConsulRepositoryTest {
         verify(closeableHttpClient, times(10)).execute(any(HttpPut.class), any(ResponseHandler.class));
     }
 
+    @Test
+    public void should_return_isdisabled_false_if_entrypoint_disabled_key_is_absent() throws IOException {
+        // given
+        ConsulReader consulReader = mock(ConsulReader.class);
+        CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
+        ConsulRepository consulRepository = new ConsulRepository("localhost", 50080, 32_000, 64_000, null, consulReader, closeableHttpClient);
+        when(closeableHttpClient.execute(any(HttpGet.class), any(ResponseHandler.class))).thenReturn(Optional.empty());
 
+        // test
+        boolean result = consulRepository.isDisabled(new EntryPointKeyDefaultImpl("test"));
+
+        // check
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    public void should_return_isdisabled_false_if_entrypoint_disabled_key_valued_at_true() throws IOException {
+        // given
+        ConsulReader consulReader = mock(ConsulReader.class);
+        CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
+        ConsulRepository consulRepository = new ConsulRepository("localhost", 50080, 32_000, 64_000, null, consulReader, closeableHttpClient);
+        when(closeableHttpClient.execute(any(HttpGet.class), any(ResponseHandler.class))).thenReturn(Optional.of(Boolean.FALSE));
+
+        // test
+        boolean result = consulRepository.isDisabled(new EntryPointKeyDefaultImpl("test"));
+
+        // check
+        assertThat(result).isFalse();
+    }
+
+
+    @Test
+    public void should_return_isdisabled_true_if_consul_request_fails() throws IOException {
+        // given
+        ConsulReader consulReader = mock(ConsulReader.class);
+        CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
+        ConsulRepository consulRepository = new ConsulRepository("localhost", 50080, 32_000, 64_000, null, consulReader, closeableHttpClient);
+        when(closeableHttpClient.execute(any(HttpGet.class), any(ResponseHandler.class))).thenThrow(new IOException());
+
+        // test
+        boolean result = consulRepository.isDisabled(new EntryPointKeyDefaultImpl("test"));
+
+        // check
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    public void should_return_isdisabled_true_if_disabled_key_valued_at_true() throws IOException {
+        // given
+        ConsulReader consulReader = mock(ConsulReader.class);
+        CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
+        ConsulRepository consulRepository = new ConsulRepository("localhost", 50080, 32_000, 64_000, null, consulReader, closeableHttpClient);
+        when(closeableHttpClient.execute(any(HttpGet.class), any(ResponseHandler.class))).thenReturn(Optional.of(Boolean.TRUE));
+
+        // test
+        boolean result = consulRepository.isDisabled(new EntryPointKeyDefaultImpl("test"));
+
+        // check
+        assertThat(result).isTrue();
+    }
 }

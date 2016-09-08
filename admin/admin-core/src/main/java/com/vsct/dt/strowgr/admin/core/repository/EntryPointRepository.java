@@ -69,6 +69,14 @@ public interface EntryPointRepository {
 
     boolean lock(EntryPointKey key);
 
+    /**
+     * Check if the entrypoint is disabled or not.
+     *
+     * @param entryPointKey to check
+     * @return true if entryPointKey field 'disabled' is present and valued at something different of 'true' or if request to consul server fails. False otherwise.
+     */
+    boolean isDisabled(EntryPointKey entryPointKey);
+
     void release(EntryPointKey key);
 
     Optional<String> getCommitCorrelationId(EntryPointKey key);

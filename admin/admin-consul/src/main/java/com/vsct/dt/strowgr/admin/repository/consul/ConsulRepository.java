@@ -147,6 +147,24 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         return session;
     }
 
+    // TODO add a cache or play with RXJava (!?) to limit calls to consul
+    @Override
+    public boolean isDisabled(EntryPointKey entryPointKey) {
+        boolean isDisabled = true;
+        HttpGet getEntryPointDisabledKey = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/disabled?raw");
+        try {
+            Optional<Boolean> disabledKey = client.execute(getEntryPointDisabledKey, response -> consulReader.parseHttpResponseAccepting404(response, consulReader::parseBooleanFromHttpEntity));
+            if (disabledKey.isPresent() && disabledKey.get()) {
+                LOGGER.info("The entrypoint {} will be disabled. Uri {} returns true content.", entryPointKey, getEntryPointDisabledKey.getRequestLine().getUri());
+            } else {
+                isDisabled = false;
+            }
+        } catch (IOException e) {
+            LOGGER.error("a problem occurs during call to consul. The entrypoint " + entryPointKey + " will be considered disabled. Http get on: http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/enable?raw", e);
+        }
+        return isDisabled;
+    }
+
     @Override
     public void release(EntryPointKey key) {
         try {
@@ -465,6 +483,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         return result;
     }
 
+    // TODO add a cache or play with RXJava (!?) to limit calls to consul
     @Override
     public Optional<Set<String>> getDisabledHaproxyIds() {
         Optional<Map<String, Map<String, String>>> haproxyProperties = getHaproxyProperties();

@@ -71,6 +71,16 @@ public class EntryPointStateManager {
     }
 
     /**
+     * Check if the entrypoint is disabled or not.
+     *
+     * @param entryPointKey to check
+     * @return true if entryPointKey field 'disabled' is present and valued at something different of 'true' or if request to consul server fails. False otherwise.
+     */
+    boolean isDisabled(EntryPointKey entryPointKey) {
+        return repository.isDisabled(entryPointKey);
+    }
+
+    /**
      * Puts a configuration in pending state.
      * The configuration will be pending only if it is different
      * from possible existing committing or current configuration
@@ -106,8 +116,8 @@ public class EntryPointStateManager {
     /**
      * Put the pending configuration in committing state, only if there is not already a configuration in committing state
      *
-     * @param correlationId
-     * @param key of the entrypoint
+     * @param correlationId of the originate event
+     * @param key           of the entrypoint
      * @return the new committing configuration (optional)
      */
     Optional<EntryPoint> tryCommitPending(String correlationId, EntryPointKey key) {
@@ -131,8 +141,8 @@ public class EntryPointStateManager {
     /**
      * Put the current configuration in committing state, only if there is not already a configuration in committing state
      *
-     * @param correlationId
-     * @param key of the entrypoint
+     * @param correlationId of the originate event
+     * @param key           of the entrypoint
      * @return the new committing configuration (optional)
      */
     Optional<EntryPoint> tryCommitCurrent(String correlationId, EntryPointKey key) {
