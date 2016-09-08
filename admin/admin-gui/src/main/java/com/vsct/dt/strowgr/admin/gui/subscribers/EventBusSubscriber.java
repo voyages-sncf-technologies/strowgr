@@ -27,7 +27,7 @@ import java.util.concurrent.RejectedExecutionException;
  * <p>
  * THIS CLASS IS TEMPORARY AND WILL BE REMOVED WHEN WE WILL GET RID OF THE EVENT BUS
  */
-public class NSQToEventBusSubscriber extends Subscriber {
+public class EventBusSubscriber extends Subscriber {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsumableHAPTopics.class);
 
@@ -36,7 +36,7 @@ public class NSQToEventBusSubscriber extends Subscriber {
 
     private int remaining = 0;
 
-    public NSQToEventBusSubscriber(EventBus eventBus, BlockingQueue eventBusQueue) {
+    public EventBusSubscriber(EventBus eventBus, BlockingQueue eventBusQueue) {
         this.eventBus = eventBus;
         this.eventBusQueue = eventBusQueue;
     }
@@ -66,6 +66,7 @@ public class NSQToEventBusSubscriber extends Subscriber {
         while (!published) {
             try {
                 eventBus.post(event);
+                published = true;
             } catch (RejectedExecutionException e) {
 
             }

@@ -34,7 +34,7 @@ import com.vsct.dt.strowgr.admin.gui.manager.NSQProducerManager;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
-import com.vsct.dt.strowgr.admin.gui.subscribers.NSQToEventBusSubscriber;
+import com.vsct.dt.strowgr.admin.gui.subscribers.EventBusSubscriber;
 import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
 import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
@@ -62,7 +62,6 @@ import rx.schedulers.Schedulers;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -150,12 +149,12 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ConsumableHAPTopics consumableTopics = new ConsumableHAPTopics(repository, nsqLookup, consumerNsqConfig, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
         Observable hapTopicsObservable = consumableTopics.observe();
 
-        Observable nsqEventsObservable = registerServerObservable.mergeWith(registerServerObservable);
+        Observable nsqEventsObservable = hapTopicsObservable.mergeWith(registerServerObservable);
 
         //Push all nsq events to eventBus
         //We observeOn a single thread to avoid blocking nio eventloops
         //NSQToEventBusSubscriber applies backpressure in regard to the eventBusQueue
-        nsqEventsObservable.observeOn(Schedulers.newThread()).subscribe(new NSQToEventBusSubscriber(eventBus, eventBusQueue));
+        nsqEventsObservable.observeOn(Schedulers.newThread()).subscribe(new EventBusSubscriber(eventBus, eventBusQueue));
 
         /* Manage resources */
         environment.lifecycle().manage(consumableTopics);
