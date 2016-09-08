@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import rx.AsyncEmitter;
 import rx.Observable;
 import rx.exceptions.Exceptions;
+import rx.observables.ConnectableObservable;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -78,8 +79,12 @@ public abstract class ObservableNSQConsumer<T> {
         }, AsyncEmitter.BackpressureMode.BUFFER);
     }
 
-    public Observable<T> observe() {
-        return observable.map(this::transformSafe).filter(Optional::isPresent).map(Optional::get); //We don't want to stop the observable on error
+    public ConnectableObservable<T> observe() {
+        return observable
+                .map(this::transformSafe)
+                .filter(Optional::isPresent)
+                .map(Optional::get) //We don't want to stop the observable on error
+                .publish(); //Make this observable connectable
     }
 
     private Optional<T> transformSafe(NSQMessage nsqMessage) {
