@@ -15,7 +15,7 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.gui.manager;
+package com.vsct.dt.strowgr.admin.gui.managed;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.lookup.NSQLookup;

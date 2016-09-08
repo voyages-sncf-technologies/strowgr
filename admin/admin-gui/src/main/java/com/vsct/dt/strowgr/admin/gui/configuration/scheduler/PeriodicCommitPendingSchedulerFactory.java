@@ -29,11 +29,11 @@ import javax.validation.constraints.Min;
 import java.util.function.Consumer;
 
 /**
+ * Retrieve configuration for CommitPending scheduler.
+ *
  * Created by william_montaz on 16/02/2016.
  */
 public class PeriodicCommitPendingSchedulerFactory {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicCommitPendingSchedulerFactory.class);
 
     @Min(1)
     private long periodMilli;
@@ -48,21 +48,4 @@ public class PeriodicCommitPendingSchedulerFactory {
         this.periodMilli = periodMilli;
     }
 
-    public PeriodicScheduler build(EntryPointRepository entryPointRepository, Consumer<TryCommitPendingConfigurationEvent> consumer, Environment environment) {
-        PeriodicScheduler scheduler = PeriodicScheduler.newPeriodicCommitPendingScheduler(entryPointRepository, consumer, getPeriodMilli());
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                LOGGER.info("Starting CommitPendingScheduler");
-                scheduler.start();
-            }
-
-            @Override
-            public void stop() throws Exception {
-                LOGGER.info("Stopping CommitPendingScheduler");
-                scheduler.stop();
-            }
-        });
-        return scheduler;
-    }
 }

@@ -22,14 +22,19 @@ import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.*;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
+import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
+import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
+import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
-import com.vsct.dt.strowgr.admin.gui.manager.ConsumableTopics;
-import com.vsct.dt.strowgr.admin.gui.manager.NSQProducerManager;
+import com.vsct.dt.strowgr.admin.gui.managed.ConsumableTopics;
+import com.vsct.dt.strowgr.admin.gui.managed.NSQProducerManaged;
+import com.vsct.dt.strowgr.admin.gui.managed.SchedulerManaged;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
@@ -151,13 +156,30 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         /* NSQ Producers */
         NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();
         // manage NSQProducer lifecycle by Dropwizard
-        environment.lifecycle().manage(new NSQProducerManager(nsqProducer));
+        environment.lifecycle().manage(new NSQProducerManaged(nsqProducer));
         // Pipeline from eventbus to NSQ producer
         eventBus.register(new ToNSQSubscriber(new NSQDispatcher(nsqProducer)));
 
         /* Commit schedulers */
-        configuration.getPeriodicSchedulerFactory().getPeriodicCommitCurrentSchedulerFactory().build(repository, eventBus::post, environment);
-        configuration.getPeriodicSchedulerFactory().getPeriodicCommitPendingSchedulerFactory().build(repository, eventBus::post, environment);
+        long periodMilliPendingCurrentScheduler = configuration
+                .getPeriodicSchedulerFactory()
+                .getPeriodicCommitPendingSchedulerFactory()
+                .getPeriodMilli();
+        long periodMilliCommitCurrentScheduler = configuration
+                .getPeriodicSchedulerFactory()
+                .getPeriodicCommitCurrentSchedulerFactory()
+                .getPeriodMilli();
+
+
+        SchedulerManaged<TryCommitPendingConfigurationEvent> commitPendingScheduler = new SchedulerManaged<>("Commit Pending", repository, ep ->
+                new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)),
+                eventBus::post, periodMilliPendingCurrentScheduler);
+        environment.lifecycle().manage(commitPendingScheduler);
+
+        SchedulerManaged<TryCommitCurrentConfigurationEvent> commitCurrentScheduler = new SchedulerManaged<>("Commit Current", repository, ep ->
+                new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)),
+                eventBus::post, periodMilliCommitCurrentScheduler);
+        environment.lifecycle().manage(commitCurrentScheduler);
 
         /* REST Resources */
         EntrypointResources restApiResource = new EntrypointResources(eventBus, repository);

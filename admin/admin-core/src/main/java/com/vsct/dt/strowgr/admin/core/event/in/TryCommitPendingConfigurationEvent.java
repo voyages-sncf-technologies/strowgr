@@ -20,6 +20,8 @@ package com.vsct.dt.strowgr.admin.core.event.in;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 
 /**
+ * Event triggered when pending configuration is committing.
+ *
  * Created by william_montaz on 05/02/2016.
  */
 public class TryCommitPendingConfigurationEvent extends EntryPointEvent {

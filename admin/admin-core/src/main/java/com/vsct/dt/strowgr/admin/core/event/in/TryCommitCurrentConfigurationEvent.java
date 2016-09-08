@@ -20,7 +20,7 @@ package com.vsct.dt.strowgr.admin.core.event.in;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 
 /**
- * Event triggered when current configuration is commiting.
+ * Event triggered when current configuration is committing.
  * <p>
  * Created by william_montaz on 05/02/2016.
  */

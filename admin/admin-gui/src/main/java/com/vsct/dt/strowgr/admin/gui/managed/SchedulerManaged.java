@@ -15,13 +15,10 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.gui.configuration.scheduler;
+package com.vsct.dt.strowgr.admin.gui.managed;
 
-import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
-import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
-import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
-import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import io.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,21 +28,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/**
- * Schedule entrypoint lifecycles.
- * <p>
- * Created by william_montaz on 11/02/2016.
- */
-public class PeriodicScheduler<T> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicScheduler.class);
+public class SchedulerManaged<T> implements Managed {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerManaged.class);
 
+    private final String name; // mainly for logging
     private final ScheduledExecutorService scheduledExecutorService;
     private final EntryPointRepository entryPointRepository;
     private final Consumer<T> consumer;
     private final Function<String, T> provider;
     private final long periodMilli;
 
-    public PeriodicScheduler(EntryPointRepository entryPointRepository, Function<String, T> provider, Consumer<T> consumer, long periodMilli) {
+    public SchedulerManaged(String name, EntryPointRepository entryPointRepository, Function<String, T> provider, Consumer<T> consumer, long periodMilli) {
+        this.name = name;
         this.entryPointRepository = entryPointRepository;
         this.consumer = consumer;
         this.provider = provider;
@@ -53,7 +47,8 @@ public class PeriodicScheduler<T> {
         scheduledExecutorService = Executors.newScheduledThreadPool(1);
     }
 
-    public void start() {
+    @Override
+    public void start() throws Exception {
         scheduledExecutorService.scheduleAtFixedRate(
                 () -> {
                     try {
@@ -65,18 +60,14 @@ public class PeriodicScheduler<T> {
                     }
                 }
                 , 0, periodMilli, TimeUnit.SECONDS);
+        LOGGER.info("Start scheduler for {} with period of {}ms", name, periodMilli);
     }
 
-    public void stop() {
+    @Override
+    public void stop() throws Exception {
         scheduledExecutorService.shutdown();
+        LOGGER.info("Shutdown scheduler {}", name);
     }
 
-    public static PeriodicScheduler<TryCommitPendingConfigurationEvent> newPeriodicCommitPendingScheduler(EntryPointRepository repository, Consumer<TryCommitPendingConfigurationEvent> consumer, long period) {
-        return new PeriodicScheduler<>(repository, ep -> new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)), consumer, period);
-    }
-
-    public static PeriodicScheduler<TryCommitCurrentConfigurationEvent> newPeriodicCommitCurrentScheduler(EntryPointRepository entryPointRepository, Consumer<TryCommitCurrentConfigurationEvent> consumer, long period) {
-        return new PeriodicScheduler<>(entryPointRepository, ep -> new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)), consumer, period);
-    }
 
 }

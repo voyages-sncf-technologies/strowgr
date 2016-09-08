@@ -15,7 +15,7 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.gui.manager;
+package com.vsct.dt.strowgr.admin.gui.managed;
 
 import com.github.brainlag.nsq.NSQProducer;
 import io.dropwizard.lifecycle.Managed;
@@ -25,12 +25,12 @@ import org.slf4j.LoggerFactory;
 /**
  * NSQ client manager by Dropwizard.
  */
-public class NSQProducerManager implements Managed {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NSQProducerManager.class);
+public class NSQProducerManaged implements Managed {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NSQProducerManaged.class);
 
     private final NSQProducer nsqProducer;
 
-    public NSQProducerManager(NSQProducer nsqProducer) {
+    public NSQProducerManaged(NSQProducer nsqProducer) {
         this.nsqProducer = nsqProducer;
     }
 
