@@ -76,7 +76,7 @@ public class ConsumableHAPTopics implements Managed {
             scheduledExecutorService.scheduleAtFixedRate(() -> refreshHaproxyTopicsConsumers(repository, emitter), 0, periodSecond, TimeUnit.SECONDS);
             /* Stop when cancelled */
             emitter.setCancellation(this::stop);
-        }, AsyncEmitter.BackpressureMode.BUFFER).flatMap(consumer -> consumer.observe()).publish();//We dont want to loose any message (they wont happen a lot !)
+        }, AsyncEmitter.BackpressureMode.BUFFER).flatMap(consumer -> consumer.observable()).publish();//We dont want to loose any message (they wont happen a lot !)
     }
 
     public ConnectableObservable<? extends EntryPointEvent> observe() {

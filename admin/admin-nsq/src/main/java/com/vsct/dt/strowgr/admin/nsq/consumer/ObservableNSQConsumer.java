@@ -79,7 +79,7 @@ public abstract class ObservableNSQConsumer<T> {
         }, AsyncEmitter.BackpressureMode.BUFFER);
     }
 
-    public Observable<T> observe() {
+    public Observable<T> observable() {
         return observable
                 .map(this::transformSafe)
                 .filter(Optional::isPresent)

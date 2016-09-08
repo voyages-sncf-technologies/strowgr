@@ -143,7 +143,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         NSQConfig consumerNsqConfig = configuration.getNsqConsumerConfigFactory().build();
 
         RegisterServerConsumer registerServerConsumer = new RegisterServerConsumer(nsqLookup, objectMapper, consumerNsqConfig);
-        Observable registerServerObservable = registerServerConsumer.observe();
+        Observable registerServerObservable = registerServerConsumer.observable();
 
         // This managed resource will properly handle consumers and their related observables depending on repository configuration
         ConsumableHAPTopics consumableTopics = new ConsumableHAPTopics(repository, nsqLookup, consumerNsqConfig, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
