@@ -59,7 +59,7 @@ public class SchedulerManaged<T> implements Managed {
                         LOGGER.error("PeriodicScheduler failed.", t);
                     }
                 }
-                , 0, periodMilli, TimeUnit.SECONDS);
+                , 0, periodMilli, TimeUnit.MILLISECONDS);
         LOGGER.info("Start scheduler for {} with period of {}ms", name, periodMilli);
     }
 
