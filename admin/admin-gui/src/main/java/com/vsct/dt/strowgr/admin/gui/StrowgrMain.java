@@ -34,7 +34,7 @@ import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.managed.ConsumableTopics;
 import com.vsct.dt.strowgr.admin.gui.managed.NSQProducerManaged;
-import com.vsct.dt.strowgr.admin.gui.managed.SchedulerManaged;
+import com.vsct.dt.strowgr.admin.gui.managed.CommitSchedulerManaged;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
@@ -171,12 +171,12 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .getPeriodMilli();
 
 
-        SchedulerManaged<TryCommitPendingConfigurationEvent> commitPendingScheduler = new SchedulerManaged<>("Commit Pending", repository, ep ->
+        CommitSchedulerManaged<TryCommitPendingConfigurationEvent> commitPendingScheduler = new CommitSchedulerManaged<>("Commit Pending", repository, ep ->
                 new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)),
                 eventBus::post, periodMilliPendingCurrentScheduler);
         environment.lifecycle().manage(commitPendingScheduler);
 
-        SchedulerManaged<TryCommitCurrentConfigurationEvent> commitCurrentScheduler = new SchedulerManaged<>("Commit Current", repository, ep ->
+        CommitSchedulerManaged<TryCommitCurrentConfigurationEvent> commitCurrentScheduler = new CommitSchedulerManaged<>("Commit Current", repository, ep ->
                 new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)),
                 eventBus::post, periodMilliCommitCurrentScheduler);
         environment.lifecycle().manage(commitCurrentScheduler);
