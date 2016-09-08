@@ -79,12 +79,12 @@ public abstract class ObservableNSQConsumer<T> {
         }, AsyncEmitter.BackpressureMode.BUFFER);
     }
 
-    public ConnectableObservable<T> observe() {
+    public Observable<T> observe() {
         return observable
                 .map(this::transformSafe)
                 .filter(Optional::isPresent)
                 .map(Optional::get) //We don't want to stop the observable on error
-                .publish(); //Make this observable connectable
+                .publish().refCount(); //Make this observable connectable
     }
 
     private Optional<T> transformSafe(NSQMessage nsqMessage) {
