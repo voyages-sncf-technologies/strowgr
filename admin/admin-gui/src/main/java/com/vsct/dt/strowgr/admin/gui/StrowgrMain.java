@@ -111,9 +111,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         BlockingQueue eventBusQueue = new ArrayBlockingQueue<>(100);
         ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(eventBusQueue).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
 
-        /* Executor wrapper for RXjava */
-        Scheduler executorScheduler = new ExecutorScheduler(executor);
-
         EventBus eventBus = new AsyncEventBus(executor, (exception, context) -> {
             LOGGER.error("exception on main event bus. Context: " + subscriberExceptionContextToString(context), exception);
         });
