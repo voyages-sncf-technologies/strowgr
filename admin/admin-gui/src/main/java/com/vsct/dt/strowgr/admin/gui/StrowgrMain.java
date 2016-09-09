@@ -24,13 +24,16 @@ import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.*;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
+import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
+import com.vsct.dt.strowgr.admin.gui.factory.NSQConsumersFactory;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
-import com.vsct.dt.strowgr.admin.gui.manager.ConsumableHAPTopics;
 import com.vsct.dt.strowgr.admin.gui.manager.NSQProducerManager;
+import com.vsct.dt.strowgr.admin.gui.observable.IncomingEvents;
+import com.vsct.dt.strowgr.admin.gui.observable.ManagedHaproxy;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
@@ -142,14 +145,17 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         //NSQConsumers configuration
         NSQConfig consumerNsqConfig = configuration.getNsqConsumerConfigFactory().build();
 
-        RegisterServerConsumer registerServerConsumer = new RegisterServerConsumer(nsqLookup, objectMapper, consumerNsqConfig);
-        Observable registerServerObservable = registerServerConsumer.observable();
+        NSQConsumersFactory nsqConsumersFactory = NSQConsumersFactory.make(nsqLookup, consumerNsqConfig, objectMapper);
 
-        // This managed resource will properly handle consumers and their related observables depending on repository configuration
-        ConsumableHAPTopics consumableTopics = new ConsumableHAPTopics(repository, nsqLookup, consumerNsqConfig, objectMapper, configuration.getHandledHaproxyRefreshPeriodSecond());
-        Observable hapTopicsObservable = consumableTopics.observe();
+        ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, configuration.getHandledHaproxyRefreshPeriodSecond());
+        Observable<ManagedHaproxy.HaproxyAction> hapRegistrationActionsObservable = managedHaproxy.registrationActionsObservable();
 
-        Observable nsqEventsObservable = hapTopicsObservable.mergeWith(registerServerObservable);
+        IncomingEvents incomingEvents = IncomingEvents.watch(hapRegistrationActionsObservable, nsqConsumersFactory);
+
+        Observable<EntryPointEvent> nsqEventsObservable = incomingEvents.registerServerEventObservable()
+                .map(e -> (EntryPointEvent)e)//Downcast
+                .mergeWith(incomingEvents.commitFailureEventObservale())
+                .mergeWith(incomingEvents.commitSuccessEventObservale());
 
         //Push all nsq events to eventBus
         //We observeOn a single thread to avoid blocking nio eventloops
@@ -157,15 +163,16 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         nsqEventsObservable.observeOn(Schedulers.newThread()).subscribe(new EventBusSubscriber(eventBus, eventBusQueue));
 
         /* Manage resources */
-        environment.lifecycle().manage(consumableTopics);
         environment.lifecycle().manage(new Managed() {
             @Override
             public void start() throws Exception {
+                managedHaproxy.startLookup();
             }
 
             @Override
             public void stop() throws Exception {
-                registerServerConsumer.shutdown();
+                managedHaproxy.stopLookup();
+                incomingEvents.shutdownConsumers();
             }
         });
 

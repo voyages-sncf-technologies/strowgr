@@ -3,8 +3,8 @@ package com.vsct.dt.strowgr.admin.gui.observable;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
 import org.junit.Before;
 import org.junit.Test;
+import rx.Observable;
 import rx.Subscription;
-import rx.observables.ConnectableObservable;
 import rx.schedulers.TestScheduler;
 
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
 
@@ -43,22 +43,25 @@ public class ManagedHaproxyTest {
     }
 
     @Test
-    public void should_observe_registration(){
+    public void should_observe_registration_actions(){
         HashSet<String> managedHap = new HashSet<>();
         managedHap.add("hap1");
         managedHap.add("hap2");
         when(repository.getHaproxyIds()).thenReturn(Optional.of(managedHap));
 
         TestScheduler scheduler = new TestScheduler();
-        ConnectableObservable<String> registerHaproxyObservable = ManagedHaproxy.create(repository, 1, scheduler).haproxyRegisterObservable();
+        ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, 1, scheduler);
+        Observable<ManagedHaproxy.HaproxyAction> registrationActionsObservable = managedHaproxy.registrationActionsObservable();
 
         /* Use list to also count elements */
         List<String> registeredHap = new ArrayList<>();
-        Subscription s = registerHaproxyObservable.subscribe(id -> {
-            registeredHap.add(id);
+        Subscription s = registrationActionsObservable.subscribe(a -> {
+            if(a.isRegistration()){
+                registeredHap.add(a.getId());
+            }
         });
 
-        registerHaproxyObservable.connect();
+        managedHaproxy.startLookup();
 
         scheduler.advanceTimeBy(10, TimeUnit.SECONDS);
 
@@ -73,7 +76,7 @@ public class ManagedHaproxyTest {
     }
 
     @Test
-    public void should_observe_unregistration(){
+    public void should_observe_unregistration_actions(){
         HashSet<String> managedHap = new HashSet<>();
         managedHap.add("hap1");
         managedHap.add("hap2");
@@ -82,15 +85,18 @@ public class ManagedHaproxyTest {
         when(repository.getHaproxyIds()).thenReturn(Optional.of(managedHap));
 
         TestScheduler scheduler = new TestScheduler();
-        ConnectableObservable<String> unregisterHaproxyObservable = ManagedHaproxy.create(repository, 1, scheduler).haproxyUnregisterObservable();
+        ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, 1, scheduler);
+        Observable<ManagedHaproxy.HaproxyAction> registrationActionsObservable = managedHaproxy.registrationActionsObservable();
 
         /* Use list to also count elements */
         List<String> unregisteredHap = new ArrayList<>();
-        Subscription s = unregisterHaproxyObservable.subscribe(id -> {
-            unregisteredHap.add(id);
+        Subscription s = registrationActionsObservable.subscribe(a -> {
+            if(!a.isRegistration()){
+                unregisteredHap.add(a.getId());
+            }
         });
 
-        unregisterHaproxyObservable.connect();
+        managedHaproxy.startLookup();
 
         scheduler.advanceTimeBy(10, TimeUnit.SECONDS);
 
@@ -110,4 +116,19 @@ public class ManagedHaproxyTest {
         expected.add("hap4");
         assertThat(unregisteredHap, is(expected));
     }
+
+    @Test
+    public void should_stop_observable(){
+        TestScheduler scheduler = new TestScheduler();
+        ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, 1, scheduler);
+        Observable<ManagedHaproxy.HaproxyAction> registrationActionsObservable = managedHaproxy.registrationActionsObservable();
+
+        Subscription s = registrationActionsObservable.subscribe();
+
+        managedHaproxy.startLookup();
+        managedHaproxy.stopLookup();
+
+        assertThat(s.isUnsubscribed(), is(true));
+    }
+
 }

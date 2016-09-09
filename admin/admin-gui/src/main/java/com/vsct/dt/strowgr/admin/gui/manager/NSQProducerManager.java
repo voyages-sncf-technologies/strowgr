@@ -42,7 +42,7 @@ public class NSQProducerManager implements Managed {
 
     @Override
     public void stop() throws Exception {
-        LOGGER.info("stop NSQProducer");
+        LOGGER.info("stopLookup NSQProducer");
         this.nsqProducer.shutdown();
     }
 }

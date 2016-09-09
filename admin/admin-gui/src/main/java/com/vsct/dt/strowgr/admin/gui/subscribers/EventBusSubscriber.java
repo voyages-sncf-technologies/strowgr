@@ -1,7 +1,6 @@
 package com.vsct.dt.strowgr.admin.gui.subscribers;
 
 import com.google.common.eventbus.EventBus;
-import com.vsct.dt.strowgr.admin.gui.manager.ConsumableHAPTopics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Subscriber;
@@ -29,7 +28,7 @@ import java.util.concurrent.RejectedExecutionException;
  */
 public class EventBusSubscriber extends Subscriber {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConsumableHAPTopics.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventBusSubscriber.class);
 
     private final EventBus      eventBus;
     private final BlockingQueue eventBusQueue;
@@ -74,7 +73,7 @@ public class EventBusSubscriber extends Subscriber {
 
         remaining--;
 
-        if(remaining == 0) {
+        if (remaining == 0) {
             //make sure to request at least one message
             int remainingCapacity = Math.max(1, eventBusQueue.remainingCapacity());
             request(remainingCapacity);

@@ -8,11 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.AsyncEmitter;
 import rx.Observable;
-import rx.exceptions.Exceptions;
-import rx.observables.ConnectableObservable;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * ~  Copyright (C) 2016 VSCT
@@ -34,7 +31,7 @@ import java.util.function.Function;
  * This class is intended to expose an NSQCOnsumer as an RXJava Observable
  * It handles the emission of new messages, complete on shutdown and shutdown on subscriber cancellation
  * The implementing classes just have to implement the transform method, to provided a domain oriented message instead of a raw NSQMessage
- *
+ * <p>
  * Note: observers to this observable should not be blocking, if they do, they can block the eventloop
  * if observers needs to block, when should use the observeOn method of the observable to choose a different scheduler
  */
@@ -42,14 +39,13 @@ public abstract class ObservableNSQConsumer<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ObservableNSQConsumer.class);
 
-    private final String topic;
-    private final String channel;
-    /* The observable created by this consumer */
-    private final Observable<NSQMessage> observable;
+    private final String        topic;
+    private final String        channel;
 
-    /* Since we can pass the callback to NSQConsumer only through its constructor we must
-     * delay enclose its creation in the Observable construction which means it will be only when some subscriber
-     * subscribes to the observable
+    /* The observable created by this consumer */
+    private final Observable<T> observable;
+
+    /*
      * We keep reference to consumer and to emitter to allow shutdown
      * and emission of onComplete. Make these reference volatile since they can be set in a different thread
      */
@@ -59,32 +55,36 @@ public abstract class ObservableNSQConsumer<T> {
     public ObservableNSQConsumer(NSQLookup lookup, String topic, String channel, NSQConfig config) {
         this.topic = topic;
         this.channel = channel;
-        this.observable = Observable.fromEmitter(emitter -> {
-            this.emitter = emitter;
 
-            consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
+        Observable<NSQMessage> o = Observable
+                .fromEmitter(emitter -> {
+                    this.emitter = emitter;
 
-            //We tell the NSQConsumer to use its own eventloop as the executor for message handling
-            //This prevent the use of the default cachedThreadPool, which spawns a huge amount of threads when a lot of messages arrives
-            //The only thing to take care of is that message transformation should never be blocking the event queue
-            //This has to be taken care of by child classes
-            consumer.setExecutor(config.getEventLoopGroup());
+                    consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
 
-            consumer.start();
+                    //We tell the NSQConsumer to use its own eventloop as the executor for message handling
+                    //This prevent the use of the default cachedThreadPool, which spawns a huge amount of threads when a lot of messages arrives
+                    //The only thing to take care of is that message transformation should never be blocking the event queue
+                    //This has to be taken care of by child classes
+                    consumer.setExecutor(config.getEventLoopGroup());
 
-            LOGGER.info("new subscription for ObservableNSQConsumer on topic {}, channel {}", topic, channel);
+                    consumer.start();
 
-            emitter.setCancellation(() -> consumer.shutdown());
+                    LOGGER.info("new subscription for ObservableNSQConsumer on topic {}, channel {}", topic, channel);
 
-        }, AsyncEmitter.BackpressureMode.BUFFER);
-    }
+                    emitter.setCancellation(() -> consumer.shutdown());
 
-    public Observable<T> observable() {
-        return observable
+                }, AsyncEmitter.BackpressureMode.BUFFER);
+
+        this.observable = o
                 .map(this::transformSafe)
                 .filter(Optional::isPresent)
                 .map(Optional::get) //We don't want to stop the observable on error
-                .publish().refCount(); //Make this observable connectable
+                .publish().autoConnect(); //Use publish/refCount for two reasons : NSQConsumer will be created only once. Obseravble will auto start
+    }
+
+    public Observable<T> observable() {
+        return observable;
     }
 
     private Optional<T> transformSafe(NSQMessage nsqMessage) {

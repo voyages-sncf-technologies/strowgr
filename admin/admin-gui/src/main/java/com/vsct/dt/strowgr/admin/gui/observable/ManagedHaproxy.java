@@ -3,11 +3,11 @@ package com.vsct.dt.strowgr.admin.gui.observable;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.AsyncEmitter;
 import rx.Observable;
 import rx.Scheduler;
 import rx.observables.ConnectableObservable;
 import rx.schedulers.Schedulers;
+import rx.subjects.PublishSubject;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -37,39 +37,35 @@ public class ManagedHaproxy {
     private static final Logger LOGGER = LoggerFactory.getLogger(ManagedHaproxy.class);
 
     private final ConsulRepository repository;
-
     private final Set<String> registered = new HashSet<>();
 
     //The connectable observable offered to subscribers
-    private ConnectableObservable<String> registerObservable;
-    private ConnectableObservable<String> unregisterObservable;
+    private final ConnectableObservable<HaproxyAction> registrationActionsObservable;
+    //Subject to stop the observable
+    private final PublishSubject stop = PublishSubject.create();
 
     private ManagedHaproxy(ConsulRepository repository, long intervalSecond, Scheduler scheduler) {
         this.repository = repository;
 
-        Observable<HaproxyAction> actions = Observable.interval(intervalSecond, TimeUnit.SECONDS, scheduler)
+        this.registrationActionsObservable = Observable.interval(intervalSecond, TimeUnit.SECONDS, scheduler)
                 .map(n -> lookupHaproxy())
                 .flatMap(Observable::from)
-                .publish().refCount();
-
-        this.registerObservable = actions.filter(a -> a.isRegistration).map(a -> a.id).publish();
-        this.unregisterObservable = actions.filter(a -> !a.isRegistration).map(a -> a.id).publish();
+                .takeUntil(stop)
+                .publish(); //We want to control the start of the observable
     }
 
-    public static ManagedHaproxy create(ConsulRepository repository, long intervalSecond){
+    //Return observable so that observable cannot be started withotu calling start method of ManagedHaproxy
+    public Observable<HaproxyAction> registrationActionsObservable() {
+        return registrationActionsObservable;
+    }
+
+    public static ManagedHaproxy create(ConsulRepository repository, long intervalSecond) {
         return new ManagedHaproxy(repository, intervalSecond, Schedulers.newThread());
     }
 
-    static ManagedHaproxy create(ConsulRepository repository, long intervalSecond, Scheduler scheduler){
+    //package protected method for test purposes
+    static ManagedHaproxy create(ConsulRepository repository, long intervalSecond, Scheduler scheduler) {
         return new ManagedHaproxy(repository, intervalSecond, scheduler);
-    }
-
-    public ConnectableObservable<String> haproxyRegisterObservable() {
-        return registerObservable;
-    }
-
-    public ConnectableObservable<String> haproxyUnregisterObservable() {
-        return unregisterObservable;
     }
 
     private List<HaproxyAction> lookupHaproxy() {
@@ -84,7 +80,7 @@ public class ManagedHaproxy {
         Set<String> removedHaproxies = registered
                 .stream()
                 .filter(k -> !ids.contains(k))
-                .peek(id -> actions.add(unregister(id)))
+                .peek(id -> actions.add(HaproxyAction.unregister(id)))
                 .collect(Collectors.toSet());
 
         registered.removeAll(removedHaproxies);
@@ -92,15 +88,16 @@ public class ManagedHaproxy {
         // Find all new haproxies
         Set<String> addedHaproxies = ids.stream()
                 .filter(k -> !registered.contains(k))
-                .peek(id -> actions.add(register(id)))
+                .peek(id -> actions.add(HaproxyAction.register(id)))
                 .collect(Collectors.toSet());
 
         registered.addAll(addedHaproxies);
 
-        if(LOGGER.isInfoEnabled()) {
-            if(actions.size() > 0) {
+        if (LOGGER.isInfoEnabled()) {
+            if (actions.size() > 0) {
                 actions.forEach(a -> LOGGER.info("registration action on haproxy id={} -> register={}", a.id, a.isRegistration));
-            } else {
+            }
+            else {
                 LOGGER.info("no registration action to perform");
             }
         }
@@ -108,21 +105,37 @@ public class ManagedHaproxy {
         return actions;
     }
 
-    private HaproxyAction register(String id) {
-        return new HaproxyAction(true, id);
+    public void startLookup() {
+        this.registrationActionsObservable.connect();
     }
 
-    private HaproxyAction unregister(String id) {
-        return new HaproxyAction(false, id);
+    public void stopLookup() {
+        stop.onNext(null);
     }
 
-    private static class HaproxyAction {
-        String id;
-        boolean isRegistration;
+    public static class HaproxyAction {
+        private final String  id;
+        private final boolean isRegistration;
 
-        HaproxyAction(boolean register, String id) {
-            this.isRegistration = register;
+        private HaproxyAction(String id, boolean register) {
             this.id = id;
+            this.isRegistration = register;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public boolean isRegistration() {
+            return isRegistration;
+        }
+
+        public static HaproxyAction register(String id) {
+            return new HaproxyAction(id, true);
+        }
+
+        public static HaproxyAction unregister(String id) {
+            return new HaproxyAction(id, false);
         }
     }
 
