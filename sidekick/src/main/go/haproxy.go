@@ -310,3 +310,7 @@ func (hap *Haproxy) Stop() error {
 	}
 	return err
 }
+
+func (hap Haproxy) Fake() bool {
+	return false
+}
