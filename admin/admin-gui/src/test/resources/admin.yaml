@@ -5,7 +5,7 @@ server:
   adminContextPath: /admin
   connector:
     type: http
-    port: 50090
+    port: 50080
   requestLog:
     timeZone: UTC
     appenders:
@@ -14,13 +14,13 @@ server:
 threads: 20
 haproxyName: default-name
 repository:
-  host: parisiancocktail
+  host: 10.1.4.38
   port: 58500
   minGeneratedPort: 50000
   maxGeneratedPort: 54000
 nsqLookup:
-  host: parisiancocktail
-  port: 54161
+  host: 10.1.4.38
+  port: 4161
 nsqProducer:
   host: parisiancocktail
   tcpPort: 54150
@@ -33,10 +33,11 @@ periodicScheduler:
 logging:
     level: FATAL
     loggers:
-      com.vsct.dt: INFO
+      com.vsct.dt: DEBUG
+      com.github.brainlag.nsq.lookup: DEBUG
     appenders:
       - type: console
-        threshold: INFO
+        threshold: DEBUG
         logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
 commitTimeout: 10
 handledHaproxyRefreshPeriodSecond: 10

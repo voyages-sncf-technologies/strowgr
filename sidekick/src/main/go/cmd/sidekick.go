@@ -187,14 +187,16 @@ func createTopicsAndChannels() {
 	for len(topicChan) > 0 {
 		// create the topic
 		topic := <-topicChan
-		log.WithField("topic", topic).Info("Creating topic")
+		log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Info("Creating topic")
 		url := fmt.Sprintf("%s/topic/create?topic=%s_%s", properties.ProducerRestAddr, topic, properties.ClusterId)
 		resp, err := http.PostForm(url, nil)
 		if err != nil || resp.StatusCode != 200 {
-			log.WithField("topic", topic).WithField("clusterid", properties.ClusterId).WithError(err).Error("topic can't be create")
+			log.WithField("topic", topic).WithField("clusterid", properties.ClusterId).WithError(err).Error("topic can't be created")
 			// retry to create this topic
 			topicChan <- topic
 			continue
+		} else {
+			log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Debug("topic created")
 		}
 
 		// create the channels of the topics
