@@ -62,9 +62,13 @@ public class EntryPointEventHandler {
     public void handle(AddEntryPointEvent event) {
         EntryPointKey key = event.getKey();
         try {
+            EntryPoint entryPoint = event.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + event));
+            // force disabled/enabled of entrypoint even if lock will fail
+            this.stateManager.setDisabled(entryPoint, key);
+
             this.stateManager.lock(key);
             if (!stateManager.getCommittingConfiguration(key).isPresent() && !stateManager.getCurrentConfiguration(key).isPresent()) {
-                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, event.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + event)));
+                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, entryPoint);
 
                 if (preparedConfiguration.isPresent()) {
                     EntryPointAddedEvent entryPointAddedEvent = new EntryPointAddedEvent(event.getCorrelationId(), key, preparedConfiguration.get());

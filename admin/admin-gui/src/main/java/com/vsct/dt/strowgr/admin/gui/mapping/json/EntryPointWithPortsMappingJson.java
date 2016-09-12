@@ -47,7 +47,7 @@ public class EntryPointWithPortsMappingJson extends EntryPointMappingJson {
                 hapUser,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
                 backends.stream().map(identity()).collect(Collectors.toSet()),
-                context);
+                context, null);
         this.syslogPort = syslogPort;
     }
 

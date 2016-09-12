@@ -40,6 +40,7 @@ public class EntryPoint {
 
     private final HashMap<String, EntryPointFrontend> frontends;
     private final HashMap<String, EntryPointBackend> backends;
+    private Boolean disabled = Boolean.TRUE;
 
     public EntryPoint(String haproxy, String hapUser,
                       Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
@@ -70,6 +71,14 @@ public class EntryPoint {
         this.context = context;
     }
 
+    public Boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(Boolean disabled) {
+        this.disabled = disabled;
+    }
+
     public static IHapUSer onHaproxy(String haproxy) {
         return new EntryPoint.Builder(haproxy);
     }
@@ -90,7 +99,7 @@ public class EntryPoint {
         Optional<EntryPointBackendServer> existingServer = findServer(server.getId());
         EntryPointBackendServer newServer = existingServer
                 .map(es -> new EntryPointBackendServer(server.getId(), server.getIp(), server.getPort(), server.getContext(), es.getContextOverride()))
-                .orElseGet(() -> new EntryPointBackendServer(server.getId(),  server.getIp(), server.getPort(), server.getContext(), new HashMap<>()));
+                .orElseGet(() -> new EntryPointBackendServer(server.getId(), server.getIp(), server.getPort(), server.getContext(), new HashMap<>()));
 
         EntryPoint configuration = this.removeServer(server.getId());
 
@@ -168,11 +177,11 @@ public class EntryPoint {
     public EntryPoint mergeWithUpdate(UpdatedEntryPoint updatedEntryPoint) {
 
         Set<EntryPointBackend> newBackends = new HashSet<>();
-        for(UpdatedEntryPointBackend updatedBackend : updatedEntryPoint.getBackends()){
+        for (UpdatedEntryPointBackend updatedBackend : updatedEntryPoint.getBackends()) {
             EntryPointBackend thisBackend = this.backends.get(updatedBackend.getId());
-            if(thisBackend != null){
+            if (thisBackend != null) {
                 Set<EntryPointBackendServer> newServers = new HashSet<>();
-                for(EntryPointBackendServer s : thisBackend.getServers()){
+                for (EntryPointBackendServer s : thisBackend.getServers()) {
                     Map<String, String> contextOverride = updatedBackend.getServer(s.getId()).map(UpdatedEntryPointBackendServer::getContextOverride).orElse(new HashMap<>());
                     newServers.add(new EntryPointBackendServer(s.getId(), s.getIp(), s.getPort(), s.getContext(), contextOverride));
                 }

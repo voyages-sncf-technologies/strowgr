@@ -17,6 +17,7 @@
 
 package com.vsct.dt.strowgr.admin.core.repository;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -34,7 +35,7 @@ public interface HaproxyRepository {
      * Get all haproxy properties for each haproxy
      * @return Map with haproxy properties by haproxy id
      */
-    Optional<Map<String, Map<String, String>>> getHaproxyProperties();
+    Optional<List<Map<String, String>>> getHaproxyProperties();
 
     /**
      * Get ids of disabled haproxy .

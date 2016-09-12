@@ -81,4 +81,5 @@ public interface EntryPointRepository {
 
     Optional<String> getCommitCorrelationId(EntryPointKey key);
 
+    void setDisabled(EntryPoint entryPoint, EntryPointKey entryPointKey);
 }

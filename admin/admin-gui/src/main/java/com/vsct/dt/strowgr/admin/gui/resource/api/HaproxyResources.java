@@ -29,6 +29,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -71,7 +72,7 @@ public class HaproxyResources {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Map<String, String>> getAll() {
+    public List<Map<String, String>> getAll() {
         return repository.getHaproxyProperties().orElseThrow(() -> new RuntimeException("can't get haproxy"));
     }
 

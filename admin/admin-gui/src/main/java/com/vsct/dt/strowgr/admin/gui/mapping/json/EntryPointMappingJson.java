@@ -29,7 +29,7 @@ import static java.util.function.Function.identity;
 
 /**
  * Json representation of {@code EntryPointConfiguration}.
- *
+ * <p>
  * Created by william_montaz on 09/02/2016.
  */
 public class EntryPointMappingJson extends EntryPoint {
@@ -39,7 +39,8 @@ public class EntryPointMappingJson extends EntryPoint {
                                  @JsonProperty("hapUser") String hapUser,
                                  @JsonProperty("frontends") Set<EntryPointFrontendMappingJson> frontends,
                                  @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
-                                 @JsonProperty("context") Map<String, String> context) {
+                                 @JsonProperty("context") Map<String, String> context,
+                                 @JsonProperty("disabled") Boolean disabled) {
         super(haproxy,
                 hapUser,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
@@ -51,6 +52,6 @@ public class EntryPointMappingJson extends EntryPoint {
         this(c.getHaproxy(), c.getHapUser(),
                 c.getFrontends().stream().map(EntryPointFrontendMappingJson::new).collect(Collectors.toSet()),
                 c.getBackends().stream().map(EntryPointBackendMappingJson::new).collect(Collectors.toSet()),
-                c.getContext());
+                c.getContext(), c.isDisabled());
     }
 }

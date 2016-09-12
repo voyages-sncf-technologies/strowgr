@@ -462,8 +462,8 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     }
 
     @Override
-    public Optional<Map<String, Map<String, String>>> getHaproxyProperties() {
-        Optional<Map<String, Map<String, String>>> result;
+    public Optional<List<Map<String, String>>> getHaproxyProperties() {
+        Optional<List<Map<String, String>>> result;
         try {
             HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + "/?raw&recurse=true");
             List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
@@ -471,10 +471,11 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                             .orElse(new ArrayList<>()));
             Map<String, List<ConsulItem<String>>> consulItemsById = consulItems.stream()
                     .collect(Collectors.groupingBy(consulItem -> consulItem.getKey().split("/")[1]));
-            Map<String, Map<String, String>> propertiesById = new HashMap<>(consulItemsById.size());
+            List<Map<String, String>> propertiesById = new ArrayList<>(consulItemsById.size());
             for (Map.Entry<String, List<ConsulItem<String>>> entry : consulItemsById.entrySet()) {
                 Map<String, String> haproxyItem = consulItemsToMap(entry.getValue());
-                propertiesById.put(entry.getKey(), haproxyItem);
+                haproxyItem.put("id", entry.getKey());
+                propertiesById.add(haproxyItem);
             }
             result = Optional.of(propertiesById);
         } catch (IOException e) {
@@ -483,15 +484,15 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         return result;
     }
 
-    // TODO add a cache or play with RXJava (!?) to limit calls to consul
+    // TODO add a cache or play with RXJava (!?) for limiting calls to consul
     @Override
     public Optional<Set<String>> getDisabledHaproxyIds() {
-        Optional<Map<String, Map<String, String>>> haproxyProperties = getHaproxyProperties();
-        return Optional.of(haproxyProperties.orElseGet(HashMap::new)
-                .entrySet().stream()
-                .filter(haproxyPropertiesEntry -> haproxyPropertiesEntry.getValue().containsKey("enable")
-                        && "false".equals(haproxyPropertiesEntry.getValue().get("enable")))
-                .map(Map.Entry::getKey)
+        Optional<List<Map<String, String>>> haproxyProperties = getHaproxyProperties();
+        return Optional.of(haproxyProperties.orElseGet(ArrayList::new)
+                .stream()
+                .filter(currentHaproxyProperties -> currentHaproxyProperties.containsKey("disabled")
+                        && "true".equals(currentHaproxyProperties.get("disabled")))
+                .map(currentHaproxyProperties -> currentHaproxyProperties.get("id"))
                 .collect(Collectors.toSet()));
     }
 
@@ -545,6 +546,18 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     @Override
     public Optional<String> getCommitCorrelationId(EntryPointKey key) {
         return getCommittingConfigurationWithCorrelationId(key).map(CommittingConfigurationJson::getCorrelationId);
+    }
+
+    @Override
+    public void setDisabled(EntryPoint entryPoint, EntryPointKey entryPointKey) {
+        try {
+            HttpPut getHaproxyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/disabled");
+            getHaproxyURI.setEntity(new StringEntity(String.valueOf(entryPoint.isDisabled())));
+
+            client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::readRawContentFromHttpEntity));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String encodeJson(Map<String, Integer> portsByEntrypoint) throws IOException {
