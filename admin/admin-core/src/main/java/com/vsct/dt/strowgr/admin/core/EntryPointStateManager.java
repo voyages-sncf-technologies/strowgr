@@ -199,7 +199,7 @@ public class EntryPointStateManager {
         return repository.getCommitCorrelationId(key);
     }
 
-    public void setDisabled(EntryPoint entryPoint, EntryPointKey entryPointKey) {
-        repository.setDisabled(entryPoint, entryPointKey);
+    public void setDisabled(EntryPointKey entryPointKey, Boolean disabled) {
+        repository.setDisabled(entryPointKey, disabled);
     }
 }

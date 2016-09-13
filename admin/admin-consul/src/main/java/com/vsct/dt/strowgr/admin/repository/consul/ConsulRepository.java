@@ -204,6 +204,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     .map(s -> s.replace("/current", ""))
                     .map(s -> s.replace("/pending", ""))
                     .map(s -> s.replace("/committing", ""))
+                    .map(s -> s.replace("/disabled", ""))
                     .distinct()
                     .collect(Collectors.toSet());
 
@@ -549,12 +550,12 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     }
 
     @Override
-    public void setDisabled(EntryPoint entryPoint, EntryPointKey entryPointKey) {
+    public void setDisabled(EntryPointKey entryPointKey, Boolean disabled) {
         try {
-            HttpPut getHaproxyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/disabled");
-            getHaproxyURI.setEntity(new StringEntity(String.valueOf(entryPoint.isDisabled())));
+            HttpPut putDisable = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/disabled");
+            putDisable.setEntity(new StringEntity(String.valueOf(disabled)));
 
-            client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::readRawContentFromHttpEntity));
+            client.execute(putDisable, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::readRawContentFromHttpEntity));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

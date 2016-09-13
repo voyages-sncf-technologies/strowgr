@@ -72,6 +72,7 @@
             min-height: 100%;
         }
 
+
     </style>
 
     <script type="text/javascript">
@@ -169,11 +170,17 @@
                 url: '/api/entrypoints'
             }).then(function (response) {
                 $scope.entrypoints = response.data;
+                console.log('load entrypoints: '+response.data);
+                var size=response.data.length;
+                for(var id=0; id<size; id++){
+                   $scope.isDisabled(response.data[id]);
+                }
             });
 
             $scope.loadEntrypoint = function (id) {
                 $scope.selectedEntrypoint = id;
                 $rootScope.$broadcast("entrypoint-updated");
+
             }
 
             $scope.deleteEntrypoint = function (id) {
@@ -184,6 +191,23 @@
                 }).then(function (response) {
                     $scope.entrypoints = response.data;
                     $rootScope.$broadcast("entrypoint-updated");
+                });
+            }
+
+            $scope.disabledEntrypoints = {};
+            $scope.isDisabled = function (id) {
+                console.log('isDisabled ? '+id);
+                $http({
+                    method: 'GET',
+                    url: '/api/entrypoints/'+escape(id)+'/disabled'
+                }).then(function (response) {
+                    var isDisabled=response.data;
+                    console.log('disabledEntrypoints: '+ isDisabled+' for '+id);
+                    if(isDisabled){
+                        $scope.disabledEntrypoints[id] = 'lock_outline';
+                    } else {
+                        $scope.disabledEntrypoints[id] = 'lock_open';
+                    }
                 });
             }
 
@@ -723,6 +747,7 @@
                     }
                 }
             }]);
+
 
 
 

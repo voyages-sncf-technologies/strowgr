@@ -79,6 +79,33 @@ public class EntrypointResources {
         return repository.getEntryPointsId();
     }
 
+    @GET
+    @Path("/{id : .+}/disabled")
+    public Boolean isDisabled(@PathParam("id") String entryPointKey) {
+        return repository.isDisabled(new EntryPointKeyDefaultImpl(entryPointKey));
+    }
+
+    @PATCH
+    @Path("/{id : .+}/disabled/{disabled: .+}")
+    public void setDisabled(@Suspended AsyncResponse asyncResponse, @PathParam("id") String entryPointKey, @PathParam("disabled") Boolean disabled) {
+        UpdateAvailabilityRequestedEvent updateAvailabilityRequestedEvent = new UpdateAvailabilityRequestedEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPointKey), disabled);
+        new CallbackBuilder(updateAvailabilityRequestedEvent.getCorrelationId())
+                .whenReceive(new AsyncResponseCallback<AvailabilityUpdatedEvent>(asyncResponse) {
+                    @Override
+                    void handle(AvailabilityUpdatedEvent availabilityUpdatedEvent) throws Exception {
+                        if (availabilityUpdatedEvent.isDisabled().isPresent()) {
+                            asyncResponse.resume(status(PARTIAL_CONTENT)
+                                    .entity(availabilityUpdatedEvent.isDisabled().orElseThrow(IllegalStateException::new))
+                                    .build());
+                        } else {
+                            asyncResponse.resume(status(NOT_FOUND).build());
+                        }
+                    }
+                })
+                .timeoutAfter(10, TimeUnit.SECONDS);
+        eventBus.post(updateAvailabilityRequestedEvent);
+    }
+
     @PUT
     @Path("/{id : .+}")
     @Timed

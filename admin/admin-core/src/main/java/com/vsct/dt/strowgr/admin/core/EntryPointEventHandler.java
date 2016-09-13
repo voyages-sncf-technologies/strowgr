@@ -60,24 +60,27 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(AddEntryPointEvent event) {
-        EntryPointKey key = event.getKey();
+        EntryPointKey entryPointKey = event.getKey();
         try {
             EntryPoint entryPoint = event.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + event));
-            // force disabled/enabled of entrypoint even if lock will fail
-            this.stateManager.setDisabled(entryPoint, key);
 
-            this.stateManager.lock(key);
-            if (!stateManager.getCommittingConfiguration(key).isPresent() && !stateManager.getCurrentConfiguration(key).isPresent()) {
-                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, entryPoint);
+            // force disabled/enabled of entrypoint even if lock will fail
+            if (Boolean.valueOf(this.haproxyRepository.getHaproxyProperty(entryPoint.getHaproxy(), "production").orElse("false"))) {
+                this.stateManager.setDisabled(entryPointKey, true);
+            }
+
+            this.stateManager.lock(entryPointKey);
+            if (!stateManager.getCommittingConfiguration(entryPointKey).isPresent() && !stateManager.getCurrentConfiguration(entryPointKey).isPresent()) {
+                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(entryPointKey, entryPoint);
 
                 if (preparedConfiguration.isPresent()) {
-                    EntryPointAddedEvent entryPointAddedEvent = new EntryPointAddedEvent(event.getCorrelationId(), key, preparedConfiguration.get());
-                    LOGGER.info("from handle AddEntryPointEvent new EntryPoint {} added -> {}", key.getID(), entryPointAddedEvent);
+                    EntryPointAddedEvent entryPointAddedEvent = new EntryPointAddedEvent(event.getCorrelationId(), entryPointKey, preparedConfiguration.get());
+                    LOGGER.info("from handle AddEntryPointEvent new EntryPoint {} added -> {}", entryPointKey.getID(), entryPointAddedEvent);
                     outputBus.post(entryPointAddedEvent);
                 }
             }
         } finally {
-            this.stateManager.release(key);
+            this.stateManager.release(entryPointKey);
         }
     }
 
@@ -102,6 +105,18 @@ public class EntryPointEventHandler {
                         }
                     });
 
+        } finally {
+            this.stateManager.release(key);
+        }
+    }
+
+    @Subscribe
+    public void handle(UpdateAvailabilityRequestedEvent updateAvailabilityRequestedEvent) {
+        EntryPointKey key = updateAvailabilityRequestedEvent.getKey();
+        try {
+            this.stateManager.lock(key);
+            this.stateManager.setDisabled(key, updateAvailabilityRequestedEvent.isDisabled());
+            outputBus.post(new AvailabilityUpdatedEvent(updateAvailabilityRequestedEvent.getCorrelationId(), key, Optional.of(updateAvailabilityRequestedEvent.isDisabled())));
         } finally {
             this.stateManager.release(key);
         }

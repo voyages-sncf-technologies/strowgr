@@ -39,8 +39,7 @@ public class EntryPointMappingJson extends EntryPoint {
                                  @JsonProperty("hapUser") String hapUser,
                                  @JsonProperty("frontends") Set<EntryPointFrontendMappingJson> frontends,
                                  @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
-                                 @JsonProperty("context") Map<String, String> context,
-                                 @JsonProperty("disabled") Boolean disabled) {
+                                 @JsonProperty("context") Map<String, String> context) {
         super(haproxy,
                 hapUser,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
@@ -52,6 +51,6 @@ public class EntryPointMappingJson extends EntryPoint {
         this(c.getHaproxy(), c.getHapUser(),
                 c.getFrontends().stream().map(EntryPointFrontendMappingJson::new).collect(Collectors.toSet()),
                 c.getBackends().stream().map(EntryPointBackendMappingJson::new).collect(Collectors.toSet()),
-                c.getContext(), c.isDisabled());
+                c.getContext());
     }
 }

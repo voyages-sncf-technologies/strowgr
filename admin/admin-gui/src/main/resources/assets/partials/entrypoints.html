@@ -59,13 +59,16 @@
         </div>
         <div ng-repeat="entrypointId in entrypoints | orderBy | filter:searchTerm" ng-cloack>
             <div layout="row">
-                <md-button flex="80" id="{{entrypointId}}-select-btn"
+                <md-button flex="70" id="{{entrypointId}}-select-btn"
                            md-ink-ripple="false"
                            ng-class="{selected: selectedEntrypoint == entrypointId, 'md-hue-3': selectedEntrypoint == entrypointId}"
                            class="md-raised md-primary" ng-click="loadEntrypoint(entrypointId)"  style="margin-right:1px; padding-right:1px" >{{entrypointId}}</md-button>
                 <md-button flex="20" id="{{entrypointId}}-delete-entrypoint-btn"
                            ng-click="deleteEntrypoint(entrypointId,$event)" style="margin-left:1px; padding-left:1px">
                     <md-icon class="material-icons" ng-style="{color: 'red', height:'24px'}" style="margin-left:1px; padding-left:1px">delete</md-icon>
+                </md-button>
+                <md-button flex="10" id="{{entrypointId}}-disabled-entrypoint-btn" style="margin-left:1px; padding-left:1px;">
+                    <i class="material-icons">{{disabledEntrypoints[entrypointId]}}</i>
                 </md-button>
             </div>
         </div>

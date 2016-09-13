@@ -40,7 +40,6 @@ public class EntryPoint {
 
     private final HashMap<String, EntryPointFrontend> frontends;
     private final HashMap<String, EntryPointBackend> backends;
-    private Boolean disabled = Boolean.TRUE;
 
     public EntryPoint(String haproxy, String hapUser,
                       Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
@@ -69,14 +68,6 @@ public class EntryPoint {
         this.frontends = frontends;
         this.backends = backends;
         this.context = context;
-    }
-
-    public Boolean isDisabled() {
-        return disabled;
-    }
-
-    public void setDisabled(Boolean disabled) {
-        this.disabled = disabled;
     }
 
     public static IHapUSer onHaproxy(String haproxy) {

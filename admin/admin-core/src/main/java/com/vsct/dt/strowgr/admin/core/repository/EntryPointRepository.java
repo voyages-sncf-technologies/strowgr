@@ -65,6 +65,11 @@ public interface EntryPointRepository {
 
     void setCurrentConfiguration(EntryPointKey key, EntryPoint configuration);
 
+    /**
+     * Retrieve entrypoint ids.
+     *
+     * @return Set of entrypoint ids
+     */
     Set<String> getEntryPointsId();
 
     boolean lock(EntryPointKey key);
@@ -81,5 +86,5 @@ public interface EntryPointRepository {
 
     Optional<String> getCommitCorrelationId(EntryPointKey key);
 
-    void setDisabled(EntryPoint entryPoint, EntryPointKey entryPointKey);
+    void setDisabled(EntryPointKey entryPointKey, Boolean disabled);
 }
