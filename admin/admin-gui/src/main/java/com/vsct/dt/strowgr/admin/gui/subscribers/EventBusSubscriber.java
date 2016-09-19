@@ -50,6 +50,7 @@ public class EventBusSubscriber extends Subscriber {
     @Override
     public void onCompleted() {
         //Nothing to do
+        LOGGER.debug("EventSubscriber got onCompleted message");
     }
 
     @Override
@@ -67,16 +68,19 @@ public class EventBusSubscriber extends Subscriber {
                 eventBus.post(event);
                 published = true;
             } catch (RejectedExecutionException e) {
-
+                LOGGER.debug("EventBus rejected execution, loop until it accepts it !");
             }
         }
 
         remaining--;
 
+        LOGGER.debug("EventBusSubscriber can still request {} events", remaining);
+
         if (remaining == 0) {
             //make sure to request at least one message
-            int remainingCapacity = Math.max(1, eventBusQueue.remainingCapacity());
-            request(remainingCapacity);
+            remaining = Math.max(1, eventBusQueue.remainingCapacity());
+            LOGGER.debug("request {} new messages", remaining);
+            request(remaining);
         }
     }
 
