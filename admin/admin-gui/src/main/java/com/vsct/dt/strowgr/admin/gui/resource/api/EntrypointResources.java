@@ -86,24 +86,23 @@ public class EntrypointResources {
     }
 
     @PATCH
-    @Path("/{id : .+}/disabled/{disabled: .+}")
-    public void setDisabled(@Suspended AsyncResponse asyncResponse, @PathParam("id") String entryPointKey, @PathParam("disabled") Boolean disabled) {
-        UpdateAvailabilityRequestedEvent updateAvailabilityRequestedEvent = new UpdateAvailabilityRequestedEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPointKey), disabled);
-        new CallbackBuilder(updateAvailabilityRequestedEvent.getCorrelationId())
-                .whenReceive(new AsyncResponseCallback<AvailabilityUpdatedEvent>(asyncResponse) {
+    @Path("/{id : .+}/availability/swap")
+    public void setDisabled(@Suspended AsyncResponse asyncResponse, @PathParam("id") String entryPointKey) {
+        SwapAvailabilityRequestedEvent swapAvailabilityRequestedEvent = new SwapAvailabilityRequestedEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPointKey));
+        new CallbackBuilder(swapAvailabilityRequestedEvent.getCorrelationId())
+                .whenReceive(new AsyncResponseCallback<AvailabilitySwappedEvent>(asyncResponse) {
                     @Override
-                    void handle(AvailabilityUpdatedEvent availabilityUpdatedEvent) throws Exception {
-                        if (availabilityUpdatedEvent.isDisabled().isPresent()) {
+                    void handle(AvailabilitySwappedEvent availabilitySwappedEvent) throws Exception {
+                        if (availabilitySwappedEvent.swapped()) {
                             asyncResponse.resume(status(PARTIAL_CONTENT)
-                                    .entity(availabilityUpdatedEvent.isDisabled().orElseThrow(IllegalStateException::new))
                                     .build());
                         } else {
                             asyncResponse.resume(status(NOT_FOUND).build());
                         }
                     }
                 })
-                .timeoutAfter(10, TimeUnit.SECONDS);
-        eventBus.post(updateAvailabilityRequestedEvent);
+                .timeoutAfter(20, TimeUnit.SECONDS);
+        eventBus.post(swapAvailabilityRequestedEvent);
     }
 
     @PUT
@@ -314,6 +313,11 @@ public class EntrypointResources {
     @Subscribe
     public void handle(EntryPointUpdatedEvent entryPointUpdatedEvent) {
         handleWithCorrelationId(entryPointUpdatedEvent);
+    }
+
+    @Subscribe
+    public void handle(AvailabilitySwappedEvent availabilitySwappedEvent) {
+        handleWithCorrelationId(availabilitySwappedEvent);
     }
 
     @Subscribe

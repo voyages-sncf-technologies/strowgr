@@ -538,7 +538,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         try {
             HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyId + "/" + key + "?raw");
 
-            return client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::readRawContentFromHttpEntity));
+            return client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::readRawContentFromHttpEntity));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

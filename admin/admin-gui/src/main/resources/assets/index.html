@@ -194,6 +194,15 @@
                 });
             }
 
+            $scope.disableEntrypoint = function (id) {
+                $scope.selectedEntrypoint = id;
+                $http.patch('/api/entrypoints/'+escape(id)+'/availability/swap')
+                    .then(function (response) {
+                    console.log('patch disabled of ' + id+ ' to ' + false);
+                    $scope.isDisabled(id);
+                });
+            }
+
             $scope.disabledEntrypoints = {};
             $scope.isDisabled = function (id) {
                 console.log('isDisabled ? '+id);

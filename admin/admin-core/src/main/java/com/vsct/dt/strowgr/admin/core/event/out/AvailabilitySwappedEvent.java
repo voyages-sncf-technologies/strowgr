@@ -15,32 +15,32 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.core.event.in;
+package com.vsct.dt.strowgr.admin.core.event.out;
 
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
+import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 
 /**
- * Event of an update of availability on an entrypoint (enable or disable update to haproxies).
+ * Availability of the entrypoint has been swapped.
  */
-public class UpdateAvailabilityRequestedEvent extends EntryPointEvent {
+public class AvailabilitySwappedEvent extends EntryPointEvent {
 
-    private final Boolean disabled;
+    private final boolean swapped;
 
-    public UpdateAvailabilityRequestedEvent(String correlationId, EntryPointKey key, Boolean disabled) {
+    public AvailabilitySwappedEvent(String correlationId, EntryPointKey key, boolean swapped) {
         super(correlationId, key);
-        this.disabled = disabled;
-    }
-
-    public Boolean isDisabled() {
-        return disabled;
+        this.swapped = swapped;
     }
 
     @Override
     public String toString() {
-        return "UpdateAvailabilityRequestedEvent{" +
-                "correlationId=" + getCorrelationId() +
-                "key=" + getKey() +
+        return "AvailabilityUpdatedEvent{" +
+                "correlationId='" + getCorrelationId() + '\'' +
+                ", key=" + getKey() +
                 '}';
     }
 
+    public boolean swapped() {
+        return swapped;
+    }
 }

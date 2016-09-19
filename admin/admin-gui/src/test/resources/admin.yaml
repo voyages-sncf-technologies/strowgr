@@ -11,7 +11,7 @@ server:
     appenders:
       - type: console
         threshold: INFO
-threads: 20
+threads: 300
 haproxyName: default-name
 repository:
   host: 10.1.4.38
@@ -22,9 +22,9 @@ nsqLookup:
   host: 10.1.4.38
   port: 4161
 nsqProducer:
-  host: parisiancocktail
-  tcpPort: 54150
-  httpPort: 54151
+  host: 10.1.4.38
+  tcpPort: 4250
+  httpPort: 4251
 periodicScheduler:
   current:
     periodMilli: 11000

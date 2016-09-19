@@ -111,14 +111,18 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
-    public void handle(UpdateAvailabilityRequestedEvent updateAvailabilityRequestedEvent) {
-        EntryPointKey key = updateAvailabilityRequestedEvent.getKey();
+    public void handle(SwapAvailabilityRequestedEvent swapAvailabilityRequestedEvent) {
+        EntryPointKey key = swapAvailabilityRequestedEvent.getKey();
         try {
             this.stateManager.lock(key);
-            this.stateManager.setDisabled(key, updateAvailabilityRequestedEvent.isDisabled());
-            outputBus.post(new AvailabilityUpdatedEvent(updateAvailabilityRequestedEvent.getCorrelationId(), key, Optional.of(updateAvailabilityRequestedEvent.isDisabled())));
+            boolean isDisabled = this.stateManager.isDisabled(swapAvailabilityRequestedEvent.getKey());
+            this.stateManager.setDisabled(key, !isDisabled);
+            outputBus.post(new AvailabilitySwappedEvent(swapAvailabilityRequestedEvent.getCorrelationId(), key, true));
+        } catch (Throwable throwable) {
+            LOGGER.error("can't change availability of entrypoint " + key, throwable);
         } finally {
             this.stateManager.release(key);
+            outputBus.post(new AvailabilitySwappedEvent(swapAvailabilityRequestedEvent.getCorrelationId(), key, false));
         }
     }
 
