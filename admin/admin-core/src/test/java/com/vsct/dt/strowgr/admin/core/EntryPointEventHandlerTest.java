@@ -73,6 +73,7 @@ public class EntryPointEventHandlerTest {
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.prepare(key, config)).thenReturn(Optional.of(config));
+        when(haproxyRepository.getHaproxyProperty("haproxy","production")).thenReturn(Optional.of("false"));
 
         handler.handle(event);
 
@@ -103,6 +104,7 @@ public class EntryPointEventHandlerTest {
 
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(current));
+        when(haproxyRepository.getHaproxyProperty("haproxy","production")).thenReturn(Optional.of("false"));
 
         handler.handle(event);
 
@@ -133,6 +135,7 @@ public class EntryPointEventHandlerTest {
 
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(committing));
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
+        when(haproxyRepository.getHaproxyProperty("haproxy","production")).thenReturn(Optional.of("false"));
 
         handler.handle(event);
 

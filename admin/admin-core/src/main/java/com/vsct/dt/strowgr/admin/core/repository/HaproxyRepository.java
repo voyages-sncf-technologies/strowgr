@@ -62,7 +62,7 @@ public interface HaproxyRepository {
      * Get a property for haproxy.
      *
      * @param haproxyId of the haproxy
-     * @param key to set for this haproxy
+     * @param key of this haproxy property
      */
     Optional<String> getHaproxyProperty(String haproxyId, String key);
 
