@@ -81,7 +81,7 @@ public class IncomingEvents {
     }
 
     //If the consumer is cancelled there would be a leak because it will still be kept in the map
-    //But an ObservableNSQConsumer is very unlikely to happen
+    //But an ObservableNSQConsumer is very unlikely to be cancelled. This would mean a bigger problem in the app...
     static class EventConsumersHandler<T extends ObservableNSQConsumer> extends Subscriber<ManagedHaproxy.HaproxyAction> {
 
         private final Map<String, T> consumers = new HashMap<>();
