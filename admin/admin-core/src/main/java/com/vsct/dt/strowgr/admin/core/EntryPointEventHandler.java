@@ -65,7 +65,7 @@ public class EntryPointEventHandler {
             EntryPoint entryPoint = event.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + event));
 
             // force disabled/enabled of entrypoint even if lock will fail
-            if (Boolean.valueOf(this.haproxyRepository.getHaproxyProperty(entryPoint.getHaproxy(), "production").orElse("false"))) {
+            if (this.haproxyRepository.getHaproxyProperty(entryPoint.getHaproxy(), "platform").orElse("").equals("production")) {
                 this.stateManager.setDisabled(entryPointKey, true);
             }
 

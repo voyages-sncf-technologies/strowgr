@@ -170,7 +170,7 @@ public class EntryPointStateManagerTest {
 
     /* This test relies on equals method based on state of the object rather than entity */
     @Test
-    public void prepare_configuration_when_nothing_is_committing_or_current__should_add_pending_configuration() {
+    public void prepare_configuration_when_nothing_is_committing_or_current__should_add_current_configuration() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint newConfiguration = EntryPoint
@@ -190,7 +190,7 @@ public class EntryPointStateManagerTest {
 
         entryPointStateManager.prepare(key, newConfiguration);
 
-        verify(repositoryMock).setPendingConfiguration(key, newConfiguration);
+        verify(repositoryMock).setCurrentConfiguration(key, newConfiguration);
     }
 
     @Test

@@ -105,7 +105,7 @@ public class EntryPointStateManager {
                     return Optional.of(configuration);
                 }
             } else {
-                repository.setPendingConfiguration(key, configuration);
+                repository.setCurrentConfiguration(key, configuration);
                 return Optional.of(configuration);
             }
         }
