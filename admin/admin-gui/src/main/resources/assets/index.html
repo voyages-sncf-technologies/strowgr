@@ -73,6 +73,7 @@
         }
 
 
+
     </style>
 
     <script type="text/javascript">
@@ -93,6 +94,10 @@
                     when('/add-entrypoint', {
                         templateUrl: 'partials/add-entrypoint.html',
                         controller: 'AddEntrypointCtrl'
+                    }).
+                    when('/add-haproxy', {
+                        templateUrl: 'partials/add-haproxy.html',
+                        controller: 'AddHaproxyCtrl'
                     }).
                     otherwise({
                         redirectTo: '/entrypoints'
@@ -414,6 +419,29 @@
                         ok: "Je reprends ma configuration"
                     });
                     $mdDialog.show(alert);
+                });
+            };
+
+        }]);
+
+        adminApp.controller('AddHaproxyCtrl', ['$scope', '$http', '$location', 'Haproxy', '$mdDialog', function ($scope, $http, $location, Haproxy, $mdDialog) {
+            /* Init conf object, avoid undefined inner objects and show expected fields */
+            $scope.conf = {
+                haproxy: {},
+                haproxyId:"",
+            };
+
+            Haproxy.all().then(function(data){
+                $scope.availableHaproxies = data;
+                console.log(data);
+                 // select first haproxyid
+                 $scope.currentHaproxy = data[0];
+            });
+
+            $scope.createHaproxy = function () {
+                console.log("create haproxy "+$scope.haproxyId+": "+ JSON.stringify($scope.haproxy));
+                $http.put('/api/haproxy/'+$scope.haproxyId,$scope.haproxy).then(function (response) {
+                    $location.path('/');
                 });
             };
 
@@ -764,6 +792,7 @@
 
 
 
+
     </script>
 </head>
 <body>
@@ -776,6 +805,9 @@
                         <span>Strowgr</span>
                     </h1>
                     <span flex></span>
+                    <md-button class="md-raised md-accent" ng-href="/#/add-haproxy">
+                        Ajouter un haproxy
+                    </md-button>
                     <md-button class="md-raised md-accent" ng-href="/#/add-entrypoint">
                         Ajouter {{libelle.un_entrypoint}}
                     </md-button>

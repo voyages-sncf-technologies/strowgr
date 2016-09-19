@@ -20,6 +20,7 @@ package com.vsct.dt.strowgr.admin.gui.resource.api;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
+import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
 import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 
@@ -49,7 +50,18 @@ public class HaproxyResources {
     }
 
     @PUT
-    @Path("/{haproxyId : .+}/{key: .+}/{value : .+}")
+    @Path("/{haproxyId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response createHaproxy(@PathParam("haproxyId") String haproxyId, HaproxyMappingJson haproxyMappingJson) {
+        repository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
+        repository.setHaproxyProperty(haproxyId, "vip", haproxyMappingJson.getVip());
+        repository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
+        repository.setHaproxyProperty(haproxyId, "disabled", haproxyMappingJson.getDisabled());
+        return ok().build();
+    }
+
+    @PUT
+    @Path("/{haproxyId}/{key}/{value}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response setHaproxyVip(@PathParam("haproxyId") String haproxyId, @PathParam("key") String key, @PathParam("value") String value) {
         repository.setHaproxyProperty(haproxyId, key, value);
@@ -57,14 +69,14 @@ public class HaproxyResources {
     }
 
     @GET
-    @Path("/{haproxyId : .+}/vip")
+    @Path("/{haproxyId}/vip")
     @Produces(MediaType.TEXT_PLAIN)
     public String getHaproxyVip(@PathParam("haproxyId") String haproxyId) {
         return repository.getHaproxyVip(haproxyId).orElseThrow(() -> new RuntimeException("can't get haproxy uri of " + haproxyId));
     }
 
     @GET
-    @Path("{haproxyId : .+}")
+    @Path("{haproxyId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, String> getHaproxy(@PathParam("haproxyId") String haproxyId) {
         return repository.getHaproxyProperties(haproxyId).orElseThrow(() -> new RuntimeException("can't get haproxy properties of " + haproxyId));
