@@ -74,6 +74,7 @@
 
 
 
+
     </style>
 
     <script type="text/javascript">
@@ -426,17 +427,14 @@
 
         adminApp.controller('AddHaproxyCtrl', ['$scope', '$http', '$location', 'Haproxy', '$mdDialog', function ($scope, $http, $location, Haproxy, $mdDialog) {
             /* Init conf object, avoid undefined inner objects and show expected fields */
-            $scope.conf = {
-                haproxy: {},
-                haproxyId:"",
+            $scope.haproxy = {
+                name: "",
+                vip: "",
+                platform: "",
+                disabled: true
             };
 
-            Haproxy.all().then(function(data){
-                $scope.availableHaproxies = data;
-                console.log(data);
-                 // select first haproxyid
-                 $scope.currentHaproxy = data[0];
-            });
+            $scope.haproxyId= "";
 
             $scope.createHaproxy = function () {
                 console.log("create haproxy "+$scope.haproxyId+": "+ JSON.stringify($scope.haproxy));
@@ -784,6 +782,7 @@
                     }
                 }
             }]);
+
 
 
 

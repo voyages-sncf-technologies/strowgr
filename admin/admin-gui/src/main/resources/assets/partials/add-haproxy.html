@@ -16,23 +16,48 @@
   -->
 
 <style type="text/css">
+    #add-haproxy-form {
+        padding: 15px;
+    }
+
+    #add-haproxy-form md-input-container {
+        margin-bottom: 0;
+        margin-right: 5px;
+    }
+
+    #add-haproxy-form md-checkbox {
+        margin-left: 15px;
+    }
+
+
+
 
 </style>
 
-<form id="add-haproxy-form" name="newHaproxyForm" ng-submit="createHaproxy()" flex
+<form id="add-haproxy-form" name="newHaproxyForm" ng-submit="newHaproxyForm.$valid && createHaproxy()" flex
       ng-keydown="$event.keyCode == 13 && $event.preventDefault();">
     <div layout="row">
         <md-input-container flex="10">
             <label>ID</label>
-            <input name="name" ng-model="haproxyId" required/>
+            <input name="id" ng-model="haproxyId" required ng-pattern="'[A-Za-z-]+'"/>
+            <div ng-messages="newHaproxyForm.id.$error">
+                <div ng-message="required">Il faut choisir un ID</div>
+                <div ng-message="pattern">Ne peut pas contenir d'espace ou de caractères spéciaux</div>
+            </div>
         </md-input-container>
         <md-input-container flex="10">
-            <label>Nom</label>
-            <input name="name" ng-model="haproxy.name" required/>
+            <label>Label</label>
+            <input name="label" ng-model="haproxy.name" required/>
+            <div ng-messages="newHaproxyForm.label.$error">
+                <div ng-message="required">Il faut choisir un label</div>
+            </div>
         </md-input-container>
         <md-input-container flex="10">
             <label>VIP</label>
-            <input name="name" ng-model="haproxy.vip" required/>
+            <input name="vip" ng-model="haproxy.vip" required/>
+            <div ng-messages="newHaproxyForm.vip.$error">
+                <div ng-message="required">Il faut indiquer la VIP portée par cet HAProxy</div>
+            </div>
         </md-input-container>
         <md-input-container flex="10">
             <label>Plateforme</label>
@@ -44,10 +69,16 @@
                 <md-option>preproduction</md-option>
                 <md-option>production</md-option>
             </md-select>
+            <div ng-messages="newHaproxyForm.platform.$error">
+                <div ng-message="required">Il faut selectionner le type de plateforme</div>
+            </div>
         </md-input-container>
-        <md-checkbox ng-model="haproxy.disabled" aria-label="désactivé ?">
-            désactivé ?
-        </md-checkbox>
+        <md-input-container flex="10">
+            <md-checkbox ng-model="haproxy.disabled" aria-label="Activer le refresh auto ?" ng-true-value="false"
+                         ng-false-value="true">
+                Activer le refresh auto ?
+            </md-checkbox>
+        </md-input-container>
     </div>
     <div layout="row">
         <md-input-container>
