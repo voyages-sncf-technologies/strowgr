@@ -1,5 +1,7 @@
 package com.vsct.dt.strowgr.admin.repository.consul;
 
+import rx.Observable;
+
 /**
  * ~  Copyright (C) 2016 VSCT
  * ~
@@ -18,14 +20,15 @@ package com.vsct.dt.strowgr.admin.repository.consul;
  */
 public class ConsulConnection {
 
-    public ConsulRepository.Session createSession(int ttl, ConsulRepository.SESSION_BEHAVIOR behavior) {
+    public Observable<ConsulRepository.Session> createSession(int ttl, ConsulRepository.SESSION_BEHAVIOR behavior) {
         return null;
     }
 
-    public void renewSession(String id) {
-
+    public Observable<ConsulRepository.Session> renewSession(String id) {
+        return null;
     }
 
-    public void destroySession(String id) {
+    public Observable<ConsulRepository.Session> destroySession(String id) {
+        return null;
     }
 }
