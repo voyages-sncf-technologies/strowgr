@@ -50,11 +50,11 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
      * RELEASE removes only the session when the TTL is reached or after an explicit release.
      * DELETE removes the key/value which acquires this session too.
      */
-    private enum CONSUL_BEHAVIOR {
+    public enum SESSION_BEHAVIOR {
         RELEASE("release"), DELETE("delete");
         private String value;
 
-        CONSUL_BEHAVIOR(String value) {
+        SESSION_BEHAVIOR(String value) {
             this.value = value;
         }
     }
@@ -131,10 +131,10 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
     }
 
     Optional<Session> createSession(EntryPointKey entryPointKey) throws IOException {
-        return createSession(entryPointKey, 10, CONSUL_BEHAVIOR.RELEASE);
+        return createSession(entryPointKey, 10, SESSION_BEHAVIOR.RELEASE);
     }
 
-    private Optional<Session> createSession(EntryPointKey entryPointKey, Integer ttlInSec, CONSUL_BEHAVIOR behavior) throws IOException {
+    private Optional<Session> createSession(EntryPointKey entryPointKey, Integer ttlInSec, SESSION_BEHAVIOR behavior) throws IOException {
         HttpPut createSessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/create");
         if (ttlInSec != null) {
             String payload = "{\"Behavior\":\"" + behavior.value + "\",\"TTL\":\"" + ttlInSec + "s\", \"Name\":\"" + entryPointKey.getID() + "\"}";
@@ -254,7 +254,7 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
                the session and thus the committing config will also be lost,
                TTL cannot be honored in that corner case.
              */
-            String sessionId = createSession(entryPointKey, ttl, CONSUL_BEHAVIOR.DELETE).orElseThrow(IllegalStateException::new).ID;
+            String sessionId = createSession(entryPointKey, ttl, SESSION_BEHAVIOR.DELETE).orElseThrow(IllegalStateException::new).ID;
 
             HttpPut setCommittingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/committing?acquire=" + sessionId);
 
@@ -529,12 +529,16 @@ public class ConsulRepository implements EntryPointRepository, PortProvider {
         }
     }
 
-    static class Session {
+    public static class Session {
         private String ID;
 
         @JsonCreator
         Session(@JsonProperty("ID") String ID) {
             this.ID = ID;
+        }
+
+        public String getID() {
+            return ID;
         }
     }
 
