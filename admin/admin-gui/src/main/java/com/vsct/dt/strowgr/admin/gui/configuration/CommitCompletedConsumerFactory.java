@@ -59,7 +59,7 @@ public class CommitCompletedConsumerFactory {
                 commitCompleted = objectMapper.readValue(message.getMessage(), CommitCompleted.class);
             } catch (IOException e) {
                 LOGGER.error("can't deserialize the commitCompleted:" + new String(message.getMessage()), e);
-                // Avoid republishing message and stop processing
+                // Avoid republishing message and stopLookup processing
                 message.finished();
                 return;
             }

@@ -55,7 +55,7 @@ public class CommitFailedConsumerFactory {
                 commitFailed = objectMapper.readValue(message.getMessage(), CommitFailed.class);
             } catch (IOException e) {
                 LOGGER.error("can't deserialize the commitFailed:" + new String(message.getMessage()), e);
-                //Avoid republishing message and stop processing
+                //Avoid republishing message and stopLookup processing
                 message.finished();
                 return;
             }

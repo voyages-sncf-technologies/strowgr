@@ -21,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicSchedulerFactory;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
-import org.hibernate.validator.constraints.NotEmpty;
 
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -52,9 +52,6 @@ public class StrowgrConfiguration extends Configuration {
     @NotNull
     private PeriodicSchedulerFactory periodicSchedulerFactory;
 
-    @NotEmpty
-    private String defaultHAPName;
-
     @Min(1)
     private int threads;
 
@@ -64,6 +61,53 @@ public class StrowgrConfiguration extends Configuration {
     @Valid
     @NotNull
     private HttpClientConfiguration httpClient = new HttpClientConfiguration();
+
+    @Valid
+    @Nullable
+    private NSQConfigFactory nsqConsumerConfigFactory;
+
+    @Valid
+    @Nullable
+    private NSQConfigFactory nsqProducerConfigFactory;
+
+    @Nullable
+    private String nsqChannel;
+
+    @JsonProperty("nsqChannel")
+    public String getNsqChannel() {
+        return nsqChannel;
+    }
+
+    @JsonProperty("nsqChannel")
+    public void setNsqChannel(String nsqChannel) {
+        this.nsqChannel = nsqChannel;
+    }
+
+    @JsonProperty("nsqConsumerConfigFactory")
+    public NSQConfigFactory getNsqConsumerConfigFactory() {
+        if(nsqProducerConfigFactory == null){
+            return new NSQConfigFactory();
+        }
+        return nsqConsumerConfigFactory;
+    }
+
+    @JsonProperty("nsqConsumerConfigFactory")
+    public void setNsqConsumerConfigFactory(NSQConfigFactory nsqConsumerConfigFactory) {
+        this.nsqConsumerConfigFactory = nsqConsumerConfigFactory;
+    }
+
+    @JsonProperty("nsqProducerConfigFactory")
+    public NSQConfigFactory getNsqProducerConfigFactory() {
+        if(nsqProducerConfigFactory == null){
+            return new NSQConfigFactory();
+        }
+        return nsqProducerConfigFactory;
+    }
+
+    @JsonProperty("nsqProducerConfigFactory")
+    public void setNsqProducerConfigFactory(NSQConfigFactory nsqProducerConfigFactory) {
+        this.nsqProducerConfigFactory = nsqProducerConfigFactory;
+    }
 
     @JsonProperty("repository")
     public ConsulRepositoryFactory getConsulRepositoryFactory() {
@@ -103,16 +147,6 @@ public class StrowgrConfiguration extends Configuration {
     @JsonProperty("periodicScheduler")
     public void setPeriodicSchedulerFactory(PeriodicSchedulerFactory periodicSchedulerFactory) {
         this.periodicSchedulerFactory = periodicSchedulerFactory;
-    }
-
-    @JsonProperty("haproxyName")
-    public String getDefaultHAPName() {
-        return defaultHAPName;
-    }
-
-    @JsonProperty("haproxyName")
-    public void setDefaultHAPName(String defaultHAPName) {
-        this.defaultHAPName = defaultHAPName;
     }
 
     @JsonProperty("threads")

@@ -75,7 +75,7 @@ public class RegisterServerMessageConsumerFactory {
 
             } catch (IOException e) {
                 LOGGER.error("can't deserialize the registerServer of message at " + message.getTimestamp() + ", id=" + Arrays.toString(message.getId()) + ": " + Arrays.toString(message.getMessage()), e);
-                //Avoid republishing message and stop processing
+                //Avoid republishing message and stopLookup processing
                 message.finished();
                 return;
             }

@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQConfig;
 import com.github.brainlag.nsq.NSQMessage;
 import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
@@ -25,36 +26,34 @@ import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitFailed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.exceptions.Exceptions;
 
-import java.io.IOException;
-
+/**
+ * This consumer listens to the commit_failed events for a specific haproxy
+ */
 public class CommitFailedConsumer extends ObservableNSQConsumer<CommitFailureEvent> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommitFailedConsumer.class);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumer.class);
 
     private static final String TOPIC_PREFIX = "commit_failed_";
 
     private final ObjectMapper objectMapper;
 
-    public CommitFailedConsumer(NSQLookup lookup, String haproxy, ObjectMapper objectMapper) {
-        super(lookup, TOPIC_PREFIX + haproxy, NSQ.CHANNEL);
+    public CommitFailedConsumer(NSQLookup lookup, String haproxy, ObjectMapper objectMapper, NSQConfig config) {
+        super(lookup, TOPIC_PREFIX + haproxy, NSQ.CHANNEL, config);
         this.objectMapper = objectMapper;
     }
 
     @Override
-    protected CommitFailureEvent transform(NSQMessage nsqMessage) {
-        try {
-            CommitFailed payload = objectMapper.readValue(nsqMessage.getMessage(), CommitFailed.class);
-            return new CommitFailureEvent(
-                    payload.getHeader().getCorrelationId(),
-                    new EntryPointKeyVsctImpl(
-                            payload.getHeader().getApplication(),
-                            payload.getHeader().getPlatform())
-            );
-        } catch (IOException e) {
-            LOGGER.error("can't deserialize the payload of message at " + nsqMessage.getTimestamp() + ", id=" + new String(nsqMessage.getId()) + ", payload=" + new String(nsqMessage.getMessage()), e);
-            throw Exceptions.propagate(e);
-        }
+    protected CommitFailureEvent transform(NSQMessage nsqMessage) throws Exception {
+        CommitFailed payload = objectMapper.readValue(nsqMessage.getMessage(), CommitFailed.class);
+
+        LOGGER.debug("received an new CommitFailureEvent with cid {}", payload.getHeader().getCorrelationId());
+
+        return new CommitFailureEvent(
+                payload.getHeader().getCorrelationId(),
+                new EntryPointKeyVsctImpl(
+                        payload.getHeader().getApplication(),
+                        payload.getHeader().getPlatform())
+        );
     }
 }
