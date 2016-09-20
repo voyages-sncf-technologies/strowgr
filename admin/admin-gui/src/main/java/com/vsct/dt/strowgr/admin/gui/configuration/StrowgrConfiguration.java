@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicSchedulerFactory;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 

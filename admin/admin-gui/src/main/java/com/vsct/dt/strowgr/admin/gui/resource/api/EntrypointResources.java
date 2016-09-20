@@ -23,7 +23,7 @@ import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
-import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
@@ -77,6 +77,32 @@ public class EntrypointResources {
     @Timed
     public Set<String> getEntryPoints() {
         return repository.getEntryPointsId();
+    }
+
+    @GET
+    @Path("/{id : .+}/disabled")
+    public Boolean isDisabled(@PathParam("id") String entryPointKey) {
+        return repository.isDisabled(new EntryPointKeyDefaultImpl(entryPointKey));
+    }
+
+    @PATCH
+    @Path("/{id : .+}/availability/swap")
+    public void setDisabled(@Suspended AsyncResponse asyncResponse, @PathParam("id") String entryPointKey) {
+        SwapAvailabilityRequestedEvent swapAvailabilityRequestedEvent = new SwapAvailabilityRequestedEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPointKey));
+        new CallbackBuilder(swapAvailabilityRequestedEvent.getCorrelationId())
+                .whenReceive(new AsyncResponseCallback<AvailabilitySwappedEvent>(asyncResponse) {
+                    @Override
+                    void handle(AvailabilitySwappedEvent availabilitySwappedEvent) throws Exception {
+                        if (availabilitySwappedEvent.swapped()) {
+                            asyncResponse.resume(status(PARTIAL_CONTENT)
+                                    .build());
+                        } else {
+                            asyncResponse.resume(status(NOT_FOUND).build());
+                        }
+                    }
+                })
+                .timeoutAfter(20, TimeUnit.SECONDS);
+        eventBus.post(swapAvailabilityRequestedEvent);
     }
 
     @PUT
@@ -287,6 +313,11 @@ public class EntrypointResources {
     @Subscribe
     public void handle(EntryPointUpdatedEvent entryPointUpdatedEvent) {
         handleWithCorrelationId(entryPointUpdatedEvent);
+    }
+
+    @Subscribe
+    public void handle(AvailabilitySwappedEvent availabilitySwappedEvent) {
+        handleWithCorrelationId(availabilitySwappedEvent);
     }
 
     @Subscribe

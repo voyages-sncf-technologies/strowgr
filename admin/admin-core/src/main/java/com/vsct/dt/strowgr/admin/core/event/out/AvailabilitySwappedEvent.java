@@ -15,23 +15,32 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.core.event.in;
+package com.vsct.dt.strowgr.admin.core.event.out;
 
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
+import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 
 /**
- * Event triggered when current configuration is committing.
- * <p>
- * Created by william_montaz on 05/02/2016.
+ * Availability of the entrypoint has been swapped.
  */
-public class TryCommitCurrentConfigurationEvent extends EntryPointEvent {
+public class AvailabilitySwappedEvent extends EntryPointEvent {
 
-    public TryCommitCurrentConfigurationEvent(String correlationId, EntryPointKey key) {
+    private final boolean swapped;
+
+    public AvailabilitySwappedEvent(String correlationId, EntryPointKey key, boolean swapped) {
         super(correlationId, key);
+        this.swapped = swapped;
     }
 
     @Override
     public String toString() {
-        return "TryCommitCurrentConfigurationEvent " + super.toString();
+        return "AvailabilityUpdatedEvent{" +
+                "correlationId='" + getCorrelationId() + '\'' +
+                ", key=" + getKey() +
+                '}';
+    }
+
+    public boolean swapped() {
+        return swapped;
     }
 }

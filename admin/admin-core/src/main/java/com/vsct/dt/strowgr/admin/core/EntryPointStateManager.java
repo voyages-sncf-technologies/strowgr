@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.core;
 
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +71,16 @@ public class EntryPointStateManager {
     }
 
     /**
+     * Check if the entrypoint is disabled or not.
+     *
+     * @param entryPointKey to check
+     * @return true if entryPointKey field 'disabled' is present and valued at something different of 'true' or if request to consul server fails. False otherwise.
+     */
+    boolean isDisabled(EntryPointKey entryPointKey) {
+        return repository.isDisabled(entryPointKey);
+    }
+
+    /**
      * Puts a configuration in pending state.
      * The configuration will be pending only if it is different
      * from possible existing committing or current configuration
@@ -94,7 +105,7 @@ public class EntryPointStateManager {
                     return Optional.of(configuration);
                 }
             } else {
-                repository.setPendingConfiguration(key, configuration);
+                repository.setCurrentConfiguration(key, configuration);
                 return Optional.of(configuration);
             }
         }
@@ -105,8 +116,8 @@ public class EntryPointStateManager {
     /**
      * Put the pending configuration in committing state, only if there is not already a configuration in committing state
      *
-     * @param correlationId
-     * @param key of the entrypoint
+     * @param correlationId of the originate event
+     * @param key           of the entrypoint
      * @return the new committing configuration (optional)
      */
     Optional<EntryPoint> tryCommitPending(String correlationId, EntryPointKey key) {
@@ -130,8 +141,8 @@ public class EntryPointStateManager {
     /**
      * Put the current configuration in committing state, only if there is not already a configuration in committing state
      *
-     * @param correlationId
-     * @param key of the entrypoint
+     * @param correlationId of the originate event
+     * @param key           of the entrypoint
      * @return the new committing configuration (optional)
      */
     Optional<EntryPoint> tryCommitCurrent(String correlationId, EntryPointKey key) {
@@ -186,5 +197,9 @@ public class EntryPointStateManager {
      */
     public Optional<String> getCommitCorrelationId(EntryPointKey key) {
         return repository.getCommitCorrelationId(key);
+    }
+
+    public void setDisabled(EntryPointKey entryPointKey, Boolean disabled) {
+        repository.setDisabled(entryPointKey, disabled);
     }
 }

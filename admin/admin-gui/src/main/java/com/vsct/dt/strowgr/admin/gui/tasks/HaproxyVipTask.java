@@ -18,7 +18,7 @@
 package com.vsct.dt.strowgr.admin.gui.tasks;
 
 import com.google.common.collect.ImmutableMultimap;
-import com.vsct.dt.strowgr.admin.core.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import io.dropwizard.servlets.tasks.Task;
 
 import java.io.PrintWriter;
@@ -28,15 +28,15 @@ import java.io.PrintWriter;
  */
 public class HaproxyVipTask extends Task {
 
-    private final EntryPointRepository repository;
+    private final HaproxyRepository haproxyRepository;
 
-    public HaproxyVipTask(EntryPointRepository repository) {
+    public HaproxyVipTask(HaproxyRepository haproxyRepository) {
         super("haproxy/vip");
-        this.repository = repository;
+        this.haproxyRepository = haproxyRepository;
     }
 
     @Override
     public void execute(ImmutableMultimap<String, String> parameters, PrintWriter printWriter) throws Exception {
-        repository.setHaproxyProperty(parameters.get("haproxy").asList().get(0), "vip", parameters.get("vip").asList().get(0));
+        haproxyRepository.setHaproxyProperty(parameters.get("haproxy").asList().get(0), "vip", parameters.get("vip").asList().get(0));
     }
 }

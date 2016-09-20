@@ -38,7 +38,7 @@ var (
 	configFile = flag.String("config", "sidekick.conf", "Configuration file")
 	version = flag.Bool("version", false, "Print current version")
 	verbose = flag.Bool("verbose", false, "Log in verbose mode")
-	drunk = flag.Bool("drunk", false, "Random status/errors for entrypoint updates. Just for test purpose.")
+	fake = flag.String("fake", "yesman", "Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.")
 	config = nsq.NewConfig()
 	properties       *sidekick.Config
 	daemon           *sidekick.Daemon
@@ -67,7 +67,7 @@ func main() {
 	loadProperties()
 
 	haFactory = sidekick.NewLoadbalancerFactory()
-	haFactory.Drunk = *drunk
+	haFactory.Fake = *fake
 	haFactory.Properties = properties
 
 	daemon = sidekick.NewDaemon(properties)
@@ -187,14 +187,16 @@ func createTopicsAndChannels() {
 	for len(topicChan) > 0 {
 		// create the topic
 		topic := <-topicChan
-		log.WithField("topic", topic).Info("Creating topic")
+		log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Info("Creating topic")
 		url := fmt.Sprintf("%s/topic/create?topic=%s_%s", properties.ProducerRestAddr, topic, properties.ClusterId)
 		resp, err := http.PostForm(url, nil)
 		if err != nil || resp.StatusCode != 200 {
-			log.WithField("topic", topic).WithField("clusterid", properties.ClusterId).WithError(err).Error("topic can't be create")
+			log.WithField("topic", topic).WithField("clusterid", properties.ClusterId).WithError(err).Error("topic can't be created")
 			// retry to create this topic
 			topicChan <- topic
 			continue
+		} else {
+			log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Debug("topic created")
 		}
 
 		// create the channels of the topics
@@ -328,7 +330,7 @@ func reloadHaProxy(data *sidekick.EventMessageWithConf, isMaster bool) error {
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		if (isMaster) {
+		if (isMaster || hap.Fake()) {
 			publishMessage("commit_completed_", data.Clone(source), context)
 		} else {
 			publishMessage("commit_slave_completed_", data.CloneWithConf(source), context)

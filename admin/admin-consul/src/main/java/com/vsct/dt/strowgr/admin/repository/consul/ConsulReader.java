@@ -69,7 +69,7 @@ class ConsulReader {
      * @param httpResponse response to read
      * @param method       method to apply to the read result
      * @param <T>          Type of the method application
-     * @return the result of the method application. The result is not nullable.
+     * @return the result of the method application. The result is not nullable. If 404 occurs, Optional.empty() will be returned.
      * @throws ClientProtocolException thrown if the http status is not between 200 and 299 including
      */
     <T> Optional<T> parseHttpResponseAccepting404(HttpResponse httpResponse, Function<HttpEntity, Optional<T>> method) throws ClientProtocolException {

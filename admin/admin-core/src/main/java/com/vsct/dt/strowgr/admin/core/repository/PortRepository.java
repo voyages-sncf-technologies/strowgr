@@ -15,17 +15,19 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.core;
+package com.vsct.dt.strowgr.admin.core.repository;
+
+import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * Provider for ports administration.
+ * Repository for ports administration (haproxy frontend ports, syslogs ports...).
  * <p>
  * Created by william_montaz on 26/02/2016.
  */
-public interface PortProvider {
+public interface PortRepository {
 
     /**
      * Request all ports.
@@ -42,8 +44,15 @@ public interface PortProvider {
      */
     Optional<Integer> getPort(String key);
 
-    default Optional<Integer> getPort(EntryPointKey key, String portId) {
-        return getPort(PortProvider.getPortKey(key, portId));
+    /**
+     * Get port from a given entrypoint key (for instance {@link com.vsct.dt.strowgr.admin.core.configuration.EntryPoint#SYSLOG_PORT_ID}).
+     *
+     * @param entryPointKey of the entrypoint key
+     * @param portId        id of the port
+     * @return the port value
+     */
+    default Optional<Integer> getPort(EntryPointKey entryPointKey, String portId) {
+        return getPort(PortRepository.getPortKey(entryPointKey, portId));
     }
 
     /**
@@ -54,8 +63,15 @@ public interface PortProvider {
      */
     Integer newPort(String key);
 
-    default Integer newPort(EntryPointKey key, String portId) {
-        return newPort(PortProvider.getPortKey(key, portId));
+    /**
+     * Generate a new port in according of the configured range.
+     *
+     * @param entryPointKey of the entry point
+     * @param portId        the port id
+     * @return a new port
+     */
+    default Integer newPort(EntryPointKey entryPointKey, String portId) {
+        return newPort(PortRepository.getPortKey(entryPointKey, portId));
     }
 
     /**

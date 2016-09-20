@@ -29,3 +29,7 @@ func (hap DrunkHaproxy) Delete() error {
 	log.WithFields(hap.context.Fields()).Info("Delete drunk instance")
 	return nil
 }
+
+func (hap DrunkHaproxy) Fake() bool {
+	return true
+}

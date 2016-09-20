@@ -15,11 +15,11 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.core;
+package com.vsct.dt.strowgr.admin.core.repository;
 
+import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -48,7 +48,7 @@ public interface EntryPointRepository {
      * Sets the committing configuration with a TTL
      *
      * @param key           of the entrypoint
-     * @param configuration conent of the entrypoint
+     * @param configuration content of the entrypoint
      * @param ttl           the ttl in seconds
      */
     void setCommittingConfiguration(String correlationId, EntryPointKey key, EntryPoint configuration, int ttl);
@@ -65,54 +65,26 @@ public interface EntryPointRepository {
 
     void setCurrentConfiguration(EntryPointKey key, EntryPoint configuration);
 
+    /**
+     * Retrieve entrypoint ids.
+     *
+     * @return Set of entrypoint ids
+     */
     Set<String> getEntryPointsId();
 
     boolean lock(EntryPointKey key);
 
+    /**
+     * Check if the entrypoint is disabled or not.
+     *
+     * @param entryPointKey to check
+     * @return true if entryPointKey field 'disabled' is present and valued at something different of 'true' or if request to consul server fails. False otherwise.
+     */
+    boolean isDisabled(EntryPointKey entryPointKey);
+
     void release(EntryPointKey key);
-
-    /**
-     * Get vip for a given haproxy id.
-     * @param id of the haproxy
-     * @return return Optional String of the vip, {@code Optional#empty} if haproxy can't be found.
-     */
-    Optional<String> getHaproxyVip(String id);
-
-    /**
-     * Get all haproxy properties for each haproxy
-     * @return Map with haproxy properties by haproxy id
-     */
-    Optional<Map<String, Map<String, String>>> getHaproxyProperties();
-
-    /**
-     * Get haproxy ids stored in repository.
-     * @return Set of haproxy ids
-     */
-    Optional<Set<String>> getHaproxyIds();
-
-    /**
-     * Set a property for haproxy. For instance a vip, a haproxyId etc...
-     *
-     * @param haproxyId of the haproxy
-     * @param key to set for this haproxy
-     * @param value for this key
-     */
-    void setHaproxyProperty(String haproxyId, String key, String value);
-
-    /**
-     * Get a property for haproxy.
-     *
-     * @param haproxyId of the haproxy
-     * @param key to set for this haproxy
-     */
-    Optional<String> getHaproxyProperty(String haproxyId, String key);
 
     Optional<String> getCommitCorrelationId(EntryPointKey key);
 
-    /**
-     * Get haproxy properties (vip, name, etc...) for an given id.
-     * @param haproxyId id of the haproxy
-     * @return haproxy properties map
-     */
-    Optional<Map<String, String>> getHaproxyProperties(String haproxyId);
+    void setDisabled(EntryPointKey entryPointKey, Boolean disabled);
 }

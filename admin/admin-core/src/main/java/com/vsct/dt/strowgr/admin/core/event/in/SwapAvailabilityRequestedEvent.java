@@ -15,25 +15,25 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.gui.tasks;
+package com.vsct.dt.strowgr.admin.core.event.in;
 
-import com.google.common.collect.ImmutableMultimap;
-import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
-import io.dropwizard.servlets.tasks.Task;
+import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 
-import java.io.PrintWriter;
+/**
+ * Event of an update of availability on an entrypoint (enable or disable update to haproxies).
+ */
+public class SwapAvailabilityRequestedEvent extends EntryPointEvent {
 
-public class InitPortsTask extends Task {
-
-    private final PortRepository portRepository;
-
-    public InitPortsTask(PortRepository portRepository) {
-        super("initports");
-        this.portRepository = portRepository;
+    public SwapAvailabilityRequestedEvent(String correlationId, EntryPointKey key) {
+        super(correlationId, key);
     }
 
     @Override
-    public void execute(ImmutableMultimap<String, String> immutableMultimap, PrintWriter printWriter) throws Exception {
-        portRepository.initPorts();
+    public String toString() {
+        return "UpdateAvailabilityRequestedEvent{" +
+                "correlationId=" + getCorrelationId() +
+                "key=" + getKey() +
+                '}';
     }
+
 }

@@ -1,29 +1,37 @@
 package sidekick
 
+import log "github.com/Sirupsen/logrus"
+
 type Loadbalancer interface {
 	ApplyConfiguration(data *EventMessageWithConf) (int, error)
 	Stop() error
 	Delete() error
+	Fake() bool
 }
 
 type LoadbalancerFactory struct {
-	Drunk      bool
+	Fake       string
 	Properties *Config
 }
 
 func NewLoadbalancerFactory() *LoadbalancerFactory {
 	return &LoadbalancerFactory{
-		Drunk: false,
+		Fake: "none",
 	}
 }
 
 func (factory *LoadbalancerFactory) CreateHaproxy(role string, context Context) Loadbalancer {
-	if factory.Drunk {
+	if factory.Fake == "drunk" {
+		log.Info("mode drunk")
 		return &DrunkHaproxy{
 			role:    role,
 			context: context,
 		}
+	} else if ( factory.Fake == "yesman") {
+		log.Info("mode yesman")
+		return &YesmanHaproxy{}
 	} else {
+		log.Info("mode normal")
 		return NewHaproxy(role, factory.Properties, context)
 	}
 }

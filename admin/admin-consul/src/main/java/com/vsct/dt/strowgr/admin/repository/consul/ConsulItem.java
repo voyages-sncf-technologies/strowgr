@@ -87,4 +87,15 @@ public class ConsulItem<T> {
         return modifyIndex;
     }
 
+    @Override
+    public String toString() {
+        return "ConsulItem{" +
+                "lockIndex=" + lockIndex +
+                ", key='" + key + '\'' +
+                ", flags=" + flags +
+                ", value='" + value + '\'' +
+                ", createIndex=" + createIndex +
+                ", modifyIndex=" + modifyIndex +
+                '}';
+    }
 }

@@ -72,12 +72,15 @@
             min-height: 100%;
         }
 
+
+
+
     </style>
 
     <script type="text/javascript">
         var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages', 'ngSanitize']);
         adminApp.constant("libelle",{"entrypoint":"platforme",
-                                     "un_entrypoint":"une platforme",
+                                     "un_entrypoint":"une plateforme",
                                      "l_entrypoint":"la plateforme"});
         adminApp.run(['$rootScope','libelle', function ($rootScope,libelle) {
             $rootScope.libelle = libelle;
@@ -92,6 +95,10 @@
                     when('/add-entrypoint', {
                         templateUrl: 'partials/add-entrypoint.html',
                         controller: 'AddEntrypointCtrl'
+                    }).
+                    when('/add-haproxy', {
+                        templateUrl: 'partials/add-haproxy.html',
+                        controller: 'AddHaproxyCtrl'
                     }).
                     otherwise({
                         redirectTo: '/entrypoints'
@@ -169,11 +176,17 @@
                 url: '/api/entrypoints'
             }).then(function (response) {
                 $scope.entrypoints = response.data;
+                console.log('load entrypoints: '+response.data);
+                var size=response.data.length;
+                for(var id=0; id<size; id++){
+                   $scope.isDisabled(response.data[id]);
+                }
             });
 
             $scope.loadEntrypoint = function (id) {
                 $scope.selectedEntrypoint = id;
                 $rootScope.$broadcast("entrypoint-updated");
+
             }
 
             $scope.deleteEntrypoint = function (id) {
@@ -184,6 +197,32 @@
                 }).then(function (response) {
                     $scope.entrypoints = response.data;
                     $rootScope.$broadcast("entrypoint-updated");
+                });
+            }
+
+            $scope.disableEntrypoint = function (id) {
+                $scope.selectedEntrypoint = id;
+                $http.patch('/api/entrypoints/'+escape(id)+'/availability/swap')
+                    .then(function (response) {
+                    console.log('patch disabled of ' + id+ ' to ' + false);
+                    $scope.isDisabled(id);
+                });
+            }
+
+            $scope.disabledEntrypoints = {};
+            $scope.isDisabled = function (id) {
+                console.log('isDisabled ? '+id);
+                $http({
+                    method: 'GET',
+                    url: '/api/entrypoints/'+escape(id)+'/disabled'
+                }).then(function (response) {
+                    var isDisabled=response.data;
+                    console.log('disabledEntrypoints: '+ isDisabled+' for '+id);
+                    if(isDisabled){
+                        $scope.disabledEntrypoints[id] = 'lock_outline';
+                    } else {
+                        $scope.disabledEntrypoints[id] = 'lock_open';
+                    }
                 });
             }
 
@@ -303,9 +342,25 @@
                 filename: "haproxy_template.conf"
             };
 
+            // TODO currentHaproxy should be more directly managed by angular model
+            $scope.currentHaproxyUpdated = function(){
+                console.log('change current haproxy');
+                for(currentHaproxy in $scope.availableHaproxies) {
+                    if(currentHaproxy['id'] == $scope.conf.haproxy) {
+                        console.log("change current haproxy to " + currentHaproxy['id']);
+                        $scope.currentHaproxy = currentHaproxy;
+                    }
+                }
+            }
+
+
             Haproxy.all().then(function(data){
-                $scope.availableHaproxy = data;
+                $scope.availableHaproxies = data;
+                console.log(data);
+                 // select first haproxyid
+                 $scope.currentHaproxy = data[0];
             });
+
 
             $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
             $scope.forbiddenFrontendKeys = ['id', 'port'];
@@ -365,6 +420,26 @@
                         ok: "Je reprends ma configuration"
                     });
                     $mdDialog.show(alert);
+                });
+            };
+
+        }]);
+
+        adminApp.controller('AddHaproxyCtrl', ['$scope', '$http', '$location', 'Haproxy', '$mdDialog', function ($scope, $http, $location, Haproxy, $mdDialog) {
+            /* Init conf object, avoid undefined inner objects and show expected fields */
+            $scope.haproxy = {
+                name: "",
+                vip: "",
+                platform: "",
+                disabled: true
+            };
+
+            $scope.haproxyId= "";
+
+            $scope.createHaproxy = function () {
+                console.log("create haproxy "+$scope.haproxyId+": "+ JSON.stringify($scope.haproxy));
+                $http.put('/api/haproxy/'+$scope.haproxyId,$scope.haproxy).then(function (response) {
+                    $location.path('/');
                 });
             };
 
@@ -710,6 +785,13 @@
 
 
 
+
+
+
+
+
+
+
     </script>
 </head>
 <body>
@@ -718,10 +800,15 @@
         <md-content>
             <md-toolbar>
                 <div class="md-toolbar-tools">
-                    <h1 style="font-size: 42px">
-                        <span>Strowgr</span>
-                    </h1>
+                    <a href="/#">
+                        <h1 style="font-size: 42px">
+                            <span>Strowgr</span>
+                        </h1>
+                    </a>
                     <span flex></span>
+                    <md-button class="md-raised md-accent" ng-href="/#/add-haproxy">
+                        Ajouter un haproxy
+                    </md-button>
                     <md-button class="md-raised md-accent" ng-href="/#/add-entrypoint">
                         Ajouter {{libelle.un_entrypoint}}
                     </md-button>

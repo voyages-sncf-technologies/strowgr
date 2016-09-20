@@ -1,0 +1,88 @@
+<!--
+  ~  Copyright (C) 2016 VSCT
+  ~
+  ~  Licensed under the Apache License, Version 2.0 (the "License");
+  ~  you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  ~
+  -->
+
+<style type="text/css">
+    #add-haproxy-form {
+        padding: 15px;
+    }
+
+    #add-haproxy-form md-input-container {
+        margin-bottom: 0;
+        margin-right: 5px;
+    }
+
+    #add-haproxy-form md-checkbox {
+        margin-left: 15px;
+    }
+
+
+
+
+</style>
+
+<form id="add-haproxy-form" name="newHaproxyForm" ng-submit="newHaproxyForm.$valid && createHaproxy()" flex
+      ng-keydown="$event.keyCode == 13 && $event.preventDefault();">
+    <div layout="row">
+        <md-input-container flex="10">
+            <label>ID</label>
+            <input name="id" ng-model="haproxyId" required ng-pattern="'[A-Za-z-]+'"/>
+            <div ng-messages="newHaproxyForm.id.$error">
+                <div ng-message="required">Il faut choisir un ID</div>
+                <div ng-message="pattern">Ne peut pas contenir d'espace ou de caractères spéciaux</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
+            <label>Label</label>
+            <input name="label" ng-model="haproxy.name" required/>
+            <div ng-messages="newHaproxyForm.label.$error">
+                <div ng-message="required">Il faut choisir un label</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
+            <label>VIP</label>
+            <input name="vip" ng-model="haproxy.vip" required/>
+            <div ng-messages="newHaproxyForm.vip.$error">
+                <div ng-message="required">Il faut indiquer la VIP portée par cet HAProxy</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
+            <label>Plateforme</label>
+            <md-select name="platform" ng-model="haproxy.platform" required>
+                <md-option>assemblage</md-option>
+                <md-option>performance</md-option>
+                <md-option>integration</md-option>
+                <md-option>recette</md-option>
+                <md-option>preproduction</md-option>
+                <md-option>production</md-option>
+            </md-select>
+            <div ng-messages="newHaproxyForm.platform.$error">
+                <div ng-message="required">Il faut selectionner le type de plateforme</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
+            <md-checkbox ng-model="haproxy.disabled" aria-label="Activer le refresh auto ?" ng-true-value="false"
+                         ng-false-value="true">
+                Activer le refresh auto ?
+            </md-checkbox>
+        </md-input-container>
+    </div>
+    <div layout="row">
+        <md-input-container>
+            <input type="submit" value="Cr&eacute;er"/>
+        </md-input-container>
+    </div>
+</form>
