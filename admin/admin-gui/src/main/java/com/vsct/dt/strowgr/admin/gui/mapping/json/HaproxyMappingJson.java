@@ -1,16 +1,25 @@
 package com.vsct.dt.strowgr.admin.gui.mapping.json;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class HaproxyMappingJson {
-    @JsonProperty("name")
-    private String name;
-    @JsonProperty("vip")
-    private String vip;
-    @JsonProperty("platform")
-    private String platform;
-    @JsonProperty("disabled")
-    private String disabled = "false";
+
+    private final String name;
+    private final String vip;
+    private final String platform;
+    private final String disabled;
+
+    @JsonCreator
+    public HaproxyMappingJson(@JsonProperty("name") String name,
+                              @JsonProperty("vip") String vip,
+                              @JsonProperty("platform") String platform,
+                              @JsonProperty("disabled") String disabled) {
+        this.name = name;
+        this.vip = vip;
+        this.platform = platform;
+        this.disabled = disabled;
+    }
 
     public String getName() {
         return name;
