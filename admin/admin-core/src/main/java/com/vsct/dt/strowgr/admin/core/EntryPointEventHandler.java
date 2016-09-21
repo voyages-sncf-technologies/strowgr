@@ -204,6 +204,7 @@ public class EntryPointEventHandler {
                         .orElseThrow(() -> new IllegalStateException("can't retrieve haproxy ids for entrypoint " + entryPointKey))
                         .contains(configuration.getHaproxy()) || stateManager.isDisabled(entryPointKey)) {
                     stateManager.cancelCommit(entryPointKey);
+                    stateManager.prepare(entryPointKey, configuration);
                     LOGGER.info("skip tryCommitPending for event {} because haproxy {} is disabled", event, configuration.getHaproxy());
                 } else {
                     String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));

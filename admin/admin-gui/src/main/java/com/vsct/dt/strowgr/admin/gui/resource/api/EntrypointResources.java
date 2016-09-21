@@ -288,7 +288,7 @@ public class EntrypointResources {
 
     private void handleWithCorrelationId(EntryPointEvent event) {
         try {
-            LOGGER.trace("remove entrypoint {}", event);
+            LOGGER.trace("remove entrypoint {} from http callbacks", event);
             AsyncResponseCallback asyncResponseCallback = callbacks.remove(event.getCorrelationId());
             if (asyncResponseCallback != null) {
                 asyncResponseCallback.handle(event);
