@@ -99,7 +99,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), properties.NodeId(), config)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), fmt.Sprintf("delete_requested_%s#ephemeral", properties.NodeId()), config)
 		consumer.AddHandler(nsq.HandlerFunc(onDeleteRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -111,7 +111,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.NodeId(), config)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s#ephemeral", properties.ClusterId), properties.NodeId(), config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -123,7 +123,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s", properties.ClusterId), properties.NodeId(), config)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s#ephemeral", properties.ClusterId), properties.NodeId(), config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitSlaveRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -135,7 +135,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), properties.NodeId(), config)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s#ephemeral", properties.ClusterId), properties.NodeId(), config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -176,7 +176,7 @@ func main() {
 func createTopicsAndChannels() {
 	// Create required topics
 	topics := []string{"commit_slave_completed", "commit_completed", "commit_failed"}
-	channels := []string{"slave", "master"}
+	channels := []string{"slave#ephemeral", "master#ephemeral"}
 	topicChan := make(chan string, len(topics))
 
 	// fill the channel
