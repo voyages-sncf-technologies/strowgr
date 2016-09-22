@@ -29,9 +29,6 @@
         margin-left: 15px;
     }
 
-
-
-
 </style>
 
 <form id="add-haproxy-form" name="newHaproxyForm" ng-submit="newHaproxyForm.$valid && createHaproxy()" flex
@@ -74,15 +71,24 @@
             </div>
         </md-input-container>
         <md-input-container flex="10">
-            <md-checkbox ng-model="haproxy.disabled" aria-label="Activer le refresh auto ?" ng-true-value="false"
-                         ng-false-value="true">
+            <md-checkbox name="disabled" ng-model="haproxy.disabled" aria-label="Activer le refresh auto ?">
                 Activer le refresh auto ?
             </md-checkbox>
         </md-input-container>
     </div>
     <div layout="row">
+        <md-input-container flex="15">
+            <label>Chargement d'un HAProxy existant</label>
+            <md-select name="haproxy" ng-model="haproxyId" ng-change="loadHaproxy()">
+                <md-option ng-repeat="properties in availableHaproxies" ng-value="properties.id">
+                    {{properties.name}}
+                </md-option>
+            </md-select>
+        </md-input-container>
+    </div>
+    <div layout="row">
         <md-input-container>
-            <input type="submit" value="Cr&eacute;er"/>
+            <input type="submit" value="Enregistrer"/>
         </md-input-container>
     </div>
 </form>

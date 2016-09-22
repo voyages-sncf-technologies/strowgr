@@ -443,6 +443,27 @@
                 });
             };
 
+            Haproxy.all().then(function(data){
+                $scope.availableHaproxies = data;
+                console.log(data);
+            });
+
+            $scope.loadHaproxy = function() {
+                if($scope.haproxyId != "") {
+                    console.log("load existing haproxy " + $scope.haproxyId + ": " +JSON.stringify($scope.availableHaproxies));
+
+                    for(var currentHaproxy=0; currentHaproxy < $scope.availableHaproxies.length; currentHaproxy++) {
+                        if($scope.availableHaproxies[currentHaproxy]["id"] == $scope.haproxyId) {
+                            $scope.haproxy.name = $scope.availableHaproxies[currentHaproxy]["name"];
+                            $scope.haproxy.vip = $scope.availableHaproxies[currentHaproxy]["vip"];
+                            $scope.haproxy.platform = $scope.availableHaproxies[currentHaproxy]["platform"];
+                            $scope.haproxy.disabled = ("true" == $scope.haproxy.disabled);
+                            console.log("load haproxy "+JSON.stringify($scope.availableHaproxies[currentHaproxy]));
+                        }
+                    }
+                }
+            }
+
         }]);
 
         adminApp.directive('entrypointUpdate', ['$http', 'Haproxy', '$mdDialog', '$rootScope', function ($http, Haproxy, $mdDialog, $rootScope) {

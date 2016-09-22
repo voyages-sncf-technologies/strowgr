@@ -8,13 +8,13 @@ public class HaproxyMappingJson {
     private final String name;
     private final String vip;
     private final String platform;
-    private final String disabled;
+    private final boolean disabled;
 
     @JsonCreator
     public HaproxyMappingJson(@JsonProperty("name") String name,
                               @JsonProperty("vip") String vip,
                               @JsonProperty("platform") String platform,
-                              @JsonProperty("disabled") String disabled) {
+                              @JsonProperty("disabled") boolean disabled) {
         this.name = name;
         this.vip = vip;
         this.platform = platform;
@@ -33,7 +33,7 @@ public class HaproxyMappingJson {
         return platform;
     }
 
-    public String getDisabled() {
+    public boolean getDisabled() {
         return disabled;
     }
 }
