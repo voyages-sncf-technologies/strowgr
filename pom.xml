@@ -32,7 +32,6 @@
         <module>aggregator</module>
         <!--GO modules-->
         <module>sidekick</module>
-        <module>registrator</module>
     </modules>
 
     <scm>
