@@ -165,6 +165,15 @@
                     }).then(function (response) {
                         return response.data;
                     });
+                },
+                getFrontBackends: function (uri) {
+                    return $http({
+                        method: 'GET',
+                        url: '/api/haproxy/template/frontbackends?uri=' + escape(uri),
+                        responseType: 'text'
+                    }).then(function (response) {
+                        return response.data;
+                    });
                 }
             }
         }]);
@@ -395,6 +404,49 @@
                 }
             };
 
+            $scope.reloadFrontBackends = function () {
+                var uri="http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.conf.context.application+"/"+$scope.gitlabTemplate.filename;
+                console.log("uri : "+uri);
+                Haproxy.getFrontBackends(uri)
+                    .then(function (response){
+                        // update frontends
+                        for(var newfrontendId=0;newfrontendId<response["frontends"].length;newfrontendId++){
+                            var alreadyLoaded=false;
+                            var newfrontend = response["frontends"][newfrontendId];
+                            for(var f=0; f<$scope.conf.frontends.length;f++){
+                                if(newfrontend == $scope.conf.frontends[f]['id']){
+                                    alreadyLoaded=true;
+                                    break;
+                                }
+                            }
+                            if(!alreadyLoaded){
+                                $scope.conf.frontends.push({
+                                    id: newfrontend,
+                                    context:{}
+                                 });
+                            }
+                        }
+                        console.log("frontends "+JSON.stringify($scope.conf.frontends));
+                        // update backends
+                        for(var backendId=0;backendId<response["backends"].length;backendId++){
+                            var alreadyLoaded=false;
+                            var newbackend = response["backends"][backendId];
+                            for(var f=0; f<$scope.conf.backends.length;f++){
+                                if(newbackend == $scope.conf.backends[f]['id']){
+                                    alreadyLoaded=true;
+                                    break;
+                                }
+                            }
+                            if(!alreadyLoaded){
+                                $scope.conf.backends.push({
+                                    id: newbackend,
+                                    context:{}
+                                 });
+                            }
+                        }
+                    });
+            }
+
             /* Checks the entrypoint configuration first and then creates the entrypoint */
             $scope.createEntrypoint = function () {
                 /* Construction of gitlab url */
@@ -507,6 +559,53 @@
                             scope.conf.backends.splice(index, 1);
                         }
                     };
+
+                    scope.reloadFrontBackends = function () {
+                        console.log('reload');
+                        /**
+                        var uri="http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.conf.context.application+"/"+$scope.gitlabTemplate.filename;
+                        console.log("uri : "+uri);
+                        Haproxy.getFrontBackends(uri)
+                            .then(function (response){
+                                // update frontends
+                                for(var newfrontendId=0;newfrontendId<response["frontends"].length;newfrontendId++){
+                                    var alreadyLoaded=false;
+                                    var newfrontend = response["frontends"][newfrontendId];
+                                    for(var f=0; f<$scope.conf.frontends.length;f++){
+                                        if(newfrontend == $scope.conf.frontends[f]['id']){
+                                            alreadyLoaded=true;
+                                            break;
+                                        }
+                                    }
+                                    if(!alreadyLoaded){
+                                        $scope.conf.frontends.push({
+                                            id: newfrontend,
+                                            context:{}
+                                         });
+                                    }
+                                }
+                                console.log("frontends "+JSON.stringify($scope.conf.frontends));
+                                // update backends
+                                for(var backendId=0;backendId<response["backends"].length;backendId++){
+                                    var alreadyLoaded=false;
+                                    var newbackend = response["backends"][backendId];
+                                    for(var f=0; f<$scope.conf.backends.length;f++){
+                                        if(newbackend == $scope.conf.backends[f]['id']){
+                                            alreadyLoaded=true;
+                                            break;
+                                        }
+                                    }
+                                    if(!alreadyLoaded){
+                                        $scope.conf.backends.push({
+                                            id: newbackend,
+                                            context:{}
+                                         });
+                                    }
+                                }
+                            });
+                            **/
+                    }
+
 
                     scope.updateEntrypoint = function () {
                         //Create the update model

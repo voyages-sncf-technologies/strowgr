@@ -28,8 +28,7 @@ import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import static javax.ws.rs.core.Response.ok;
 import static javax.ws.rs.core.Response.status;
@@ -38,8 +37,8 @@ import static javax.ws.rs.core.Response.status;
 public class HaproxyResources {
 
     private final UriTemplateLocator templateLocator;
-    private final HaproxyRepository  repository;
-    private final TemplateGenerator  templateGenerator;
+    private final HaproxyRepository repository;
+    private final TemplateGenerator templateGenerator;
 
     public HaproxyResources(HaproxyRepository repository, UriTemplateLocator templateLocator, TemplateGenerator templateGenerator) {
         this.repository = repository;
@@ -109,6 +108,23 @@ public class HaproxyResources {
         return templateLocator.readTemplate(uri)
                 .map(template -> ok(template).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("Could not find any template at " + uri).build());
+    }
+
+    @GET
+    @Path("/template/frontbackends")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Set<String>> getFrontAndBackends(@QueryParam("uri") String uri) {
+        if (uri == null || uri.equals("")) {
+            throw new BadRequestException("You must provide 'uri' query param");
+        }
+        return templateLocator.readTemplate(uri)
+                .map(templateGenerator::generateFrontAndBackends)
+                .orElseGet(() -> {
+                    HashMap<String, Set<String>> result = new HashMap<>();
+                    result.put("frontends", new HashSet<>());
+                    result.put("backends", new HashSet<>());
+                    return result;
+                });
     }
 
     @POST
