@@ -23,6 +23,8 @@ import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.exceptions.NSQException;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitRequested;
 import com.vsct.dt.strowgr.admin.nsq.payload.DeleteRequested;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Base64;
@@ -30,11 +32,14 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Dispatcher of events to NSQ.
- *
+ * <p>
  * WARNING: NSQProducer is not managed by this dispatcher. For instance the start/shutdown should be done outside this
  * object.
  */
 public class NSQDispatcher {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NSQDispatcher.class);
+
     private static final String SOURCE_NAME = "admin";
 
     private final NSQProducer nsqProducer;
@@ -65,7 +70,11 @@ public class NSQDispatcher {
         CommitRequested payload = new CommitRequested(correlationId, application, platform, confBase64, syslogConfBase64);
         payload.getHeader().setSource(SOURCE_NAME);
 
-        nsqProducer.produce("commit_requested_" + haproxyName, mapper.writeValueAsBytes(payload));
+        try {
+            nsqProducer.produce("commit_requested_" + haproxyName, mapper.writeValueAsBytes(payload));
+        } catch (NSQException | TimeoutException | JsonProcessingException e) {
+            LOGGER.error("can't produce NSQ message to commit_requested_" + haproxyName, e);
+        }
     }
 
     /**
