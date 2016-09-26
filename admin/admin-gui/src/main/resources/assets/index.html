@@ -562,8 +562,8 @@
 
                     scope.reloadFrontBackends = function () {
                         console.log('reload');
-                        /**
-                        var uri="http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.conf.context.application+"/"+$scope.gitlabTemplate.filename;
+
+                        var uri=scope.conf.context.templateUri;
                         console.log("uri : "+uri);
                         Haproxy.getFrontBackends(uri)
                             .then(function (response){
@@ -571,39 +571,39 @@
                                 for(var newfrontendId=0;newfrontendId<response["frontends"].length;newfrontendId++){
                                     var alreadyLoaded=false;
                                     var newfrontend = response["frontends"][newfrontendId];
-                                    for(var f=0; f<$scope.conf.frontends.length;f++){
-                                        if(newfrontend == $scope.conf.frontends[f]['id']){
+                                    for(var f=0; f<scope.conf.frontends.length;f++){
+                                        if(newfrontend == scope.conf.frontends[f]['id']){
                                             alreadyLoaded=true;
                                             break;
                                         }
                                     }
                                     if(!alreadyLoaded){
-                                        $scope.conf.frontends.push({
+                                        scope.conf.frontends.push({
                                             id: newfrontend,
                                             context:{}
                                          });
                                     }
                                 }
-                                console.log("frontends "+JSON.stringify($scope.conf.frontends));
+                                console.log("frontends "+JSON.stringify(scope.conf.frontends));
                                 // update backends
                                 for(var backendId=0;backendId<response["backends"].length;backendId++){
                                     var alreadyLoaded=false;
                                     var newbackend = response["backends"][backendId];
-                                    for(var f=0; f<$scope.conf.backends.length;f++){
-                                        if(newbackend == $scope.conf.backends[f]['id']){
+                                    for(var f=0; f<scope.conf.backends.length;f++){
+                                        if(newbackend == scope.conf.backends[f]['id']){
                                             alreadyLoaded=true;
                                             break;
                                         }
                                     }
                                     if(!alreadyLoaded){
-                                        $scope.conf.backends.push({
+                                        scope.conf.backends.push({
                                             id: newbackend,
                                             context:{}
                                          });
                                     }
                                 }
                             });
-                            **/
+
                     }
 
 
