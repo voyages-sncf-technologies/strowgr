@@ -188,7 +188,7 @@
                 console.log('load entrypoints: '+response.data);
                 var size=response.data.length;
                 for(var id=0; id<size; id++){
-                   $scope.isDisabled(response.data[id]);
+                   $scope.isAutoreloaded(response.data[id]);
                 }
             });
 
@@ -209,28 +209,27 @@
                 });
             }
 
-            $scope.disableEntrypoint = function (id) {
+            $scope.swapAutoreloadEntrypoint = function (id) {
                 $scope.selectedEntrypoint = id;
-                $http.patch('/api/entrypoints/'+escape(id)+'/availability/swap')
+                $http.patch('/api/entrypoints/'+escape(id)+'/autoreload/swap')
                     .then(function (response) {
-                    console.log('patch disabled of ' + id+ ' to ' + false);
-                    $scope.isDisabled(id);
+                    $scope.isAutoreloaded(id);
                 });
             }
 
-            $scope.disabledEntrypoints = {};
-            $scope.isDisabled = function (id) {
-                console.log('isDisabled ? '+id);
+            $scope.autoreloadEntrypoints = {};
+            $scope.isAutoreloaded = function (id) {
+                console.log('isAutoreloaded ? '+id);
                 $http({
                     method: 'GET',
-                    url: '/api/entrypoints/'+escape(id)+'/disabled'
+                    url: '/api/entrypoints/'+escape(id)+'/autoreload'
                 }).then(function (response) {
-                    var isDisabled=response.data;
-                    console.log('disabledEntrypoints: '+ isDisabled+' for '+id);
-                    if(isDisabled){
-                        $scope.disabledEntrypoints[id] = 'lock_outline';
+                    var isAutoreloaded=response.data;
+                    console.log('autoreloadEntrypoints: '+ isAutoreloaded +' for '+id);
+                    if(isAutoreloaded){
+                        $scope.autoreloadEntrypoints[id] = 'lock_open';
                     } else {
-                        $scope.disabledEntrypoints[id] = 'lock_open';
+                        $scope.autoreloadEntrypoints[id] = 'lock_outline';
                     }
                 });
             }

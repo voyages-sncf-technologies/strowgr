@@ -83,14 +83,14 @@
                              style="margin-left:1px; padding-left:1px">delete
                     </md-icon>
                 </md-button>
-                <md-button flex="15" id="{{entrypointId}}-disabled-entrypoint-btn"
-                           ng-click="disableEntrypoint(entrypointId,$event)" style="margin-left:1px; padding-left:1px;">
+                <md-button flex="15" id="{{entrypointId}}-autoreload-entrypoint-btn"
+                           ng-click="swapAutoreloadEntrypoint(entrypointId,$event)" style="margin-left:1px; padding-left:1px;">
                     <md-tooltip md-direction="bottom">
                         Active (unlock) ou Désactive (lock) le refresh auto pour cet entrypoint.
                     </md-tooltip>
                     <md-icon class="material-icons"
-                             ng-style="{color: 'lock_outline' == disabledEntrypoints[entrypointId] ? 'red': 'green' , 'height':'24px', 'margin-left':'1px', 'padding-left':'1px'}" aria-label="disable or enable entrypoint">
-                        {{disabledEntrypoints[entrypointId]}}
+                             ng-style="{color: 'lock_outline' == autoreloadEntrypoints[entrypointId] ? 'red': 'green' , 'height':'24px', 'margin-left':'1px', 'padding-left':'1px'}" aria-label="active ou non l'autoreload">
+                        {{autoreloadEntrypoints[entrypointId]}}
                     </md-icon>
                 </md-button>
             </div>

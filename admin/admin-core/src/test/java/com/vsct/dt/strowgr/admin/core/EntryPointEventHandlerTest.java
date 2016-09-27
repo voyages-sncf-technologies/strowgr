@@ -369,7 +369,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_current_with_disabled_haproxy() {
+    public void try_commit_current_with_no_autoreload_haproxy() {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
@@ -424,7 +424,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_pending_with_disabled_haproxy() {
+    public void try_commit_pending_with_no_autoreload_haproxy() {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();

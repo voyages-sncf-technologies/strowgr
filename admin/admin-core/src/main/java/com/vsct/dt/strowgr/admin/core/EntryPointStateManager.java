@@ -71,13 +71,13 @@ public class EntryPointStateManager {
     }
 
     /**
-     * Check if the entrypoint is disabled or not.
+     * Check if the entrypoint is on autoreload mode or not.
      *
      * @param entryPointKey to check
-     * @return true if entryPointKey field 'disabled' is present and valued at something different of 'true' or if request to consul server fails. False otherwise.
+     * @return true if entryPointKey field 'autoreload' is present and valued at 'true'. False otherwise.
      */
-    boolean isDisabled(EntryPointKey entryPointKey) {
-        return repository.isDisabled(entryPointKey);
+    boolean isAutoreloaded(EntryPointKey entryPointKey) {
+        return repository.isAutoreloaded(entryPointKey);
     }
 
     /**
@@ -199,7 +199,7 @@ public class EntryPointStateManager {
         return repository.getCommitCorrelationId(key);
     }
 
-    public void setDisabled(EntryPointKey entryPointKey, Boolean disabled) {
-        repository.setDisabled(entryPointKey, disabled);
+    public void setAutoreload(EntryPointKey entryPointKey, Boolean autoreload) {
+        repository.setAutoreload(entryPointKey, autoreload);
     }
 }

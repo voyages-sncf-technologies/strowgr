@@ -80,29 +80,28 @@ public class EntrypointResources {
     }
 
     @GET
-    @Path("/{id : .+}/disabled")
-    public Boolean isDisabled(@PathParam("id") String entryPointKey) {
-        return repository.isDisabled(new EntryPointKeyDefaultImpl(entryPointKey));
+    @Path("/{id : .+}/autoreload")
+    public Boolean isAutoreloaded(@PathParam("id") String entryPointKey) {
+        return repository.isAutoreloaded(new EntryPointKeyDefaultImpl(entryPointKey));
     }
 
     @PATCH
-    @Path("/{id : .+}/availability/swap")
-    public void setDisabled(@Suspended AsyncResponse asyncResponse, @PathParam("id") String entryPointKey) {
-        SwapAvailabilityRequestedEvent swapAvailabilityRequestedEvent = new SwapAvailabilityRequestedEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPointKey));
-        new CallbackBuilder(swapAvailabilityRequestedEvent.getCorrelationId())
-                .whenReceive(new AsyncResponseCallback<AvailabilitySwappedEvent>(asyncResponse) {
+    @Path("/{id : .+}/autoreload/swap")
+    public void setAutoreload(@Suspended AsyncResponse asyncResponse, @PathParam("id") String entryPointKey) {
+        SwapAutoreloadRequestedEvent swapAutoreloadRequestedEvent = new SwapAutoreloadRequestedEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPointKey));
+        new CallbackBuilder(swapAutoreloadRequestedEvent.getCorrelationId())
+                .whenReceive(new AsyncResponseCallback<AutoreloadSwappedEvent>(asyncResponse) {
                     @Override
-                    void handle(AvailabilitySwappedEvent availabilitySwappedEvent) throws Exception {
-                        if (availabilitySwappedEvent.swapped()) {
-                            asyncResponse.resume(status(PARTIAL_CONTENT)
-                                    .build());
+                    void handle(AutoreloadSwappedEvent autoreloadSwappedEvent) throws Exception {
+                        if (autoreloadSwappedEvent.swapped()) {
+                            asyncResponse.resume(status(PARTIAL_CONTENT).build());
                         } else {
                             asyncResponse.resume(status(NOT_FOUND).build());
                         }
                     }
                 })
                 .timeoutAfter(20, TimeUnit.SECONDS);
-        eventBus.post(swapAvailabilityRequestedEvent);
+        eventBus.post(swapAutoreloadRequestedEvent);
     }
 
     @PUT
@@ -316,8 +315,8 @@ public class EntrypointResources {
     }
 
     @Subscribe
-    public void handle(AvailabilitySwappedEvent availabilitySwappedEvent) {
-        handleWithCorrelationId(availabilitySwappedEvent);
+    public void handle(AutoreloadSwappedEvent autoreloadSwappedEvent) {
+        handleWithCorrelationId(autoreloadSwappedEvent);
     }
 
     @Subscribe
