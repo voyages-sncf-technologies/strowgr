@@ -40,8 +40,9 @@ public interface HaproxyRepository {
     /**
      * Get ids of disabled haproxy .
      * @return Set of disabled haproxy
+     * @param haproxyId id of the haproxy
      */
-    Optional<Set<String>> getDisabledHaproxyIds();
+    boolean isAutoreload(String haproxyId);
 
     /**
      * Get haproxy ids stored in repository.

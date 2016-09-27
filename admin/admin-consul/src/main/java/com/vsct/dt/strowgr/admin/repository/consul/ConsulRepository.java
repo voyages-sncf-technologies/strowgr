@@ -485,16 +485,10 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         return result;
     }
 
-    // TODO add a cache or play with RXJava (!?) for limiting calls to consul
     @Override
-    public Optional<Set<String>> getDisabledHaproxyIds() {
-        Optional<List<Map<String, String>>> haproxyProperties = getHaproxyProperties();
-        return Optional.of(haproxyProperties.orElseGet(ArrayList::new)
-                .stream()
-                .filter(currentHaproxyProperties -> currentHaproxyProperties.containsKey("disabled")
-                        && "true".equals(currentHaproxyProperties.get("disabled")))
-                .map(currentHaproxyProperties -> currentHaproxyProperties.get("id"))
-                .collect(Collectors.toSet()));
+    public boolean isAutoreload(String haproxyId) {
+        Optional<String> autoreload = getHaproxyProperty(haproxyId, "autoreload");
+        return autoreload.map(Boolean::getBoolean).orElse(false);
     }
 
     @Override

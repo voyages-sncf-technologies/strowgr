@@ -8,17 +8,17 @@ public class HaproxyMappingJson {
     private final String name;
     private final String vip;
     private final String platform;
-    private final boolean disabled;
+    private final boolean autoreload;
 
     @JsonCreator
     public HaproxyMappingJson(@JsonProperty("name") String name,
                               @JsonProperty("vip") String vip,
                               @JsonProperty("platform") String platform,
-                              @JsonProperty("disabled") boolean disabled) {
+                              @JsonProperty("autoreload") boolean autoreload) {
         this.name = name;
         this.vip = vip;
         this.platform = platform;
-        this.disabled = disabled;
+        this.autoreload = autoreload;
     }
 
     public String getName() {
@@ -33,7 +33,7 @@ public class HaproxyMappingJson {
         return platform;
     }
 
-    public boolean getDisabled() {
-        return disabled;
+    public boolean getAutoreload() {
+        return autoreload;
     }
 }

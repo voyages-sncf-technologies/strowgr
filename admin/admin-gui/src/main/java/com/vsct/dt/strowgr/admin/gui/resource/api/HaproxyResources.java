@@ -53,7 +53,7 @@ public class HaproxyResources {
         repository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
         repository.setHaproxyProperty(haproxyId, "vip", haproxyMappingJson.getVip());
         repository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
-        repository.setHaproxyProperty(haproxyId, "disabled", String.valueOf(haproxyMappingJson.getDisabled()));
+        repository.setHaproxyProperty(haproxyId, "autoreload", String.valueOf(haproxyMappingJson.getAutoreload()));
         return ok().build();
     }
 

@@ -484,7 +484,7 @@
                 name: "",
                 vip: "",
                 platform: "",
-                disabled: true
+                autoreload: true
             };
 
             $scope.haproxyId= "";
@@ -510,7 +510,7 @@
                             $scope.haproxy.name = $scope.availableHaproxies[currentHaproxy]["name"];
                             $scope.haproxy.vip = $scope.availableHaproxies[currentHaproxy]["vip"];
                             $scope.haproxy.platform = $scope.availableHaproxies[currentHaproxy]["platform"];
-                            $scope.haproxy.disabled = ("true" == $scope.haproxy.disabled);
+                            $scope.haproxy.autoreload = ("true" == $scope.availableHaproxies[currentHaproxy]["autoreload"]);
                             console.log("load haproxy "+JSON.stringify($scope.availableHaproxies[currentHaproxy]));
                         }
                     }

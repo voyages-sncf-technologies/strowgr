@@ -171,11 +171,9 @@ public class EntryPointEventHandler {
             Optional<EntryPoint> entryPoint = stateManager.tryCommitCurrent(event.getCorrelationId(), entryPointKey);
             if (entryPoint.isPresent()) {
                 EntryPoint configuration = entryPoint.get();
-                if (haproxyRepository.getDisabledHaproxyIds()
-                        .orElseThrow(() -> new IllegalStateException("can't retrieve haproxy ids for entrypoint " + entryPointKey))
-                        .contains(configuration.getHaproxy()) || stateManager.isDisabled(entryPointKey)) {
+                if (!haproxyRepository.isAutoreload(configuration.getHaproxy()) || stateManager.isDisabled(entryPointKey)) {
                     stateManager.cancelCommit(entryPointKey);
-                    LOGGER.info("skip tryCommitCurrent for event {} because haproxy {} is disabled", event, configuration.getHaproxy());
+                    LOGGER.info("skip tryCommitCurrent for event {} because haproxy {} or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
                 } else {
                     String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
                     Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
@@ -200,12 +198,10 @@ public class EntryPointEventHandler {
             if (entryPoint.isPresent()) {
                 EntryPoint configuration = entryPoint.get();
                 // TODO use cache for retrieving disabled haproxy
-                if (haproxyRepository.getDisabledHaproxyIds()
-                        .orElseThrow(() -> new IllegalStateException("can't retrieve haproxy ids for entrypoint " + entryPointKey))
-                        .contains(configuration.getHaproxy()) || stateManager.isDisabled(entryPointKey)) {
+                if (!haproxyRepository.isAutoreload(configuration.getHaproxy()) || stateManager.isDisabled(entryPointKey)) {
                     stateManager.cancelCommit(entryPointKey);
                     stateManager.prepare(entryPointKey, configuration);
-                    LOGGER.info("skip tryCommitPending for event {} because haproxy {} is disabled", event, configuration.getHaproxy());
+                    LOGGER.info("skip tryCommitPending for event {} because haproxy {}  or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
                 } else {
                     String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
                     Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
