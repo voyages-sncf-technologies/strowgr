@@ -776,7 +776,7 @@
                         };
 
                         Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (response) {
-                            return Entrypoint.update(scope.conf.context.application + '/' + scope.conf.context.platform, scope.updateModel);
+                            return Entrypoint.update(scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
                         }).then(function (response) {
                             $rootScope.$broadcast("entrypoint-updated");
                         }, function (error) {
