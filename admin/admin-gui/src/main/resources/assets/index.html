@@ -40,6 +40,7 @@
     <meta name="theme-color" content="#ffffff">
 
     <link rel="stylesheet" href="webjars/angular-material/1.0.5/angular-material.min.css">
+    <link rel="stylesheet" href="webjars/angular-ui-notification/0.2.0/dist/angular-ui-notification.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <script src="webjars/angularjs/1.4.9/angular.min.js"></script>
@@ -58,6 +59,8 @@
     <script src="webjars/lodash/4.0.0/lodash.min.js"></script>
     <script src="webjars/angular-material-icons/0.6.0/angular-material-icons.min.js"></script>
 
+    <script src="webjars/angular-ui-notification/0.2.0/dist/angular-ui-notification.min.js"></script>
+
     <style type="text/css">
         .layout-margin {
             margin: 4px;
@@ -75,10 +78,11 @@
 
 
 
+
     </style>
 
     <script type="text/javascript">
-        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages', 'ngSanitize']);
+        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages', 'ngSanitize','ui-notification']);
         adminApp.constant("libelle",{"entrypoint":"platforme",
                                      "un_entrypoint":"une plateforme",
                                      "l_entrypoint":"la plateforme"});
@@ -86,7 +90,7 @@
             $rootScope.libelle = libelle;
         }]);
 
-        adminApp.config(['$routeProvider', '$mdThemingProvider', function ($routeProvider, $mdThemingProvider) {
+        adminApp.config(['$routeProvider', '$mdThemingProvider', 'NotificationProvider', function ($routeProvider, $mdThemingProvider, $notificationProvider) {
             $routeProvider.
                     when('/entrypoints', {
                         templateUrl: 'partials/entrypoints.html',
@@ -115,9 +119,19 @@
                         'default': '300'
                     })
                     .warnPalette('amber');
+
+            $notificationProvider.setOptions({
+                delay: 5000,
+                startTop: 20,
+                startRight: 10,
+                verticalSpacing: 20,
+                horizontalSpacing: 20,
+                positionX: 'right',
+                positionY: 'bottom'
+            });
         }]);
 
-        adminApp.factory('PortProvider', ['$http', function ($http) {
+        adminApp.factory('PortProvider', ['$http', 'Notification', function ($http, Notification) {
             return {
                 getPort: function (id) {
                     return $http.get('/api/ports/' + id).then(function (response) {
@@ -125,26 +139,145 @@
                     }, function (error) {
                         if (error.status = 404) {
                             return "Port not assigned yet";
+                        } else if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
+                        throw error;
                     });
                 }
             }
         }]);
 
-        adminApp.factory('Haproxy', ['$http', function ($http) {
+        adminApp.factory('Entrypoint', ['$http', 'Notification', function($http, Notification) {
+            return {
+                all: function(){
+                    return $http.get('/api/entrypoints').then(function(response) {
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                delete: function(id){
+                    return $http.delete('/api/entrypoints/'+escape(id)).then(function(response) {
+                        Notification.success('Entrypoint '+id+' supprimé');
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                swapAvailibility: function(id){
+                    return $http.patch('/api/entrypoints/'+escape(id)+'/availability/swap').then(function(response) {
+                        Notification.success('Auto reload pour '+id);
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                isDisabled: function(id) {
+                    return $http.get('/api/entrypoints/'+escape(id)+'/disabled').then(function(response) {
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                add: function(id, conf){
+                    return $http.put('/api/entrypoints/' + id, conf).then(function(response) {
+                        Notification.success('Entrypoint '+ id + ' créé');
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                update: function(id, updatableConf){
+                    return $http.patch('/api/entrypoints/' + id, updatableConf).then(function(response) {
+                        Notification.success('Entrypoint '+ id + ' mis à jour');
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                getCurrent: function(id){
+                    return $http.get('/api/entrypoints/' + id + '/current').then(function(response) {
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                getPending: function(id){
+                    return $http.get('/api/entrypoints/' + id + '/pending').then(function(response) {
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                getCommitting: function(id){
+                    return $http.get('/api/entrypoints/' + id + '/committing').then(function(response) {
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                }
+            }
+        }]);
+
+        adminApp.factory('Haproxy', ['$http', 'Notification', function ($http, Notification) {
             return {
                 all: function(){
                     return $http.get('/api/haproxy/').then(function(response) {
                         return response.data;
                     }, function(error) {
-                        console.error("Can't load list of haproxies. Response  is " + response.data);
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                add: function(id, conf){
+                    return $http.put('/api/haproxy/'+id, conf).then(function(response) {
+                        Notification.success('Load Balancer ' + id + ' créé');
+                        return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
                     });
                 },
                 getVIP: function (id) {
-                    return $http.get('/api/haproxy/' + id + '/vip/').then(function (response) {
+                    return $http.get('/api/haproxy/' + id + '/vip/').then(function(response) {
                         return response.data;
-                    }, function (error) {
-                        console.error("can't load haproxyName " + haproxyName + ". Response is " + response.data);
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
                     });
                 },
                 getGeneratedTemplate: function (conf) {
@@ -153,8 +286,13 @@
                         url: '/api/haproxy/template/valorise',
                         responseType: 'text',
                         data: conf
-                    }).then(function (response) {
+                    }).then(function(response) {
                         return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
                     });
                 },
                 getTemplate: function (uri) {
@@ -162,8 +300,13 @@
                         method: 'GET',
                         url: '/api/haproxy/template?uri=' + escape(uri),
                         responseType: 'text'
-                    }).then(function (response) {
+                    }).then(function(response) {
                         return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
                     });
                 },
                 getFrontBackends: function (uri) {
@@ -171,61 +314,47 @@
                         method: 'GET',
                         url: '/api/haproxy/template/frontbackends?uri=' + escape(uri),
                         responseType: 'text'
-                    }).then(function (response) {
+                    }).then(function(response) {
                         return response.data;
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
                     });
                 }
             }
         }]);
 
-        adminApp.controller('EntrypointsCtrl', ['$scope', '$http', '$interval', '$rootScope', '$mdDialog', function ($scope, $http, $interval, $rootScope, $mdDialog) {
+        adminApp.controller('EntrypointsCtrl', ['$scope', 'Entrypoint', '$interval', '$rootScope', '$mdDialog', function ($scope, Entrypoint, $interval, $rootScope, $mdDialog) {
 
-            $http({
-                method: 'GET',
-                url: '/api/entrypoints'
-            }).then(function (response) {
-                $scope.entrypoints = response.data;
-                console.log('load entrypoints: '+response.data);
-                var size=response.data.length;
+            $scope.disabledEntrypoints = {};
+
+            Entrypoint.all().then(function (entrypoints) {
+                $scope.entrypoints = entrypoints;
+                console.log('load entrypoints: '+entrypoints);
+                var size=entrypoints.length;
                 for(var id=0; id<size; id++){
-                   $scope.isDisabled(response.data[id]);
+                   $scope.isDisabled(entrypoints[id]);
                 }
             });
 
             $scope.loadEntrypoint = function (id) {
                 $scope.selectedEntrypoint = id;
                 $rootScope.$broadcast("entrypoint-updated");
-
-            }
-
-            $scope.deleteEntrypoint = function (id) {
-                $scope.selectedEntrypoint = id;
-                $http({
-                    method: 'DELETE',
-                    url: '/api/entrypoints/'+escape(id)
-                }).then(function (response) {
-                    $scope.entrypoints = response.data;
-                    $rootScope.$broadcast("entrypoint-updated");
-                });
-            }
+            };
 
             $scope.disableEntrypoint = function (id) {
                 $scope.selectedEntrypoint = id;
-                $http.patch('/api/entrypoints/'+escape(id)+'/availability/swap')
-                    .then(function (response) {
+                Entrypoint.swapAvailibility(id).then(function () {
                     console.log('patch disabled of ' + id+ ' to ' + false);
                     $scope.isDisabled(id);
                 });
-            }
+            };
 
-            $scope.disabledEntrypoints = {};
             $scope.isDisabled = function (id) {
                 console.log('isDisabled ? '+id);
-                $http({
-                    method: 'GET',
-                    url: '/api/entrypoints/'+escape(id)+'/disabled'
-                }).then(function (response) {
-                    var isDisabled=response.data;
+                Entrypoint.isDisabled(id).then(function (isDisabled) {
                     console.log('disabledEntrypoints: '+ isDisabled+' for '+id);
                     if(isDisabled){
                         $scope.disabledEntrypoints[id] = 'lock_outline';
@@ -233,33 +362,30 @@
                         $scope.disabledEntrypoints[id] = 'lock_open';
                     }
                 });
-            }
+            };
 
-              $scope.deleteEntrypoint = function(id,ev) {
-                var confirm = $mdDialog.confirm()
-                    .title('Voulez-vous supprimer cet entrypoint ?')
-                    .textContent("l'entrypoint sera supprimé sur le repository et au niveau des haproxy")
-                    .targetEvent(ev)
-                    .ok('supprime')
-                    .cancel('annule');
-                $mdDialog.show(confirm).then(function() {
-                    $scope.selectedEntrypoint = id;
-                    $http({
-                        method: 'DELETE',
-                        url: '/api/entrypoints/'+escape(id)
-                    }).then(function (response) {
-                        $scope.entrypoints = response.data;
-                        $rootScope.$broadcast("entrypoint-updated");
-                    });
-                }, function() {
-                    console.log('cancel delete of ' + id);
-                });
-              };
+            $scope.deleteEntrypoint = function(id,ev) {
+              var confirm = $mdDialog.confirm()
+                  .title('Voulez-vous supprimer cet entrypoint ?')
+                  .textContent("l'entrypoint sera supprimé sur le repository et au niveau des haproxy")
+                  .targetEvent(ev)
+                  .ok('supprimer')
+                  .cancel('annuler');
+              $mdDialog.show(confirm).then(function() {
+                  $scope.selectedEntrypoint = id;
+                  Entrypoint.delete(id).then(function (entrypoints) {
+                      $scope.entrypoints = entrypoints;
+                      $rootScope.$broadcast("entrypoint-updated");
+                  });
+              }, function() {
+                  console.log('cancel delete of ' + id);
+              });
+            };
 
         }]);
 
-        adminApp.directive('templateDisplay', ['$mdDialog', '$http', 'Haproxy',
-            function ($mdDialog, $http, Haproxy) {
+        adminApp.directive('templateDisplay', ['$mdDialog', 'Haproxy',
+            function ($mdDialog, Haproxy) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/template-display.html',
@@ -294,8 +420,8 @@
             }
         ]);
 
-        adminApp.directive('haproxyGenerated', ['$mdDialog', '$http', 'Haproxy',
-            function ($mdDialog, $http, Haproxy) {
+        adminApp.directive('haproxyGenerated', ['$mdDialog', 'Haproxy',
+            function ($mdDialog, Haproxy) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/haproxy-generated.html',
@@ -328,10 +454,9 @@
                     }
                 }
             }
-        ])
-        ;
+        ]);
 
-        adminApp.controller('AddEntrypointCtrl', ['$scope', '$http', '$location', 'Haproxy', '$mdDialog', function ($scope, $http, $location, Haproxy, $mdDialog) {
+        adminApp.controller('AddEntrypointCtrl', ['$scope', 'Entrypoint', '$location', 'Haproxy', '$mdDialog', function ($scope, Entrypoint, $location, Haproxy, $mdDialog) {
             /* Init conf object, avoid undefined inner objects and show expected fields */
             $scope.conf = {
                 haproxy: "",
@@ -360,7 +485,7 @@
                         $scope.currentHaproxy = currentHaproxy;
                     }
                 }
-            }
+            };
 
 
             Haproxy.all().then(function(data){
@@ -445,7 +570,7 @@
                             }
                         }
                     });
-            }
+            };
 
             /* Checks the entrypoint configuration first and then creates the entrypoint */
             $scope.createEntrypoint = function () {
@@ -462,8 +587,8 @@
                 }
 
                 Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (template) {
-                    return $http.put('/api/entrypoints/' + $scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf);
-                }).then(function (response) {
+                    return Entrypoint.add($scope.conf.context.application + '/' + $scope.conf.context.platform, $scope.conf);
+                }).then(function () {
                     $location.path('/');
                 }, function (error) {
                     var alert = $mdDialog.alert({
@@ -477,7 +602,7 @@
 
         }]);
 
-        adminApp.controller('AddHaproxyCtrl', ['$scope', '$http', '$location', 'Haproxy', '$mdDialog', function ($scope, $http, $location, Haproxy, $mdDialog) {
+        adminApp.controller('AddHaproxyCtrl', ['$scope', '$location', 'Haproxy', '$mdDialog', function ($scope, $location, Haproxy, $mdDialog) {
             /* Init conf object, avoid undefined inner objects and show expected fields */
             $scope.haproxy = {
                 name: "",
@@ -490,7 +615,7 @@
 
             $scope.createHaproxy = function () {
                 console.log("create haproxy "+$scope.haproxyId+": "+ JSON.stringify($scope.haproxy));
-                $http.put('/api/haproxy/'+$scope.haproxyId,$scope.haproxy).then(function (response) {
+                Haproxy.add($scope.haproxyId, $scope.haproxy).then(function () {
                     $location.path('/');
                 });
             };
@@ -518,7 +643,7 @@
 
         }]);
 
-        adminApp.directive('entrypointUpdate', ['$http', 'Haproxy', '$mdDialog', '$rootScope', function ($http, Haproxy, $mdDialog, $rootScope) {
+        adminApp.directive('entrypointUpdate', ['Haproxy', '$mdDialog', '$rootScope', 'Entrypoint', function (Haproxy, $mdDialog, $rootScope, Entrypoint) {
             return {
                 templateUrl: 'partials/update-entrypoint.html',
                 scope: {
@@ -651,7 +776,7 @@
                         };
 
                         Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (response) {
-                            return $http.patch('/api/entrypoints/' + scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
+                            return Entrypoint.update(scope.conf.context.application + '/' + scope.conf.context.platform, scope.updateModel);
                         }).then(function (response) {
                             $rootScope.$broadcast("entrypoint-updated");
                         }, function (error) {
@@ -786,8 +911,8 @@
             }
         ]);
 
-        adminApp.directive('entrypointView', ['$interval', '$timeout', '$http', '$q', 'PortProvider',
-            function ($interval, $timeout, $http, $q, PortProvider) {
+        adminApp.directive('entrypointView', ['$interval', '$timeout', 'Entrypoint', '$q', 'PortProvider',
+            function ($interval, $timeout, Entrypoint, $q, PortProvider) {
                 return {
                     restrict: 'E',
                     templateUrl: 'partials/entrypoint-view.html',
@@ -802,23 +927,20 @@
 
                         refreshAllStates = function () {
                             return $q.all({
-                                current: $http.get('/api/entrypoints/' + scope.id + '/current')
-                                        .then(function (response) {
-                                            return portPromises(scope.id, response.data);
+                                current: Entrypoint.getCurrent(scope.id).then(function (conf) {
+                                            return portPromises(scope.id, conf);
                                         }, function (error) {
                                             //TODO Check for 404
                                             scope.current = undefined
                                         }),
-                                pending: $http.get('/api/entrypoints/' + scope.id + '/pending')
-                                        .then(function (response) {
-                                            return portPromises(scope.id, response.data);
+                                pending: Entrypoint.getPending(scope.id).then(function (conf) {
+                                            return portPromises(scope.id, conf);
                                         }, function (error) {
                                             //TODO Check for 404
                                             scope.pending = undefined
                                         }),
-                                committing: $http.get('/api/entrypoints/' + scope.id + '/committing')
-                                        .then(function (response) {
-                                            return portPromises(scope.id, response.data);
+                                committing: Entrypoint.getCommitting(scope.id).then(function (conf) {
+                                            return portPromises(scope.id, conf);
                                         }, function (error) {
                                             //TODO Check for 404
                                             scope.committing = undefined
@@ -902,14 +1024,6 @@
                     }
                 }
             }]);
-
-
-
-
-
-
-
-
 
 
     </script>
