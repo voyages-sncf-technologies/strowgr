@@ -359,6 +359,7 @@ public class EntryPointEventHandlerTest {
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(true);
+        when(stateManager.isAutoreloaded(key)).thenReturn(true);
 
         // Test
         handler.handle(event);
@@ -413,6 +414,7 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
+        when(stateManager.isAutoreloaded(key)).thenReturn(true);
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(true);
 
         // Test
