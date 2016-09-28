@@ -75,16 +75,16 @@ public interface EntryPointRepository {
     boolean lock(EntryPointKey key);
 
     /**
-     * Check if the entrypoint is disabled or not.
+     * Check if the entrypoint is on autoreload mode or not.
      *
      * @param entryPointKey to check
-     * @return true if entryPointKey field 'disabled' is present and valued at something different of 'true' or if request to consul server fails. False otherwise.
+     * @return true if entryPointKey field 'autoreload' is present and valued at 'true'. False otherwise.
      */
-    boolean isDisabled(EntryPointKey entryPointKey);
+    boolean isAutoreloaded(EntryPointKey entryPointKey);
 
     void release(EntryPointKey key);
 
     Optional<String> getCommitCorrelationId(EntryPointKey key);
 
-    void setDisabled(EntryPointKey entryPointKey, Boolean disabled);
+    void setAutoreload(EntryPointKey entryPointKey, Boolean autoreload);
 }

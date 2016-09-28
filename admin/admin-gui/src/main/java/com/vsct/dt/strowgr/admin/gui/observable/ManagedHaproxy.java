@@ -70,7 +70,7 @@ public class ManagedHaproxy {
 
     private List<HaproxyAction> lookupHaproxy() {
 
-        LOGGER.info("lookup registration action on haproxy");
+        LOGGER.debug("lookup registration action on haproxy");
 
         List<HaproxyAction> actions = new ArrayList<>();
 
@@ -98,7 +98,7 @@ public class ManagedHaproxy {
                 actions.forEach(a -> LOGGER.info("registration action on haproxy id={} -> register={}", a.id, a.isRegistration));
             }
             else {
-                LOGGER.info("no registration action to perform");
+                LOGGER.debug("no registration action to perform");
             }
         }
 

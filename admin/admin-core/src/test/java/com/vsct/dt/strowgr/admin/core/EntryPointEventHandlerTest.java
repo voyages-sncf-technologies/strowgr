@@ -358,7 +358,8 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
-        when(haproxyRepository.getDisabledHaproxyIds()).thenReturn(Optional.of(new HashSet<>()));
+        when(haproxyRepository.isAutoreload("haproxy")).thenReturn(true);
+        when(stateManager.isAutoreloaded(key)).thenReturn(true);
 
         // Test
         handler.handle(event);
@@ -369,7 +370,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_current_with_disabled_haproxy() {
+    public void try_commit_current_with_no_autoreload_haproxy() {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
@@ -385,7 +386,8 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
-        when(haproxyRepository.getDisabledHaproxyIds()).thenReturn(Optional.of(newHashSet("haproxy")));
+        when(haproxyRepository.isAutoreload("haproxy")).thenReturn(false);
+
 
         // Test
         handler.handle(event);
@@ -412,7 +414,8 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
-        when(haproxyRepository.getDisabledHaproxyIds()).thenReturn(Optional.of(new HashSet<>()));
+        when(stateManager.isAutoreloaded(key)).thenReturn(true);
+        when(haproxyRepository.isAutoreload("haproxy")).thenReturn(true);
 
         // Test
         handler.handle(event);
@@ -423,7 +426,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_pending_with_disabled_haproxy() {
+    public void try_commit_pending_with_no_autoreload_haproxy() {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
@@ -438,7 +441,7 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
-        when(haproxyRepository.getDisabledHaproxyIds()).thenReturn(Optional.of(Sets.newHashSet("haproxy")));
+        when(haproxyRepository.isAutoreload("haproxy")).thenReturn(false);
 
         // Test
         handler.handle(event);

@@ -32,10 +32,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MustacheTemplateGenerator implements TemplateGenerator {
 
@@ -70,6 +67,24 @@ public class MustacheTemplateGenerator implements TemplateGenerator {
         Mustache mustache = mf.compile(new StringReader(DefaultTemplates.SYSLOG_DEFAULT_TEMPLATE), "no_cache");
         mustache.execute(writer, new StrowgrMustacheScope(configuration, portsMapping));
         return writer.toString();
+    }
+
+    @Override
+    public Map<String, Set<String>> generateFrontAndBackends(String template) {
+        HashMap<String, Set<String>> result = new HashMap<>();
+        result.put("frontends", new HashSet<>());
+        result.put("backends", new HashSet<>());
+        Mustache mustache = mf.compile(new StringReader(template), "no_cache");
+        for (Code code : mustache.getCodes()) {
+            if (code != null && code.getName() != null) {
+                if (code.getName().startsWith("backend") && code.getName().split("\\.").length > 1) {
+                    result.get("backends").add(code.getName().split("\\.")[1]);
+                } else if (code.getName().startsWith("frontend") && code.getName().split("\\.").length > 1) {
+                    result.get("frontends").add(code.getName().split("\\.")[1]);
+                }
+            }
+        }
+        return result;
     }
 
     /**

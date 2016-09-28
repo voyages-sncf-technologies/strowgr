@@ -86,7 +86,7 @@ public class ConsulRepositoryTest {
     }
 
     @Test
-    public void should_return_isdisabled_false_if_entrypoint_disabled_key_is_absent() throws IOException {
+    public void should_return_autoreload_false_if_entrypoint_disabled_key_is_absent() throws IOException {
         // given
         ConsulReader consulReader = mock(ConsulReader.class);
         CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
@@ -94,14 +94,14 @@ public class ConsulRepositoryTest {
         when(closeableHttpClient.execute(any(HttpGet.class), any(ResponseHandler.class))).thenReturn(Optional.empty());
 
         // test
-        boolean result = consulRepository.isDisabled(new EntryPointKeyDefaultImpl("test"));
+        boolean result = consulRepository.isAutoreloaded(new EntryPointKeyDefaultImpl("test"));
 
         // check
         assertThat(result).isFalse();
     }
 
     @Test
-    public void should_return_isdisabled_false_if_entrypoint_disabled_key_valued_at_true() throws IOException {
+    public void should_return_autoreload_false_if_entrypoint_disabled_key_valued_at_true() throws IOException {
         // given
         ConsulReader consulReader = mock(ConsulReader.class);
         CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
@@ -109,7 +109,7 @@ public class ConsulRepositoryTest {
         when(closeableHttpClient.execute(any(HttpGet.class), any(ResponseHandler.class))).thenReturn(Optional.of(Boolean.FALSE));
 
         // test
-        boolean result = consulRepository.isDisabled(new EntryPointKeyDefaultImpl("test"));
+        boolean result = consulRepository.isAutoreloaded(new EntryPointKeyDefaultImpl("test"));
 
         // check
         assertThat(result).isFalse();
@@ -117,7 +117,7 @@ public class ConsulRepositoryTest {
 
 
     @Test
-    public void should_return_isdisabled_true_if_consul_request_fails() throws IOException {
+    public void should_return_autoreload_false_if_consul_request_fails() throws IOException {
         // given
         ConsulReader consulReader = mock(ConsulReader.class);
         CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
@@ -125,14 +125,14 @@ public class ConsulRepositoryTest {
         when(closeableHttpClient.execute(any(HttpGet.class), any(ResponseHandler.class))).thenThrow(new IOException());
 
         // test
-        boolean result = consulRepository.isDisabled(new EntryPointKeyDefaultImpl("test"));
+        boolean result = consulRepository.isAutoreloaded(new EntryPointKeyDefaultImpl("test"));
 
         // check
-        assertThat(result).isTrue();
+        assertThat(result).isFalse();
     }
 
     @Test
-    public void should_return_isdisabled_true_if_disabled_key_valued_at_true() throws IOException {
+    public void should_return_autoreload_true_if_autoreload_key_valued_at_true() throws IOException {
         // given
         ConsulReader consulReader = mock(ConsulReader.class);
         CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
@@ -140,7 +140,7 @@ public class ConsulRepositoryTest {
         when(closeableHttpClient.execute(any(HttpGet.class), any(ResponseHandler.class))).thenReturn(Optional.of(Boolean.TRUE));
 
         // test
-        boolean result = consulRepository.isDisabled(new EntryPointKeyDefaultImpl("test"));
+        boolean result = consulRepository.isAutoreloaded(new EntryPointKeyDefaultImpl("test"));
 
         // check
         assertThat(result).isTrue();

@@ -78,7 +78,6 @@
 
 
 
-
     </style>
 
     <script type="text/javascript">
@@ -171,8 +170,8 @@
                         throw error;
                     });
                 },
-                swapAvailibility: function(id){
-                    return $http.patch('/api/entrypoints/'+escape(id)+'/availability/swap').then(function(response) {
+                swapAutoreload: function(id){
+                    return $http.patch('/api/entrypoints/'+escape(id)+'/autoreload/swap').then(function(response) {
                         Notification.success('Auto reload pour '+id);
                         return response.data;
                     }, function(error) {
@@ -182,8 +181,8 @@
                         throw error;
                     });
                 },
-                isDisabled: function(id) {
-                    return $http.get('/api/entrypoints/'+escape(id)+'/disabled').then(function(response) {
+                isAutoreloaded: function(id) {
+                    return $http.get('/api/entrypoints/'+escape(id)+'/autoreload').then(function(response) {
                         return response.data;
                     }, function(error) {
                         if(error.status >= 500) {
@@ -328,14 +327,14 @@
 
         adminApp.controller('EntrypointsCtrl', ['$scope', 'Entrypoint', '$interval', '$rootScope', '$mdDialog', function ($scope, Entrypoint, $interval, $rootScope, $mdDialog) {
 
-            $scope.disabledEntrypoints = {};
+            $scope.autoreloadEntrypoints = {};
 
             Entrypoint.all().then(function (entrypoints) {
                 $scope.entrypoints = entrypoints;
                 console.log('load entrypoints: '+entrypoints);
                 var size=entrypoints.length;
                 for(var id=0; id<size; id++){
-                   $scope.isDisabled(entrypoints[id]);
+                   $scope.isAutoreloaded(entrypoints[id]);
                 }
             });
 
@@ -344,22 +343,21 @@
                 $rootScope.$broadcast("entrypoint-updated");
             };
 
-            $scope.disableEntrypoint = function (id) {
+            $scope.swapAutoreloadEntrypoint = function (id) {
                 $scope.selectedEntrypoint = id;
-                Entrypoint.swapAvailibility(id).then(function () {
-                    console.log('patch disabled of ' + id+ ' to ' + false);
-                    $scope.isDisabled(id);
+                Entrypoint.swapAutoreload(id).then(function (response) {
+                    $scope.isAutoreloaded(id);
                 });
             };
 
-            $scope.isDisabled = function (id) {
-                console.log('isDisabled ? '+id);
-                Entrypoint.isDisabled(id).then(function (isDisabled) {
-                    console.log('disabledEntrypoints: '+ isDisabled+' for '+id);
-                    if(isDisabled){
-                        $scope.disabledEntrypoints[id] = 'lock_outline';
+            $scope.isAutoreloaded = function (id) {
+                console.log('isAutoreloaded ? '+id);
+                Entrypoint.isAutoreloaded(id).then(function (isAutoreloaded) {
+                    console.log('autoreloadEntrypoints: '+ isAutoreloaded+' for '+id);
+                    if(isAutoreloaded){
+                        $scope.autoreloadEntrypoints[id] = 'lock_open';
                     } else {
-                        $scope.disabledEntrypoints[id] = 'lock_open';
+                        $scope.autoreloadEntrypoints[id] = 'lock_outline';
                     }
                 });
             };
@@ -627,7 +625,7 @@
                 name: "",
                 vip: "",
                 platform: "",
-                disabled: true
+                autoreload: true
             };
 
             $scope.haproxyId= "";
@@ -653,7 +651,7 @@
                             $scope.haproxy.name = $scope.availableHaproxies[currentHaproxy]["name"];
                             $scope.haproxy.vip = $scope.availableHaproxies[currentHaproxy]["vip"];
                             $scope.haproxy.platform = $scope.availableHaproxies[currentHaproxy]["platform"];
-                            $scope.haproxy.disabled = ("true" == $scope.haproxy.disabled);
+                            $scope.haproxy.autoreload = ("true" == $scope.availableHaproxies[currentHaproxy]["autoreload"]);
                             console.log("load haproxy "+JSON.stringify($scope.availableHaproxies[currentHaproxy]));
                         }
                     }
