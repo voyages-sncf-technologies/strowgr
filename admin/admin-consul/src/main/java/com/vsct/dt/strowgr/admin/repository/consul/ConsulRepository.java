@@ -149,20 +149,19 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
 
     // TODO add a cache or play with RXJava (!?) to limit calls to consul
     @Override
-    public boolean isDisabled(EntryPointKey entryPointKey) {
-        boolean isDisabled = true;
-        HttpGet getEntryPointDisabledKey = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/disabled?raw");
+    public boolean isAutoreloaded(EntryPointKey entryPointKey) {
+        boolean isAutoreloaded = false;
+        HttpGet getEntryPointAutoreloadKey = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/autoreload?raw");
         try {
-            Optional<Boolean> disabledKey = client.execute(getEntryPointDisabledKey, response -> consulReader.parseHttpResponseAccepting404(response, consulReader::parseBooleanFromHttpEntity));
-            if (disabledKey.isPresent() && disabledKey.get()) {
-                LOGGER.info("The entrypoint {} will be disabled. Uri {} returns true content.", entryPointKey, getEntryPointDisabledKey.getRequestLine().getUri());
-            } else {
-                isDisabled = false;
+            Optional<Boolean> autoreload = client.execute(getEntryPointAutoreloadKey, response -> consulReader.parseHttpResponseAccepting404(response, consulReader::parseBooleanFromHttpEntity));
+            if (autoreload.isPresent() && autoreload.get()) {
+                LOGGER.info("The entrypoint {} will be autoreloaded. Uri {} returns true content.", entryPointKey, getEntryPointAutoreloadKey.getRequestLine().getUri());
+                isAutoreloaded = true;
             }
         } catch (IOException e) {
-            LOGGER.error("a problem occurs during call to consul. The entrypoint " + entryPointKey + " will be considered disabled. Http get on: http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/enable?raw", e);
+            LOGGER.error("a problem occurs during call to consul. The entrypoint " + entryPointKey + " won't be autoreloaded. Http get on: http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/autoreload?raw", e);
         }
-        return isDisabled;
+        return isAutoreloaded;
     }
 
     @Override
@@ -204,7 +203,8 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     .map(s -> s.replace("/current", ""))
                     .map(s -> s.replace("/pending", ""))
                     .map(s -> s.replace("/committing", ""))
-                    .map(s -> s.replace("/disabled", ""))
+                    .map(s -> s.replace("/disabled", "")) // @deprecated TODO remove
+                    .map(s -> s.replace("/autoreload", ""))
                     .distinct()
                     .collect(Collectors.toSet());
 
@@ -485,16 +485,10 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         return result;
     }
 
-    // TODO add a cache or play with RXJava (!?) for limiting calls to consul
     @Override
-    public Optional<Set<String>> getDisabledHaproxyIds() {
-        Optional<List<Map<String, String>>> haproxyProperties = getHaproxyProperties();
-        return Optional.of(haproxyProperties.orElseGet(ArrayList::new)
-                .stream()
-                .filter(currentHaproxyProperties -> currentHaproxyProperties.containsKey("disabled")
-                        && "true".equals(currentHaproxyProperties.get("disabled")))
-                .map(currentHaproxyProperties -> currentHaproxyProperties.get("id"))
-                .collect(Collectors.toSet()));
+    public boolean isAutoreload(String haproxyId) {
+        Optional<String> autoreload = getHaproxyProperty(haproxyId, "autoreload");
+        return autoreload.map(Boolean::valueOf).orElse(false);
     }
 
     @Override
@@ -550,12 +544,12 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     }
 
     @Override
-    public void setDisabled(EntryPointKey entryPointKey, Boolean disabled) {
+    public void setAutoreload(EntryPointKey entryPointKey, Boolean autoreload) {
         try {
-            HttpPut putDisable = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/disabled");
-            putDisable.setEntity(new StringEntity(String.valueOf(disabled)));
+            HttpPut putAutoreload = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/autoreload");
+            putAutoreload.setEntity(new StringEntity(String.valueOf(autoreload)));
 
-            client.execute(putDisable, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::readRawContentFromHttpEntity));
+            client.execute(putAutoreload, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::readRawContentFromHttpEntity));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

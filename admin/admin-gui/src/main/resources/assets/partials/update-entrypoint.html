@@ -84,6 +84,10 @@
                 <div ng-message="url">La valeur renseign&eacutee n'est pas une URL valide</div>
             </div>
         </md-input-container>
+        <md-button class="md-fab md-primary md-mini">
+            <md-icon class="material-icons" style="font-size: 22px"  ng-click="reloadFrontBackends()">find_replace</md-icon>
+            <md-tooltip md-direction="bottom">Recharger les backends/frontends du template</md-tooltip>
+        </md-button>
     </div>
     <div layout="row" layout-align="start center">
         <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Contexte global => </p>

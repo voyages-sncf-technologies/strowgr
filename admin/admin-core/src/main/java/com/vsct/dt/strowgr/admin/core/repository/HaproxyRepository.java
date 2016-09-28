@@ -38,10 +38,11 @@ public interface HaproxyRepository {
     Optional<List<Map<String, String>>> getHaproxyProperties();
 
     /**
-     * Get ids of disabled haproxy .
-     * @return Set of disabled haproxy
+     * Check if this haproxy is on autoreload mode or not.
+     * @return true if is on autoreload mode
+     * @param haproxyId id of the haproxy
      */
-    Optional<Set<String>> getDisabledHaproxyIds();
+    boolean isAutoreload(String haproxyId);
 
     /**
      * Get haproxy ids stored in repository.
