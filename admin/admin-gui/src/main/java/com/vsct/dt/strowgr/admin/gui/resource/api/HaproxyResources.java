@@ -49,7 +49,7 @@ public class HaproxyResources {
     @PUT
     @Path("/{haproxyId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createHaproxy(@PathParam("haproxyId") String haproxyId, HaproxyMappingJson haproxyMappingJson) {
+    public Response createHaproxy(@PathParam("haproxyId") String haproxyId, @Valid HaproxyMappingJson haproxyMappingJson) {
         repository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
         repository.setHaproxyProperty(haproxyId, "vip", haproxyMappingJson.getVip());
         repository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
@@ -86,16 +86,14 @@ public class HaproxyResources {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll() {
-        return repository.getHaproxyProperties()
-                .map(all -> ok(all).build())
-                .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy").build());
+        return ok(repository.getHaproxyProperties()).build();
     }
 
     @GET
     @Path("/ids")
     @Produces(MediaType.APPLICATION_JSON)
     public Set<String> getHaproxyIds() {
-        return repository.getHaproxyIds().orElseGet(() -> new HashSet<>());
+        return repository.getHaproxyIds();
     }
 
     @GET

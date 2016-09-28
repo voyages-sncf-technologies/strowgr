@@ -196,7 +196,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         try {
             HttpGet listKeysURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin?keys");
             Optional<Set<String>> allKeys = client.execute(listKeysURI, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parseKeysFromHttpEntity));
-            return allKeys.orElse(new HashSet<>()).stream()
+            return allKeys.orElseGet(HashSet::new).stream()
                     .filter(s -> !s.contains("lock"))
                     .map(s -> s.replace("admin/", ""))
                     .map(s -> s.replace("/lock", ""))
@@ -445,7 +445,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyId + "/?raw&recurse=true");
             List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
                     consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
-                            .orElse(new ArrayList<>()));
+                            .orElseGet(ArrayList::new));
             Map<String, String> haproxyItems = consulItemsToMap(consulItems);
             result = Optional.of(haproxyItems);
         } catch (IOException e) {
@@ -463,13 +463,13 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     }
 
     @Override
-    public Optional<List<Map<String, String>>> getHaproxyProperties() {
-        Optional<List<Map<String, String>>> result;
+    public List<Map<String, String>> getHaproxyProperties() {
+        List<Map<String, String>> result;
         try {
             HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + "/?raw&recurse=true");
             List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
                     consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
-                            .orElse(new ArrayList<>()));
+                            .orElseGet(ArrayList::new));
             Map<String, List<ConsulItem<String>>> consulItemsById = consulItems.stream()
                     .collect(Collectors.groupingBy(consulItem -> consulItem.getKey().split("/")[1]));
             List<Map<String, String>> propertiesById = new ArrayList<>(consulItemsById.size());
@@ -478,7 +478,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                 haproxyItem.put("id", entry.getKey());
                 propertiesById.add(haproxyItem);
             }
-            result = Optional.of(propertiesById);
+            result = propertiesById;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -492,17 +492,17 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     }
 
     @Override
-    public Optional<Set<String>> getHaproxyIds() {
-        Optional<Set<String>> result;
+    public Set<String> getHaproxyIds() {
+        Set<String> result;
         try {
             HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/?raw&recurse=true");
             List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
                     consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
-                            .orElse(new ArrayList<>()));
+                            .orElseGet(ArrayList::new));
             Set<String> haproxyId = consulItems.stream()
                     .map(consulItem -> consulItem.getKey().split("/")[1])
                     .collect(Collectors.toSet());
-            result = Optional.of(haproxyId);
+            result = haproxyId;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -35,7 +35,7 @@ public interface HaproxyRepository {
      * Get all haproxy properties for each haproxy
      * @return Map with haproxy properties by haproxy id
      */
-    Optional<List<Map<String, String>>> getHaproxyProperties();
+    List<Map<String, String>> getHaproxyProperties();
 
     /**
      * Check if this haproxy is on autoreload mode or not.
@@ -48,7 +48,7 @@ public interface HaproxyRepository {
      * Get haproxy ids stored in repository.
      * @return Set of haproxy ids
      */
-    Optional<Set<String>> getHaproxyIds();
+    Set<String> getHaproxyIds();
 
     /**
      * Set a property for haproxy. For instance a vip, a haproxyId etc...
