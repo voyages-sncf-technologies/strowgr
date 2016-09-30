@@ -35,10 +35,10 @@ import (
 
 var (
 	ip = flag.String("ip", "4.3.2.1", "Node ip address")
-	configFile = flag.String("config", "sidekick.conf", "Configuration file")
+	configFile = flag.String("config", "sidekick.toml", "Configuration file")
 	version = flag.Bool("version", false, "Print current version")
 	verbose = flag.Bool("verbose", false, "Log in verbose mode")
-	fake = flag.String("fake", "yesman", "Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.")
+	fake = flag.String("fake", "", "Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.")
 	config = nsq.NewConfig()
 	properties       *sidekick.Config
 	daemon           *sidekick.Daemon

@@ -40,7 +40,7 @@ public class Conf {
     private String syslog;
 
     /**
-     * Haproxy.
+     * Haproxy version.
      */
     @JsonProperty("haproxyVersion")
     private String haproxyVersion;
@@ -49,9 +49,10 @@ public class Conf {
     public Conf() {
     }
 
-    public Conf(String haproxy, String syslog) {
+    public Conf(String haproxy, String syslog, String haproxyVersion) {
         this.haproxy = checkNotNull(haproxy);
         this.syslog = checkNotNull(syslog);
+        this.haproxyVersion = checkNotNull(haproxyVersion);
     }
 
     public String getHaproxy() {

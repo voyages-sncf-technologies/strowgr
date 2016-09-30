@@ -30,9 +30,9 @@ public class CommitRequested {
     private Header header;
 
     @JsonCreator
-    public CommitRequested(String correlationId, String application, String platform, String confBase64, String syslogConfBase64) {
+    public CommitRequested(String correlationId, String application, String platform, String confBase64, String syslogConfBase64, String haproxyVersion) {
         header = new Header(correlationId, application, platform);
-        conf = new Conf(confBase64, syslogConfBase64);
+        conf = new Conf(confBase64, syslogConfBase64, haproxyVersion);
     }
 
     public Header getHeader() {

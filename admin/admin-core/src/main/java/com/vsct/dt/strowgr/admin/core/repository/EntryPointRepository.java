@@ -87,4 +87,6 @@ public interface EntryPointRepository {
     Optional<String> getCommitCorrelationId(EntryPointKey key);
 
     void setAutoreload(EntryPointKey entryPointKey, Boolean autoreload);
+
+    String getHaproxyVersion(EntryPointKey entryPointKey);
 }

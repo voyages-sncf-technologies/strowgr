@@ -1,10 +1,10 @@
 LookupdAddr = '10.1.4.38:4161'
 ProducerAddr = '10.1.4.38:4250'
 ProducerRestAddr = 'http://10.1.4.38:4251'
-ClusterId = 'default-name'
+ClusterId = 'test'
 Vip = '10.98.209.224'
 Port = 50000
 HapHome = '/HOME/hapadm'
 Status = 'slave'
-HapVersion = '1.4.22'
+HapVersions = ['1.4.22','1.55']
 ChannelName = "myslavechannel"

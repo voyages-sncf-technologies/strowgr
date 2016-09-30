@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.exceptions.NSQException;
+import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitRequested;
 import com.vsct.dt.strowgr.admin.nsq.payload.DeleteRequested;
 import org.slf4j.Logger;
@@ -53,21 +54,19 @@ public class NSQDispatcher {
     /**
      * Send a {@link CommitRequested} message to commit_requested_[haproxyName] NSQ topic.
      *
-     * @param correlationId from initial request
-     * @param haproxyName   name of the targeted entrypoint
-     * @param application   of the targeted entrypoint
-     * @param platform      of the targeted entrypoint
-     * @param haproxyConf   is the haproxy configuration content which is computed from the template and different registered values
-     * @param syslogConf    is the haproxy configuration content which is computed from the template and different registered values
+     * @param commitRequestedEvent in commit requested event
+     * @param haproxyName          name of the targeted entrypoint
+     * @param application          of the targeted entrypoint
+     * @param platform             of the targeted entrypoint
      * @throws JsonProcessingException      during a Json serialization with Jackson
      * @throws NSQException                 during any problem with NSQ
      * @throws TimeoutException             during a too long response from NSQ
      * @throws UnsupportedEncodingException during the conversion to UTF-8
      */
-    public void sendCommitRequested(String correlationId, String haproxyName, String application, String platform, String haproxyConf, String syslogConf) throws JsonProcessingException, NSQException, TimeoutException, UnsupportedEncodingException {
-        String confBase64 = new String(Base64.getEncoder().encode(haproxyConf.getBytes("UTF-8")));
-        String syslogConfBase64 = new String(Base64.getEncoder().encode(syslogConf.getBytes("UTF-8")));
-        CommitRequested payload = new CommitRequested(correlationId, application, platform, confBase64, syslogConfBase64);
+    public void sendCommitRequested(CommitRequestedEvent commitRequestedEvent, String haproxyName, String application, String platform) throws JsonProcessingException, NSQException, TimeoutException, UnsupportedEncodingException {
+        String confBase64 = new String(Base64.getEncoder().encode(commitRequestedEvent.getConf().getBytes("UTF-8")));
+        String syslogConfBase64 = new String(Base64.getEncoder().encode(commitRequestedEvent.getSyslogConf().getBytes("UTF-8")));
+        CommitRequested payload = new CommitRequested(commitRequestedEvent.getCorrelationId(), application, platform, confBase64, syslogConfBase64, commitRequestedEvent.getHaproxyVersion());
         payload.getHeader().setSource(SOURCE_NAME);
 
         try {
