@@ -32,6 +32,7 @@ type Config struct {
 	IpAddr           string
 	Status           string
 	HapVersion       string
+	ChannelName      string
 }
 
 func DefaultConfig() *Config {
