@@ -342,7 +342,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_current_applies_with_right_key() {
+    public void try_commit_current_applies_with_right_key() throws IncompleteConfigurationException {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
@@ -370,7 +370,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_current_with_no_autoreload_haproxy() {
+    public void try_commit_current_with_no_autoreload_haproxy() throws IncompleteConfigurationException {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
@@ -399,7 +399,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_pending_applies_with_right_key() {
+    public void try_commit_pending_applies_with_right_key() throws IncompleteConfigurationException {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
@@ -426,7 +426,7 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_pending_with_no_autoreload_haproxy() {
+    public void try_commit_pending_with_no_autoreload_haproxy() throws IncompleteConfigurationException {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();

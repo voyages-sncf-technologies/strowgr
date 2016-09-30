@@ -21,22 +21,26 @@ import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
-import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
+import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.util.*;
 
+import static javax.ws.rs.core.Response.created;
 import static javax.ws.rs.core.Response.ok;
 import static javax.ws.rs.core.Response.status;
 
 @Path("/haproxy")
 public class HaproxyResources {
 
-    private final UriTemplateLocator templateLocator;
+    private final UriTemplateLocator   templateLocator;
     private final HaproxyRepository repository;
     private final TemplateGenerator templateGenerator;
 
@@ -49,27 +53,28 @@ public class HaproxyResources {
     @PUT
     @Path("/{haproxyId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createHaproxy(@PathParam("haproxyId") String haproxyId, @Valid HaproxyMappingJson haproxyMappingJson) {
+    public Response createHaproxy(@PathParam("haproxyId") String haproxyId, @NotNull @Valid HaproxyMappingJson haproxyMappingJson) {
         repository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
         repository.setHaproxyProperty(haproxyId, "vip", haproxyMappingJson.getVip());
         repository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
         repository.setHaproxyProperty(haproxyId, "autoreload", String.valueOf(haproxyMappingJson.getAutoreload()));
-        return ok().build();
+        return created(URI.create("/haproxy/"+haproxyId)).build();
     }
 
     @PUT
-    @Path("/{haproxyId}/{key}/{value}")
+    @Path("/{haproxyId}/binding/{bindingId}")
+    @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response setHaproxyVip(@PathParam("haproxyId") String haproxyId, @PathParam("key") String key, @PathParam("value") String value) {
-        repository.setHaproxyProperty(haproxyId, key, value);
-        return ok().build();
+    public Response setHaproxyBindings(@PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId, @NotEmpty String value) {
+        repository.setHaproxyProperty(haproxyId, "binding/"+bindingId, value);
+        return created(URI.create("/haproxy/"+haproxyId+"/binding/"+bindingId)).build();
     }
 
     @GET
-    @Path("/{haproxyId}/vip")
+    @Path("/{haproxyId}/binding/{bindingId}")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getHaproxyVip(@PathParam("haproxyId") String haproxyId) {
-        return repository.getHaproxyVip(haproxyId)
+    public Response getHaproxyBinding(@PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId) {
+        return repository.getHaproxyProperty(haproxyId, "binding/"+bindingId)
                 .map(vip -> ok(vip).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy uri of " + haproxyId).build());
     }
@@ -96,10 +101,11 @@ public class HaproxyResources {
         return repository.getHaproxyIds();
     }
 
+    //TODO should be in its own resource
     @GET
     @Path("/template")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getHaproxyTemplate(@QueryParam("uri") String uri) {
+    public Response getHaproxyTemplate(@QueryParam("uri") @NotEmpty String uri) {
         if (uri == null || uri.equals("")) {
             throw new BadRequestException("You must provide 'uri' query param");
         }
@@ -108,31 +114,27 @@ public class HaproxyResources {
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("Could not find any template at " + uri).build());
     }
 
+    //TODO should be in its own resource
     @GET
     @Path("/template/frontbackends")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Set<String>> getFrontAndBackends(@QueryParam("uri") String uri) {
+    public Response getFrontAndBackends(@QueryParam("uri") @NotEmpty String uri) {
         if (uri == null || uri.equals("")) {
             throw new BadRequestException("You must provide 'uri' query param");
         }
         return templateLocator.readTemplate(uri)
                 .map(templateGenerator::generateFrontAndBackends)
-                .orElseGet(() -> {
-                    HashMap<String, Set<String>> result = new HashMap<>();
-                    result.put("frontends", new HashSet<>());
-                    result.put("backends", new HashSet<>());
-                    return result;
-                });
+                .map(map -> ok(map).build())
+                .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("Could not find any template at " + uri).build());
     }
 
     @POST
     @Path("/template/valorise")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String getHaproxyConfiguration(@Valid EntryPointWithPortsMappingJson configuration) {
+    public String getHaproxyConfiguration(@NotNull @Valid EntryPointWithPortsMappingJson configuration) {
         try {
-            String uri = configuration.getContext().get(UriTemplateLocator.URI_FIELD);
-            String template = templateLocator.readTemplate(uri).orElseThrow(() -> new NotFoundException("Could not find any template at " + uri));
+            String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new NotFoundException("Could not find any template for entrypoint "+configuration));
             return templateGenerator.generate(template, configuration, configuration.generatePortMapping());
         } catch (IncompleteConfigurationException e) {
             throw new BadRequestException(e.getMessage());

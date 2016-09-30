@@ -53,10 +53,14 @@ public class EntryPointWithPortsMappingJson extends EntryPointMappingJson {
 
     public Map<String, Integer> generatePortMapping() {
         HashMap<String, Integer> mapping = new HashMap<>();
-        mapping.put(syslogPortId(), this.syslogPort);
-        this.getFrontends().forEach(f -> mapping.put(f.getId(),
-                ((EntryPointFrontendWithPortMappingJson) f).getPort()
-        ));
+        if (this.syslogPort != null) mapping.put(syslogPortId(), this.syslogPort);
+        this.getFrontends().forEach(f -> {
+            if (((EntryPointFrontendWithPortMappingJson) f).getPort() != null) {
+                mapping.put(f.getId(),
+                        ((EntryPointFrontendWithPortMappingJson) f).getPort()
+                );
+            }
+        });
         return mapping;
     }
 

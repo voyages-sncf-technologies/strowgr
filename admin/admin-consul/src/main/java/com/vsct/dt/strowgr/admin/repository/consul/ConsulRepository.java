@@ -428,17 +428,6 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     }
 
     @Override
-    public Optional<String> getHaproxyVip(String haproxyId) {
-        try {
-            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyId + "/vip?raw");
-            return client.execute(getHaproxyURI, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::readRawContentFromHttpEntity));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    @Override
     public Optional<Map<String, String>> getHaproxyProperties(String haproxyId) {
         Optional<Map<String, String>> result;
         try {

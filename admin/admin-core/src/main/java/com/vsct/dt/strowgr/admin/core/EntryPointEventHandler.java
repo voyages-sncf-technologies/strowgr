@@ -166,7 +166,7 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
-    public void handle(TryCommitCurrentConfigurationEvent event) {
+    public void handle(TryCommitCurrentConfigurationEvent event) throws IncompleteConfigurationException {
         EntryPointKey entryPointKey = event.getKey();
         try {
             this.stateManager.lock(entryPointKey);
@@ -192,7 +192,7 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
-    public void handle(TryCommitPendingConfigurationEvent event) {
+    public void handle(TryCommitPendingConfigurationEvent event) throws IncompleteConfigurationException {
         EntryPointKey entryPointKey = event.getKey();
         try {
             this.stateManager.lock(entryPointKey);

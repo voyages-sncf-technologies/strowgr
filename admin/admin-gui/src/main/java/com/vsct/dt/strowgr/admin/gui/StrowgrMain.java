@@ -49,7 +49,7 @@ import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
-import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
+import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.Application;
