@@ -39,12 +39,6 @@ public class Conf {
     @JsonProperty("syslog")
     private String syslog;
 
-    /**
-     * Haproxy.
-     */
-    @JsonProperty("haproxyVersion")
-    private String haproxyVersion;
-
     @JsonCreator
     public Conf() {
     }
