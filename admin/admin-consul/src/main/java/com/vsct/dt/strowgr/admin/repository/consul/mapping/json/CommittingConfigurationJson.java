@@ -34,11 +34,13 @@ public class CommittingConfigurationJson extends EntryPoint {
     @JsonCreator
     public CommittingConfigurationJson(@JsonProperty("correlationId") String correlationId,
                                        @JsonProperty("haproxy") String haproxy,
+                                       @JsonProperty("bindingId") int bindingId,
                                        @JsonProperty("hapUser") String hapUser,
                                        @JsonProperty("frontends") Set<EntryPointFrontendMappingJson> frontends,
                                        @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
                                        @JsonProperty("context") Map<String, String> context) {
         super(haproxy,
+                bindingId,
                 hapUser,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
                 backends.stream().map(identity()).collect(Collectors.toSet()),
@@ -48,6 +50,7 @@ public class CommittingConfigurationJson extends EntryPoint {
 
     public CommittingConfigurationJson(String correlationId, EntryPoint configuration) {
         super(configuration.getHaproxy(),
+                configuration.getBindingId(),
                 configuration.getHapUser(),
                 configuration.getFrontends(),
                 configuration.getBackends(),

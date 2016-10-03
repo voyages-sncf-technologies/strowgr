@@ -27,6 +27,7 @@ import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.repository.consul.mapping.json.CommittingConfigurationJson;
+import com.vsct.dt.strowgr.admin.repository.consul.mapping.json.EntryPointMappingJson;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
@@ -227,7 +228,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
 
     @Override
     public Optional<EntryPoint> getCommittingConfiguration(EntryPointKey key) {
-        return getCommittingConfigurationWithCorrelationId(key).map(committingConfigurationJson -> new EntryPoint(committingConfigurationJson.getHaproxy(), committingConfigurationJson.getHapUser(), committingConfigurationJson.getFrontends(), committingConfigurationJson.getBackends(), committingConfigurationJson.getContext()));
+        return getCommittingConfigurationWithCorrelationId(key).map(committingConfigurationJson -> new EntryPoint(committingConfigurationJson.getHaproxy(), committingConfigurationJson.getBindingId(), committingConfigurationJson.getHapUser(), committingConfigurationJson.getFrontends(), committingConfigurationJson.getBackends(), committingConfigurationJson.getContext()));
     }
 
     private Optional<CommittingConfigurationJson> getCommittingConfigurationWithCorrelationId(EntryPointKey key) {
@@ -242,6 +243,10 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
 
     @Override
     public void setPendingConfiguration(EntryPointKey key, EntryPoint configuration) {
+        setPendingConfiguration(key, new EntryPointMappingJson(configuration));
+    }
+
+    private void setPendingConfiguration(EntryPointKey key, EntryPointMappingJson configuration) {
         try {
             HttpPut setPendingURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/pending");
 
@@ -268,6 +273,10 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
 
     @Override
     public void setCommittingConfiguration(String correlationId, EntryPointKey entryPointKey, EntryPoint configuration, int ttl) {
+        setCommittingConfiguration(correlationId, entryPointKey, new EntryPointMappingJson(configuration), ttl);
+    }
+
+    private void setCommittingConfiguration(String correlationId, EntryPointKey entryPointKey, EntryPointMappingJson configuration, int ttl) {
         try {
             /* Use Consul session to use TTL feature
                This implies that when the consul node holding the session is lost,
@@ -318,6 +327,10 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
 
     @Override
     public void setCurrentConfiguration(EntryPointKey key, EntryPoint configuration) {
+        setCurrentConfiguration(key, new EntryPointMappingJson(configuration));
+    }
+
+    private void setCurrentConfiguration(EntryPointKey key, EntryPointMappingJson configuration) {
         try {
             HttpPut setCurrentURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/current");
 
@@ -446,7 +459,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     private Map<String, String> consulItemsToMap(List<ConsulItem<String>> consulItems) {
         Map<String, String> haproxyItems = new HashMap<>(consulItems.size());
         for (ConsulItem<String> consulItem : consulItems) {
-            haproxyItems.put(consulItem.getKey().split("/")[2], consulItem.valueFromBase64());
+            haproxyItems.put(consulItem.getKey().split("/", 3)[2], consulItem.valueFromBase64());
         }
         return haproxyItems;
     }
@@ -460,6 +473,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
                             .orElseGet(ArrayList::new));
             Map<String, List<ConsulItem<String>>> consulItemsById = consulItems.stream()
+                    .filter(consulItem -> consulItem.getKey().split("/").length > 1) //We evaluate twice consulItem.getKey().split("/"), no a big deal since haproxy dont have many properties yet.
                     .collect(Collectors.groupingBy(consulItem -> consulItem.getKey().split("/")[1]));
             List<Map<String, String>> propertiesById = new ArrayList<>(consulItemsById.size());
             for (Map.Entry<String, List<ConsulItem<String>>> entry : consulItemsById.entrySet()) {
@@ -489,6 +503,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
                             .orElseGet(ArrayList::new));
             Set<String> haproxyId = consulItems.stream()
+                    .filter(consulItem -> consulItem.getKey().split("/").length > 1) //We evaluate twice consulItem.getKey().split("/"), no a big deal since haproxy dont have many properties yet.
                     .map(consulItem -> consulItem.getKey().split("/")[1])
                     .collect(Collectors.toSet());
             result = haproxyId;

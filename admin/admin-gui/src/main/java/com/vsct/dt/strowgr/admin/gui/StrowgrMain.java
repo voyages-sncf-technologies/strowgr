@@ -42,6 +42,7 @@ import com.vsct.dt.strowgr.admin.gui.observable.ManagedHaproxy;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
+import com.vsct.dt.strowgr.admin.gui.resource.api.UriTemplateResources;
 import com.vsct.dt.strowgr.admin.gui.subscribers.EventBusSubscriber;
 import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
 import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
@@ -212,6 +213,9 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         PortResources portResources = new PortResources(repository);
         environment.jersey().register(portResources);
+
+        UriTemplateResources uriTemplateResources = new UriTemplateResources(templateLocator, templateGenerator);
+        environment.jersey().register(uriTemplateResources);
 
         eventBus.register(restApiResource);
 

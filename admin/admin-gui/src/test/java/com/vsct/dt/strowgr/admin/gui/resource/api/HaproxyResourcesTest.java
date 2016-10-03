@@ -64,7 +64,10 @@ public class HaproxyResourcesTest {
 
     @Test
     public void should_create_haproxy_with_all_properties(){
-        HaproxyMappingJson haproxyJson = new HaproxyMappingJson("name", "vip", "platform", true);
+        Map<Integer, String> bindings = new HashMap<>();
+        bindings.put(0, "vip0");
+        bindings.put(1, "vip1");
+        HaproxyMappingJson haproxyJson = new HaproxyMappingJson("name", bindings, "platform", true);
 
         Response res = resources.client().target("/haproxy/id").request().put(Entity.json(haproxyJson));
 
@@ -73,7 +76,8 @@ public class HaproxyResourcesTest {
 
         verify(haproxyRepository).setHaproxyProperty("id", "name", "name");
         verify(haproxyRepository).setHaproxyProperty("id", "platform", "platform");
-        verify(haproxyRepository).setHaproxyProperty("id", "vip", "vip");
+        verify(haproxyRepository).setHaproxyProperty("id", "binding/0", "vip0");
+        verify(haproxyRepository).setHaproxyProperty("id", "binding/1", "vip1");
         verify(haproxyRepository).setHaproxyProperty("id", "autoreload", "true");
     }
 
@@ -158,56 +162,11 @@ public class HaproxyResourcesTest {
     }
 
     @Test
-    public void should_get_template(){
-        when(templateLocator.readTemplate("/some/uri")).thenReturn(Optional.of("I'm a template believe it or not"));
-
-        String result = resources.client().target("/haproxy/template?uri=/some/uri").request().get(String.class);
-
-        assertThat(result, is("I'm a template believe it or not"));
-    }
-
-    @Test
-    public void get_template_should_return_404_if_not_found(){
-        when(templateLocator.readTemplate("/some/uri")).thenReturn(Optional.empty());
-
-        Response res = resources.client().target("/haproxy/template?uri=/some/uri").request().get();
-
-        assertThat(res.getStatus(), is(404));
-    }
-
-    @Test
-    public void should_get_frontends_and_backends_from_template(){
-        Map<String, Set<String>> frontAndBackends = new HashMap<>();
-        Set<String> backends = new HashSet<>();
-        backends.add("backend");
-        frontAndBackends.put("frontend", backends);
-
-        when(templateLocator.readTemplate("/some/uri")).thenReturn(Optional.of("void"));
-        when(templateGenerator.generateFrontAndBackends("void")).thenReturn(frontAndBackends);
-
-        //jersey will prefer list impl instead of set, this is not a big deal since we just want to test size and presenc eof one element
-        Map<String, List<String>> result = resources.client().target("/haproxy/template/frontbackends?uri=/some/uri").request().get(Map.class);
-
-        assertThat(result.size(), is(1));
-        assertThat(result.get("frontend").size(), is(1));
-        assertThat(result.get("frontend").contains("backend"), is(true));
-    }
-
-    @Test
-    public void get_frontends_and_backends_should_get_empty_front_and_backend_if_uri_is_not_found(){
-        when(templateLocator.readTemplate("/some/uri")).thenReturn(Optional.empty());
-
-        Response res = resources.client().target("/haproxy/template/frontbackends?uri=/some/uri").request().get();
-
-        assertThat(res.getStatus(), is(404));
-    }
-
-    @Test
     public void should_get_haproxy_configuration_from_entrypoint_configuration() throws IncompleteConfigurationException {
         //for unknown reason, this jersey testing has a problem when you set a number for the property syslogPort.
         //this may be due to class hierarchy with json mappings
         //For this reasons we pass null value.
-        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson("haproxy", "user", null, new HashSet<>(), new HashSet<>(), new HashMap<>());
+        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson("haproxy", 0, "user", null, new HashSet<>(), new HashSet<>(), new HashMap<>());
         when(templateLocator.readTemplate(ep)).thenReturn(Optional.of("A template"));
         when(templateGenerator.generate("A template", ep, ep.generatePortMapping())).thenReturn("A valorized template");
 
@@ -218,7 +177,7 @@ public class HaproxyResourcesTest {
 
     @Test
     public void get_haproxy_configuration_should_return_404_if_template_not_found(){
-        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson("haproxy", "user", null, new HashSet<>(), new HashSet<>(), new HashMap<>());
+        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson("haproxy", 0, "user", null, new HashSet<>(), new HashSet<>(), new HashMap<>());
         when(templateLocator.readTemplate(ep)).thenReturn(Optional.empty());
 
         Response res = resources.client().target("/haproxy/template/valorise").request().post(Entity.json(ep));
@@ -228,7 +187,7 @@ public class HaproxyResourcesTest {
 
     @Test
     public void get_haproxy_configuration_should_return_400_if_template_cannot_be_properly_valorised() throws IncompleteConfigurationException {
-        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson("haproxy", "user", null, new HashSet<>(), new HashSet<>(), new HashMap<>());
+        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson("haproxy", 0, "user", null, new HashSet<>(), new HashSet<>(), new HashMap<>());
         when(templateLocator.readTemplate(ep)).thenReturn(Optional.of("A template"));
         IncompleteConfigurationException ex = new IncompleteConfigurationException(new HashSet<String>());
         when(templateGenerator.generate("A template", ep, ep.generatePortMapping())).thenThrow(ex);

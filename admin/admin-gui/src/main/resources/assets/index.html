@@ -78,6 +78,7 @@
 
 
 
+
     </style>
 
     <script type="text/javascript">
@@ -250,7 +251,23 @@
             return {
                 all: function(){
                     return $http.get('/api/haproxy/').then(function(response) {
-                        return response.data;
+                        return response.data.map(function(hapProps){
+                            var hap = {
+                                'id': hapProps.id,
+                                'name': hapProps.name,
+                                'platform': hapProps.platform,
+                                'autoreload': hapProps.autoreload,
+                                'bindings': {}
+                            };
+                            //bindings are not stored as map but as a bunch of keys starting with 'binding/'
+                            for(var prop in hapProps){
+                                if (hapProps.hasOwnProperty(prop) && prop.startsWith('binding/')) {
+                                    var id = prop.replace('binding/', '');
+                                    hap['bindings'][id] =  hapProps[prop];
+                                }
+                            }
+                            return hap;
+                        });
                     }, function(error) {
                         if(error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
@@ -269,8 +286,8 @@
                         throw error;
                     });
                 },
-                getVIP: function (id) {
-                    return $http.get('/api/haproxy/' + id + '/vip/').then(function(response) {
+                getBinding: function (hapid, bindingId) {
+                    return $http.get('/api/haproxy/' + hapid + '/binding/' + bindingId).then(function(response) {
                         return response.data;
                     }, function(error) {
                         if(error.status >= 500) {
@@ -297,7 +314,7 @@
                 getTemplate: function (uri) {
                     return $http({
                         method: 'GET',
-                        url: '/api/haproxy/template?uri=' + escape(uri),
+                        url: '/api/templates?uri=' + escape(uri),
                         responseType: 'text'
                     }).then(function(response) {
                         return response.data;
@@ -311,7 +328,7 @@
                 getFrontBackends: function (uri) {
                     return $http({
                         method: 'GET',
-                        url: '/api/haproxy/template/frontbackends?uri=' + escape(uri),
+                        url: '/api/templates/frontbackends?uri=' + escape(uri),
                         responseType: 'text'
                     }).then(function(response) {
                         return response.data;
@@ -458,6 +475,7 @@
             /* Init conf object, avoid undefined inner objects and show expected fields */
             $scope.conf = {
                 haproxy: "",
+                bindingId: 0,
                 hapUser: "hapadm",
                 context: {
                     templateUri: ""
@@ -605,12 +623,18 @@
             /* Init conf object, avoid undefined inner objects and show expected fields */
             $scope.haproxy = {
                 name: "",
-                vip: "",
+                bindings: {
+                    0: ''
+                },
                 platform: "",
                 autoreload: true
             };
 
             $scope.haproxyId= "";
+
+            $scope.addBinding = function() {
+                $scope.haproxy.bindings[Object.keys($scope.haproxy.bindings).length] = "";
+            };
 
             $scope.createHaproxy = function () {
                 console.log("create haproxy "+$scope.haproxyId+": "+ JSON.stringify($scope.haproxy));
@@ -631,7 +655,7 @@
                     for(var currentHaproxy=0; currentHaproxy < $scope.availableHaproxies.length; currentHaproxy++) {
                         if($scope.availableHaproxies[currentHaproxy]["id"] == $scope.haproxyId) {
                             $scope.haproxy.name = $scope.availableHaproxies[currentHaproxy]["name"];
-                            $scope.haproxy.vip = $scope.availableHaproxies[currentHaproxy]["vip"];
+                            $scope.haproxy.bindings = $scope.availableHaproxies[currentHaproxy]["bindings"];
                             $scope.haproxy.platform = $scope.availableHaproxies[currentHaproxy]["platform"];
                             $scope.haproxy.autoreload = ("true" == $scope.availableHaproxies[currentHaproxy]["autoreload"]);
                             console.log("load haproxy "+JSON.stringify($scope.availableHaproxies[currentHaproxy]));
@@ -761,6 +785,7 @@
 
                         var updateModel = {
                             hapUser: scope.conf.hapUser,
+                            bindingId: scope.conf.bindingId,
                             context: scope.conf.context,
                             frontends: frontends,
                             backends: backends
@@ -803,7 +828,7 @@
                     link: function (scope, element, attrs) {
                         scope.$watch('conf', function (newConf, oldConf) {
                             if (newConf != undefined) {
-                                Haproxy.getVIP(newConf.haproxy).then(function (uri) {
+                                Haproxy.getBinding(newConf.haproxy, newConf.bindingId).then(function (uri) {
                                     scope.haproxyUri = uri;
                                 });
                             }
@@ -1023,6 +1048,7 @@
                     }
                 }
             }]);
+
 
 
     </script>

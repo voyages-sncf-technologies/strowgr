@@ -45,6 +45,14 @@
             </div>
         </md-input-container>
         <md-input-container flex="10">
+            <label>Binding IP</label>
+            <input name="bindingId" ng-model="conf.bindingId" required/>
+
+            <div ng-messages="newEntrypointForm.bindingId.$error">
+                <div ng-message="required">Il faut indiquer l'IP sur laquelle écoute cette configuration</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
             <label>User haproxy (ex. hapwdia1)</label>
             <input name="hapUser" ng-model="conf.hapUser" required/>
 

@@ -29,6 +29,11 @@
         margin-left: 15px;
     }
 
+
+
+
+
+
 </style>
 
 <form id="add-haproxy-form" name="newHaproxyForm" ng-submit="newHaproxyForm.$valid && createHaproxy()" flex
@@ -50,13 +55,6 @@
             </div>
         </md-input-container>
         <md-input-container flex="10">
-            <label>VIP</label>
-            <input name="vip" ng-model="haproxy.vip" required/>
-            <div ng-messages="newHaproxyForm.vip.$error">
-                <div ng-message="required">Il faut indiquer la VIP portée par cet HAProxy</div>
-            </div>
-        </md-input-container>
-        <md-input-container flex="10">
             <label>Plateforme</label>
             <md-select name="platform" ng-model="haproxy.platform" required>
                 <md-option>assemblage</md-option>
@@ -75,6 +73,18 @@
                 Activer le refresh auto ?
             </md-checkbox>
         </md-input-container>
+    </div>
+    <div layout="column" layout-align="start start">
+        <div layout="row" layout-align="start start" ng-repeat="(id, value) in haproxy.bindings" flex>
+            <md-input-container width="150px">
+                <label>Bind IP</label>
+                <input name="binding{{id}}" ng-model="haproxy.bindings[id]" required/>
+            </md-input-container>
+            <md-button class="md-fab md-primary md-mini" ng-click="addBinding()" ng-show="$last">
+                <md-icon class="material-icons" style="font-size: 22px">add</md-icon>
+                <md-tooltip>Ajouter une ip</md-tooltip>
+            </md-button>
+        </div>
     </div>
     <div layout="row">
         <md-input-container flex="15">

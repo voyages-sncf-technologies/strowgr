@@ -33,6 +33,7 @@ public class EntryPoint {
     public static final String SYSLOG_PORT_ID = "syslog";
 
     private final String haproxy;
+    private final int bindingId;
 
     private final String hapUser;
 
@@ -41,9 +42,10 @@ public class EntryPoint {
     private final HashMap<String, EntryPointFrontend> frontends;
     private final HashMap<String, EntryPointBackend> backends;
 
-    public EntryPoint(String haproxy, String hapUser,
+    public EntryPoint(String haproxy, int bindingId, String hapUser,
                       Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
         this.haproxy = checkStringNotEmpty(haproxy, "EntryPointConfiguration should have an haproxy id");
+        this.bindingId = bindingId;
         this.hapUser = checkStringNotEmpty(hapUser, "EntryPointConfiguration should have a user for haproxy");
 
         checkNotNull(frontends);
@@ -61,24 +63,25 @@ public class EntryPoint {
         this.context = new HashMap<>(checkNotNull(context));
     }
 
-    private EntryPoint(String haproxy, String hapUser,
+    private EntryPoint(String haproxy, int bindingId, String hapUser,
                        HashMap<String, EntryPointFrontend> frontends, HashMap<String, EntryPointBackend> backends, HashMap<String, String> context) {
         this.haproxy = haproxy;
+        this.bindingId = bindingId;
         this.hapUser = hapUser;
         this.frontends = frontends;
         this.backends = backends;
         this.context = context;
     }
 
-    public static IHapUSer onHaproxy(String haproxy) {
-        return new EntryPoint.Builder(haproxy);
+    public static IHapUSer onHaproxy(String haproxy, int bindingId) {
+        return new EntryPoint.Builder(haproxy, bindingId);
     }
 
     public EntryPoint addOrReplaceBackend(EntryPointBackend backend) {
         checkNotNull(backend);
         HashMap<String, EntryPointBackend> newBackends = new HashMap<>(backends);
         newBackends.put(backend.getId(), backend);
-        return new EntryPoint(this.haproxy, this.hapUser, this.frontends, newBackends, this.context);
+        return new EntryPoint(this.haproxy, this.bindingId, this.hapUser, this.frontends, newBackends, this.context);
     }
 
     public Optional<EntryPointBackend> getBackend(String id) {
@@ -138,6 +141,10 @@ public class EntryPoint {
         return haproxy;
     }
 
+    public int getBindingId() {
+        return bindingId;
+    }
+
     public Map<String, String> getContext() {
         return new HashMap<>(context);
     }
@@ -182,7 +189,7 @@ public class EntryPoint {
             }
         }
 
-        return EntryPoint.onHaproxy(this.haproxy)
+        return EntryPoint.onHaproxy(this.haproxy, this.bindingId)
                 .withUser(updatedEntryPoint.getHapUser())
                 .definesFrontends(updatedEntryPoint.getFrontends().stream().map(f -> new EntryPointFrontend(f.getId(), f.getContext())).collect(Collectors.toSet()))
                 .definesBackends(newBackends)
@@ -238,6 +245,7 @@ public class EntryPoint {
 
     public static class Builder implements IHapUSer, IFrontends, IBackends, IContext, IBuild {
 
+        private final int bindingId;
         private Set<EntryPointBackend> backends;
         private Set<EntryPointFrontend> frontends;
         private String haproxy;
@@ -245,8 +253,9 @@ public class EntryPoint {
         private String syslogPort;
         private Map<String, String> context;
 
-        private Builder(String haproxy) {
+        private Builder(String haproxy, int bindingId) {
             this.haproxy = haproxy;
+            this.bindingId = bindingId;
         }
 
         @Override
@@ -275,7 +284,7 @@ public class EntryPoint {
 
         @Override
         public EntryPoint build() {
-            return new EntryPoint(haproxy, user, frontends, backends, context);
+            return new EntryPoint(haproxy, bindingId, user, frontends, backends, context);
         }
 
     }

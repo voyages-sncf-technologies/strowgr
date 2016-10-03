@@ -38,12 +38,14 @@ public class EntryPointWithPortsMappingJson extends EntryPointMappingJson {
 
     @JsonCreator
     public EntryPointWithPortsMappingJson(@JsonProperty("haproxy") String haproxy,
+                                          @JsonProperty("bindingId") int bindingId,
                                           @JsonProperty("hapUser") String hapUser,
                                           @JsonProperty("syslogPort") Integer syslogPort,
                                           @JsonProperty("frontends") Set<EntryPointFrontendWithPortMappingJson> frontends,
                                           @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
                                           @JsonProperty("context") Map<String, String> context) {
         super(haproxy,
+                bindingId,
                 hapUser,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
                 backends.stream().map(identity()).collect(Collectors.toSet()),

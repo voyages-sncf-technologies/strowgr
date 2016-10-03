@@ -36,11 +36,13 @@ public class EntryPointMappingJson extends EntryPoint {
 
     @JsonCreator
     public EntryPointMappingJson(@JsonProperty("haproxy") String haproxy,
+                                 @JsonProperty("bindingId") int bindingId,
                                  @JsonProperty("hapUser") String hapUser,
                                  @JsonProperty("frontends") Set<EntryPointFrontendMappingJson> frontends,
                                  @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
                                  @JsonProperty("context") Map<String, String> context) {
         super(haproxy,
+                bindingId,
                 hapUser,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
                 backends.stream().map(identity()).collect(Collectors.toSet()),
@@ -48,7 +50,7 @@ public class EntryPointMappingJson extends EntryPoint {
     }
 
     public EntryPointMappingJson(EntryPoint c) {
-        this(c.getHaproxy(), c.getHapUser(),
+        this(c.getHaproxy(), c.getBindingId(), c.getHapUser(),
                 c.getFrontends().stream().map(EntryPointFrontendMappingJson::new).collect(Collectors.toSet()),
                 c.getBackends().stream().map(EntryPointBackendMappingJson::new).collect(Collectors.toSet()),
                 c.getContext());

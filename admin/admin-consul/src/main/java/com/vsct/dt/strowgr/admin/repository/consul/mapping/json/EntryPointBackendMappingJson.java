@@ -31,10 +31,19 @@ import java.util.stream.Collectors;
  * Created by william_montaz on 09/02/2016.
  */
 public class EntryPointBackendMappingJson extends EntryPointBackend {
+
     public EntryPointBackendMappingJson(@JsonProperty("id") String id,
                                         @JsonProperty("servers") Set<EntryPointBackendServerMappingJson> servers,
                                         @JsonProperty("context") Map<String, String> context) {
         super(id, servers.stream().map(Function.identity()).collect(Collectors.toSet()), context);
+    }
+
+    public EntryPointBackendMappingJson(EntryPointBackend entryPointBackend){
+        this(
+                entryPointBackend.getId(),
+                entryPointBackend.getServers().stream().map(EntryPointBackendServerMappingJson::new).collect(Collectors.toSet()),
+                entryPointBackend.getContext()
+        );
     }
 
 }
