@@ -31,6 +31,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"github.com/opencontainers/runc/Godeps/_workspace/src/github.com/Sirupsen/logrus"
 )
 
 var (
@@ -50,6 +51,15 @@ var (
 	haFactory *sidekick.LoadbalancerFactory
 )
 
+type SdkLogger struct {
+	logrus *log.Logger
+}
+
+func (sdkLogger SdkLogger) Output(calldepth int, s string) error {
+	logrus.WithField("type", "nsq driver").Info(s)
+	return nil
+}
+
 func main() {
 	log.SetFormatter(&log.TextFormatter{})
 	flag.Parse()
@@ -62,6 +72,9 @@ func main() {
 	if *verbose {
 		log.SetLevel(log.DebugLevel)
 		log.WithField("loglevel", "debug").Info("Change loglevel")
+	} else {
+		log.SetLevel(log.InfoLevel)
+		log.WithField("loglevel", "info").Info("Change loglevel")
 	}
 
 	loadProperties()
@@ -79,6 +92,11 @@ func main() {
 	}).Info("Starting sidekick")
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
+	if *verbose {
+		producer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
+	} else {
+		producer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
+	}
 
 	createTopicsAndChannels()
 	time.Sleep(1 * time.Second)
@@ -100,6 +118,11 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), fmt.Sprintf("%s", properties.NodeId()), config)
+		if *verbose {
+			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
+		} else {
+			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
+		}
 		consumer.AddHandler(nsq.HandlerFunc(onDeleteRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -112,6 +135,12 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), fmt.Sprintf("%s", properties.NodeId()), config)
+		if *verbose {
+			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
+		} else {
+			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
+		}
+
 		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -124,6 +153,11 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s", properties.ClusterId), fmt.Sprintf("%s", properties.NodeId()), config)
+		if *verbose {
+			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
+		} else {
+			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
+		}
 		consumer.AddHandler(nsq.HandlerFunc(onCommitSlaveRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -138,6 +172,11 @@ func main() {
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), fmt.Sprintf("%s", properties.NodeId()), config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		if *verbose {
+			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
+		} else {
+			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
+		}
 		if err != nil {
 			log.Panic("Could not connect")
 		}
