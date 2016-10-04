@@ -1,7 +1,8 @@
 {
   "conf" : {
     "haproxy" : "abcde",
-    "syslog" : "fghij"
+    "syslog" : "fghij",
+    "haproxyVersion" : "hapversion"
   },
   "header" : {
     "correlationId" : "test-id",

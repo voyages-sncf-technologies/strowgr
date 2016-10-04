@@ -177,6 +177,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* NSQ Producers */
         NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();
+
         // manage NSQProducer lifecycle by Dropwizard
         environment.lifecycle().manage(new NSQProducerManaged(nsqProducer));
         // Pipeline from eventbus to NSQ producer

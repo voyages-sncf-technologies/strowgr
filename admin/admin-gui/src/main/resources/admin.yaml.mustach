@@ -13,9 +13,9 @@ server:
         threshold: INFO
 threads: 20
 haproxyName: default-name
-repository:
-  host: {{repository.host}}
-  port: {{repository.port}}
+haproxyRepository:
+  host: {{haproxyRepository.host}}
+  port: {{haproxyRepository.port}}
   minGeneratedPort: 50000
   maxGeneratedPort: 54000
 nsqLookup:

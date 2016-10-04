@@ -66,7 +66,7 @@ public class NSQDispatcher {
     public void sendCommitRequested(CommitRequestedEvent commitRequestedEvent, String haproxyName, String application, String platform) throws JsonProcessingException, NSQException, TimeoutException, UnsupportedEncodingException {
         String confBase64 = new String(Base64.getEncoder().encode(commitRequestedEvent.getConf().getBytes("UTF-8")));
         String syslogConfBase64 = new String(Base64.getEncoder().encode(commitRequestedEvent.getSyslogConf().getBytes("UTF-8")));
-        CommitRequested payload = new CommitRequested(commitRequestedEvent.getCorrelationId(), application, platform, confBase64, syslogConfBase64, commitRequestedEvent.getHaproxyVersion());
+        CommitRequested payload = new CommitRequested(commitRequestedEvent.getCorrelationId(), application, platform, confBase64, syslogConfBase64, commitRequestedEvent.getConfiguration().get().getHapVersion());
         payload.getHeader().setSource(SOURCE_NAME);
 
         try {

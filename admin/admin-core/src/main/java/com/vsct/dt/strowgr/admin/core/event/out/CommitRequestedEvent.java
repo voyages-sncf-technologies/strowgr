@@ -27,14 +27,12 @@ public class CommitRequestedEvent extends EntryPointEvent {
     private final EntryPoint configuration;
     private final String conf;
     private final String syslogConf;
-    private final String haproxyVersion;
 
-    public CommitRequestedEvent(String correlationId, EntryPointKey key, EntryPoint configuration, String conf, String syslogConf, String haproxyVersion) {
+    public CommitRequestedEvent(String correlationId, EntryPointKey key, EntryPoint configuration, String conf, String syslogConf) {
         super(correlationId, key);
         this.configuration = configuration;
         this.conf = conf;
         this.syslogConf = syslogConf;
-        this.haproxyVersion = haproxyVersion;
     }
 
     public Optional<EntryPoint> getConfiguration() {
@@ -49,10 +47,6 @@ public class CommitRequestedEvent extends EntryPointEvent {
         return syslogConf;
     }
 
-    public String getHaproxyVersion() {
-        return haproxyVersion;
-    }
-
     @Override
     public String toString() {
         return "CommitRequestedEvent{" +
@@ -60,7 +54,6 @@ public class CommitRequestedEvent extends EntryPointEvent {
                 "key=" + getKey() +
                 "configuration=" + configuration +
                 ", conf='" + conf + '\'' +
-                ", haproxyVersion='" + haproxyVersion + '\'' +
                 ", syslogConf='" + syslogConf + '\'' +
                 '}';
     }

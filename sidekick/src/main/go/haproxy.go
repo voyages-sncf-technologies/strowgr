@@ -60,7 +60,10 @@ const (
 func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) {
 	present := false
 	for _, version := range hap.Versions {
-		present = (version == data.Conf.Version)
+		if version == data.Conf.Version {
+			present = true
+			break
+		}
 	}
 	// validate that received haproxy configuration contains a managed version of haproxy
 	if data.Conf.Version == "" || !present {

@@ -19,7 +19,6 @@ package com.vsct.dt.strowgr.admin.core;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.configuration.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
@@ -63,6 +62,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint config = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -87,6 +87,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint config = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -95,6 +96,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint current = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -118,6 +120,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint config = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -126,6 +129,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint committing = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -145,7 +149,7 @@ public class EntryPointEventHandlerTest {
     @Test
     public void update_entry_point_should_do_nothing_if_there_is_no_configuration_at_all() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("key");
-        UpdateEntryPointEvent event = new UpdateEntryPointEvent("correlation_id", key, new UpdatedEntryPoint("user", new HashMap<>(), new HashSet<>(), new HashSet<>()));
+        UpdateEntryPointEvent event = new UpdateEntryPointEvent("correlation_id", key, new UpdatedEntryPoint("user", new HashMap<>(), new HashSet<>(), new HashSet<>(), "hapversion"));
 
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
@@ -211,7 +215,7 @@ public class EntryPointEventHandlerTest {
         newBackends.add(nb1);
         newBackends.add(new EntryPointBackend("b6", new HashSet<>(), new HashMap<>()));
 
-        return new EntryPoint("haproxy", "new_user", newFrontends, newBackends, newGlobalContext);
+        return new EntryPoint("haproxy", "new_user", "hapversion", newFrontends, newBackends, newGlobalContext);
     }
 
     private UpdateEntryPointEvent getUpdateTestEvent(EntryPointKey key) {
@@ -241,7 +245,7 @@ public class EntryPointEventHandlerTest {
         UpdatedEntryPointBackend ub1 = new UpdatedEntryPointBackend("b1", newHashSet(us1, us2, us6), b1Context);
         UpdatedEntryPointBackend ub6 = new UpdatedEntryPointBackend("b6", newHashSet(us1, us2), new HashMap<>());
 
-        UpdatedEntryPoint uep = new UpdatedEntryPoint("new_user", globalContext, newHashSet(uf2, uf3), newHashSet(ub1, ub6));
+        UpdatedEntryPoint uep = new UpdatedEntryPoint("new_user", globalContext, newHashSet(uf2, uf3), newHashSet(ub1, ub6), "hapversion");
 
         return new UpdateEntryPointEvent("correlation_id", key, uep);
     }
@@ -292,7 +296,7 @@ public class EntryPointEventHandlerTest {
         backends.add(new EntryPointBackend("b5", new HashSet<>(), new HashMap<>()));
 
         /* Put everything in a configuration */
-        return new EntryPoint("haproxy", "user", frontends, backends, existingGlobalContext);
+        return new EntryPoint("haproxy", "user", "hapversion", frontends, backends, existingGlobalContext);
     }
 
     @Test
@@ -350,6 +354,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint entryPoint = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -378,6 +383,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint entryPoint = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -407,6 +413,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint entryPoint = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -434,6 +441,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint entryPoint = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -547,6 +555,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint commmittingConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -555,6 +564,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint pendingConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.of())
@@ -563,6 +573,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -573,6 +584,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.of())
@@ -599,6 +611,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint commmittingConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.of())
@@ -607,6 +620,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -617,6 +631,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.of())
@@ -643,6 +658,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.of())
@@ -653,6 +669,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.of())
@@ -678,6 +695,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
@@ -688,6 +706,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.of())
@@ -718,6 +737,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.of())
@@ -728,6 +748,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.of())
@@ -764,6 +785,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.of())
@@ -774,6 +796,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.of())
@@ -812,6 +835,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.of())
@@ -822,6 +846,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(expectedBackend))
                 .withGlobalContext(ImmutableMap.of())
@@ -857,6 +882,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint currentConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(backend))
                 .withGlobalContext(ImmutableMap.of())
@@ -872,6 +898,7 @@ public class EntryPointEventHandlerTest {
         EntryPoint expectedConfig = EntryPoint
                 .onHaproxy("haproxy")
                 .withUser("hapuser")
+                .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of(expectedBackend1, expectedBackend2))
                 .withGlobalContext(ImmutableMap.of())

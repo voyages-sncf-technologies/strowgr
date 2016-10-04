@@ -57,7 +57,7 @@ public class PayloadTest {
 
     @Test
     public void testCommitRequested() throws IOException, URISyntaxException {
-        CommitRequested message = new CommitRequested("test-id", "TST", "REL1", "abcde", "fghij", null);
+        CommitRequested message = new CommitRequested("test-id", "TST", "REL1", "abcde", "fghij", "hapversion");
         message.getHeader().setTimestamp(1L);
         message.getHeader().setSource("test");
         assertSerialization(message, "commitRequested.expected.json");

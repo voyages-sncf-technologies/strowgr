@@ -45,6 +45,15 @@
             </div>
         </md-input-container>
         <md-input-container flex="10">
+            <label>HAproxy version</label>
+            <md-select name="haproxyVersion" ng-model="conf.hapVersion" required>
+                <md-option ng-repeat="version in haproxyVersions" ng-selected="$first">{{version}}</md-option>
+            </md-select>
+            <div ng-messages="newEntrypointForm.haproxy.$error">
+                <div ng-message="required">Il faut choisir un couple master/slave</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
             <label>User haproxy (ex. hapwdia1)</label>
             <input name="hapUser" ng-model="conf.hapUser" required/>
 
@@ -73,7 +82,7 @@
             <input name="gitlabPath" ng-model="gitlabTemplate.filename" required/>
 
             <div ng-messages="newEntrypointForm.gitlabPath.$error">
-                <div ng-message="required">Il faut renseigner le nom du template (au sein du repository)</div>
+                <div ng-message="required">Il faut renseigner le nom du template (au sein du haproxyRepository)</div>
             </div>
         </md-input-container>
         <md-input-container flex="10">
