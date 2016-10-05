@@ -699,6 +699,11 @@
                         }
                     };
 
+                    Haproxy.allVersions().then(function(data){
+                        scope.haproxyVersions = data;
+                        console.log("haproxy versions: "+data);
+                    });
+
                     scope.reloadFrontBackends = function () {
                         console.log('reload');
 
@@ -745,7 +750,6 @@
 
                     }
 
-
                     scope.updateEntrypoint = function () {
                         //Create the update model
                         var frontends = [];
@@ -777,6 +781,7 @@
                         var updateModel = {
                             hapUser: scope.conf.hapUser,
                             context: scope.conf.context,
+                            hapVersion: scope.conf.hapVersion,
                             frontends: frontends,
                             backends: backends
                         };
@@ -790,9 +795,11 @@
                         };
 
                         Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (response) {
+                            console.log("update haproxy:" + JSON.stringify(updateModel));
                             return Entrypoint.update(scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
                         }).then(function (response) {
                             $rootScope.$broadcast("entrypoint-updated");
+                            console.log("response:" + JSON.stringify(response));
                         }, function (error) {
                             var alert = $mdDialog.alert({
                                 htmlContent: '<pre>' + error.data.message + '</pre>',

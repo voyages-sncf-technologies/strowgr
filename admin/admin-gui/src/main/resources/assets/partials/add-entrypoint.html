@@ -49,9 +49,6 @@
             <md-select name="haproxyVersion" ng-model="conf.hapVersion" required>
                 <md-option ng-repeat="version in haproxyVersions" ng-selected="$first">{{version}}</md-option>
             </md-select>
-            <div ng-messages="newEntrypointForm.haproxy.$error">
-                <div ng-message="required">Il faut choisir un couple master/slave</div>
-            </div>
         </md-input-container>
         <md-input-container flex="10">
             <label>User haproxy (ex. hapwdia1)</label>

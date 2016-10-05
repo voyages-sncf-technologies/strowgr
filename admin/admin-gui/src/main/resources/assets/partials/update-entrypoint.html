@@ -66,6 +66,12 @@
             </div>
         </md-input-container>
         <md-input-container flex="10">
+            <label>HAproxy version</label>
+            <md-select name="haproxyVersion" ng-model="conf.hapVersion" required>
+                <md-option ng-value="version" ng-repeat="version in haproxyVersions">{{version}}</md-option>
+            </md-select>
+        </md-input-container>
+        <md-input-container flex="10">
             <label>Application</label>
             <input name="application" ng-model="conf.context.application" disabled
                    style="font-weight: bold; color: black;"/>
