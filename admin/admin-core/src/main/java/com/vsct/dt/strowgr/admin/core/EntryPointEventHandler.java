@@ -209,7 +209,6 @@ public class EntryPointEventHandler {
                     Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
                     String conf = templateGenerator.generate(template, configuration, portsMapping);
                     String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                    String haproxyVersion = stateManager.getHaproxyVersion(entryPointKey);
                     CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf);
                     LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
                     outputBus.post(commitRequestedEvent);

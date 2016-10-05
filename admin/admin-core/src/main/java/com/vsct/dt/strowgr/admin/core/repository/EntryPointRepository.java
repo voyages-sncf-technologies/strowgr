@@ -88,5 +88,4 @@ public interface EntryPointRepository {
 
     void setAutoreload(EntryPointKey entryPointKey, Boolean autoreload);
 
-    String getHaproxyVersion(EntryPointKey entryPointKey);
 }

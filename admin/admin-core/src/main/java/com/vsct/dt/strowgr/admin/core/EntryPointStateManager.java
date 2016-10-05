@@ -203,7 +203,4 @@ public class EntryPointStateManager {
         repository.setAutoreload(entryPointKey, autoreload);
     }
 
-    public String getHaproxyVersion(EntryPointKey entryPointKey) {
-        return repository.getHaproxyVersion(entryPointKey);
-    }
 }

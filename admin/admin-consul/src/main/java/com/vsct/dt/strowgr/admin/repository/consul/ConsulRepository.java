@@ -586,18 +586,6 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         }
     }
 
-    @Override
-    public String getHaproxyVersion(EntryPointKey entryPointKey) {
-        HttpGet httpGet = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey.getID() + "/haproxyversion?raw");
-        Optional<String> haproxyVersion;
-        try {
-            haproxyVersion = client.execute(httpGet, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::readRawContentFromHttpEntity));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return haproxyVersion.orElseThrow(() -> new IllegalStateException("can't find an haproxy version for entrypoint " + entryPointKey.getID()));
-    }
-
     private String encodeJson(Map<String, Integer> portsByEntrypoint) throws IOException {
         ObjectWriter ow = mapper.writer().withDefaultPrettyPrinter();
         return ow.writeValueAsString(portsByEntrypoint);
