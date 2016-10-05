@@ -16,8 +16,6 @@
  */
 package sidekick
 
-import ()
-
 type Daemon struct {
 	Properties *Config
 }
