@@ -795,11 +795,9 @@
                         };
 
                         Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (response) {
-                            console.log("update haproxy:" + JSON.stringify(updateModel));
                             return Entrypoint.update(scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
                         }).then(function (response) {
                             $rootScope.$broadcast("entrypoint-updated");
-                            console.log("response:" + JSON.stringify(response));
                         }, function (error) {
                             var alert = $mdDialog.alert({
                                 htmlContent: '<pre>' + error.data.message + '</pre>',
