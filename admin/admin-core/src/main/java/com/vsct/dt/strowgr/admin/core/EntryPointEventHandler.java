@@ -130,7 +130,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(RegisterServerEvent event) {
-        LOGGER.info("receive event {}", event);
+        LOGGER.info("receive RegisterServerEvent {}", event);
         EntryPointKey key = event.getKey();
         try {
             this.stateManager.lock(key);
@@ -138,27 +138,29 @@ public class EntryPointEventHandler {
                     stateManager.getPendingConfiguration(key)
                             .orElseGet(() -> stateManager.getCommittingConfiguration(key)
                                     .orElseGet(() -> stateManager.getCurrentConfiguration(key)
-                                            .orElse(null)))
+                                            .orElseGet(() -> {
+                                                LOGGER.warn("can't find an entrypoint for key {} from register server event {}", key, event);
+                                                return null;
+                                            })))
             );
 
-            existingConfiguration.map(c -> c.registerServers(event.getBackend(), event.getServers()))
-                    .ifPresent(c -> {
-                        Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
+            existingConfiguration.map(c -> c.registerServers(event.getBackend(), event.getServers())).ifPresent(c -> {
+                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
 
-                        if (preparedConfiguration.isPresent()) {
-                            LOGGER.info("new servers registered for EntryPoint {}", event.getKey().getID());
-                            if (LOGGER.isDebugEnabled()) {
-                                for (IncomingEntryPointBackendServer server : event.getServers()) {
-                                    LOGGER.debug("- registered server {}", server);
-                                }
-                            }
-                            ServerRegisteredEvent serverRegisteredEvent = new ServerRegisteredEvent(event.getCorrelationId(), event.getKey(), event.getBackend(), event.getServers());
-                            LOGGER.debug("post to event bus event {}", serverRegisteredEvent);
-                            outputBus.post(serverRegisteredEvent);
-                        } else {
-                            LOGGER.warn("can't prepare configuration on key {}", key);
+                if (preparedConfiguration.isPresent()) {
+                    LOGGER.info("new servers registered for EntryPoint {}", event.getKey().getID());
+                    if (LOGGER.isDebugEnabled()) {
+                        for (IncomingEntryPointBackendServer server : event.getServers()) {
+                            LOGGER.debug("- registered server {}", server);
                         }
-                    });
+                    }
+                    ServerRegisteredEvent serverRegisteredEvent = new ServerRegisteredEvent(event.getCorrelationId(), event.getKey(), event.getBackend(), event.getServers());
+                    LOGGER.debug("post to event bus event {}", serverRegisteredEvent);
+                    outputBus.post(serverRegisteredEvent);
+                } else {
+                    LOGGER.warn("can't prepare configuration on key {}", key);
+                }
+            });
 
         } finally {
             this.stateManager.release(key);

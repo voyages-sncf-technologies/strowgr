@@ -52,7 +52,7 @@ public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServer
         RegisterServer payload = objectMapper.readValue(nsqMessage.getMessage(), RegisterServer.class);
 
         if (payload.getHeader().getCorrelationId() == null) {
-            payload.getHeader().setCorrelationId(Arrays.toString(nsqMessage.getId()));
+            payload.getHeader().setCorrelationId(new String(nsqMessage.getId()));
         }
         if (payload.getHeader().getTimestamp() == null) {
             payload.getHeader().setTimestamp(nsqMessage.getTimestamp().getTime());
