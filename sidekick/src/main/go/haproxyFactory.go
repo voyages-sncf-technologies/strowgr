@@ -22,16 +22,16 @@ func NewLoadbalancerFactory() *LoadbalancerFactory {
 
 func (factory *LoadbalancerFactory) CreateHaproxy(role string, context Context) Loadbalancer {
 	if factory.Fake == "drunk" {
-		log.Info("mode drunk")
+		log.Debug("mode drunk")
 		return &DrunkHaproxy{
 			role:    role,
 			context: context,
 		}
 	} else if ( factory.Fake == "yesman") {
-		log.Info("mode yesman")
+		log.Debug("mode yesman")
 		return &YesmanHaproxy{}
 	} else {
-		log.Info("mode normal")
+		log.Debug("mode normal")
 		return NewHaproxy(role, factory.Properties, context)
 	}
 }
