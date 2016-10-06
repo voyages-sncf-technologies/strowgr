@@ -31,7 +31,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"github.com/opencontainers/runc/Godeps/_workspace/src/github.com/Sirupsen/logrus"
 )
 
 var (
@@ -56,7 +55,7 @@ type SdkLogger struct {
 }
 
 func (sdkLogger SdkLogger) Output(calldepth int, s string) error {
-	logrus.WithField("type", "nsq driver").Info(s)
+	log.WithField("type", "nsq driver").Info(s)
 	return nil
 }
 
