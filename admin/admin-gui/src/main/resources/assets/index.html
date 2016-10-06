@@ -828,14 +828,14 @@
                     link: function (scope, element, attrs) {
                         scope.$watch('conf', function (newConf, oldConf) {
                             if (newConf != undefined) {
-                                Haproxy.getBinding(newConf.haproxy, newConf.bindingId).then(function (uri) {
-                                    scope.haproxyUri = uri;
+                                Haproxy.getBinding(newConf.haproxy, newConf.bindingId).then(function (bind) {
+                                    scope.haproxyBind = bind;
                                 });
                             }
                         });
 
                         scope.openStatsPage = function(frontend){
-                            $window.open("http://"+scope.haproxyUri+":"+frontend.port+"/stats");
+                            $window.open("http://"+scope.haproxyBind+":"+frontend.port+"/stats");
                         };
                     }
                 }
