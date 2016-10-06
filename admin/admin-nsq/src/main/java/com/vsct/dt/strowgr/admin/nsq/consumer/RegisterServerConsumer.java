@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * This consumer listens to the register_server events
@@ -51,16 +52,12 @@ public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServer
     protected RegisterServerEvent transform(NSQMessage nsqMessage) throws Exception {
         RegisterServer payload = objectMapper.readValue(nsqMessage.getMessage(), RegisterServer.class);
 
-        if (payload.getHeader().getCorrelationId() == null) {
-            payload.getHeader().setCorrelationId(Arrays.toString(nsqMessage.getId()));
-        }
-        if (payload.getHeader().getTimestamp() == null) {
-            payload.getHeader().setTimestamp(nsqMessage.getTimestamp().getTime());
-        }
+        String correlationId = Optional.ofNullable(payload.getHeader().getCorrelationId()).orElseGet(() -> Arrays.toString(nsqMessage.getId()));
+        long timestamp = Optional.ofNullable(payload.getHeader().getTimestamp()).orElseGet(() -> nsqMessage.getTimestamp().getTime());
 
-        LOGGER.debug("received an new RegisterServerEvent with cid {}", payload.getHeader().getCorrelationId());
+        LOGGER.debug("received an new RegisterServerEvent with cid {}", correlationId);
 
-        return new RegisterServerEvent(payload.getHeader().getCorrelationId(),
+        return new RegisterServerEvent(correlationId,
                 new EntryPointKeyVsctImpl(payload.getHeader().getApplication(), payload.getHeader().getPlatform()),
                 payload.getServer().getBackendId(),
                 Sets.newHashSet(new IncomingEntryPointBackendServer(

@@ -1,13 +1,14 @@
 {
-  "conf" : {
-    "haproxy" : "abcde",
-    "syslog" : "fghij"
-  },
   "header" : {
     "correlationId" : "test-id",
     "application" : "TST",
     "platform" : "REL1",
     "timestamp" : 1,
     "source" : "test"
+  },
+  "conf" : {
+    "haproxy" : "abcde",
+    "syslog" : "fghij",
+    "bind" : "127.0.0.1"
   }
 }

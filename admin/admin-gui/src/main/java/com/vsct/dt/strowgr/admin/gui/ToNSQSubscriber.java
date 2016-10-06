@@ -53,7 +53,7 @@ class ToNSQSubscriber {
         String platform = context.get("platform");
         /* TODO test application and platform nullity */
         LOGGER.debug("send to nsq a CommitRequested from CommitRequestedEvent {}", commitRequestedEvent);
-        this.nsqDispatcher.sendCommitRequested(commitRequestedEvent.getCorrelationId(), configuration.getHaproxy(), application, platform, commitRequestedEvent.getConf(), commitRequestedEvent.getSyslogConf());
+        this.nsqDispatcher.sendCommitRequested(commitRequestedEvent.getCorrelationId(), configuration.getHaproxy(), application, platform, commitRequestedEvent.getConf(), commitRequestedEvent.getSyslogConf(), commitRequestedEvent.getBind());
     }
 
     @Subscribe

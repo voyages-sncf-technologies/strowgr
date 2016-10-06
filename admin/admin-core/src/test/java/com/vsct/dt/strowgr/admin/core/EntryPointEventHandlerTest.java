@@ -42,13 +42,14 @@ public class EntryPointEventHandlerTest {
     TemplateLocator        templateLocator;
     PortRepository         portRepository;
     HaproxyRepository      haproxyRepository;
+    TemplateGenerator templateGenerator;
     EventBus               outputBus;
 
     @Before
     public void setUp() {
         stateManager = mock(EntryPointStateManager.class);
         templateLocator = mock(TemplateLocator.class);
-        TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
+        templateGenerator = mock(TemplateGenerator.class);
         portRepository = mock(PortRepository.class);
         haproxyRepository = mock(HaproxyRepository.class);
         outputBus = mock(EventBus.class);
@@ -347,7 +348,7 @@ public class EntryPointEventHandlerTest {
         String correlationId = CorrelationId.newCorrelationId();
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
-                .onHaproxy("haproxy", 0)
+                .onHaproxy("haproxy", 1)
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
@@ -357,6 +358,9 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
+        when(templateGenerator.generate(eq("some template"), eq(entryPoint), any())).thenReturn("some template");
+        when(templateGenerator.generateSyslogFragment(eq(entryPoint), any())).thenReturn("some syslog conf");
+        when(haproxyRepository.getHaproxyProperty("haproxy", "binding/1")).thenReturn(Optional.of("127.0.0.1"));
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(true);
         when(stateManager.isAutoreloaded(key)).thenReturn(true);
 
@@ -365,7 +369,9 @@ public class EntryPointEventHandlerTest {
 
         // Check
         verify(stateManager).tryCommitCurrent(correlationId, key);
-        verify(outputBus).post(any(CommitRequestedEvent.class));
+
+        CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(correlationId, new EntryPointKeyDefaultImpl("some_key"), entryPoint, "some template", "some syslog conf", "127.0.0.1");
+        verify(outputBus).post(commitRequestedEvent);
     }
 
     @Test
@@ -375,7 +381,7 @@ public class EntryPointEventHandlerTest {
         String correlationId = CorrelationId.newCorrelationId();
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
-                .onHaproxy("haproxy", 0)
+                .onHaproxy("haproxy", 1)
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
@@ -385,6 +391,9 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
+        when(templateGenerator.generate(eq("some template"), eq(entryPoint), any())).thenReturn("some template");
+        when(templateGenerator.generateSyslogFragment(eq(entryPoint), any())).thenReturn("some syslog conf");
+        when(haproxyRepository.getHaproxyProperty("haproxy", "binding/1")).thenReturn(Optional.of("127.0.0.1"));
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(false);
 
 
@@ -404,7 +413,7 @@ public class EntryPointEventHandlerTest {
         String correlationId = CorrelationId.newCorrelationId();
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
-                .onHaproxy("haproxy", 0)
+                .onHaproxy("haproxy", 1)
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
@@ -413,6 +422,9 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
+        when(templateGenerator.generate(eq("some template"), eq(entryPoint), any())).thenReturn("some template");
+        when(templateGenerator.generateSyslogFragment(eq(entryPoint), any())).thenReturn("some syslog conf");
+        when(haproxyRepository.getHaproxyProperty("haproxy", "binding/1")).thenReturn(Optional.of("127.0.0.1"));
         when(stateManager.isAutoreloaded(key)).thenReturn(true);
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(true);
 
@@ -421,7 +433,8 @@ public class EntryPointEventHandlerTest {
 
         // Check
         verify(stateManager).tryCommitPending(correlationId, key);
-        verify(outputBus).post(any(CommitRequestedEvent.class));
+        CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(correlationId, new EntryPointKeyDefaultImpl("some_key"), entryPoint, "some template", "some syslog conf", "127.0.0.1");
+        verify(outputBus).post(commitRequestedEvent);
     }
 
     @Test
@@ -431,7 +444,7 @@ public class EntryPointEventHandlerTest {
         String correlationId = CorrelationId.newCorrelationId();
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
-                .onHaproxy("haproxy", 0)
+                .onHaproxy("haproxy", 1)
                 .withUser("hapuser")
                 .definesFrontends(ImmutableSet.of())
                 .definesBackends(ImmutableSet.of())
@@ -440,6 +453,9 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
+        when(templateGenerator.generate(eq("some template"), eq(entryPoint), any())).thenReturn("some template");
+        when(templateGenerator.generateSyslogFragment(eq(entryPoint), any())).thenReturn("some syslog conf");
+        when(haproxyRepository.getHaproxyProperty("haproxy", "binding/1")).thenReturn(Optional.of("127.0.0.1"));
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(false);
 
         // Test

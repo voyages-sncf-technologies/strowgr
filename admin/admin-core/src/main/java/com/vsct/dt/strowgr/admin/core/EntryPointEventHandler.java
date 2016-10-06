@@ -181,7 +181,8 @@ public class EntryPointEventHandler {
                     Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
                     String conf = templateGenerator.generate(template, configuration, portsMapping);
                     String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                    CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf);
+                    String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/"+configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
+                    CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
                     LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
                     outputBus.post(commitRequestedEvent);
                 }
@@ -208,7 +209,8 @@ public class EntryPointEventHandler {
                     Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
                     String conf = templateGenerator.generate(template, configuration, portsMapping);
                     String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                    CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf);
+                    String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/"+configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
+                    CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
                     LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
                     outputBus.post(commitRequestedEvent);
                 }

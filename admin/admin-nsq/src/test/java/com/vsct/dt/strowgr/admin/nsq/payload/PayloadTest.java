@@ -1,28 +1,32 @@
 /*
  * Copyright (C) 2016 VSCT
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.vsct.dt.strowgr.admin.nsq;
+package com.vsct.dt.strowgr.admin.nsq.payload;
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vsct.dt.strowgr.admin.nsq.payload.*;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Conf;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Server;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Conf;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Server;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Sidekick;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -57,50 +61,37 @@ public class PayloadTest {
 
     @Test
     public void testCommitRequested() throws IOException, URISyntaxException {
-        CommitRequested message = new CommitRequested("test-id", "TST", "REL1", "abcde", "fghij");
-        message.getHeader().setTimestamp(1L);
-        message.getHeader().setSource("test");
+        CommitRequested message = new CommitRequested(new Header("test-id", "TST", "REL1", 1L, "test"), new Conf("abcde", "fghij", "127.0.0.1"));
         assertSerialization(message, "commitRequested.expected.json");
     }
 
     @Test
     public void testCommitCompleted() throws IOException, URISyntaxException {
-        CommitCompleted message = new CommitCompleted(new Header("test-id", "TST", "REL1"));
-        message.getHeader().setTimestamp(1L);
-        message.getHeader().setSource("test");
+        CommitCompleted message = new CommitCompleted(new Header("test-id", "TST", "REL1", 1L, "test"));
         assertSerialization(message, "commitCompleted.expected.json");
     }
 
     @Test
     public void testCommitFailed() throws IOException, URISyntaxException {
-        CommitFailed message = new CommitFailed(new Header("test-id", "TST", "REL1"));
-        message.getHeader().setTimestamp(1L);
-        message.getHeader().setSource("test");
+        CommitFailed message = new CommitFailed(new Header("test-id", "TST", "REL1", 1L, "test"));
         assertSerialization(message, "commitFailed.expected.json");
     }
 
     @Test
     public void testDeleteRequested() throws IOException, URISyntaxException {
-        DeleteRequested message = new DeleteRequested("test-id", "TST", "REL1", "test");
-        message.getHeader().setTimestamp(1L);
+        DeleteRequested message = new DeleteRequested(new Header("test-id", "TST", "REL1", 1L, "test"));
         assertSerialization(message, "deleteRequested.expected.json");
     }
 
     @Test
     public void should_serialize_register_server_with_expected_format() throws IOException, URISyntaxException {
         // given
-        Server server = new Server();
-        server.setId("server-id");
-        server.setPort("1234");
-        server.setBackendId("backend-id");
-        server.setIp("1.2.3.4");
         Map<String, String> context = new HashMap<>();
         context.put("key1", "val1");
         context.put("key2", "val2");
-        server.setContext(context);
-        RegisterServer message = new RegisterServer(new Header("test-id", "TST", "REL1"), server);
-        message.getHeader().setTimestamp(1L);
-        message.getHeader().setSource("test");
+        Server server = new Server("server-id", "backend-id", "1.2.3.4", "1234", context);
+
+        RegisterServer message = new RegisterServer(new Header("test-id", "TST", "REL1", 1L, "test"), server);
 
         // test and check
         assertSerialization(message, "registerServer.expected.json");
@@ -108,17 +99,14 @@ public class PayloadTest {
 
     @Test
     public void registerSidekick() throws IOException, URISyntaxException {
-        RegisterSidekick message = new RegisterSidekick("test-id", "TST", "REL1");
-        message.getHeader().setTimestamp(1L);
-        message.getHeader().setSource("test");
-
         Sidekick sidekick = new Sidekick();
         sidekick.setId("sidekcik-id");
         sidekick.setHost("host");
         sidekick.setRole("master");
         sidekick.setVip("2.3.4.5");
         sidekick.setVersion("1.0");
-        message.setSidekick(sidekick);
+
+        RegisterSidekick message = new RegisterSidekick(new Header("test-id", "TST", "REL1", 1L, "test"), sidekick);
         assertSerialization(message, "registerSidekick.expected.json");
     }
 
@@ -133,6 +121,6 @@ public class PayloadTest {
         // check
         assertNotNull(commitCompleted);
         assertNotNull(commitCompleted.getHeader());
-        assertEquals("16f484b9-3935-415b-bd8e-aaeaaf1020ac", commitCompleted.getHeader().getCorrelationId());
+        Assert.assertEquals("16f484b9-3935-415b-bd8e-aaeaaf1020ac", commitCompleted.getHeader().getCorrelationId());
     }
 }

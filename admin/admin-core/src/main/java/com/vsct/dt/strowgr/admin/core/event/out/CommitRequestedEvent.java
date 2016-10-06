@@ -21,18 +21,21 @@ import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class CommitRequestedEvent extends EntryPointEvent {
     private final EntryPoint configuration;
     private final String conf;
     private final String syslogConf;
+    private final String bind;
 
-    public CommitRequestedEvent(String correlationId, EntryPointKey key, EntryPoint configuration, String conf, String syslogConf) {
+    public CommitRequestedEvent(String correlationId, EntryPointKey key, EntryPoint configuration, String conf, String syslogConf, String bind) {
         super(correlationId, key);
         this.configuration = configuration;
         this.conf = conf;
         this.syslogConf = syslogConf;
+        this.bind = bind;
     }
 
     public Optional<EntryPoint> getConfiguration() {
@@ -47,14 +50,33 @@ public class CommitRequestedEvent extends EntryPointEvent {
         return syslogConf;
     }
 
+    public String getBind() {
+        return bind;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CommitRequestedEvent that = (CommitRequestedEvent) o;
+        return Objects.equals(configuration, that.configuration) &&
+                Objects.equals(conf, that.conf) &&
+                Objects.equals(syslogConf, that.syslogConf) &&
+                Objects.equals(bind, that.bind);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(configuration, conf, syslogConf, bind);
+    }
+
     @Override
     public String toString() {
         return "CommitRequestedEvent{" +
-                "correlationId=" + getCorrelationId() +
-                "key=" + getKey() +
                 "configuration=" + configuration +
                 ", conf='" + conf + '\'' +
                 ", syslogConf='" + syslogConf + '\'' +
+                ", bind='" + bind + '\'' +
                 '}';
     }
 }

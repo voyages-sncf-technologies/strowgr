@@ -17,15 +17,12 @@
 
 package com.vsct.dt.strowgr.admin.core.configuration;
 
-import com.google.common.base.*;
-import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackendServer;
 
 import java.util.*;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -36,14 +33,14 @@ public class EntryPoint {
     public static final String SYSLOG_PORT_ID = "syslog";
 
     private final String haproxy;
-    private final int bindingId;
+    private final int    bindingId;
 
     private final String hapUser;
 
     private final HashMap<String, String> context;
 
     private final HashMap<String, EntryPointFrontend> frontends;
-    private final HashMap<String, EntryPointBackend> backends;
+    private final HashMap<String, EntryPointBackend>  backends;
 
     public EntryPoint(String haproxy, int bindingId, String hapUser,
                       Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
@@ -187,7 +184,8 @@ public class EntryPoint {
                     newServers.add(new EntryPointBackendServer(s.getId(), s.getIp(), s.getPort(), s.getContext(), contextOverride));
                 }
                 newBackends.add(new EntryPointBackend(updatedBackend.getId(), newServers, updatedBackend.getContext()));
-            } else {
+            }
+            else {
                 newBackends.add(new EntryPointBackend(updatedBackend.getId(), new HashSet<>(), updatedBackend.getContext()));
             }
         }
@@ -206,16 +204,16 @@ public class EntryPoint {
         if (o == null || getClass() != o.getClass()) return false;
         EntryPoint that = (EntryPoint) o;
         return bindingId == that.bindingId &&
-                com.google.common.base.Objects.equal(haproxy, that.haproxy) &&
-                Objects.equal(hapUser, that.hapUser) &&
-                Objects.equal(context, that.context) &&
-                Objects.equal(frontends, that.frontends) &&
-                Objects.equal(backends, that.backends);
+                java.util.Objects.equals(haproxy, that.haproxy) &&
+                java.util.Objects.equals(hapUser, that.hapUser) &&
+                java.util.Objects.equals(context, that.context) &&
+                java.util.Objects.equals(frontends, that.frontends) &&
+                java.util.Objects.equals(backends, that.backends);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(haproxy, bindingId, hapUser, context, frontends, backends);
+        return java.util.Objects.hash(haproxy, bindingId, hapUser, context, frontends, backends);
     }
 
     public interface IHapUSer {
@@ -240,13 +238,13 @@ public class EntryPoint {
 
     public static class Builder implements IHapUSer, IFrontends, IBackends, IContext, IBuild {
 
-        private final int bindingId;
-        private Set<EntryPointBackend> backends;
-        private Set<EntryPointFrontend> frontends;
-        private String haproxy;
-        private String user;
-        private String syslogPort;
-        private Map<String, String> context;
+        private final int                     bindingId;
+        private       Set<EntryPointBackend>  backends;
+        private       Set<EntryPointFrontend> frontends;
+        private       String                  haproxy;
+        private       String                  user;
+        private       String                  syslogPort;
+        private       Map<String, String>     context;
 
         private Builder(String haproxy, int bindingId) {
             this.haproxy = haproxy;

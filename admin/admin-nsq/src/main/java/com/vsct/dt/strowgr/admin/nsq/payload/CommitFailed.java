@@ -23,15 +23,11 @@ import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
 public class CommitFailed {
 
-    private Header header;
-
-    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public CommitFailed(@JsonProperty("header") Header header) {
-        this.header = header;
-    }
+    private final Header header;
 
     @JsonCreator
-    public CommitFailed() {
+    public CommitFailed(@JsonProperty("header") Header header) {
+        this.header = header;
     }
 
     public Header getHeader() {
