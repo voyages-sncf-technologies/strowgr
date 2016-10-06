@@ -17,12 +17,15 @@
 
 package com.vsct.dt.strowgr.admin.core.configuration;
 
+import com.google.common.base.*;
+import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackendServer;
 
 import java.util.*;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -189,7 +192,7 @@ public class EntryPoint {
             }
         }
 
-        return EntryPoint.onHaproxy(this.haproxy, this.bindingId)
+        return EntryPoint.onHaproxy(this.haproxy, updatedEntryPoint.getBindingId())
                 .withUser(updatedEntryPoint.getHapUser())
                 .definesFrontends(updatedEntryPoint.getFrontends().stream().map(f -> new EntryPointFrontend(f.getId(), f.getContext())).collect(Collectors.toSet()))
                 .definesBackends(newBackends)
@@ -201,26 +204,18 @@ public class EntryPoint {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         EntryPoint that = (EntryPoint) o;
-
-        if (backends != null ? !backends.equals(that.backends) : that.backends != null) return false;
-        if (context != null ? !context.equals(that.context) : that.context != null) return false;
-        if (frontends != null ? !frontends.equals(that.frontends) : that.frontends != null) return false;
-        if (hapUser != null ? !hapUser.equals(that.hapUser) : that.hapUser != null) return false;
-        if (haproxy != null ? !haproxy.equals(that.haproxy) : that.haproxy != null) return false;
-
-        return true;
+        return bindingId == that.bindingId &&
+                com.google.common.base.Objects.equal(haproxy, that.haproxy) &&
+                Objects.equal(hapUser, that.hapUser) &&
+                Objects.equal(context, that.context) &&
+                Objects.equal(frontends, that.frontends) &&
+                Objects.equal(backends, that.backends);
     }
 
     @Override
     public int hashCode() {
-        int result = haproxy != null ? haproxy.hashCode() : 0;
-        result = 31 * result + (hapUser != null ? hapUser.hashCode() : 0);
-        result = 31 * result + (context != null ? context.hashCode() : 0);
-        result = 31 * result + (frontends != null ? frontends.hashCode() : 0);
-        result = 31 * result + (backends != null ? backends.hashCode() : 0);
-        return result;
+        return Objects.hashCode(haproxy, bindingId, hapUser, context, frontends, backends);
     }
 
     public interface IHapUSer {

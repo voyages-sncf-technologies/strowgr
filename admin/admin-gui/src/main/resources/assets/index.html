@@ -79,6 +79,7 @@
 
 
 
+
     </style>
 
     <script type="text/javascript">
@@ -248,26 +249,41 @@
         }]);
 
         adminApp.factory('Haproxy', ['$http', 'Notification', function ($http, Notification) {
+
+            var haproxyBackendModelToFrontendModel = function(id, backendModel){
+                var hap = {
+                    'id': id,
+                    'name': backendModel.name,
+                    'platform': backendModel.platform,
+                    'autoreload': backendModel.autoreload,
+                    'bindings': {}
+                };
+                //bindings are not stored as map but as a bunch of keys starting with 'binding/'
+                for(var prop in backendModel){
+                    if (backendModel.hasOwnProperty(prop) && prop.startsWith('binding/')) {
+                        var id = prop.replace('binding/', '');
+                        hap['bindings'][id] =  backendModel[prop];
+                    }
+                }
+                return hap;
+            };
+
             return {
                 all: function(){
                     return $http.get('/api/haproxy/').then(function(response) {
-                        return response.data.map(function(hapProps){
-                            var hap = {
-                                'id': hapProps.id,
-                                'name': hapProps.name,
-                                'platform': hapProps.platform,
-                                'autoreload': hapProps.autoreload,
-                                'bindings': {}
-                            };
-                            //bindings are not stored as map but as a bunch of keys starting with 'binding/'
-                            for(var prop in hapProps){
-                                if (hapProps.hasOwnProperty(prop) && prop.startsWith('binding/')) {
-                                    var id = prop.replace('binding/', '');
-                                    hap['bindings'][id] =  hapProps[prop];
-                                }
-                            }
-                            return hap;
+                        return response.data.map(function(backendModelWithId){
+                            return haproxyBackendModelToFrontendModel(backendModelWithId.id, backendModelWithId);
                         });
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                get: function(id){
+                    return $http.get('/api/haproxy/' + id).then(function(response) {
+                        return haproxyBackendModelToFrontendModel(id, response.data);
                     }, function(error) {
                         if(error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
@@ -591,6 +607,9 @@
 
             /* Checks the entrypoint configuration first and then creates the entrypoint */
             $scope.createEntrypoint = function () {
+                //md-option seems to convert integer to strings, which causes problem, so we use parseInt
+                $scope.conf.bindingId = parseInt($scope.conf.bindingId);
+
                 /* Construction of gitlab url */
                 $scope.conf.context.templateUri = "http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.conf.context.application+"/"+$scope.gitlabTemplate.filename;
 
@@ -678,6 +697,15 @@
                     scope.forbiddenFrontendKeys = ['id', 'port'];
                     scope.forbiddenBackendKeys = ['id'];
                     scope.forbiddenServerKeys = ['id', 'hostname', 'ip', 'port'];
+
+                    //Load haproxy properties when conf is reloaded
+                    scope.$watch('conf', function(newValue, oldValue) {
+                        if(newValue != undefined){
+                            Haproxy.get(scope.conf.haproxy).then(function(data){
+                                scope.currentHaproxy = data;
+                            });
+                        }
+                    }, false);
 
                     scope.addFrontend = function () {
                         scope.conf.frontends.push({
@@ -785,7 +813,8 @@
 
                         var updateModel = {
                             hapUser: scope.conf.hapUser,
-                            bindingId: scope.conf.bindingId,
+                            //md-option seems to convert integer to strings, which causes problem, so we use parseInt
+                            bindingId: parseInt(scope.conf.bindingId),
                             context: scope.conf.context,
                             frontends: frontends,
                             backends: backends
@@ -1048,6 +1077,7 @@
                     }
                 }
             }]);
+
 
 
 

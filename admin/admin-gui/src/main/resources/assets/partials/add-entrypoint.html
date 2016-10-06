@@ -46,8 +46,11 @@
         </md-input-container>
         <md-input-container flex="10">
             <label>Binding IP</label>
-            <input name="bindingId" ng-model="conf.bindingId" required/>
-
+            <md-select name="bindingId" ng-model="conf.bindingId" required>
+                <md-option ng-repeat="(id, value) in currentHaproxy.bindings" ng-value="id" ng-selected="$first">
+                    {{value}}
+                </md-option>
+            </md-select>
             <div ng-messages="newEntrypointForm.bindingId.$error">
                 <div ng-message="required">Il faut indiquer l'IP sur laquelle écoute cette configuration</div>
             </div>
@@ -101,8 +104,8 @@
             </div>
         </md-input-container>
         <md-button class="md-fab md-primary md-mini" ng-click="reloadFrontBackends()">
-             <md-icon class="material-icons" style="font-size: 22px">find_replace</md-icon>
-             <md-tooltip md-direction="bottom">Recharger les backends/frontends du template</md-tooltip>
+            <md-icon class="material-icons" style="font-size: 22px">find_replace</md-icon>
+            <md-tooltip md-direction="bottom">Recharger les backends/frontends du template</md-tooltip>
         </md-button>
     </div>
     <div layout="row" layout-align="start center">

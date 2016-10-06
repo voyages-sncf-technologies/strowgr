@@ -144,7 +144,7 @@ public class EntryPointEventHandlerTest {
     @Test
     public void update_entry_point_should_do_nothing_if_there_is_no_configuration_at_all() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("key");
-        UpdateEntryPointEvent event = new UpdateEntryPointEvent("correlation_id", key, new UpdatedEntryPoint("user", new HashMap<>(), new HashSet<>(), new HashSet<>()));
+        UpdateEntryPointEvent event = new UpdateEntryPointEvent("correlation_id", key, new UpdatedEntryPoint(0, "user", new HashMap<>(), new HashSet<>(), new HashSet<>()));
 
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
@@ -210,7 +210,7 @@ public class EntryPointEventHandlerTest {
         newBackends.add(nb1);
         newBackends.add(new EntryPointBackend("b6", new HashSet<>(), new HashMap<>()));
 
-        return new EntryPoint("haproxy", 0, "new_user", newFrontends, newBackends, newGlobalContext);
+        return new EntryPoint("haproxy", 1, "new_user", newFrontends, newBackends, newGlobalContext);
     }
 
     private UpdateEntryPointEvent getUpdateTestEvent(EntryPointKey key) {
@@ -240,7 +240,7 @@ public class EntryPointEventHandlerTest {
         UpdatedEntryPointBackend ub1 = new UpdatedEntryPointBackend("b1", newHashSet(us1, us2, us6), b1Context);
         UpdatedEntryPointBackend ub6 = new UpdatedEntryPointBackend("b6", newHashSet(us1, us2), new HashMap<>());
 
-        UpdatedEntryPoint uep = new UpdatedEntryPoint("new_user", globalContext, newHashSet(uf2, uf3), newHashSet(ub1, ub6));
+        UpdatedEntryPoint uep = new UpdatedEntryPoint(1, "new_user", globalContext, newHashSet(uf2, uf3), newHashSet(ub1, ub6));
 
         return new UpdateEntryPointEvent("correlation_id", key, uep);
     }
