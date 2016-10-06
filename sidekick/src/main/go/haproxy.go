@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"time"
+	"strings"
 )
 
 func NewHaproxy(role string, properties *Config, context Context) *Haproxy {
@@ -32,14 +33,14 @@ func NewHaproxy(role string, properties *Config, context Context) *Haproxy {
 	return &Haproxy{
 		Role:       role,
 		properties: properties,
-		Version:    properties.HapVersion,
+		Versions:    properties.HapVersions,
 		Context:    context,
 	}
 }
 
 type Haproxy struct {
 	Role       string
-	Version    string
+	Versions   []string
 	properties *Config
 	State      int
 	Context    Context
@@ -57,7 +58,22 @@ const (
 // ApplyConfiguration write the new configuration and reload
 // A rollback is called on failure
 func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) {
-	hap.createSkeleton(data.Header.CorrelationId)
+	present := false
+	for _, version := range hap.Versions {
+		if version == data.Conf.Version {
+			present = true
+			break
+		}
+	}
+	// validate that received haproxy configuration contains a managed version of haproxy
+	if data.Conf.Version == "" || !present {
+		log.WithFields(log.Fields{
+			"given haproxy version":data.Conf.Version,
+			"managed versions by sidekick": strings.Join(hap.Versions, ",")}).Error("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
+		return ERR_CONF, errors.New("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
+	}
+
+	hap.createSkeleton(data.Header.CorrelationId, data.Conf)
 
 	newConf := data.Conf.Haproxy
 	path := hap.confPath()
@@ -202,7 +218,7 @@ func (hap *Haproxy) rollback(correlationId string) error {
 }
 
 // createSkeleton creates the directory tree for a new haproxy context
-func (hap *Haproxy) createSkeleton(correlationId string) error {
+func (hap *Haproxy) createSkeleton(correlationId string, conf Conf) error {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
 
 	createDirectory(hap.Context, correlationId, baseDir + "/Config")
@@ -213,7 +229,7 @@ func (hap *Haproxy) createSkeleton(correlationId string) error {
 	createDirectory(hap.Context, correlationId, baseDir + "/dump")
 
 	updateSymlink(hap.Context, correlationId, hap.getHapctlFilename(), hap.getReloadScript())
-	updateSymlink(hap.Context, correlationId, hap.getHapBinary(), baseDir + "/Config/haproxy")
+	updateSymlink(hap.Context, correlationId, hap.getHapBinary(conf), baseDir + "/Config/haproxy")
 
 	return nil
 }
@@ -275,10 +291,10 @@ func (hap *Haproxy) getReloadScript() string {
 	return fmt.Sprintf("%s/%s/scripts/hapctl%s%s", hap.properties.HapHome, hap.Context.Application, hap.Context.Application, hap.Context.Platform)
 }
 
-// getHapBinary calculates the haproxy binary to use given the expected version
+// getHapBinary calculates the haproxy binary to use with given version
 // It returns the full path to the haproxy binary
-func (hap *Haproxy) getHapBinary() string {
-	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", hap.Version)
+func (hap *Haproxy) getHapBinary(conf Conf) string {
+	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", conf.Version)
 }
 
 func (hap *Haproxy) Delete() error {

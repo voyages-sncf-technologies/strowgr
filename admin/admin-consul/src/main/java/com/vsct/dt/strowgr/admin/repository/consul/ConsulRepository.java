@@ -205,6 +205,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     .map(s -> s.replace("/committing", ""))
                     .map(s -> s.replace("/disabled", "")) // @deprecated TODO remove
                     .map(s -> s.replace("/autoreload", ""))
+                    .map(s -> s.replace("/haproxyversion", ""))
                     .distinct()
                     .collect(Collectors.toSet());
 
@@ -227,7 +228,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
 
     @Override
     public Optional<EntryPoint> getCommittingConfiguration(EntryPointKey key) {
-        return getCommittingConfigurationWithCorrelationId(key).map(committingConfigurationJson -> new EntryPoint(committingConfigurationJson.getHaproxy(), committingConfigurationJson.getHapUser(), committingConfigurationJson.getFrontends(), committingConfigurationJson.getBackends(), committingConfigurationJson.getContext()));
+        return getCommittingConfigurationWithCorrelationId(key).map(committingConfigurationJson -> new EntryPoint(committingConfigurationJson.getHaproxy(), committingConfigurationJson.getHapUser(), committingConfigurationJson.getHapVersion(), committingConfigurationJson.getFrontends(), committingConfigurationJson.getBackends(), committingConfigurationJson.getContext()));
     }
 
     private Optional<CommittingConfigurationJson> getCommittingConfigurationWithCorrelationId(EntryPointKey key) {
@@ -452,6 +453,36 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             throw new RuntimeException(e);
         }
         return result;
+    }
+
+    @Override
+    public Set<String> getHaproxyVersions() {
+        Set<String> result;
+        try {
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxyversions?raw");
+            result = client.execute(getHaproxyURI, httpResponse ->
+                    consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parseAsSet)
+                            .orElse(new HashSet<>()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    @Override
+    public void addVersion(String haproxyVersion) {
+        // TODO add transaction including get and add
+        Set<String> haproxyVersions = getHaproxyVersions();
+        haproxyVersions.add(haproxyVersion);
+        try {
+            HttpPut putHaproxyVersion = new HttpPut("http://" + host + ":" + port + "/v1/kv/haproxyversions");
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            mapper.writeValue(out, haproxyVersions);
+            putHaproxyVersion.setEntity(new ByteArrayEntity(out.toByteArray()));
+            client.execute(putHaproxyVersion, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
+        } catch (IOException e) {
+            LOGGER.error("can't put new haproxy version " + haproxyVersion, e);
+        }
     }
 
     private Map<String, String> consulItemsToMap(List<ConsulItem<String>> consulItems) {

@@ -22,7 +22,7 @@ import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 
 /**
  * Generic entrypoint event.
- *
+ * <p>
  * Created by william_montaz on 05/02/2016.
  */
 public class EntryPointEvent {
@@ -47,7 +47,6 @@ public class EntryPointEvent {
     public String toString() {
         return "EntryPointEvent{" +
                 "correlationId='" + correlationId + '\'' +
-                ", key=" + key +
-                '}';
+                ", key=" + key + '}';
     }
 }

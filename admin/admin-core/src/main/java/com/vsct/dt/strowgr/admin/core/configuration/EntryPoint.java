@@ -33,8 +33,8 @@ public class EntryPoint {
     public static final String SYSLOG_PORT_ID = "syslog";
 
     private final String haproxy;
-
     private final String hapUser;
+    private final String hapVersion;
 
     private final HashMap<String, String> context;
 
@@ -42,9 +42,10 @@ public class EntryPoint {
     private final HashMap<String, EntryPointBackend> backends;
 
     public EntryPoint(String haproxy, String hapUser,
-                      Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
+                      String hapVersion, Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
         this.haproxy = checkStringNotEmpty(haproxy, "EntryPointConfiguration should have an haproxy id");
         this.hapUser = checkStringNotEmpty(hapUser, "EntryPointConfiguration should have a user for haproxy");
+        this.hapVersion = hapVersion;
 
         checkNotNull(frontends);
         this.frontends = new HashMap<>();
@@ -62,9 +63,10 @@ public class EntryPoint {
     }
 
     private EntryPoint(String haproxy, String hapUser,
-                       HashMap<String, EntryPointFrontend> frontends, HashMap<String, EntryPointBackend> backends, HashMap<String, String> context) {
+                       String hapVersion, HashMap<String, EntryPointFrontend> frontends, HashMap<String, EntryPointBackend> backends, HashMap<String, String> context) {
         this.haproxy = haproxy;
         this.hapUser = hapUser;
+        this.hapVersion = hapVersion;
         this.frontends = frontends;
         this.backends = backends;
         this.context = context;
@@ -78,7 +80,7 @@ public class EntryPoint {
         checkNotNull(backend);
         HashMap<String, EntryPointBackend> newBackends = new HashMap<>(backends);
         newBackends.put(backend.getId(), backend);
-        return new EntryPoint(this.haproxy, this.hapUser, this.frontends, newBackends, this.context);
+        return new EntryPoint(this.haproxy, this.hapUser, hapVersion, this.frontends, newBackends, this.context);
     }
 
     public Optional<EntryPointBackend> getBackend(String id) {
@@ -154,6 +156,10 @@ public class EntryPoint {
         return SYSLOG_PORT_ID;
     }
 
+    public String getHapVersion() {
+        return hapVersion;
+    }
+
     /**
      * Merging rules :
      * - Updated global context replaces existing one
@@ -184,6 +190,7 @@ public class EntryPoint {
 
         return EntryPoint.onHaproxy(this.haproxy)
                 .withUser(updatedEntryPoint.getHapUser())
+                .withVersion(updatedEntryPoint.getHapVersion())
                 .definesFrontends(updatedEntryPoint.getFrontends().stream().map(f -> new EntryPointFrontend(f.getId(), f.getContext())).collect(Collectors.toSet()))
                 .definesBackends(newBackends)
                 .withGlobalContext(updatedEntryPoint.getContext())
@@ -217,7 +224,11 @@ public class EntryPoint {
     }
 
     public interface IHapUSer {
-        IFrontends withUser(String user);
+        IHapVersion withUser(String user);
+    }
+
+    public interface IHapVersion {
+        IFrontends withVersion(String hapVersion);
     }
 
     public interface IFrontends {
@@ -236,11 +247,12 @@ public class EntryPoint {
         EntryPoint build();
     }
 
-    public static class Builder implements IHapUSer, IFrontends, IBackends, IContext, IBuild {
+    public static class Builder implements IHapUSer, IFrontends, IBackends, IContext, IBuild, IHapVersion {
 
         private Set<EntryPointBackend> backends;
         private Set<EntryPointFrontend> frontends;
         private String haproxy;
+        private String hapVersion;
         private String user;
         private String syslogPort;
         private Map<String, String> context;
@@ -262,8 +274,14 @@ public class EntryPoint {
         }
 
         @Override
-        public IFrontends withUser(String user) {
+        public IHapVersion withUser(String user) {
             this.user = user;
+            return this;
+        }
+
+        @Override
+        public IFrontends withVersion(String hapVersion) {
+            this.hapVersion = hapVersion;
             return this;
         }
 
@@ -275,9 +293,8 @@ public class EntryPoint {
 
         @Override
         public EntryPoint build() {
-            return new EntryPoint(haproxy, user, frontends, backends, context);
+            return new EntryPoint(haproxy, user, hapVersion, frontends, backends, context);
         }
-
     }
 
 }

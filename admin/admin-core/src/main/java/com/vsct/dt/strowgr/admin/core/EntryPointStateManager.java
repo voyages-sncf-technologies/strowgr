@@ -202,4 +202,5 @@ public class EntryPointStateManager {
     public void setAutoreload(EntryPointKey entryPointKey, Boolean autoreload) {
         repository.setAutoreload(entryPointKey, autoreload);
     }
+
 }

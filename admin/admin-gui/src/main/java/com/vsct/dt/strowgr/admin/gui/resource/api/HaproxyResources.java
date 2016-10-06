@@ -37,11 +37,11 @@ import static javax.ws.rs.core.Response.status;
 public class HaproxyResources {
 
     private final UriTemplateLocator templateLocator;
-    private final HaproxyRepository repository;
+    private final HaproxyRepository haproxyRepository;
     private final TemplateGenerator templateGenerator;
 
-    public HaproxyResources(HaproxyRepository repository, UriTemplateLocator templateLocator, TemplateGenerator templateGenerator) {
-        this.repository = repository;
+    public HaproxyResources(HaproxyRepository haproxyRepository, UriTemplateLocator templateLocator, TemplateGenerator templateGenerator) {
+        this.haproxyRepository = haproxyRepository;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;
     }
@@ -50,10 +50,10 @@ public class HaproxyResources {
     @Path("/{haproxyId}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createHaproxy(@PathParam("haproxyId") String haproxyId, HaproxyMappingJson haproxyMappingJson) {
-        repository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
-        repository.setHaproxyProperty(haproxyId, "vip", haproxyMappingJson.getVip());
-        repository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
-        repository.setHaproxyProperty(haproxyId, "autoreload", String.valueOf(haproxyMappingJson.getAutoreload()));
+        haproxyRepository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
+        haproxyRepository.setHaproxyProperty(haproxyId, "vip", haproxyMappingJson.getVip());
+        haproxyRepository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
+        haproxyRepository.setHaproxyProperty(haproxyId, "autoreload", String.valueOf(haproxyMappingJson.getAutoreload()));
         return ok().build();
     }
 
@@ -61,7 +61,7 @@ public class HaproxyResources {
     @Path("/{haproxyId}/{key}/{value}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response setHaproxyVip(@PathParam("haproxyId") String haproxyId, @PathParam("key") String key, @PathParam("value") String value) {
-        repository.setHaproxyProperty(haproxyId, key, value);
+        haproxyRepository.setHaproxyProperty(haproxyId, key, value);
         return ok().build();
     }
 
@@ -69,7 +69,7 @@ public class HaproxyResources {
     @Path("/{haproxyId}/vip")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getHaproxyVip(@PathParam("haproxyId") String haproxyId) {
-        return repository.getHaproxyVip(haproxyId)
+        return haproxyRepository.getHaproxyVip(haproxyId)
                 .map(vip -> ok(vip).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy uri of " + haproxyId).build());
     }
@@ -78,7 +78,7 @@ public class HaproxyResources {
     @Path("{haproxyId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getHaproxy(@PathParam("haproxyId") String haproxyId) {
-        return repository.getHaproxyProperties(haproxyId)
+        return haproxyRepository.getHaproxyProperties(haproxyId)
                 .map(props -> ok(props).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy properties of " + haproxyId).build());
     }
@@ -86,7 +86,7 @@ public class HaproxyResources {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll() {
-        return repository.getHaproxyProperties()
+        return haproxyRepository.getHaproxyProperties()
                 .map(all -> ok(all).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy").build());
     }
@@ -95,7 +95,7 @@ public class HaproxyResources {
     @Path("/ids")
     @Produces(MediaType.APPLICATION_JSON)
     public Set<String> getHaproxyIds() {
-        return repository.getHaproxyIds().orElseGet(() -> new HashSet<>());
+        return haproxyRepository.getHaproxyIds().orElseGet(() -> new HashSet<>());
     }
 
     @GET
@@ -139,6 +139,19 @@ public class HaproxyResources {
         } catch (IncompleteConfigurationException e) {
             throw new BadRequestException(e.getMessage());
         }
+    }
+
+    @GET
+    @Path("/versions")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<String> getHaproxyVersions(){
+        return haproxyRepository.getHaproxyVersions();
+    }
+
+    @PUT
+    @Path("/versions/{haproxyVersion}")
+    public void addHaproxyVersion(@PathParam("haproxyVersion") String haproxyVersion){
+        haproxyRepository.addVersion(haproxyVersion);
     }
 
 }

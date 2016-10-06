@@ -31,7 +31,7 @@ type Config struct {
 	HapHome          string
 	IpAddr           string
 	Status           string
-	HapVersion       string
+	HapVersions      []string
 	ChannelName      string
 }
 
@@ -58,6 +58,7 @@ type Header struct {
 type Conf struct {
 	Haproxy []byte `json:"haproxy"`
 	Syslog  []byte `json:"syslog"`
+	Version  string `json:"haproxyVersion,omitempty"`
 }
 
 // main type for messages

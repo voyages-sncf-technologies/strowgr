@@ -28,15 +28,17 @@ import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
 public class UpdatedEntryPoint {
 
     private final String hapUser;
+    private final String hapVersion;
 
     private final HashMap<String, String> context;
 
     private final HashMap<String, UpdatedEntryPointFrontend> frontends;
     private final HashMap<String, UpdatedEntryPointBackend> backends;
 
-    public UpdatedEntryPoint(String hapUser, Map<String, String> context, Set<UpdatedEntryPointFrontend> frontends, Set<UpdatedEntryPointBackend> backends) {
+    public UpdatedEntryPoint(String hapUser, Map<String, String> context, Set<UpdatedEntryPointFrontend> frontends, Set<UpdatedEntryPointBackend> backends, String hapVersion) {
         this.hapUser = checkStringNotEmpty(hapUser, "hapUser must be provided");
         this.context = new HashMap<>(checkNotNull(context));
+        this.hapVersion = hapVersion;
 
         this.frontends = new HashMap<>();
         for (UpdatedEntryPointFrontend f : checkNotNull(frontends)) {
@@ -51,6 +53,10 @@ public class UpdatedEntryPoint {
 
     public String getHapUser() {
         return hapUser;
+    }
+
+    public String getHapVersion() {
+        return hapVersion;
     }
 
     public HashMap<String, String> getContext() {

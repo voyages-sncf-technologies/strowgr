@@ -73,4 +73,8 @@ public interface HaproxyRepository {
      * @return haproxy properties map
      */
     Optional<Map<String, String>> getHaproxyProperties(String haproxyId);
+
+    Set<String> getHaproxyVersions();
+
+    void addVersion(String haproxyVersion);
 }

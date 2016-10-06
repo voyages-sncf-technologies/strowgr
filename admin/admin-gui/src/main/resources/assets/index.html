@@ -258,6 +258,16 @@
                         throw error;
                     });
                 },
+                allVersions: function(){
+                    return $http.get('/api/haproxy/versions').then(function(response) {
+                        return response.data.sort();
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
                 add: function(id, conf){
                     return $http.put('/api/haproxy/'+id, conf).then(function(response) {
                         Notification.success('Load Balancer ' + id + ' créé');
@@ -462,6 +472,7 @@
                 context: {
                     templateUri: ""
                 },
+                hapVersion: "",
                 frontends: [],
                 backends: []
             };
@@ -493,6 +504,10 @@
                  $scope.currentHaproxy = data[0];
             });
 
+            Haproxy.allVersions().then(function(data){
+                $scope.haproxyVersions = data;
+                console.log("haproxy versions: "+data);
+            });
 
             $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
             $scope.forbiddenFrontendKeys = ['id', 'port'];
@@ -684,6 +699,11 @@
                         }
                     };
 
+                    Haproxy.allVersions().then(function(data){
+                        scope.haproxyVersions = data;
+                        console.log("haproxy versions: "+data);
+                    });
+
                     scope.reloadFrontBackends = function () {
                         console.log('reload');
 
@@ -730,7 +750,6 @@
 
                     }
 
-
                     scope.updateEntrypoint = function () {
                         //Create the update model
                         var frontends = [];
@@ -762,6 +781,7 @@
                         var updateModel = {
                             hapUser: scope.conf.hapUser,
                             context: scope.conf.context,
+                            hapVersion: scope.conf.hapVersion,
                             frontends: frontends,
                             backends: backends
                         };
