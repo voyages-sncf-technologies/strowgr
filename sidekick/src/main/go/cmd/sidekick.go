@@ -71,7 +71,6 @@ func main() {
 	syslog = sidekick.NewSyslog(properties)
 	syslog.Init()
 	log.WithFields(log.Fields{
-		"status": properties.Status,
 		"id":     properties.Id,
 		"clusterId":     properties.ClusterId,
 	}).Info("Starting sidekick")
@@ -174,39 +173,29 @@ func main() {
 func createTopicsAndChannels() {
 	// Create required topics
 	topics := []string{"commit_slave_completed", "commit_completed", "commit_failed"}
-	topicChan := make(chan string, len(topics))
 
-	// fill the channel
-	for i := range topics {
-		topicChan <- topics[i]
-	}
-
-	for len(topicChan) > 0 {
+	for _, topic := range topics {
 		// create the topic
-		topic := <-topicChan
 		log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Info("Creating topic")
 		url := fmt.Sprintf("%s/topic/create?topic=%s_%s", properties.ProducerRestAddr, topic, properties.ClusterId)
-		resp, err := http.PostForm(url, nil)
-		if err != nil || resp.StatusCode != 200 {
-			log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).WithError(err).Error("topic can't be created")
-			// retry to create this topic
-			topicChan <- topic
-			continue
-		} else {
+		respTopic, err := http.PostForm(url, nil)
+		if err == nil && respTopic.StatusCode == 200 {
 			log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Debug("topic created")
+		} else {
+			log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).WithError(err).Panic("topic can't be created")
 		}
 
 		// create the channels of the topics
 		log.WithField("channel", properties.Id).Info("Creating channel")
 		url = fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s", properties.ProducerRestAddr, topic, properties.ClusterId, properties.Id)
-		resp, err = http.PostForm(url, nil)
-		if err != nil || resp.StatusCode != 200 {
+		respChannel, err := http.PostForm(url, nil)
+		if err == nil && respChannel.StatusCode == 200 {
+			log.WithField("channel", properties.Id).WithField("topic", topic).Info("channel created")
+		} else {
 			// retry all for this topic if channel creation failed
-			topicChan <- topic
-			continue
+			log.WithField("topic", topic).WithField("channel", properties.Id).WithField("clusterId", properties.ClusterId).WithError(err).Panic("channel can't be created")
 		}
 
-		log.WithField("topic", topic).Info("Topic created")
 	}
 }
 

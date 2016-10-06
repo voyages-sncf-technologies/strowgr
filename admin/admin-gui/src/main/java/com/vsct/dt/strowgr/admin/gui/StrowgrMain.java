@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.Connection;
 import com.github.brainlag.nsq.NSQConfig;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
@@ -60,6 +61,7 @@ import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.logging.log4j.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
