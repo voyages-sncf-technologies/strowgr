@@ -16,22 +16,26 @@
  */
 package sidekick
 
-import ()
+import (
+	"net/http"
+	"fmt"
+	"log"
+	"io/ioutil"
+)
 
 type Daemon struct {
 	Properties *Config
 }
 
-func (daemon *Daemon) IsMaster() (bool, error) {
-	return (daemon.Properties.Status == "master"), nil
-}
-
-func (daemon *Daemon) IsSlave() (bool, error) {
-	return (daemon.Properties.Status == "slave"), nil
-}
-
-func (daemon *Daemon) Is(target string) (bool, error) {
-	return (daemon.Properties.Status == target), nil
+func (daemon *Daemon) IsMaster(vip string) (bool, error) {
+	resp, err := http.Get(fmt.Sprintf("http://%s:%d/real-ip", vip, daemon.Properties.Port))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	log.Printf("master id: %s", body)
+	return string(body) == daemon.Properties.Id, nil
 }
 
 func NewDaemon(properties *Config) *Daemon {
