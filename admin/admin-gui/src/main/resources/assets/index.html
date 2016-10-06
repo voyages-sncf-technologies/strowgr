@@ -676,6 +676,10 @@
                         if($scope.availableHaproxies[currentHaproxy]["id"] == $scope.haproxyId) {
                             $scope.haproxy.name = $scope.availableHaproxies[currentHaproxy]["name"];
                             $scope.haproxy.bindings = $scope.availableHaproxies[currentHaproxy]["bindings"];
+                            //This line helps migration of existing haproxy conf without bindings by creating a default one if empty
+                            if(Object.keys($scope.haproxy.bindings).length == 0){
+                                $scope.haproxy.bindings = { 0: '' };
+                            }
                             $scope.haproxy.platform = $scope.availableHaproxies[currentHaproxy]["platform"];
                             $scope.haproxy.autoreload = ("true" == $scope.availableHaproxies[currentHaproxy]["autoreload"]);
                             console.log("load haproxy "+JSON.stringify($scope.availableHaproxies[currentHaproxy]));
