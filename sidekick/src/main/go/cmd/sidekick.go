@@ -281,7 +281,7 @@ func reloadMaster(data *sidekick.EventMessageWithConf) error {
 
 func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
 	context := data.Context()
-	hap := sidekick.NewHaproxy("", properties, context)
+	hap := sidekick.NewHaproxy(properties, context)
 	err := hap.Stop()
 	if err != nil {
 		return err
@@ -294,7 +294,7 @@ func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
 func reloadHaProxy(data *sidekick.EventMessageWithConf, masterRole bool) error {
 	context := data.Context()
 	var hap sidekick.Loadbalancer
-
+	hap = haFactory.CreateHaproxy(context)
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != sidekick.UNCHANGED {

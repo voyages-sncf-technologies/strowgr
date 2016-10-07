@@ -27,10 +27,9 @@ import (
 	"time"
 )
 
-func NewHaproxy(role string, properties *Config, context Context) *Haproxy {
+func NewHaproxy(properties *Config, context Context) *Haproxy {
 
 	return &Haproxy{
-		Role:       role,
 		properties: properties,
 		Version:    properties.HapVersion,
 		Context:    context,
@@ -38,7 +37,6 @@ func NewHaproxy(role string, properties *Config, context Context) *Haproxy {
 }
 
 type Haproxy struct {
-	Role       string
 	Version    string
 	properties *Config
 	State      int
@@ -69,7 +67,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	}
 	if bytes.Equal(oldConf, newConf) {
 		log.WithFields(hap.Context.Fields()).WithFields(
-			log.Fields{"role": hap.Role}).Debug("Unchanged configuration")
+			log.Fields{"id": hap.properties.Id}).Debug("Unchanged configuration")
 		return UNCHANGED, nil
 	}
 
@@ -78,7 +76,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	os.Rename(path, archivePath)
 	log.WithFields(hap.Context.Fields()).WithFields(
 		log.Fields{
-			"role":        hap.Role,
+			"id":        hap.properties.Id,
 			"archivePath": archivePath,
 		}).Info("Old configuration saved")
 	err = ioutil.WriteFile(path, newConf, 0644)
@@ -87,7 +85,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	}
 
 	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-		"role": hap.Role,
+		"id": hap.properties.Id,
 		"path": path,
 	}).Info("New configuration written")
 
@@ -95,7 +93,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	err = hap.reload(data.Header.CorrelationId)
 	if err != nil {
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-			"role": hap.Role,
+			"id": hap.properties.Id,
 		}).WithError(err).Error("Reload failed")
 		hap.dumpConfiguration(hap.NewErrorPath(), newConf, data)
 		errRollback := hap.rollback(data.Header.CorrelationId)
@@ -111,13 +109,13 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	err = ioutil.WriteFile(fragmentPath, data.Conf.Syslog, 0644)
 	if err != nil {
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-			"role": hap.Role,
+			"id": hap.properties.Id,
 		}).WithError(err).Error("Failed to write syslog fragment")
 		// TODO Should we rollback on syslog error ?
 		return ERR_SYSLOG, err
 	}
 	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-		"role":     hap.Role,
+		"id":     hap.properties.Id,
 		"content":  string(data.Conf.Syslog),
 		"filename": fragmentPath,
 	}).Debug("Write syslog fragment")
@@ -139,7 +137,7 @@ func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *Eve
 		f.Sync()
 
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-			"role":     hap.Role,
+			"id":     hap.properties.Id,
 			"filename": filename,
 		}).Info("Dump configuration")
 	}
@@ -181,7 +179,7 @@ func (hap *Haproxy) reload(correlationId string) error {
 		log.WithFields(hap.Context.Fields()).WithField("output", string(output[:])).WithError(err).Error("Error reloading")
 	} else {
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
-			"role":         hap.Role,
+			"id":         hap.properties.Id,
 			"reloadScript": reloadScript,
 			"output":          string(output[:]),
 		}).Debug("Reload succeeded")
