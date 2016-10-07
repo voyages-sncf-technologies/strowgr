@@ -46,12 +46,11 @@ public interface EntryPointRepository {
 
     /**
      * Sets the committing configuration with a TTL
-     *
-     * @param key           of the entrypoint
+     *  @param key           of the entrypoint
      * @param configuration content of the entrypoint
      * @param ttl           the ttl in seconds
      */
-    void setCommittingConfiguration(String correlationId, EntryPointKey key, EntryPoint configuration, int ttl);
+    boolean setCommittingConfiguration(String correlationId, EntryPointKey key, EntryPoint configuration, int ttl);
 
     void removeCommittingConfiguration(EntryPointKey key);
 

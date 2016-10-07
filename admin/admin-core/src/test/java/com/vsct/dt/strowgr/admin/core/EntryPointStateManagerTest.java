@@ -215,6 +215,7 @@ public class EntryPointStateManagerTest {
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
+
         when(repositoryMock.getPendingConfiguration(key)).thenReturn(
                 Optional.of(pendingConfiguration)
         );
@@ -223,7 +224,10 @@ public class EntryPointStateManagerTest {
         );
 
         String correlationId = CorrelationId.newCorrelationId();
+        when(repositoryMock.setCommittingConfiguration(correlationId, key, pendingConfiguration, 10)).thenReturn(true);
+
         entryPointStateManager.tryCommitPending(correlationId, key);
+
 
         verify(repositoryMock).setCommittingConfiguration(correlationId, key, pendingConfiguration, 10);
         verify(repositoryMock).removePendingConfiguration(key);

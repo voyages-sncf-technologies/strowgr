@@ -139,7 +139,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     private Optional<Session> createSession(EntryPointKey entryPointKey, Integer ttlInSec, SESSION_BEHAVIOR behavior) throws IOException {
         HttpPut createSessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/create");
         if (ttlInSec != null) {
-            String payload = "{\"Behavior\":\"" + behavior.value + "\",\"TTL\":\"" + ttlInSec + "s\", \"Name\":\"" + entryPointKey.getID() + "\"}";
+            String payload = "{\"Behavior\":\"" + behavior.value + "\",\"TTL\":\"" + ttlInSec + "s\", \"Name\":\"" + entryPointKey.getID() + "\", \"LockDelay\": \"0\" }";
             LOGGER.trace("create a consul session with theses options: {} ", payload);
             createSessionURI.setEntity(new StringEntity(payload));
         }
@@ -273,11 +273,11 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     }
 
     @Override
-    public void setCommittingConfiguration(String correlationId, EntryPointKey entryPointKey, EntryPoint configuration, int ttl) {
-        setCommittingConfiguration(correlationId, entryPointKey, new EntryPointMappingJson(configuration), ttl);
+    public boolean setCommittingConfiguration(String correlationId, EntryPointKey entryPointKey, EntryPoint configuration, int ttl) {
+        return setCommittingConfiguration(correlationId, entryPointKey, new EntryPointMappingJson(configuration), ttl);
     }
 
-    private void setCommittingConfiguration(String correlationId, EntryPointKey entryPointKey, EntryPointMappingJson configuration, int ttl) {
+    private boolean setCommittingConfiguration(String correlationId, EntryPointKey entryPointKey, EntryPointMappingJson configuration, int ttl) {
         try {
             /* Use Consul session to use TTL feature
                This implies that when the consul node holding the session is lost,
@@ -293,10 +293,11 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
 
             setCommittingURI.setEntity(new ByteArrayEntity(out.toByteArray()));
 
-            client.execute(setCommittingURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
+            return client.execute(setCommittingURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity)).orElse(false);
         } catch (IOException e) {
             LOGGER.error("error in consul repository", e);
         }
+        return false;
     }
 
     @Override
