@@ -47,6 +47,8 @@ public class ConsulSessionManagerTest {
 
     @Test
     public void should_create_consul_session_with_ttl_when_started(){
+        when(consulConnection.createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE)).thenReturn(Observable.just(new ConsulRepository.Session("id")));
+
         consulSessionManager.start();
 
         verify(consulConnection).createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE);
@@ -59,7 +61,8 @@ public class ConsulSessionManagerTest {
 
     @Test
     public void should_renew_session_at_half_lifetime(){
-        when(consulConnection.createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE)).thenReturn(new ConsulRepository.Session("id"));
+        when(consulConnection.createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE)).thenReturn(Observable.just(new ConsulRepository.Session("id")));
+        when(consulConnection.renewSession("id")).thenReturn(Observable.just(new ConsulRepository.Session("id")));
 
         consulSessionManager.start();
 
@@ -69,8 +72,27 @@ public class ConsulSessionManagerTest {
     }
 
     @Test
+    public void should_create_new_session_if_it_cannot_be_renewed(){
+        when(consulConnection.createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE))
+                .thenReturn(Observable.just(new ConsulRepository.Session("id1")))
+                .thenReturn(Observable.just(new ConsulRepository.Session("id2")));
+        when(consulConnection.renewSession("id1")).thenReturn(Observable.error(new Exception()));
+
+        consulSessionManager.start();
+
+        scheduler.advanceTimeBy(TTL+2, TimeUnit.SECONDS);
+
+        verify(consulConnection, times(2)).createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE);
+
+        verify(consulConnection).renewSession("id1");
+        verify(consulConnection).renewSession("id2");
+
+        assertThat(consulSessionManager.getSession().getID(), is("id2"));
+    }
+
+    @Test
     public void should_return_session_when_asked(){
-        when(consulConnection.createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE)).thenReturn(new ConsulRepository.Session("id"));
+        when(consulConnection.createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE)).thenReturn(Observable.just(new ConsulRepository.Session("id")));
 
         consulSessionManager.start();
 
@@ -81,7 +103,9 @@ public class ConsulSessionManagerTest {
 
     @Test
     public void should_destroy_session_when_shutdown(){
-        when(consulConnection.createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE)).thenReturn(new ConsulRepository.Session("id"));
+        when(consulConnection.createSession(TTL, ConsulRepository.SESSION_BEHAVIOR.DELETE)).thenReturn(Observable.just(new ConsulRepository.Session("id")));
+        when(consulConnection.destroySession("id")).thenReturn(Observable.just(new ConsulRepository.Session("id")));
+
         consulSessionManager.start();
 
         consulSessionManager.stop();

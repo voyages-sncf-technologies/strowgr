@@ -465,6 +465,16 @@
         ]);
 
         adminApp.controller('AddEntrypointCtrl', ['$scope', 'Entrypoint', '$location', 'Haproxy', '$mdDialog', function ($scope, Entrypoint, $location, Haproxy, $mdDialog) {
+
+            Haproxy.all().then(function(data){
+                $scope.availableHaproxies = data;
+            });
+
+            Haproxy.allVersions().then(function(data){
+                $scope.haproxyVersions = data;
+                console.log("haproxy versions: "+data);
+            });
+
             /* Init conf object, avoid undefined inner objects and show expected fields */
             $scope.conf = {
                 haproxy: "",
@@ -477,37 +487,35 @@
                 backends: []
             };
 
-            $scope.gitlabTemplate = {
-                host: "gitlab.socrate.vsct.fr",
-                group: "dt",
-                repository: "haproxy-templates-horsprod",
-                tag: "",
-                filename: "haproxy_template.conf"
-            };
-
-            // TODO currentHaproxy should be more directly managed by angular model
-            $scope.currentHaproxyUpdated = function(){
-                console.log('change current haproxy');
-                for(currentHaproxy in $scope.availableHaproxies) {
-                    if(currentHaproxy['id'] == $scope.conf.haproxy) {
-                        console.log("change current haproxy to " + currentHaproxy['id']);
-                        $scope.currentHaproxy = currentHaproxy;
+            $scope.templateTypes = [
+                {
+                    id: 1,
+                    name: "Par défaut",
+                    conf: {
+                        host: "gitlab.socrate.vsct.fr",
+                        group: "dt",
+                        repository: "haproxy-templates-horsprod",
+                        tag: "1.0-DEFAULT",
+                        filename: "haproxy_default_template.conf",
+                        gitlabFolder: function(){ return "/DEFAULT";}
+                    }
+                },
+                {
+                    id: 2,
+                    name: "Custom",
+                    conf: {
+                        host: "gitlab.socrate.vsct.fr",
+                        group: "dt",
+                        repository: "haproxy-templates-horsprod",
+                        tag: "",
+                        filename: "haproxy_template.conf",
+                        gitlabFolder: function(){ return "/"+$scope.conf.context.application;}
                     }
                 }
-            };
+            ];
 
-
-            Haproxy.all().then(function(data){
-                $scope.availableHaproxies = data;
-                console.log(data);
-                 // select first haproxyid
-                 $scope.currentHaproxy = data[0];
-            });
-
-            Haproxy.allVersions().then(function(data){
-                $scope.haproxyVersions = data;
-                console.log("haproxy versions: "+data);
-            });
+            //Make sure templateType is not null at init, even though gui part might decide to preselect an option
+            $scope.templateType = $scope.templateTypes[0];
 
             $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
             $scope.forbiddenFrontendKeys = ['id', 'port'];
@@ -543,7 +551,13 @@
             };
 
             $scope.reloadFrontBackends = function () {
-                var uri="http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.conf.context.application+"/"+$scope.gitlabTemplate.filename;
+                var uri = "http://" + $scope.templateType.conf.host +
+                                "/" + $scope.templateType.conf.group +
+                                "/" + $scope.templateType.conf.repository +
+                                "/raw/" + $scope.templateType.conf.tag +
+                                $scope.templateType.conf.gitlabFolder() +
+                                "/" + $scope.templateType.conf.filename;
+
                 console.log("uri : "+uri);
                 Haproxy.getFrontBackends(uri)
                     .then(function (response){
@@ -589,7 +603,12 @@
             /* Checks the entrypoint configuration first and then creates the entrypoint */
             $scope.createEntrypoint = function () {
                 /* Construction of gitlab url */
-                $scope.conf.context.templateUri = "http://"+$scope.gitlabTemplate.host+"/"+$scope.gitlabTemplate.group+"/"+$scope.gitlabTemplate.repository+"/raw/"+$scope.gitlabTemplate.tag+"/"+$scope.conf.context.application+"/"+$scope.gitlabTemplate.filename;
+                $scope.conf.context.templateUri = "http://" + $scope.templateType.conf.host +
+                                "/" + $scope.templateType.conf.group +
+                                "/" + $scope.templateType.conf.repository +
+                                "/raw/" + $scope.templateType.conf.tag +
+                                $scope.templateType.conf.gitlabFolder() +
+                                "/" + $scope.templateType.conf.filename;
 
                 console.log($scope.conf.context.templateUri);
 
@@ -699,11 +718,6 @@
                         }
                     };
 
-                    Haproxy.allVersions().then(function(data){
-                        scope.haproxyVersions = data;
-                        console.log("haproxy versions: "+data);
-                    });
-
                     scope.reloadFrontBackends = function () {
                         console.log('reload');
 
@@ -750,6 +764,7 @@
 
                     }
 
+
                     scope.updateEntrypoint = function () {
                         //Create the update model
                         var frontends = [];
@@ -781,7 +796,6 @@
                         var updateModel = {
                             hapUser: scope.conf.hapUser,
                             context: scope.conf.context,
-                            hapVersion: scope.conf.hapVersion,
                             frontends: frontends,
                             backends: backends
                         };

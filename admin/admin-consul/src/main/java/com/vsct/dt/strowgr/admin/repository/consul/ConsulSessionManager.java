@@ -53,10 +53,7 @@ public class ConsulSessionManager {
 
     public void start() {
         LOGGER.debug("create new currentSession");
-        currentSession = consulConnection.createSession(ttl, ConsulRepository.SESSION_BEHAVIOR.DELETE);
-        LOGGER.debug("currentSession created with ttl {} and behavior {}", ttl, ConsulRepository.SESSION_BEHAVIOR.DELETE);
-
-        timer.subscribe(sessionRenewer);
+        createSession().subscribe(session -> timer.subscribe(sessionRenewer));
     }
 
     public ConsulRepository.Session getSession() {
@@ -70,10 +67,26 @@ public class ConsulSessionManager {
         LOGGER.debug("destroy current session");
 
         sessionRenewer.unsubscribe();
-        consulConnection.destroySession(currentSession.getID());
-        currentSession = null;
 
-        LOGGER.debug("current session has been destroyed");
+        consulConnection.destroySession(currentSession.getID()).subscribe(
+                session -> {
+                    currentSession = null;
+                    LOGGER.debug("current session has been destroyed");
+                },
+                error -> LOGGER.info("session could not be destroyed. it will be destroyed via TTL ({}s)", ttl)
+        );
+    }
+
+    private Observable<ConsulRepository.Session> createSession() {
+        return consulConnection
+                .createSession(ttl, ConsulRepository.SESSION_BEHAVIOR.DELETE)
+                .doOnNext(session -> {
+                    currentSession = session;
+                    LOGGER.debug("currentSession created with ttl {} and behavior {}", ttl, ConsulRepository.SESSION_BEHAVIOR.DELETE);
+                })
+                .doOnError(
+                        error -> LOGGER.error("session could not be created. Application cannot work properlly, this needs further investigation. Cause {]", error.getCause())
+                );
     }
 
     private class SessionRenewer extends Subscriber<Long> {
@@ -90,8 +103,14 @@ public class ConsulSessionManager {
 
         @Override
         public void onNext(Long l) {
-            if(currentSession != null) {
-                consulConnection.renewSession(currentSession.getID());
+            if (currentSession != null) {
+                consulConnection.renewSession(currentSession.getID()).subscribe(
+                        session -> LOGGER.debug("session {} has been renewed", session.getID()),
+                        error -> {
+                            LOGGER.info("session could not be renewed. needs to create a new session");
+                            createSession().subscribe();
+                        }
+                );
             }
         }
     }
