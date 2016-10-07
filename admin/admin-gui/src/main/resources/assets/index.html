@@ -501,6 +501,7 @@
 
             Haproxy.all().then(function(data){
                 $scope.availableHaproxies = data;
+                $scope.currentHaproxy = data[0];
             });
 
             Haproxy.allVersions().then(function(data){
@@ -554,6 +555,16 @@
             $scope.forbiddenGlobalKeys = ['hap_user', 'syslog_port', 'application', 'platform', 'templateUri'];
             $scope.forbiddenFrontendKeys = ['id', 'port'];
             $scope.forbiddenBackendKeys = ['id'];
+
+            $scope.currentHaproxyUpdated = function(){
+                for (var i = 0; i < $scope.availableHaproxies.length; i++) {
+                    var hapConf = $scope.availableHaproxies[i];
+                    if(hapConf['id'] == $scope.conf.haproxy) {
+                        console.log("change current haproxy to " + hapConf['id']);
+                        $scope.currentHaproxy = hapConf;
+                    }
+                }
+            };
 
             $scope.addFrontend = function () {
                 $scope.conf.frontends.push({
@@ -745,6 +756,12 @@
                         }
                     }, false);
 
+
+                    Haproxy.allVersions().then(function(data){
+                        scope.haproxyVersions = data;
+                        console.log("haproxy versions: "+data);
+                    });
+
                     scope.addFrontend = function () {
                         scope.conf.frontends.push({
                             id: "",
@@ -853,6 +870,7 @@
                             hapUser: scope.conf.hapUser,
                             //md-option seems to convert integer to strings, which causes problem, so we use parseInt
                             bindingId: parseInt(scope.conf.bindingId),
+                            hapVersion: scope.conf.hapVersion,
                             context: scope.conf.context,
                             frontends: frontends,
                             backends: backends

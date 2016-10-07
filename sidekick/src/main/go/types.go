@@ -46,10 +46,11 @@ func (config Config) IsMaster(vip string) (bool, error) {
 		log.WithField("http status", resp.Status).Debug("response ip")
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
-		log.Printf("master id: %s", body)
+		log.WithField("id", body).Debug("retrieve master id")
 		return string(body) == config.Id, err
 	}
 }
+
 
 func DefaultConfig() *Config {
 	return &Config{
@@ -75,7 +76,7 @@ type Conf struct {
 	Haproxy []byte `json:"haproxy"`
 	Syslog  []byte `json:"syslog"`
 	Bind    string `json:"bind"`
-	Version  string `json:"haproxyVersion,omitempty"`
+	Version string `json:"haproxyVersion,omitempty"`
 }
 
 // main type for messages
