@@ -39,26 +39,34 @@ public class EntryPointWithPortsMappingJson extends EntryPointMappingJson {
     @JsonCreator
     public EntryPointWithPortsMappingJson(@JsonProperty("haproxy") String haproxy,
                                           @JsonProperty("hapUser") String hapUser,
+                                          @JsonProperty("haproxyVersion") String haproxyVersion,
+                                          @JsonProperty("bindingId") int bindingId,
                                           @JsonProperty("syslogPort") Integer syslogPort,
                                           @JsonProperty("frontends") Set<EntryPointFrontendWithPortMappingJson> frontends,
                                           @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
-                                          @JsonProperty("context") Map<String, String> context,
-                                          @JsonProperty("haproxyVersion") String haproxyVersion) {
-        super(haproxy,
+                                          @JsonProperty("context") Map<String, String> context) {
+        super(
+                haproxy,
                 hapUser,
                 haproxyVersion,
+                bindingId,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
                 backends.stream().map(identity()).collect(Collectors.toSet()),
-                context);
+                context
+        );
         this.syslogPort = syslogPort;
     }
 
     public Map<String, Integer> generatePortMapping() {
         HashMap<String, Integer> mapping = new HashMap<>();
-        mapping.put(syslogPortId(), this.syslogPort);
-        this.getFrontends().forEach(f -> mapping.put(f.getId(),
-                ((EntryPointFrontendWithPortMappingJson) f).getPort()
-        ));
+        if (this.syslogPort != null) mapping.put(syslogPortId(), this.syslogPort);
+        this.getFrontends().forEach(f -> {
+            if (((EntryPointFrontendWithPortMappingJson) f).getPort() != null) {
+                mapping.put(f.getId(),
+                        ((EntryPointFrontendWithPortMappingJson) f).getPort()
+                );
+            }
+        });
         return mapping;
     }
 

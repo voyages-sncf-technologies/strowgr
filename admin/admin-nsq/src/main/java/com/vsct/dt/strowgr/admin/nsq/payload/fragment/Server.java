@@ -23,27 +23,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 public class Server {
-    @JsonProperty("id")
-    private String id;
-    @JsonProperty("backendId")
-    private String backendId;
-    @JsonProperty("ip")
-    private String ip;
-    @JsonProperty("port")
-    private String port;
-    @JsonProperty("context")
-    private Map<String, String> context;
+
+    private final String              id;
+    private final String              backendId;
+    private final String              ip;
+    private final String              port;
+    private final Map<String, String> context;
 
     @JsonCreator
-    public Server() {
+    public Server(@JsonProperty("id") String id,
+                  @JsonProperty("backendId") String backendId,
+                  @JsonProperty("ip") String ip,
+                  @JsonProperty("port") String port,
+                  @JsonProperty("context") Map<String, String> context) {
+        this.id = id;
+        this.backendId = backendId;
+        this.ip = ip;
+        this.port = port;
+        this.context = context;
     }
 
     public String getId() {
         return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getBackendId() {
@@ -58,23 +59,7 @@ public class Server {
         return port;
     }
 
-    public void setPort(String port) {
-        this.port = port;
-    }
-
     public Map<String, String> getContext() {
         return context;
-    }
-
-    public void setContext(Map<String, String> context) {
-        this.context = context;
-    }
-
-    public void setBackendId(String backendId) {
-        this.backendId = backendId;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
     }
 }

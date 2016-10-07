@@ -19,6 +19,9 @@ package sidekick
 import (
 	log "github.com/Sirupsen/logrus"
 	"time"
+	"net/http"
+	"fmt"
+	"io/ioutil"
 )
 
 type Config struct {
@@ -29,10 +32,23 @@ type Config struct {
 	Vip              string
 	Port             int32
 	HapHome          string
-	IpAddr           string
+	Id               string
 	Status           string
 	HapVersions      []string
-	ChannelName      string
+}
+
+func (config Config) IsMaster(vip string) (bool, error) {
+	resp, err := http.Get(fmt.Sprintf("http://%s:%d/id", vip, config.Port))
+	if err != nil {
+		log.WithField("vip", vip).WithField("port", config.Port).WithError(err).Error("can't request in http the vip")
+		return false, err
+	} else {
+		log.WithField("http status", resp.Status).Debug("response ip")
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		log.Printf("master id: %s", body)
+		return string(body) == config.Id, err
+	}
 }
 
 func DefaultConfig() *Config {
@@ -58,6 +74,7 @@ type Header struct {
 type Conf struct {
 	Haproxy []byte `json:"haproxy"`
 	Syslog  []byte `json:"syslog"`
+	Bind    string `json:"bind"`
 	Version  string `json:"haproxyVersion,omitempty"`
 }
 

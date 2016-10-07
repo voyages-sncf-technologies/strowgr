@@ -17,31 +17,33 @@
 
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
+import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
+import com.vsct.dt.strowgr.admin.core.TemplateLocator;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
-import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
-import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.*;
+import java.net.URI;
+import java.util.Set;
 
-import static javax.ws.rs.core.Response.ok;
-import static javax.ws.rs.core.Response.status;
+import static javax.ws.rs.core.Response.*;
 
 @Path("/haproxy")
 public class HaproxyResources {
 
-    private final UriTemplateLocator templateLocator;
-    private final HaproxyRepository haproxyRepository;
+    private final TemplateLocator   templateLocator;
+    private final HaproxyRepository repository;
     private final TemplateGenerator templateGenerator;
 
-    public HaproxyResources(HaproxyRepository haproxyRepository, UriTemplateLocator templateLocator, TemplateGenerator templateGenerator) {
-        this.haproxyRepository = haproxyRepository;
+    public HaproxyResources(HaproxyRepository repository, TemplateLocator templateLocator, TemplateGenerator templateGenerator) {
+        this.repository = repository;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;
     }
@@ -49,27 +51,28 @@ public class HaproxyResources {
     @PUT
     @Path("/{haproxyId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createHaproxy(@PathParam("haproxyId") String haproxyId, HaproxyMappingJson haproxyMappingJson) {
-        haproxyRepository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
-        haproxyRepository.setHaproxyProperty(haproxyId, "vip", haproxyMappingJson.getVip());
-        haproxyRepository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
-        haproxyRepository.setHaproxyProperty(haproxyId, "autoreload", String.valueOf(haproxyMappingJson.getAutoreload()));
-        return ok().build();
+    public Response createHaproxy(@PathParam("haproxyId") String haproxyId, @NotNull @Valid HaproxyMappingJson haproxyMappingJson) {
+        repository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
+        haproxyMappingJson.getBindings().forEach((key, value) -> repository.setHaproxyProperty(haproxyId, "binding/"+key, value));
+        repository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
+        repository.setHaproxyProperty(haproxyId, "autoreload", String.valueOf(haproxyMappingJson.getAutoreload()));
+        return created(URI.create("/haproxy/" + haproxyId)).build();
     }
 
     @PUT
-    @Path("/{haproxyId}/{key}/{value}")
+    @Path("/{haproxyId}/binding/{bindingId}")
+    @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response setHaproxyVip(@PathParam("haproxyId") String haproxyId, @PathParam("key") String key, @PathParam("value") String value) {
-        haproxyRepository.setHaproxyProperty(haproxyId, key, value);
-        return ok().build();
+    public Response setHaproxyBindings(@PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId, @NotEmpty String value) {
+        repository.setHaproxyProperty(haproxyId, "binding/" + bindingId, value);
+        return created(URI.create("/haproxy/" + haproxyId + "/binding/" + bindingId)).build();
     }
 
     @GET
-    @Path("/{haproxyId}/vip")
+    @Path("/{haproxyId}/binding/{bindingId}")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getHaproxyVip(@PathParam("haproxyId") String haproxyId) {
-        return haproxyRepository.getHaproxyVip(haproxyId)
+    public Response getHaproxyBinding(@PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId) {
+        return repository.getHaproxyProperty(haproxyId, "binding/" + bindingId)
                 .map(vip -> ok(vip).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy uri of " + haproxyId).build());
     }
@@ -78,7 +81,7 @@ public class HaproxyResources {
     @Path("{haproxyId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getHaproxy(@PathParam("haproxyId") String haproxyId) {
-        return haproxyRepository.getHaproxyProperties(haproxyId)
+        return repository.getHaproxyProperties(haproxyId)
                 .map(props -> ok(props).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy properties of " + haproxyId).build());
     }
@@ -86,55 +89,23 @@ public class HaproxyResources {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll() {
-        return haproxyRepository.getHaproxyProperties()
-                .map(all -> ok(all).build())
-                .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy").build());
+        return ok(repository.getHaproxyProperties()).build();
     }
 
     @GET
     @Path("/ids")
     @Produces(MediaType.APPLICATION_JSON)
     public Set<String> getHaproxyIds() {
-        return haproxyRepository.getHaproxyIds().orElseGet(() -> new HashSet<>());
-    }
-
-    @GET
-    @Path("/template")
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response getHaproxyTemplate(@QueryParam("uri") String uri) {
-        if (uri == null || uri.equals("")) {
-            throw new BadRequestException("You must provide 'uri' query param");
-        }
-        return templateLocator.readTemplate(uri)
-                .map(template -> ok(template).build())
-                .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("Could not find any template at " + uri).build());
-    }
-
-    @GET
-    @Path("/template/frontbackends")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Set<String>> getFrontAndBackends(@QueryParam("uri") String uri) {
-        if (uri == null || uri.equals("")) {
-            throw new BadRequestException("You must provide 'uri' query param");
-        }
-        return templateLocator.readTemplate(uri)
-                .map(templateGenerator::generateFrontAndBackends)
-                .orElseGet(() -> {
-                    HashMap<String, Set<String>> result = new HashMap<>();
-                    result.put("frontends", new HashSet<>());
-                    result.put("backends", new HashSet<>());
-                    return result;
-                });
+        return repository.getHaproxyIds();
     }
 
     @POST
     @Path("/template/valorise")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String getHaproxyConfiguration(@Valid EntryPointWithPortsMappingJson configuration) {
+    public String getHaproxyConfiguration(@NotNull @Valid EntryPointWithPortsMappingJson configuration) {
         try {
-            String uri = configuration.getContext().get(UriTemplateLocator.URI_FIELD);
-            String template = templateLocator.readTemplate(uri).orElseThrow(() -> new NotFoundException("Could not find any template at " + uri));
+            String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new NotFoundException("Could not find any template for entrypoint " + configuration));
             return templateGenerator.generate(template, configuration, configuration.generatePortMapping());
         } catch (IncompleteConfigurationException e) {
             throw new BadRequestException(e.getMessage());
@@ -145,13 +116,13 @@ public class HaproxyResources {
     @Path("/versions")
     @Produces(MediaType.APPLICATION_JSON)
     public Set<String> getHaproxyVersions(){
-        return haproxyRepository.getHaproxyVersions();
+        return repository.getHaproxyVersions();
     }
 
     @PUT
     @Path("/versions/{haproxyVersion}")
     public void addHaproxyVersion(@PathParam("haproxyVersion") String haproxyVersion){
-        haproxyRepository.addVersion(haproxyVersion);
+        repository.addVersion(haproxyVersion);
     }
 
 }

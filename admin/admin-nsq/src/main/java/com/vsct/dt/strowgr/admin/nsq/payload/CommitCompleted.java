@@ -23,9 +23,9 @@ import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
 public class CommitCompleted {
 
-    private Header header;
+    private final Header header;
 
-    @JsonCreator(mode= JsonCreator.Mode.PROPERTIES)
+    @JsonCreator
     public CommitCompleted(@JsonProperty("header") Header header) {
         this.header = header;
     }

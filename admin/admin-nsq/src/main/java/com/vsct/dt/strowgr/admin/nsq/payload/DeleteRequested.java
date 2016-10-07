@@ -19,21 +19,20 @@ package com.vsct.dt.strowgr.admin.nsq.payload;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
 public class DeleteRequested {
 
-    @JsonProperty("header")
-    private Header header;
+    private final Header header;
 
     @JsonCreator
-    public DeleteRequested(String correlationId, String application, String platform,String source) {
-        header = new Header(correlationId, application, platform);
-        header.setSource(source);
+    public DeleteRequested(@JsonProperty("header") Header header) {
+        this.header = header;
     }
 
-    @JsonCreator
-    public DeleteRequested() {
+    public DeleteRequested(String correlationId, String application, String platform) {
+        this(new Header(correlationId, application, platform));
     }
 
     public Header getHeader() {

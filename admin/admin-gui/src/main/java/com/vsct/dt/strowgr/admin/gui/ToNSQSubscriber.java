@@ -47,13 +47,13 @@ class ToNSQSubscriber {
 
     @Subscribe
     public void handle(CommitRequestedEvent commitRequestedEvent) throws NSQException, TimeoutException, JsonProcessingException, UnsupportedEncodingException {
-        EntryPoint configuration = commitRequestedEvent.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + commitRequestedEvent));
+        EntryPoint configuration = commitRequestedEvent.getConfiguration();
         Map<String, String> context = configuration.getContext();
         String application = context.get("application");
         String platform = context.get("platform");
         /* TODO test application and platform nullity */
         LOGGER.debug("send to nsq a CommitRequested from CommitRequestedEvent {}", commitRequestedEvent);
-        this.nsqDispatcher.sendCommitRequested(commitRequestedEvent, configuration.getHaproxy(), application, platform);
+        this.nsqDispatcher.sendCommitRequested(commitRequestedEvent, configuration.getHaproxy(), application, platform, commitRequestedEvent.getBind());
     }
 
     @Subscribe

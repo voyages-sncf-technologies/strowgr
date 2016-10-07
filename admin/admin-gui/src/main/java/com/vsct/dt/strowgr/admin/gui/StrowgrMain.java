@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.Connection;
 import com.github.brainlag.nsq.NSQConfig;
 import com.github.brainlag.nsq.NSQProducer;
 import com.github.brainlag.nsq.lookup.NSQLookup;
@@ -42,6 +43,7 @@ import com.vsct.dt.strowgr.admin.gui.observable.ManagedHaproxy;
 import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
 import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
+import com.vsct.dt.strowgr.admin.gui.resource.api.UriTemplateResources;
 import com.vsct.dt.strowgr.admin.gui.subscribers.EventBusSubscriber;
 import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
 import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
@@ -49,7 +51,7 @@ import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
-import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
+import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.Application;
@@ -59,6 +61,7 @@ import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.logging.log4j.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -213,6 +216,9 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         PortResources portResources = new PortResources(repository);
         environment.jersey().register(portResources);
+
+        UriTemplateResources uriTemplateResources = new UriTemplateResources(templateLocator, templateGenerator);
+        environment.jersey().register(uriTemplateResources);
 
         eventBus.register(restApiResource);
 

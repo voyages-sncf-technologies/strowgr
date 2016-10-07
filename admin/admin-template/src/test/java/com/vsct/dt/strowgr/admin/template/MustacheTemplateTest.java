@@ -20,6 +20,7 @@ package com.vsct.dt.strowgr.admin.template;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
+import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackendServer;
@@ -50,7 +51,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.standard.context.mustache").getFile());
@@ -89,7 +90,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", Sets.newHashSet(frontend1, frontend2), Sets.newHashSet(backend1, backend2), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend1, frontend2), Sets.newHashSet(backend1, backend2), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.iterate.servers.context.mustache").getFile());
@@ -130,7 +131,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.user.context.on.server.mustache").getFile());
@@ -169,7 +170,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", Sets.newHashSet(frontend1, frontend2), Sets.newHashSet(backend1, backend2), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend1, frontend2), Sets.newHashSet(backend1, backend2), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.iterate.servers.context.mustache").getFile());
@@ -193,7 +194,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.missing.property.1.context.mustache").getFile());
@@ -225,7 +226,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.missing.property.2.context.mustache").getFile());
@@ -256,7 +257,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.missing.property.3.context.mustache").getFile());
@@ -277,7 +278,7 @@ public class MustacheTemplateTest {
     }
 
     @Test
-    public void should_not_throw_exception_when_variable_is_missing_but_default_behavior_exists() throws IOException {
+    public void should_not_throw_exception_when_variable_is_missing_but_default_behavior_exists() throws IOException, IncompleteConfigurationException {
         EntryPointFrontend frontend = new EntryPointFrontend("OCEREC1WS", Maps.newHashMap());
 
         EntryPointBackendServer server = new EntryPointBackendServer("instance_name", "10.98.81.74", "9090", new HashMap<>(), new HashMap<>());
@@ -285,7 +286,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.missing.property.with.default.mustache").getFile());

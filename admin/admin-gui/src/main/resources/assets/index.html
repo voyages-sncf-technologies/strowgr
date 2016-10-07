@@ -78,6 +78,8 @@
 
 
 
+
+
     </style>
 
     <script type="text/javascript">
@@ -247,10 +249,41 @@
         }]);
 
         adminApp.factory('Haproxy', ['$http', 'Notification', function ($http, Notification) {
+
+            var haproxyBackendModelToFrontendModel = function(id, backendModel){
+                var hap = {
+                    'id': id,
+                    'name': backendModel.name,
+                    'platform': backendModel.platform,
+                    'autoreload': backendModel.autoreload,
+                    'bindings': {}
+                };
+                //bindings are not stored as map but as a bunch of keys starting with 'binding/'
+                for(var prop in backendModel){
+                    if (backendModel.hasOwnProperty(prop) && prop.startsWith('binding/')) {
+                        var id = prop.replace('binding/', '');
+                        hap['bindings'][id] =  backendModel[prop];
+                    }
+                }
+                return hap;
+            };
+
             return {
                 all: function(){
                     return $http.get('/api/haproxy/').then(function(response) {
-                        return response.data;
+                        return response.data.map(function(backendModelWithId){
+                            return haproxyBackendModelToFrontendModel(backendModelWithId.id, backendModelWithId);
+                        });
+                    }, function(error) {
+                        if(error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                get: function(id){
+                    return $http.get('/api/haproxy/' + id).then(function(response) {
+                        return haproxyBackendModelToFrontendModel(id, response.data);
                     }, function(error) {
                         if(error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
@@ -279,8 +312,8 @@
                         throw error;
                     });
                 },
-                getVIP: function (id) {
-                    return $http.get('/api/haproxy/' + id + '/vip/').then(function(response) {
+                getBinding: function (hapid, bindingId) {
+                    return $http.get('/api/haproxy/' + hapid + '/binding/' + bindingId).then(function(response) {
                         return response.data;
                     }, function(error) {
                         if(error.status >= 500) {
@@ -307,7 +340,7 @@
                 getTemplate: function (uri) {
                     return $http({
                         method: 'GET',
-                        url: '/api/haproxy/template?uri=' + escape(uri),
+                        url: '/api/templates?uri=' + escape(uri),
                         responseType: 'text'
                     }).then(function(response) {
                         return response.data;
@@ -321,7 +354,7 @@
                 getFrontBackends: function (uri) {
                     return $http({
                         method: 'GET',
-                        url: '/api/haproxy/template/frontbackends?uri=' + escape(uri),
+                        url: '/api/templates/frontbackends?uri=' + escape(uri),
                         responseType: 'text'
                     }).then(function(response) {
                         return response.data;
@@ -478,6 +511,7 @@
             /* Init conf object, avoid undefined inner objects and show expected fields */
             $scope.conf = {
                 haproxy: "",
+                bindingId: 0,
                 hapUser: "hapadm",
                 context: {
                     templateUri: ""
@@ -602,6 +636,9 @@
 
             /* Checks the entrypoint configuration first and then creates the entrypoint */
             $scope.createEntrypoint = function () {
+                //md-option seems to convert integer to strings, which causes problem, so we use parseInt
+                $scope.conf.bindingId = parseInt($scope.conf.bindingId);
+
                 /* Construction of gitlab url */
                 $scope.conf.context.templateUri = "http://" + $scope.templateType.conf.host +
                                 "/" + $scope.templateType.conf.group +
@@ -639,12 +676,18 @@
             /* Init conf object, avoid undefined inner objects and show expected fields */
             $scope.haproxy = {
                 name: "",
-                vip: "",
+                bindings: {
+                    0: ''
+                },
                 platform: "",
                 autoreload: true
             };
 
             $scope.haproxyId= "";
+
+            $scope.addBinding = function() {
+                $scope.haproxy.bindings[Object.keys($scope.haproxy.bindings).length] = "";
+            };
 
             $scope.createHaproxy = function () {
                 console.log("create haproxy "+$scope.haproxyId+": "+ JSON.stringify($scope.haproxy));
@@ -665,7 +708,11 @@
                     for(var currentHaproxy=0; currentHaproxy < $scope.availableHaproxies.length; currentHaproxy++) {
                         if($scope.availableHaproxies[currentHaproxy]["id"] == $scope.haproxyId) {
                             $scope.haproxy.name = $scope.availableHaproxies[currentHaproxy]["name"];
-                            $scope.haproxy.vip = $scope.availableHaproxies[currentHaproxy]["vip"];
+                            $scope.haproxy.bindings = $scope.availableHaproxies[currentHaproxy]["bindings"];
+                            //This line helps migration of existing haproxy conf without bindings by creating a default one if empty
+                            if(Object.keys($scope.haproxy.bindings).length == 0){
+                                $scope.haproxy.bindings = { 0: '' };
+                            }
                             $scope.haproxy.platform = $scope.availableHaproxies[currentHaproxy]["platform"];
                             $scope.haproxy.autoreload = ("true" == $scope.availableHaproxies[currentHaproxy]["autoreload"]);
                             console.log("load haproxy "+JSON.stringify($scope.availableHaproxies[currentHaproxy]));
@@ -688,6 +735,15 @@
                     scope.forbiddenFrontendKeys = ['id', 'port'];
                     scope.forbiddenBackendKeys = ['id'];
                     scope.forbiddenServerKeys = ['id', 'hostname', 'ip', 'port'];
+
+                    //Load haproxy properties when conf is reloaded
+                    scope.$watch('conf', function(newValue, oldValue) {
+                        if(newValue != undefined){
+                            Haproxy.get(scope.conf.haproxy).then(function(data){
+                                scope.currentHaproxy = data;
+                            });
+                        }
+                    }, false);
 
                     scope.addFrontend = function () {
                         scope.conf.frontends.push({
@@ -795,6 +851,8 @@
 
                         var updateModel = {
                             hapUser: scope.conf.hapUser,
+                            //md-option seems to convert integer to strings, which causes problem, so we use parseInt
+                            bindingId: parseInt(scope.conf.bindingId),
                             context: scope.conf.context,
                             frontends: frontends,
                             backends: backends
@@ -837,14 +895,14 @@
                     link: function (scope, element, attrs) {
                         scope.$watch('conf', function (newConf, oldConf) {
                             if (newConf != undefined) {
-                                Haproxy.getVIP(newConf.haproxy).then(function (uri) {
-                                    scope.haproxyUri = uri;
+                                Haproxy.getBinding(newConf.haproxy, newConf.bindingId).then(function (bind) {
+                                    scope.haproxyBind = bind;
                                 });
                             }
                         });
 
                         scope.openStatsPage = function(frontend){
-                            $window.open("http://"+scope.haproxyUri+":"+frontend.port+"/stats");
+                            $window.open("http://"+scope.haproxyBind+":"+frontend.port+"/stats");
                         };
                     }
                 }
@@ -1057,6 +1115,8 @@
                     }
                 }
             }]);
+
+
 
 
     </script>

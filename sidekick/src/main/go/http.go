@@ -21,6 +21,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"net"
 	"net/http"
+	"strconv"
 )
 
 type RestApi struct {
@@ -37,9 +38,18 @@ func NewRestApi(properties *Config) *RestApi {
 
 func (api *RestApi) Start() error {
 	sm := http.NewServeMux()
-	sm.HandleFunc("/uuid", func(writer http.ResponseWriter, request *http.Request) {
-		log.Debug("GET /uuid")
-		fmt.Fprintf(writer, "%s\n", api.properties.IpAddr)
+	sm.HandleFunc("/id", func(writer http.ResponseWriter, request *http.Request) {
+		log.Debug("GET /id")
+		fmt.Fprintf(writer, "%s", api.properties.Id)
+	})
+	sm.HandleFunc("/ismaster", func(writer http.ResponseWriter, request *http.Request) {
+		log.Debug("GET /id")
+		isMaster, err := api.properties.IsMaster(request.URL.Query().Get("vip"))
+		if err == nil {
+			fmt.Fprintf(writer, "%s", strconv.FormatBool(isMaster))
+		} else {
+			fmt.Fprint(writer, "can't know if there is master")
+		}
 	})
 
 	listener, err := net.Listen("tcp4", fmt.Sprintf(":%d", api.properties.Port))

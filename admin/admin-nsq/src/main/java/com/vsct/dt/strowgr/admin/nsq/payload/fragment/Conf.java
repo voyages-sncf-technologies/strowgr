@@ -30,28 +30,28 @@ public class Conf {
     /**
      * Haproxy configuration file resolved from template and based64 encoded.
      */
-    @JsonProperty("haproxy")
-    private String haproxy;
+    private final String haproxy;
 
     /**
      * Syslog configuration file resolved from template and based64 encoded.
      */
-    @JsonProperty("syslog")
-    private String syslog;
+    private final String syslog;
+
+    /**
+     * On what does this entrypoint binds to
+     */
+    private final String bind;
 
     /**
      * Haproxy version.
      */
-    @JsonProperty("haproxyVersion")
-    private String haproxyVersion;
+    private final String haproxyVersion;
 
     @JsonCreator
-    public Conf() {
-    }
-
-    public Conf(String haproxy, String syslog, String haproxyVersion) {
+    public Conf(@JsonProperty("haproxy") String haproxy, @JsonProperty("syslog") String syslog, @JsonProperty("haproxyVersion") String haproxyVersion, @JsonProperty("bind") String bind) {
         this.haproxy = checkNotNull(haproxy);
         this.syslog = checkNotNull(syslog);
+        this.bind = checkNotNull(bind);
         this.haproxyVersion = checkNotNull(haproxyVersion);
     }
 
@@ -59,7 +59,15 @@ public class Conf {
         return haproxy;
     }
 
-    public void setHaproxy(String haproxy) {
-        this.haproxy = haproxy;
+    public String getSyslog() {
+        return syslog;
+    }
+
+    public String getBind() {
+        return bind;
+    }
+
+    public String getHaproxyVersion() {
+        return haproxyVersion;
     }
 }

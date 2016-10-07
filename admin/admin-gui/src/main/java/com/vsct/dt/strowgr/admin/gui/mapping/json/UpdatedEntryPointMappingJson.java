@@ -33,11 +33,11 @@ import static java.util.function.Function.identity;
 public class UpdatedEntryPointMappingJson extends UpdatedEntryPoint {
 
     @JsonCreator
-    public UpdatedEntryPointMappingJson(@JsonProperty("hapUser") String hapUser, @JsonProperty("hapVersion") String hapVersion,
+    public UpdatedEntryPointMappingJson(@JsonProperty("hapUser") String hapUser, @JsonProperty("hapVersion") String hapVersion, @JsonProperty("bindingId") int bindingId,
                                         @JsonProperty("context") Map<String, String> context,
                                         @JsonProperty("frontends") Set<UpdatedEntryPointFrontendMappingJson> frontends,
                                         @JsonProperty("backends") Set<UpdatedEntryPointBackendMappingJson> backends) {
-        super(hapUser, context,
+        super(bindingId, hapUser, context,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
                 backends.stream().map(identity()).collect(Collectors.toSet()), hapVersion);
     }

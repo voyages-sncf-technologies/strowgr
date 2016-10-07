@@ -19,6 +19,7 @@ package com.vsct.dt.strowgr.admin.core;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.configuration.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
@@ -39,16 +40,17 @@ public class EntryPointEventHandlerTest {
 
     EntryPointStateManager stateManager;
     EntryPointEventHandler handler;
-    TemplateLocator templateLocator;
-    PortRepository portRepository;
-    HaproxyRepository haproxyRepository;
-    EventBus outputBus;
+    TemplateLocator        templateLocator;
+    PortRepository         portRepository;
+    HaproxyRepository      haproxyRepository;
+    TemplateGenerator templateGenerator;
+    EventBus               outputBus;
 
     @Before
     public void setUp() {
         stateManager = mock(EntryPointStateManager.class);
         templateLocator = mock(TemplateLocator.class);
-        TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
+        templateGenerator = mock(TemplateGenerator.class);
         portRepository = mock(PortRepository.class);
         haproxyRepository = mock(HaproxyRepository.class);
         outputBus = mock(EventBus.class);
@@ -60,7 +62,7 @@ public class EntryPointEventHandlerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint config = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
@@ -73,7 +75,7 @@ public class EntryPointEventHandlerTest {
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.prepare(key, config)).thenReturn(Optional.of(config));
-        when(haproxyRepository.getHaproxyProperty("haproxy","platform")).thenReturn(Optional.of("test"));
+        when(haproxyRepository.getHaproxyProperty("haproxy", "platform")).thenReturn(Optional.of("test"));
 
         handler.handle(event);
 
@@ -85,7 +87,7 @@ public class EntryPointEventHandlerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint config = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
@@ -94,7 +96,7 @@ public class EntryPointEventHandlerTest {
                 .build();
 
         EntryPoint current = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
@@ -106,7 +108,7 @@ public class EntryPointEventHandlerTest {
 
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(current));
-        when(haproxyRepository.getHaproxyProperty("haproxy","platform")).thenReturn(Optional.of("test"));
+        when(haproxyRepository.getHaproxyProperty("haproxy", "platform")).thenReturn(Optional.of("test"));
 
         handler.handle(event);
 
@@ -118,7 +120,7 @@ public class EntryPointEventHandlerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint config = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
@@ -127,7 +129,7 @@ public class EntryPointEventHandlerTest {
                 .build();
 
         EntryPoint committing = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.of())
@@ -139,7 +141,7 @@ public class EntryPointEventHandlerTest {
 
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(committing));
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
-        when(haproxyRepository.getHaproxyProperty("haproxy","platform")).thenReturn(Optional.of("test"));
+        when(haproxyRepository.getHaproxyProperty("haproxy", "platform")).thenReturn(Optional.of("test"));
 
         handler.handle(event);
 
@@ -149,7 +151,7 @@ public class EntryPointEventHandlerTest {
     @Test
     public void update_entry_point_should_do_nothing_if_there_is_no_configuration_at_all() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("key");
-        UpdateEntryPointEvent event = new UpdateEntryPointEvent("correlation_id", key, new UpdatedEntryPoint("user", new HashMap<>(), new HashSet<>(), new HashSet<>(), "hapversion"));
+        UpdateEntryPointEvent event = new UpdateEntryPointEvent("correlation_id", key, new UpdatedEntryPoint(0, "user", new HashMap<>(), new HashSet<>(), new HashSet<>(), "hapVersion"));
 
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
@@ -215,7 +217,7 @@ public class EntryPointEventHandlerTest {
         newBackends.add(nb1);
         newBackends.add(new EntryPointBackend("b6", new HashSet<>(), new HashMap<>()));
 
-        return new EntryPoint("haproxy", "new_user", "hapversion", newFrontends, newBackends, newGlobalContext);
+        return new EntryPoint("haproxy", "new_user", "hapVersion", 1, newFrontends, newBackends, newGlobalContext);
     }
 
     private UpdateEntryPointEvent getUpdateTestEvent(EntryPointKey key) {
@@ -245,7 +247,7 @@ public class EntryPointEventHandlerTest {
         UpdatedEntryPointBackend ub1 = new UpdatedEntryPointBackend("b1", newHashSet(us1, us2, us6), b1Context);
         UpdatedEntryPointBackend ub6 = new UpdatedEntryPointBackend("b6", newHashSet(us1, us2), new HashMap<>());
 
-        UpdatedEntryPoint uep = new UpdatedEntryPoint("new_user", globalContext, newHashSet(uf2, uf3), newHashSet(ub1, ub6), "hapversion");
+        UpdatedEntryPoint uep = new UpdatedEntryPoint(1, "new_user", globalContext, newHashSet(uf2, uf3), newHashSet(ub1, ub6), "hapVersion");
 
         return new UpdateEntryPointEvent("correlation_id", key, uep);
     }
@@ -296,7 +298,7 @@ public class EntryPointEventHandlerTest {
         backends.add(new EntryPointBackend("b5", new HashSet<>(), new HashMap<>()));
 
         /* Put everything in a configuration */
-        return new EntryPoint("haproxy", "user", "hapversion", frontends, backends, existingGlobalContext);
+        return new EntryPoint("haproxy", "user", "hapversion", 0, frontends, backends, existingGlobalContext);
     }
 
     @Test
@@ -346,13 +348,13 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_current_applies_with_right_key() {
+    public void try_commit_current_applies_with_right_key() throws IncompleteConfigurationException {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 1)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -363,6 +365,9 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
+        when(templateGenerator.generate(eq("some template"), eq(entryPoint), any())).thenReturn("some template");
+        when(templateGenerator.generateSyslogFragment(eq(entryPoint), any())).thenReturn("some syslog conf");
+        when(haproxyRepository.getHaproxyProperty("haproxy", "binding/1")).thenReturn(Optional.of("127.0.0.1"));
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(true);
         when(stateManager.isAutoreloaded(key)).thenReturn(true);
 
@@ -371,17 +376,19 @@ public class EntryPointEventHandlerTest {
 
         // Check
         verify(stateManager).tryCommitCurrent(correlationId, key);
-        verify(outputBus).post(any(CommitRequestedEvent.class));
+
+        CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(correlationId, new EntryPointKeyDefaultImpl("some_key"), entryPoint, "some template", "some syslog conf", "127.0.0.1");
+        verify(outputBus).post(commitRequestedEvent);
     }
 
     @Test
-    public void try_commit_current_with_no_autoreload_haproxy() {
+    public void try_commit_current_with_no_autoreload_haproxy() throws IncompleteConfigurationException {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 1)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -392,6 +399,9 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
+        when(templateGenerator.generate(eq("some template"), eq(entryPoint), any())).thenReturn("some template");
+        when(templateGenerator.generateSyslogFragment(eq(entryPoint), any())).thenReturn("some syslog conf");
+        when(haproxyRepository.getHaproxyProperty("haproxy", "binding/1")).thenReturn(Optional.of("127.0.0.1"));
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(false);
 
 
@@ -405,13 +415,13 @@ public class EntryPointEventHandlerTest {
     }
 
     @Test
-    public void try_commit_pending_applies_with_right_key() {
+    public void try_commit_pending_applies_with_right_key() throws IncompleteConfigurationException {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 1)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -421,6 +431,9 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
+        when(templateGenerator.generate(eq("some template"), eq(entryPoint), any())).thenReturn("some template");
+        when(templateGenerator.generateSyslogFragment(eq(entryPoint), any())).thenReturn("some syslog conf");
+        when(haproxyRepository.getHaproxyProperty("haproxy", "binding/1")).thenReturn(Optional.of("127.0.0.1"));
         when(stateManager.isAutoreloaded(key)).thenReturn(true);
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(true);
 
@@ -429,17 +442,18 @@ public class EntryPointEventHandlerTest {
 
         // Check
         verify(stateManager).tryCommitPending(correlationId, key);
-        verify(outputBus).post(any(CommitRequestedEvent.class));
+        CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(correlationId, new EntryPointKeyDefaultImpl("some_key"), entryPoint, "some template", "some syslog conf", "127.0.0.1");
+        verify(outputBus).post(commitRequestedEvent);
     }
 
     @Test
-    public void try_commit_pending_with_no_autoreload_haproxy() {
+    public void try_commit_pending_with_no_autoreload_haproxy() throws IncompleteConfigurationException {
         // Given
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(correlationId, key);
         EntryPoint entryPoint = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 1)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -449,6 +463,9 @@ public class EntryPointEventHandlerTest {
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
+        when(templateGenerator.generate(eq("some template"), eq(entryPoint), any())).thenReturn("some template");
+        when(templateGenerator.generateSyslogFragment(eq(entryPoint), any())).thenReturn("some syslog conf");
+        when(haproxyRepository.getHaproxyProperty("haproxy", "binding/1")).thenReturn(Optional.of("127.0.0.1"));
         when(haproxyRepository.isAutoreload("haproxy")).thenReturn(false);
 
         // Test
@@ -457,7 +474,7 @@ public class EntryPointEventHandlerTest {
         // Check
         verify(stateManager).tryCommitPending(correlationId, key);
         verify(stateManager).cancelCommit(key);
-        verify(outputBus,never()).post(any(CommitRequestedEvent.class));
+        verify(outputBus, never()).post(any(CommitRequestedEvent.class));
     }
 
     @Test
@@ -553,7 +570,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackend backend = new EntryPointBackend("BACKEND");
 
         EntryPoint commmittingConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -562,7 +579,7 @@ public class EntryPointEventHandlerTest {
                 .build();
 
         EntryPoint pendingConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -571,7 +588,7 @@ public class EntryPointEventHandlerTest {
                 .build();
 
         EntryPoint currentConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -582,7 +599,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackendServer bs = new EntryPointBackendServer("ijklm", "10.98.71.1", "9090", new HashMap<>(), new HashMap<>());
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", newHashSet(bs), new HashMap<>());
         EntryPoint expectedConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -609,7 +626,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackend backend = new EntryPointBackend("BACKEND");
 
         EntryPoint commmittingConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -618,7 +635,7 @@ public class EntryPointEventHandlerTest {
                 .build();
 
         EntryPoint currentConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -629,7 +646,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackendServer bs = new EntryPointBackendServer("ijklm", "10.98.71.1", "9090", new HashMap<>(), new HashMap<>());
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", newHashSet(bs), new HashMap<>());
         EntryPoint expectedConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -656,7 +673,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackend backend = new EntryPointBackend("BACKEND");
 
         EntryPoint currentConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -667,7 +684,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackendServer bs = new EntryPointBackendServer("ijklm", "10.98.71.1", "9090", new HashMap<>(), new HashMap<>());
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", newHashSet(bs), new HashMap<>());
         EntryPoint expectedConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -693,7 +710,7 @@ public class EntryPointEventHandlerTest {
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "BACKEND", ImmutableSet.of(server));
 
         EntryPoint currentConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -704,7 +721,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackendServer bs = new EntryPointBackendServer("ijklm", "10.98.71.1", "9090", new HashMap<>(), new HashMap<>());
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", newHashSet(bs), new HashMap<>());
         EntryPoint expectedConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -735,7 +752,7 @@ public class EntryPointEventHandlerTest {
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "BACKEND", ImmutableSet.of(server));
 
         EntryPoint currentConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -746,7 +763,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackendServer bs = new EntryPointBackendServer("ijklm", "10.98.71.1", "9090", new HashMap<>(), new HashMap<>());
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", newHashSet(bs), backendContext);
         EntryPoint expectedConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -783,7 +800,7 @@ public class EntryPointEventHandlerTest {
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "BACKEND", ImmutableSet.of(newServer));
 
         EntryPoint currentConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -794,7 +811,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackendServer bs = new EntryPointBackendServer("ijklm", "10.98.71.2", "9092", newServerContext, new HashMap<>());
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", newHashSet(bs), new HashMap<>());
         EntryPoint expectedConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -833,7 +850,7 @@ public class EntryPointEventHandlerTest {
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "BACKEND", ImmutableSet.of(newServerInEvent));
 
         EntryPoint currentConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -844,7 +861,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackendServer expectedServer = new EntryPointBackendServer("ijklm", "10.98.71.2", "9092", newServerContext, oldUserContext);
         EntryPointBackend expectedBackend = new EntryPointBackend("BACKEND", newHashSet(expectedServer), new HashMap<>());
         EntryPoint expectedConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -880,7 +897,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackend backend = new EntryPointBackend("BACKEND", newHashSet(server), backendContext);
 
         EntryPoint currentConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())
@@ -896,7 +913,7 @@ public class EntryPointEventHandlerTest {
         EntryPointBackend expectedBackend2 = new EntryPointBackend("NEWBACKEND", newHashSet(expectedServer), new HashMap<>());
 
         EntryPoint expectedConfig = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
                 .withVersion("hapversion")
                 .definesFrontends(ImmutableSet.of())

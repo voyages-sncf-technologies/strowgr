@@ -34,14 +34,12 @@ import (
 )
 
 var (
-	ip = flag.String("ip", "4.3.2.1", "Node ip address")
-	configFile = flag.String("config", "sidekick.toml", "Configuration file")
+	configFile = flag.String("config", "sidekick.conf", "Configuration file")
 	version = flag.Bool("version", false, "Print current version")
 	verbose = flag.Bool("verbose", false, "Log in verbose mode")
 	fake = flag.String("fake", "", "Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.")
 	config = nsq.NewConfig()
 	properties       *sidekick.Config
-	daemon           *sidekick.Daemon
 	producer         *nsq.Producer
 	syslog           *sidekick.Syslog
 	reloadChan = make(chan sidekick.ReloadEvent)
@@ -82,12 +80,11 @@ func main() {
 	haFactory.Fake = *fake
 	haFactory.Properties = properties
 
-	daemon = sidekick.NewDaemon(properties)
 	syslog = sidekick.NewSyslog(properties)
 	syslog.Init()
 	log.WithFields(log.Fields{
-		"status": properties.Status,
-		"id":     properties.NodeId(),
+		"id":     properties.Id,
+		"clusterId":     properties.ClusterId,
 	}).Info("Starting sidekick")
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
@@ -116,7 +113,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), fmt.Sprintf("%s", properties.NodeId()), config)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), properties.Id, config)
 		if *verbose {
 			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
 		} else {
@@ -133,13 +130,12 @@ func main() {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), fmt.Sprintf("%s", properties.NodeId()), config)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.Id, config)
 		if *verbose {
 			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
 		} else {
 			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
 		}
-
 		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -151,7 +147,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s", properties.ClusterId), fmt.Sprintf("%s", properties.NodeId()), config)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s", properties.ClusterId), properties.Id, config)
 		if *verbose {
 			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
 		} else {
@@ -168,7 +164,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		wg.Add(1)
-		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), fmt.Sprintf("%s", properties.NodeId()), config)
+		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), properties.Id, config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if *verbose {
@@ -214,42 +210,29 @@ func main() {
 func createTopicsAndChannels() {
 	// Create required topics
 	topics := []string{"commit_slave_completed", "commit_completed", "commit_failed"}
-	channels := []string{"slave", "master"}
-	topicChan := make(chan string, len(topics))
 
-	// fill the channel
-	for i := range topics {
-		topicChan <- topics[i]
-	}
-
-	for len(topicChan) > 0 {
+	for _, topic := range topics {
 		// create the topic
-		topic := <-topicChan
 		log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Info("Creating topic")
 		url := fmt.Sprintf("%s/topic/create?topic=%s_%s", properties.ProducerRestAddr, topic, properties.ClusterId)
-		resp, err := http.PostForm(url, nil)
-		if err != nil || resp.StatusCode != 200 {
-			log.WithField("topic", topic).WithField("clusterid", properties.ClusterId).WithError(err).Error("topic can't be created")
-			// retry to create this topic
-			topicChan <- topic
-			continue
-		} else {
+		respTopic, err := http.PostForm(url, nil)
+		if err == nil && respTopic.StatusCode == 200 {
 			log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Debug("topic created")
+		} else {
+			log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).WithError(err).Panic("topic can't be created")
 		}
 
 		// create the channels of the topics
-		for _, channel := range channels {
-			log.WithField("channel", channel).Info("Creating channel")
-			url := fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s-%s", properties.ProducerRestAddr, topic, properties.ClusterId, properties.ClusterId, channel)
-			resp, err := http.PostForm(url, nil)
-			if err != nil || resp.StatusCode != 200 {
-				// retry all for this topic if channel creation failed
-				topicChan <- topic
-				continue
-			}
+		log.WithField("channel", properties.Id).Info("Creating channel")
+		url = fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s", properties.ProducerRestAddr, topic, properties.ClusterId, properties.Id)
+		respChannel, err := http.PostForm(url, nil)
+		if err == nil && respChannel.StatusCode == 200 {
+			log.WithField("channel", properties.Id).WithField("topic", topic).Info("channel created")
+		} else {
+			// retry all for this topic if channel creation failed
+			log.WithField("topic", topic).WithField("channel", properties.Id).WithField("clusterId", properties.ClusterId).WithError(err).Panic("channel can't be created")
 		}
 
-		log.WithField("topic", topic).Info("Topic created")
 	}
 }
 
@@ -260,63 +243,47 @@ func loadProperties() {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-	properties.IpAddr = *ip
 	len := len(properties.HapHome)
 	if properties.HapHome[len - 1] == '/' {
 		properties.HapHome = properties.HapHome[:len - 1]
 	}
 }
 
-func filteredHandler(event string, message *nsq.Message, target string, f sidekick.HandlerFunc) error {
+func filteredHandler(event string, message *nsq.Message, f sidekick.HandlerFunc) error {
 	defer message.Finish()
-	var match bool
-	if target == "any" {
-		match = true
-	} else {
-		var err error
-		match, err = daemon.Is(target)
-		if err != nil {
-			return err
-		}
+
+	log.WithField("event", event).WithField("raw", string(message.Body)).Debug("Handle event")
+	data, err := bodyToData(message.Body)
+	if err != nil {
+		log.WithError(err).Error("Unable to read data")
+		return err
 	}
 
-	if match {
-		log.WithField("event", event).WithField("raw", string(message.Body)).Debug("Handle event")
-		data, err := bodyToData(message.Body)
-		if err != nil {
-			log.WithError(err).Error("Unable to read data")
-			return err
-		}
-
-		switch event {
-		case "delete_requested":
-			deleteChan <- sidekick.ReloadEvent{F: f, Message: data}
-		case "commit_requested":
-			reloadChan <- sidekick.ReloadEvent{F: f, Message: data}
-		case "commit_slave_completed":
-			reloadChan <- sidekick.ReloadEvent{F: f, Message: data}
-		case "commit_completed":
-			f(data)
-		}
-
-	} else {
-		log.WithField("event", event).Debug("Ignore event")
+	switch event {
+	case "delete_requested":
+		deleteChan <- sidekick.ReloadEvent{F: f, Message: data}
+	case "commit_requested":
+		reloadChan <- sidekick.ReloadEvent{F: f, Message: data}
+	case "commit_slave_completed":
+		reloadChan <- sidekick.ReloadEvent{F: f, Message: data}
+	case "commit_completed":
+		f(data)
 	}
 
 	return nil
 }
 
 func onCommitRequested(message *nsq.Message) error {
-	return filteredHandler("commit_requested", message, "slave", reloadSlave)
+	return filteredHandler("commit_requested", message, reloadSlave)
 }
 func onCommitSlaveRequested(message *nsq.Message) error {
-	return filteredHandler("commit_slave_completed", message, "master", reloadMaster)
+	return filteredHandler("commit_slave_completed", message, reloadMaster)
 }
 func onCommitCompleted(message *nsq.Message) error {
-	return filteredHandler("commit_completed", message, "slave", logAndForget)
+	return filteredHandler("commit_completed", message, logAndForget)
 }
 func onDeleteRequested(message *nsq.Message) error {
-	return filteredHandler("delete_requested", message, "any", deleteHaproxy)
+	return filteredHandler("delete_requested", message, deleteHaproxy)
 }
 
 // logAndForget is a generic function to just log event
@@ -326,16 +293,32 @@ func logAndForget(data *sidekick.EventMessageWithConf) error {
 }
 
 func reloadSlave(data *sidekick.EventMessageWithConf) error {
-	return reloadHaProxy(data, false)
+	isMaster, err := properties.IsMaster(data.Conf.Bind)
+	if err != nil {
+		log.WithField("bind", data.Conf.Bind).WithError(err).Info("can't find if binding to vip")
+	}
+	if isMaster {
+		return nil
+	} else {
+		return reloadHaProxy(data, false)
+	}
 }
 
 func reloadMaster(data *sidekick.EventMessageWithConf) error {
-	return reloadHaProxy(data, true)
+	isMaster, err := properties.IsMaster(data.Conf.Bind)
+	if err != nil {
+		log.WithField("bind", data.Conf.Bind).WithError(err).Info("can't find if binding to vip")
+	}
+	if isMaster {
+		return reloadHaProxy(data, true)
+	} else {
+		return nil
+	}
 }
 
 func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
 	context := data.Context()
-	hap := sidekick.NewHaproxy("", properties, context)
+	hap := sidekick.NewHaproxy(properties, context)
 	err := hap.Stop()
 	if err != nil {
 		return err
@@ -345,18 +328,10 @@ func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
 }
 
 // reload an haproxy with content of data in according to role (slave or master)
-func reloadHaProxy(data *sidekick.EventMessageWithConf, isMaster bool) error {
+func reloadHaProxy(data *sidekick.EventMessageWithConf, masterRole bool) error {
 	context := data.Context()
 	var hap sidekick.Loadbalancer
-	var source string
-	if (isMaster) {
-		hap = haFactory.CreateHaproxy("master", context)
-		source = "sidekick-" + properties.ClusterId + "-master"
-	} else {
-		hap = haFactory.CreateHaproxy("slave", context)
-		source = "sidekick-" + properties.ClusterId + "-slave"
-	}
-
+	hap = haFactory.CreateHaproxy(context)
 	status, err := hap.ApplyConfiguration(data)
 	if err == nil {
 		if status != sidekick.UNCHANGED {
@@ -368,14 +343,14 @@ func reloadHaProxy(data *sidekick.EventMessageWithConf, isMaster bool) error {
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		if (isMaster || hap.Fake()) {
-			publishMessage("commit_completed_", data.Clone(source), context)
+		if (masterRole || hap.Fake()) {
+			publishMessage("commit_completed_", data.Clone(properties.Id), context)
 		} else {
-			publishMessage("commit_slave_completed_", data.CloneWithConf(source), context)
+			publishMessage("commit_slave_completed_", data.CloneWithConf(properties.Id), context)
 		}
 	} else {
 		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
-		publishMessage("commit_failed_", data.Clone(source), context)
+		publishMessage("commit_failed_", data.Clone(properties.Id), context)
 	}
 	return nil
 }

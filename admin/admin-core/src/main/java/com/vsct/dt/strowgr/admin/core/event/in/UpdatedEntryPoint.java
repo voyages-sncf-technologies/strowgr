@@ -29,13 +29,15 @@ public class UpdatedEntryPoint {
 
     private final String hapUser;
     private final String hapVersion;
+    private final int bindingId;
 
     private final HashMap<String, String> context;
 
     private final HashMap<String, UpdatedEntryPointFrontend> frontends;
     private final HashMap<String, UpdatedEntryPointBackend> backends;
 
-    public UpdatedEntryPoint(String hapUser, Map<String, String> context, Set<UpdatedEntryPointFrontend> frontends, Set<UpdatedEntryPointBackend> backends, String hapVersion) {
+    public UpdatedEntryPoint(int bindingId, String hapUser, Map<String, String> context, Set<UpdatedEntryPointFrontend> frontends, Set<UpdatedEntryPointBackend> backends, String hapVersion) {
+        this.bindingId = bindingId;
         this.hapUser = checkStringNotEmpty(hapUser, "hapUser must be provided");
         this.context = new HashMap<>(checkNotNull(context));
         this.hapVersion = hapVersion;
@@ -69,5 +71,9 @@ public class UpdatedEntryPoint {
 
     public Set<UpdatedEntryPointBackend> getBackends() {
         return new HashSet<>(backends.values());
+    }
+
+    public int getBindingId() {
+        return bindingId;
     }
 }

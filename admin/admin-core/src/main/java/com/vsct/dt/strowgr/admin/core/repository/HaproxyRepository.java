@@ -25,17 +25,23 @@ import java.util.Set;
 public interface HaproxyRepository {
 
     /**
-     * Get vip for a given haproxy id.
-     * @param id of the haproxy
-     * @return return Optional String of the vip, {@code Optional#empty} if haproxy can't be found.
-     */
-    Optional<String> getHaproxyVip(String id);
-
-    /**
      * Get all haproxy properties for each haproxy
      * @return Map with haproxy properties by haproxy id
      */
-    Optional<List<Map<String, String>>> getHaproxyProperties();
+    List<Map<String, String>> getHaproxyProperties();
+
+    /**
+     * Get haproxy ids stored in repository.
+     * @return Set of haproxy ids
+     */
+    Set<String> getHaproxyIds();
+
+    /**
+     * Get haproxy properties (vip, name, etc...) for an given id.
+     * @param haproxyId id of the haproxy
+     * @return haproxy properties map
+     */
+    Optional<Map<String, String>> getHaproxyProperties(String haproxyId);
 
     /**
      * Check if this haproxy is on autoreload mode or not.
@@ -43,12 +49,6 @@ public interface HaproxyRepository {
      * @param haproxyId id of the haproxy
      */
     boolean isAutoreload(String haproxyId);
-
-    /**
-     * Get haproxy ids stored in repository.
-     * @return Set of haproxy ids
-     */
-    Optional<Set<String>> getHaproxyIds();
 
     /**
      * Set a property for haproxy. For instance a vip, a haproxyId etc...
@@ -66,13 +66,6 @@ public interface HaproxyRepository {
      * @param key of this haproxy property
      */
     Optional<String> getHaproxyProperty(String haproxyId, String key);
-
-    /**
-     * Get haproxy properties (vip, name, etc...) for an given id.
-     * @param haproxyId id of the haproxy
-     * @return haproxy properties map
-     */
-    Optional<Map<String, String>> getHaproxyProperties(String haproxyId);
 
     Set<String> getHaproxyVersions();
 
