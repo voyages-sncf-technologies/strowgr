@@ -14,28 +14,25 @@
  *  limitations under the License.
  *
  */
-package sidekick
 
-import ()
+package com.vsct.dt.strowgr.admin.gui.resource.api;
 
-type Daemon struct {
-	Properties *Config
-}
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-func (daemon *Daemon) IsMaster() (bool, error) {
-	return (daemon.Properties.Status == "master"), nil
-}
+/**
+ * All resources about admin of Strowgr.
+ */
+@Path("/admin")
+public class AdminResources {
 
-func (daemon *Daemon) IsSlave() (bool, error) {
-	return (daemon.Properties.Status == "slave"), nil
-}
-
-func (daemon *Daemon) Is(target string) (bool, error) {
-	return (daemon.Properties.Status == target), nil
-}
-
-func NewDaemon(properties *Config) *Daemon {
-	return &Daemon{
-		Properties: properties,
-	}
+    @GET
+    @Path("/version")
+    public String getVersion() throws IOException, URISyntaxException {
+        return new String(Files.readAllBytes(Paths.get(ClassLoader.getSystemResource("version").toURI())));
+    }
 }

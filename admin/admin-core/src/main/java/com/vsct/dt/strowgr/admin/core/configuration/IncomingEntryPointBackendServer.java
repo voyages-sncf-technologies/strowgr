@@ -38,7 +38,10 @@ public class IncomingEntryPointBackendServer {
         // TODO remove unnecessary hostname attribute
         this.hostname = this.id;
         this.port = checkStringNotEmpty(port, "Backend should have a port");
-        this.context = new HashMap<>(checkNotNull(context));
+        this.context = new HashMap<>();
+        if (context != null) {
+            this.context.putAll(context);
+        }
     }
 
     public String getHostname() {

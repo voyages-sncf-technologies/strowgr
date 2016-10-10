@@ -48,16 +48,18 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint differentNewConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPoint committingConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser2")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -78,16 +80,18 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint sameNewConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPoint committingConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -108,16 +112,18 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint differentNewConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPoint currentConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser2")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -141,16 +147,18 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint sameNewConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPoint currentConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -174,8 +182,9 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint newConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -198,12 +207,14 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint pendingConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
+
 
         when(repositoryMock.getPendingConfiguration(key)).thenReturn(
                 Optional.of(pendingConfiguration)
@@ -213,7 +224,10 @@ public class EntryPointStateManagerTest {
         );
 
         String correlationId = CorrelationId.newCorrelationId();
+        when(repositoryMock.setCommittingConfiguration(correlationId, key, pendingConfiguration, 10)).thenReturn(true);
+
         entryPointStateManager.tryCommitPending(correlationId, key);
+
 
         verify(repositoryMock).setCommittingConfiguration(correlationId, key, pendingConfiguration, 10);
         verify(repositoryMock).removePendingConfiguration(key);
@@ -224,16 +238,18 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint pendingConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPoint existingCommittingConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -271,8 +287,9 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint currentConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -296,16 +313,18 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint currentConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
                 .build();
 
         EntryPoint existingCommittingConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())
@@ -354,8 +373,9 @@ public class EntryPointStateManagerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
 
         EntryPoint committingConfiguration = EntryPoint
-                .onHaproxy("haproxy")
+                .onHaproxy("haproxy", 0)
                 .withUser("hapuser")
+                .withVersion("hapVersion")
                 .definesFrontends(ImmutableSet.<EntryPointFrontend>of())
                 .definesBackends(ImmutableSet.<EntryPointBackend>of())
                 .withGlobalContext(ImmutableMap.<String, String>of())

@@ -47,7 +47,7 @@ public class ManagedHaproxyTest {
         HashSet<String> managedHap = new HashSet<>();
         managedHap.add("hap1");
         managedHap.add("hap2");
-        when(repository.getHaproxyIds()).thenReturn(Optional.of(managedHap));
+        when(repository.getHaproxyIds()).thenReturn(managedHap);
 
         TestScheduler scheduler = new TestScheduler();
         ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, 1, scheduler);
@@ -82,7 +82,7 @@ public class ManagedHaproxyTest {
         managedHap.add("hap2");
         managedHap.add("hap3");
         managedHap.add("hap4");
-        when(repository.getHaproxyIds()).thenReturn(Optional.of(managedHap));
+        when(repository.getHaproxyIds()).thenReturn(managedHap);
 
         TestScheduler scheduler = new TestScheduler();
         ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, 1, scheduler);

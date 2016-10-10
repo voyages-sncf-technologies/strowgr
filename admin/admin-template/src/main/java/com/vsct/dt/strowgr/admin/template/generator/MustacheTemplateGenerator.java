@@ -24,7 +24,7 @@ import com.github.mustachejava.util.Wrapper;
 import com.google.common.base.Preconditions;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
-import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
+import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 import com.vsct.dt.strowgr.admin.template.template.DefaultTemplates;
 

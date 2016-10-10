@@ -39,9 +39,7 @@ import com.vsct.dt.strowgr.admin.gui.managed.CommitSchedulerManaged;
 import com.vsct.dt.strowgr.admin.gui.managed.NSQProducerManaged;
 import com.vsct.dt.strowgr.admin.gui.observable.IncomingEvents;
 import com.vsct.dt.strowgr.admin.gui.observable.ManagedHaproxy;
-import com.vsct.dt.strowgr.admin.gui.resource.api.EntrypointResources;
-import com.vsct.dt.strowgr.admin.gui.resource.api.HaproxyResources;
-import com.vsct.dt.strowgr.admin.gui.resource.api.PortResources;
+import com.vsct.dt.strowgr.admin.gui.resource.api.*;
 import com.vsct.dt.strowgr.admin.gui.subscribers.EventBusSubscriber;
 import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
 import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
@@ -49,7 +47,7 @@ import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
-import com.vsct.dt.strowgr.admin.template.IncompleteConfigurationException;
+import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.Application;
@@ -177,6 +175,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* NSQ Producers */
         NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();
+
         // manage NSQProducer lifecycle by Dropwizard
         environment.lifecycle().manage(new NSQProducerManaged(nsqProducer));
         // Pipeline from eventbus to NSQ producer
@@ -212,6 +211,12 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         PortResources portResources = new PortResources(repository);
         environment.jersey().register(portResources);
+
+        UriTemplateResources uriTemplateResources = new UriTemplateResources(templateLocator, templateGenerator);
+        environment.jersey().register(uriTemplateResources);
+
+        AdminResources adminResources = new AdminResources();
+        environment.jersey().register(adminResources);
 
         eventBus.register(restApiResource);
 

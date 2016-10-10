@@ -2,6 +2,8 @@ package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.brainlag.nsq.NSQProducer;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +86,8 @@ public class NSQProducerFactory {
     public NSQProducer build() {
         NSQProducer nsqProducer = new NSQProducer();
         nsqProducer.addAddress(getHost(), getTcpPort());
+
+        LogManager.getRootLogger().setLevel(Level.ERROR);
         LOGGER.info("read NSQ Producer configuration with host:{}, port: {}", getHost(), getTcpPort());
         return nsqProducer;
     }

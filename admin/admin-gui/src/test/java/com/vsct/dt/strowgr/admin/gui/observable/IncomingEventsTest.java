@@ -10,7 +10,6 @@ import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import rx.Subscriber;
 import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 

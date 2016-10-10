@@ -140,6 +140,17 @@ class ConsulReader {
         return result;
     }
 
+    Optional<Set<String>> parseAsSet(HttpEntity httpEntity) {
+        Optional<Set<String>> result = Optional.empty();
+        try {
+            result = Optional.of(mapper.readValue(httpEntity.getContent(), new TypeReference<Set<String>>() {
+            }));
+        } catch (IOException e) {
+            LOGGER.error("can't deserialize http entity with jackson: " + httpEntity, e);
+        }
+        return result;
+    }
+
     Optional<EntryPoint> parseEntryPointMappingJsonFromHttpEntity(HttpEntity httpEntity) {
         Optional<EntryPoint> result = Optional.empty();
         try {

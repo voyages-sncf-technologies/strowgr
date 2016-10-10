@@ -19,23 +19,23 @@ package com.vsct.dt.strowgr.admin.nsq.payload;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Sidekick;
 
 public class RegisterSidekick {
 
-    @JsonProperty("header")
-    private Header header;
-    @JsonProperty("sidekick")
-    private Sidekick sidekick;
+    private final Header header;
+    private final Sidekick sidekick;
 
     @JsonCreator
-    public RegisterSidekick() {
+    public RegisterSidekick(@JsonProperty("header") Header header, @JsonProperty("sidekick") Sidekick sidekick) {
+        this.header = header;
+        this.sidekick = sidekick;
     }
 
-    @JsonCreator
-    public RegisterSidekick(String correlationId, String application, String platform) {
-        header = new Header(correlationId, application, platform);
+    protected RegisterSidekick(String correlationId, String application, String platform, Sidekick sidekick) {
+        this(new Header(correlationId, application, platform), sidekick);
     }
 
     public Sidekick getSidekick() {
@@ -46,7 +46,4 @@ public class RegisterSidekick {
         return header;
     }
 
-    public void setSidekick(Sidekick sidekick) {
-        this.sidekick = sidekick;
-    }
 }

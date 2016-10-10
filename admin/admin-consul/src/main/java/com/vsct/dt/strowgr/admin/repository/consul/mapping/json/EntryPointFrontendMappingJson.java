@@ -36,4 +36,11 @@ public class EntryPointFrontendMappingJson extends EntryPointFrontend {
         super(id, context);
     }
 
+    public EntryPointFrontendMappingJson(EntryPointFrontend entryPointFrontend){
+        this(
+                entryPointFrontend.getId(),
+                entryPointFrontend.getContext()
+        );
+    }
+
 }

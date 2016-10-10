@@ -25,19 +25,12 @@ import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Server;
 
 public class RegisterServer {
 
-    @JsonProperty("header")
-    private Header header;
+    private final Header header;
+    private final Server server;
 
-    @JsonProperty("server")
-    Server server;
-
-    @JsonCreator(mode = Mode.PROPERTIES)
+    @JsonCreator
     public RegisterServer(@JsonProperty("header") Header header, @JsonProperty("server") Server server) {
         this.header = header;
-        this.server = server;
-    }
-
-    public void setServer(Server server) {
         this.server = server;
     }
 

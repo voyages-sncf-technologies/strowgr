@@ -40,4 +40,15 @@ public class EntryPointBackendServerMappingJson extends EntryPointBackendServer 
         super(id, ip, port, context, contextOverride);
     }
 
+    public EntryPointBackendServerMappingJson(EntryPointBackendServer entryPointBackendServer){
+        this(
+                entryPointBackendServer.getId(),
+                entryPointBackendServer.getHostname(),
+                entryPointBackendServer.getIp(),
+                entryPointBackendServer.getPort(),
+                entryPointBackendServer.getContext(),
+                entryPointBackendServer.getContextOverride()
+        );
+    }
+
 }

@@ -74,7 +74,7 @@ public class ManagedHaproxy {
 
         List<HaproxyAction> actions = new ArrayList<>();
 
-        Set<String> ids = repository.getHaproxyIds().orElseGet(HashSet::new);
+        Set<String> ids = repository.getHaproxyIds();
 
         //Find all removed haproxies
         Set<String> removedHaproxies = registered

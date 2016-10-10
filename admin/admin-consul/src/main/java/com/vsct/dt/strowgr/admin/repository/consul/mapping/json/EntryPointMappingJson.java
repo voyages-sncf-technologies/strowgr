@@ -18,6 +18,7 @@
 package com.vsct.dt.strowgr.admin.repository.consul.mapping.json;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 
@@ -29,7 +30,7 @@ import static java.util.function.Function.identity;
 
 /**
  * Json mapping of {@code EntryPoint}.
- *
+ * <p>
  * Created by william_montaz on 09/02/2016.
  */
 public class EntryPointMappingJson extends EntryPoint {
@@ -37,14 +38,32 @@ public class EntryPointMappingJson extends EntryPoint {
     @JsonCreator
     public EntryPointMappingJson(@JsonProperty("haproxy") String haproxy,
                                  @JsonProperty("hapUser") String hapUser,
+                                 @JsonProperty("hapVersion") String hapVersion,
+                                 @JsonProperty("bindingId") int bindingId,
                                  @JsonProperty("frontends") Set<EntryPointFrontendMappingJson> frontends,
                                  @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
                                  @JsonProperty("context") Map<String, String> context) {
-        super(haproxy,
+        super(
+                haproxy,
                 hapUser,
+                hapVersion,
+                bindingId,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
                 backends.stream().map(identity()).collect(Collectors.toSet()),
-                context);
+                context
+        );
+    }
+
+    public EntryPointMappingJson(EntryPoint entryPoint) {
+        this(
+                entryPoint.getHaproxy(),
+                entryPoint.getHapUser(),
+                entryPoint.getHapVersion(),
+                entryPoint.getBindingId(),
+                entryPoint.getFrontends().stream().map(EntryPointFrontendMappingJson::new).collect(Collectors.toSet()),
+                entryPoint.getBackends().stream().map(EntryPointBackendMappingJson::new).collect(Collectors.toSet()),
+                entryPoint.getContext()
+        );
     }
 
 }

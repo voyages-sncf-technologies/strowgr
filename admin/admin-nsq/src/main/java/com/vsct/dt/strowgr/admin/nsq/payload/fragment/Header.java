@@ -19,38 +19,37 @@ package com.vsct.dt.strowgr.admin.nsq.payload.fragment;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vsct.dt.strowgr.admin.nsq.NSQ;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Header {
-    @JsonProperty("correlationId")
-    private String correlationId;
-    @JsonProperty("application")
-    private String application;
-    @JsonProperty("platform")
-    private String platform;
-    @JsonProperty("timestamp")
-    private Long timestamp;
-    @JsonProperty("source")
-    private String source;
+
+    private final String correlationId;
+    private final String application;
+    private final String platform;
+    private final Long   timestamp;
+    private final String source;
 
     @JsonCreator
-    public Header() {
-    }
-
-    public Header(String correlationId, String application, String platform) {
+    public Header(@JsonProperty("correlationId") String correlationId,
+                  @JsonProperty("application") String application,
+                  @JsonProperty("platform") String platform,
+                  @JsonProperty("timestamp") Long timestamp,
+                  @JsonProperty("source") String source) {
         this.correlationId = checkNotNull(correlationId);
         this.application = checkNotNull(application);
         this.platform = checkNotNull(platform);
-        this.timestamp = System.currentTimeMillis();
+        this.timestamp = timestamp;
+        this.source = source;
+    }
+
+    public Header(String correlationId, String application, String platform){
+        this(correlationId, application, platform, System.currentTimeMillis(), NSQ.SOURCE_NAME);
     }
 
     public String getCorrelationId() {
         return correlationId;
-    }
-
-    public void setCorrelationId(String correlationId) {
-        this.correlationId = correlationId;
     }
 
     public String getApplication() {
@@ -65,11 +64,7 @@ public class Header {
         return timestamp;
     }
 
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
+    public String getSource() {
+        return source;
     }
 }

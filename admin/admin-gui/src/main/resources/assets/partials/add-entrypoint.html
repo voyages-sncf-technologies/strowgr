@@ -45,6 +45,23 @@
             </div>
         </md-input-container>
         <md-input-container flex="10">
+            <label>HAproxy version</label>
+            <md-select name="haproxyVersion" ng-model="conf.hapVersion" required>
+                <md-option ng-repeat="version in haproxyVersions" ng-selected="$first">{{version}}</md-option>
+            </md-select>
+        </md-input-container>
+        <md-input-container flex="10">
+            <label>Binding IP</label>
+            <md-select name="bindingId" ng-model="conf.bindingId" required>
+                <md-option ng-repeat="(id, value) in currentHaproxy.bindings" ng-value="id" ng-selected="$first">
+                    {{value}}
+                </md-option>
+            </md-select>
+            <div ng-messages="newEntrypointForm.bindingId.$error">
+                <div ng-message="required">Il faut indiquer l'IP sur laquelle écoute cette configuration</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
             <label>User haproxy (ex. hapwdia1)</label>
             <input name="hapUser" ng-model="conf.hapUser" required/>
 
@@ -68,33 +85,41 @@
                 <div ng-message="required">Il faut renseigner une plateforme</div>
             </div>
         </md-input-container>
-        <md-input-container flex="20">
+        <md-input-container flex="10">
+            <label>Type de template</label>
+            <md-select name="templateType" ng-model="templateType">
+                <md-option ng-repeat="templateType in templateTypes" ng-value="templateType" ng-selected="$first">
+                    {{templateType.name}}
+                </md-option>
+            </md-select>
+        </md-input-container>
+        <md-input-container flex="20" ng-if="templateType.id == 2">
             <label>Nom du template</label>
-            <input name="gitlabPath" ng-model="gitlabTemplate.filename" required/>
+            <input name="gitlabPath" ng-model="templateType.conf.filename" required/>
 
             <div ng-messages="newEntrypointForm.gitlabPath.$error">
-                <div ng-message="required">Il faut renseigner le nom du template (au sein du repository)</div>
+                <div ng-message="required">Il faut renseigner le nom du template (au sein du haproxyRepository)</div>
             </div>
         </md-input-container>
-        <md-input-container flex="10">
+        <md-input-container flex="10" ng-if="templateType.id == 2">
             <label>TAG</label>
-            <input name="gitlabTag" ng-model="gitlabTemplate.tag" required/>
+            <input name="gitlabTag" ng-model="templateType.conf.tag" required/>
 
             <div ng-messages="newEntrypointForm.gitlabTag.$error">
                 <div ng-message="required">Il faut renseigner un tag</div>
             </div>
         </md-input-container>
-        <md-input-container flex="15">
+        <md-input-container flex="15" ng-if="templateType.id == 2">
             <label>Host Gitlab</label>
-            <input name="gitlabHost" ng-model="gitlabTemplate.host" required/>
+            <input name="gitlabHost" ng-model="templateType.conf.host" required/>
 
             <div ng-messages="newEntrypointForm.gitlabHost.$error">
                 <div ng-message="required">Il faut renseigner un host gitlab</div>
             </div>
         </md-input-container>
         <md-button class="md-fab md-primary md-mini" ng-click="reloadFrontBackends()">
-             <md-icon class="material-icons" style="font-size: 22px">find_replace</md-icon>
-             <md-tooltip md-direction="bottom">Recharger les backends/frontends du template</md-tooltip>
+            <md-icon class="material-icons" style="font-size: 22px">find_replace</md-icon>
+            <md-tooltip md-direction="bottom">Recharger les backends/frontends du template</md-tooltip>
         </md-button>
     </div>
     <div layout="row" layout-align="start center">
