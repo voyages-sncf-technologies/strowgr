@@ -167,6 +167,24 @@
     </profiles>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/main/resources-filtered</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>src/test/resources-filtered</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
