@@ -167,6 +167,10 @@ func (hap *Haproxy) confPath() string {
 	return baseDir + "/hap" + hap.Context.Application + hap.Context.Platform + ".conf"
 }
 
+func (hap *Haproxy) pidPath() string {
+	return hap.properties.HapHome + "/" + hap.Context.Application + "/logs/" + hap.Context.Application + hap.Context.Platform + "/haproxy.pid"
+}
+
 // confPath give the path of the archived configuration file given an application context
 func (hap *Haproxy) confArchivePath() string {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/version-1"
@@ -191,7 +195,13 @@ func (hap *Haproxy) NewDebugPath() string {
 // It returns error if the reload fails
 func (hap *Haproxy) reload(correlationId string) error {
 	reloadScript := hap.getReloadScript()
-	output, err := exec.Command("sh", reloadScript, "reload", "-y").Output()
+	pid, err := ioutil.ReadFile(hap.pidPath())
+	if err != nil {
+		log.WithField("pid path", string(pid)).Error("can't read pid file")
+		return err
+	}
+	log.WithFields(log.Fields{"reloadScript":reloadScript, "confPath":hap.confPath(), "pidPath":hap.pidPath(), "pid":string(pid)}).Debug("reload haproxy")
+	output, err := exec.Command(reloadScript, "-f", hap.confPath(), "-p", hap.pidPath(), "-sf", string(pid)).Output()
 	if err != nil {
 		log.WithFields(hap.Context.Fields()).WithField("output", string(output[:])).WithError(err).Error("Error reloading")
 	} else {
@@ -227,8 +237,8 @@ func (hap *Haproxy) createSkeleton(correlationId string, conf Conf) error {
 	createDirectory(hap.Context, correlationId, baseDir + "/errors")
 	createDirectory(hap.Context, correlationId, baseDir + "/dump")
 
-	updateSymlink(hap.Context, correlationId, hap.getHapctlFilename(), hap.getReloadScript())
-	updateSymlink(hap.Context, correlationId, hap.getHapBinary(conf), baseDir + "/Config/haproxy")
+	updateSymlink(hap.Context, correlationId, getHaproxyBin(conf), hap.getReloadScript())
+	//updateSymlink(hap.Context, correlationId, hap.getHapBinary(conf), baseDir + "/Config/haproxy")
 
 	return nil
 }
@@ -284,10 +294,15 @@ func (hap *Haproxy) getHapctlFilename() string {
 	return "/HOME/uxwadm/scripts/hapctl_unif"
 }
 
+// getHaproxyBin return the path to the haproxy binary at a given version
+func getHaproxyBin(conf Conf) string {
+	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", conf.Version)
+}
+
 // getReloadScript calculates reload script path given the hap context
 // It returns the full script path
 func (hap *Haproxy) getReloadScript() string {
-	return fmt.Sprintf("%s/%s/scripts/hapctl%s%s", hap.properties.HapHome, hap.Context.Application, hap.Context.Application, hap.Context.Platform)
+	return fmt.Sprintf("%s/%s/scripts/hap%s%s", hap.properties.HapHome, hap.Context.Application, hap.Context.Application, hap.Context.Platform)
 }
 
 // getHapBinary calculates the haproxy binary to use with given version
