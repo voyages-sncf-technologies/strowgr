@@ -21,38 +21,91 @@ import (
 	"os"
 	"runtime"
 	"testing"
+	"fmt"
 )
+
+func mock_command(name string, arg ...string) ([]byte, error) {
+	return []byte("output"), nil
+}
 
 var (
 	config = Config{HapHome: "/HOME"}
-	hap    = NewHaproxy("master", &config, Context{Application: "TST", Platform: "DEV"})
+
 )
 
 func TestGetReloadScript(t *testing.T) {
+	hap := NewHaproxy(&Config{HapHome: "/HOME"},Context{Application: "TST", Platform: "DEV"})
 	config.HapHome = "/HOME"
 	result := hap.getReloadScript()
-	expected := "/HOME/TST/scripts/hapctlTSTDEV"
+	expected := "/HOME/TST/scripts/hapTSTDEV"
 	AssertEquals(t, expected, result)
 }
 
+func TestReloadScript(t *testing.T) {
+	// given
+	tmpDir := os.TempDir()
+	hap := NewHaproxy(&Config{HapHome: tmpDir},Context{Application: "TST", Platform: "DEV"})
+	hap.Command = mock_command
+	err := os.MkdirAll(tmpDir + "/TST/logs/TSTDEV/", 0644)
+	if err != nil {
+		t.Fail()
+	}
+	err = ioutil.WriteFile(tmpDir + "/TST/logs/TSTDEV/haproxy.pid", []byte("1234"), 0644)
+	if err != nil {
+		t.Fail()
+	}
+	config.HapHome = tmpDir
+
+	// test
+	fmt.Println(hap.Paths.Pid)
+	err = hap.reload("my_id")
+
+	// check
+	if err != nil {
+		t.Fail()
+	}
+}
+
 func TestCreateSkeleton(t *testing.T) {
+	// given
 	tmpdir, _ := ioutil.TempDir("", "strowgr")
 	defer os.Remove(tmpdir)
-	config.HapHome = tmpdir
+	hap := NewHaproxy(&Config{HapHome: tmpdir},Context{Application: "TST", Platform: "DEV"})
+
+
+	// test
 	hap.createSkeleton("mycorrelationid")
-	AssertFileExists(t, tmpdir+"/TST/Config")
-	AssertFileExists(t, tmpdir+"/TST/logs/TSTDEV")
-	AssertFileExists(t, tmpdir+"/TST/scripts")
-	AssertFileExists(t, tmpdir+"/TST/version-1")
+
+	// check
+	AssertFileExists(t, tmpdir + "/TST/Config")
+	AssertFileExists(t, tmpdir + "/TST/logs/TSTDEV")
+	AssertFileExists(t, tmpdir + "/TST/scripts")
+	AssertFileExists(t, tmpdir + "/TST/version-1")
+}
+
+func TestHapBinLink(t *testing.T) {
+	// given
+	tmpdir, _ := ioutil.TempDir("", "strowgr")
+	defer os.Remove(tmpdir)
+	hap := NewHaproxy(&Config{HapHome: tmpdir},Context{Application: "TST", Platform: "DEV"})
+	hap.createSkeleton("mycorrelationid")
+
+	// test
+	err := updateSymlink(hap.Context, "mycorrelationid", tmpdir, hap.HaproxyBinLink)
+
+	// check
+	if err != nil {
+		t.Error(err)
+	}
 	if runtime.GOOS != "windows" {
-		AssertIsSymlink(t, tmpdir+"/TST/Config/haproxy")
-		AssertIsSymlink(t, tmpdir+"/TST/scripts/hapctlTSTDEV")
+		AssertIsSymlink(t, tmpdir + "/TST/scripts/hapTSTDEV")
 	}
 }
 
 func TestArchivePath(t *testing.T) {
-	config.HapHome = "/HOME"
-	result := hap.confArchivePath()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"},Context{Application: "TST", Platform: "DEV"})
+
+	result := hap.Paths.Archive
 	expected := "/HOME/TST/version-1/hapTSTDEV.conf"
 	AssertEquals(t, expected, result)
 }
@@ -73,7 +126,7 @@ func AssertFileNotExists(t *testing.T, file string) {
 
 func AssertIsSymlink(t *testing.T, file string) {
 	fi, err := os.Lstat(file)
-	if err != nil || (fi.Mode()&os.ModeSymlink != os.ModeSymlink) {
+	if err != nil || (fi.Mode() & os.ModeSymlink != os.ModeSymlink) {
 		t.Logf("File or directory '%s' does not exists", file)
 		t.Fail()
 	}
@@ -89,11 +142,17 @@ func AssertEquals(t *testing.T, expected interface{}, result interface{}) {
 func TestDeleteInstance(t *testing.T) {
 	tmpdir, _ := ioutil.TempDir("", "strowgr")
 	defer os.Remove(tmpdir)
-	config.HapHome = tmpdir
-	hap.createSkeleton("mycorrelationid")
-	AssertFileExists(t, tmpdir+"/TST/Config")
+	hap := NewHaproxy(&Config{HapHome: tmpdir},Context{Application: "TST", Platform: "DEV"})
+
+	err := hap.createSkeleton("mycorrelationid")
+
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	AssertFileExists(t, tmpdir + "/TST/Config")
 	hap.Delete()
 
-	AssertFileNotExists(t, tmpdir+"/TST")
+	AssertFileNotExists(t, tmpdir + "/TST")
 	AssertFileExists(t, tmpdir)
 }

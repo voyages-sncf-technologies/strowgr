@@ -23,25 +23,55 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"time"
 	"strings"
+	"os/exec"
 )
 
-func NewHaproxy(properties *Config, context Context) *Haproxy {
+type Command func(name string, arg ...string) ([]byte, error)
+type Paths struct {
+	Config  string
+	Syslog  string
+	Archive string
+	Pid     string
+}
 
+func NewHaproxy(properties *Config, context Context) *Haproxy {
 	return &Haproxy{
 		properties: properties,
-		Versions:   properties.HapVersions,
 		Context:    context,
+		Command: ExecCommand,
+		ConfigDir: map[string]string{
+			"Config": properties.HapHome + "/" + context.Application + "/Config",
+			"Logs": properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform,
+			"Scripts": properties.HapHome + "/" + context.Application + "/scripts",
+			"VersionMinus1": properties.HapHome + "/" + context.Application + "/version-1",
+			"Errors": properties.HapHome + "/" + context.Application + "/errors",
+			"Dump": properties.HapHome + "/" + context.Application + "/dump",
+			"Syslog":     properties.HapHome + "/SYSLOG/Config/syslog.conf.d",
+		},
+		HaproxyBinLink:  fmt.Sprintf("%s/%s/scripts/hap%s%s", properties.HapHome, context.Application, context.Application, context.Platform),
+		Paths: Paths{
+			Syslog: properties.HapHome + "/SYSLOG/Config/syslog.conf.d" + context.Application + context.Platform + ".conf",
+			Config:           properties.HapHome + "/" + context.Application + "/Config",
+			Pid: properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform + "/haproxy.pid",
+			Archive: properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform + ".conf",
+		},
 	}
 }
 
 type Haproxy struct {
-	Versions   []string
-	properties *Config
-	State      int
-	Context    Context
+	properties     *Config
+	State          int
+	Context        Context
+	Command        Command
+	ConfigDir      map[string]string
+	HaproxyBinLink string
+	Paths          Paths
+}
+
+func ExecCommand(name string, arg ...string) ([]byte, error) {
+	return exec.Command(name, arg...).Output()
 }
 
 const (
@@ -57,7 +87,7 @@ const (
 // A rollback is called on failure
 func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) {
 	present := false
-	for _, version := range hap.Versions {
+	for _, version := range hap.properties.HapVersions {
 		if version == data.Conf.Version {
 			present = true
 			break
@@ -68,20 +98,21 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 		log.WithFields(log.Fields{
 
 			"given haproxy version":data.Conf.Version,
-			"managed versions by sidekick": strings.Join(hap.Versions, ",")}).Error("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
+			"managed versions by sidekick": strings.Join(hap.properties.HapVersions, ",")}).Error("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
 		return ERR_CONF, errors.New("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
 	}
 
-	hap.createSkeleton(data.Header.CorrelationId, data.Conf)
+	hap.createSkeleton(data.Header.CorrelationId)
+	updateSymlink(hap.Context, data.Header.CorrelationId, fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", data.Conf.Version), hap.HaproxyBinLink)
 
+	// get new conf
 	newConf := data.Conf.Haproxy
-	path := hap.confPath()
-
-	// Check conf diff
-	oldConf, err := ioutil.ReadFile(path)
 	if log.GetLevel() == log.DebugLevel {
 		hap.dumpConfiguration(hap.NewDebugPath(), newConf, data)
 	}
+
+	// Check conf diff
+	oldConf, err := ioutil.ReadFile(hap.Paths.Config)
 	if bytes.Equal(oldConf, newConf) {
 		log.WithFields(hap.Context.Fields()).WithFields(
 			log.Fields{"id": hap.properties.Id}).Debug("Unchanged configuration")
@@ -89,21 +120,20 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	}
 
 	// Archive previous configuration
-	archivePath := hap.confArchivePath()
-	os.Rename(path, archivePath)
+	os.Rename(hap.Paths.Config, hap.Paths.Archive)
 	log.WithFields(hap.Context.Fields()).WithFields(
 		log.Fields{
 			"id":        hap.properties.Id,
-			"archivePath": archivePath,
+			"archivePath": hap.Paths.Archive,
 		}).Info("Old configuration saved")
-	err = ioutil.WriteFile(path, newConf, 0644)
+	err = ioutil.WriteFile(hap.Paths.Config, newConf, 0644)
 	if err != nil {
 		return ERR_CONF, err
 	}
 
 	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 		"id": hap.properties.Id,
-		"path": path,
+		"path": hap.Paths.Config,
 	}).Info("New configuration written")
 
 	// Reload haproxy
@@ -122,8 +152,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 		return ERR_RELOAD, err
 	}
 	// Write syslog fragment
-	fragmentPath := hap.syslogFragmentPath()
-	err = ioutil.WriteFile(fragmentPath, data.Conf.Syslog, 0644)
+	err = ioutil.WriteFile(hap.Paths.Syslog, data.Conf.Syslog, 0644)
 	if err != nil {
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 			"id": hap.properties.Id,
@@ -134,7 +163,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 		"id":     hap.properties.Id,
 		"content":  string(data.Conf.Syslog),
-		"filename": fragmentPath,
+		"filename": hap.Paths.Syslog,
 	}).Debug("Write syslog fragment")
 
 	return SUCCESS, nil
@@ -160,22 +189,6 @@ func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *Eve
 	}
 }
 
-// confPath give the path of the configuration file given an application context
-// It returns the absolute path to the file
-func (hap *Haproxy) confPath() string {
-	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/Config"
-	return baseDir + "/hap" + hap.Context.Application + hap.Context.Platform + ".conf"
-}
-
-func (hap *Haproxy) pidPath() string {
-	return hap.properties.HapHome + "/" + hap.Context.Application + "/logs/" + hap.Context.Application + hap.Context.Platform + "/haproxy.pid"
-}
-
-// confPath give the path of the archived configuration file given an application context
-func (hap *Haproxy) confArchivePath() string {
-	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/version-1"
-	return baseDir + "/hap" + hap.Context.Application + hap.Context.Platform + ".conf"
-}
 
 // NewErrorPath gives a unique path the error file given the hap context
 // It returns the full path to the file
@@ -194,65 +207,52 @@ func (hap *Haproxy) NewDebugPath() string {
 // reload calls external shell script to reload haproxy
 // It returns error if the reload fails
 func (hap *Haproxy) reload(correlationId string) error {
-	reloadScript := hap.getReloadScript()
-	pid, err := ioutil.ReadFile(hap.pidPath())
+	pid, err := ioutil.ReadFile(hap.Paths.Pid)
 	if err != nil {
-		log.WithField("pid path", string(pid)).Error("can't read pid file")
+		log.WithField("pid path", string(hap.Paths.Pid)).Error("can't read pid file")
 		return err
 	}
-	log.WithFields(log.Fields{"reloadScript":reloadScript, "confPath":hap.confPath(), "pidPath":hap.pidPath(), "pid":string(pid)}).Debug("reload haproxy")
-	output, err := exec.Command(reloadScript, "-f", hap.confPath(), "-p", hap.pidPath(), "-sf", string(pid)).Output()
-	if err != nil {
-		log.WithFields(hap.Context.Fields()).WithField("output", string(output[:])).WithError(err).Error("Error reloading")
-	} else {
+	log.WithFields(log.Fields{"reloadScript":hap.HaproxyBinLink, "confPath":hap.Paths.Config, "pidPath":hap.Paths.Pid, "pid":string(pid)}).Debug("reload haproxy")
+	output, err := hap.Command(hap.HaproxyBinLink, "-f", hap.Paths.Config, "-p", hap.Paths.Pid, "-sf", string(pid))
+
+	if err == nil {
 		log.WithFields(hap.Context.Fields()).WithFields(log.Fields{
 			"id":         hap.properties.Id,
-			"reloadScript": reloadScript,
+			"reloadScript": hap.HaproxyBinLink,
 			"output":          string(output[:]),
 		}).Debug("Reload succeeded")
+	} else {
+		log.WithFields(hap.Context.Fields()).WithField("output", string(output[:])).WithError(err).Error("Error reloading")
+
 	}
 	return err
 }
 
 // rollback reverts configuration files and call for reload
 func (hap *Haproxy) rollback(correlationId string) error {
-	lastConf := hap.confArchivePath()
-	if _, err := os.Stat(lastConf); os.IsNotExist(err) {
+	if _, err := os.Stat(hap.Paths.Archive); os.IsNotExist(err) {
 		return errors.New("No configuration file to rollback")
 	}
 	// TODO remove current hap.confPath() ?
-	os.Rename(lastConf, hap.confPath())
+	os.Rename(hap.Paths.Archive, hap.Paths.Config)
 	hap.reload(correlationId)
 	return nil
 }
 
 // createSkeleton creates the directory tree for a new haproxy context
-func (hap *Haproxy) createSkeleton(correlationId string, conf Conf) error {
-	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
-
-	createDirectory(hap.Context, correlationId, baseDir + "/Config")
-	createDirectory(hap.Context, correlationId, baseDir + "/logs/" + hap.Context.Application + hap.Context.Platform)
-	createDirectory(hap.Context, correlationId, baseDir + "/scripts")
-	createDirectory(hap.Context, correlationId, baseDir + "/version-1")
-	createDirectory(hap.Context, correlationId, baseDir + "/errors")
-	createDirectory(hap.Context, correlationId, baseDir + "/dump")
-
-	updateSymlink(hap.Context, correlationId, getHaproxyBin(conf), hap.getReloadScript())
-	//updateSymlink(hap.Context, correlationId, hap.getHapBinary(conf), baseDir + "/Config/haproxy")
-
+func (hap *Haproxy) createSkeleton(correlationId string) error {
+	for _, directory := range hap.ConfigDir {
+		err := createDirectory(hap.Context, correlationId, directory)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-// confPath give the path of the configuration file given an application context
-// It returns the absolute path to the file
-func (hap *Haproxy) syslogFragmentPath() string {
-	baseDir := hap.properties.HapHome + "/SYSLOG/Config/syslog.conf.d"
-	os.MkdirAll(baseDir, 0755)
-	return baseDir + "/syslog" + hap.Context.Application + hap.Context.Platform + ".conf"
-}
 
 // updateSymlink create or update a symlink
-func updateSymlink(context Context, correlationId, oldname, newname string) {
+func updateSymlink(context Context, correlationId, oldname, newname string) error {
 	newLink := true
 	if _, err := os.Stat(newname); err == nil {
 		os.Remove(newname)
@@ -263,6 +263,7 @@ func updateSymlink(context Context, correlationId, oldname, newname string) {
 		log.WithFields(context.Fields()).WithError(err).WithFields(log.Fields{
 			"path": newname,
 		}).Error("Symlink failed")
+		return err
 	}
 
 	if newLink {
@@ -270,45 +271,31 @@ func updateSymlink(context Context, correlationId, oldname, newname string) {
 			"path": newname,
 		}).Info("Symlink created")
 	}
+	return nil
 }
 
 // createDirectory recursively creates directory if it doesn't exists
-func createDirectory(context Context, correlationId string, dir string) {
+func createDirectory(context Context, correlationId string, dir string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			log.WithError(err).WithFields(context.Fields()).WithFields(log.Fields{
 				"dir": dir,
 			}).Error("Failed to create")
+			return err
 		} else {
 			log.WithFields(context.Fields()).WithFields(log.Fields{
 				"dir": dir,
 			}).Info("Directory created")
 		}
 	}
-}
-
-// getHapctlFilename return the path to the vsc hapctl shell script
-// This script is provided
-func (hap *Haproxy) getHapctlFilename() string {
-	return "/HOME/uxwadm/scripts/hapctl_unif"
-}
-
-// getHaproxyBin return the path to the haproxy binary at a given version
-func getHaproxyBin(conf Conf) string {
-	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", conf.Version)
+	return nil
 }
 
 // getReloadScript calculates reload script path given the hap context
 // It returns the full script path
 func (hap *Haproxy) getReloadScript() string {
 	return fmt.Sprintf("%s/%s/scripts/hap%s%s", hap.properties.HapHome, hap.Context.Application, hap.Context.Application, hap.Context.Platform)
-}
-
-// getHapBinary calculates the haproxy binary to use with given version
-// It returns the full path to the haproxy binary
-func (hap *Haproxy) getHapBinary(conf Conf) string {
-	return fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", conf.Version)
 }
 
 func (hap *Haproxy) Delete() error {
@@ -329,7 +316,7 @@ func (hap *Haproxy) Delete() error {
 
 func (hap *Haproxy) Stop() error {
 	reloadScript := hap.getReloadScript()
-	output, err := exec.Command("sh", reloadScript, "stop").Output()
+	output, err := hap.Command("sh", reloadScript, "stop")
 	if err != nil {
 		log.WithFields(hap.Context.Fields()).WithError(err).Error("Error stop")
 	} else {
