@@ -29,20 +29,45 @@ import (
 )
 
 type Command func(name string, arg ...string) ([]byte, error)
+type Dumper func(context Context, filename string, newConf []byte)
+
+type Reader func(path string) ([]byte, error)
+type Writer func(path string, content []byte, perm os.FileMode) error
+
 type Paths struct {
+	Reader  Reader
+	Writer  Writer
 	Config  string
 	Syslog  string
 	Archive string
 	Pid     string
 }
 
+func (paths Paths) readConfig() ([]byte, error) {
+	return paths.Reader(paths.Config)
+}
+
+func (paths Paths) readPid() ([]byte, error) {
+	return paths.Reader(paths.Pid)
+}
+
+func (paths Paths) writeConfig(content []byte) error {
+	return paths.Writer(paths.Config, content, 0644)
+}
+
+func (paths Paths) writeSyslog(content []byte) error {
+	return paths.Writer(paths.Syslog, content, 0644)
+}
+
 type ConfigDir map[string]string
 
 func NewHaproxy(properties *Config, context Context) *Haproxy {
+
 	return &Haproxy{
 		properties: properties,
 		Context:    context,
 		Command: ExecCommand,
+		Dumper: dumpConfiguration,
 		ConfigDir: ConfigDir{
 			"Config": properties.HapHome + "/" + context.Application + "/Config",
 			"Logs": properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform,
@@ -54,6 +79,8 @@ func NewHaproxy(properties *Config, context Context) *Haproxy {
 		},
 		HaproxyBinLink:  fmt.Sprintf("%s/%s/scripts/hap%s%s", properties.HapHome, context.Application, context.Application, context.Platform),
 		Paths: Paths{
+			Reader: ioutil.ReadFile,
+			Writer: ioutil.WriteFile,
 			Syslog: properties.HapHome + "/SYSLOG/Config/syslog.conf.d" + context.Application + context.Platform + ".conf",
 			Config:           properties.HapHome + "/" + context.Application + "/Config",
 			Pid: properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform + "/haproxy.pid",
@@ -70,6 +97,7 @@ type Haproxy struct {
 	ConfigDir      ConfigDir
 	HaproxyBinLink string
 	Paths          Paths
+	Dumper         Dumper
 }
 
 func ExecCommand(name string, arg ...string) ([]byte, error) {
@@ -108,12 +136,10 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 
 	// get new conf
 	newConf := data.Conf.Haproxy
-	if log.GetLevel() == log.DebugLevel {
-		hap.dumpConfiguration(hap.NewDebugPath(), newConf, data)
-	}
+	hap.dumpDebug(newConf)
 
 	// Check conf diff
-	oldConf, err := ioutil.ReadFile(hap.Paths.Config)
+	oldConf, err := hap.Paths.readConfig()
 	if bytes.Equal(oldConf, newConf) {
 		hap.Context.Fields().WithFields(
 			log.Fields{"id": hap.properties.Id}).Debug("Unchanged configuration")
@@ -127,7 +153,8 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 			"id":        hap.properties.Id,
 			"archivePath": hap.Paths.Archive,
 		}).Info("Old configuration saved")
-	err = ioutil.WriteFile(hap.Paths.Config, newConf, 0644)
+	err = hap.Paths.writeConfig(newConf)
+
 	if err != nil {
 		return ERR_CONF, err
 	}
@@ -143,7 +170,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 		hap.Context.Fields().WithFields(log.Fields{
 			"id": hap.properties.Id,
 		}).WithError(err).Error("Reload failed")
-		hap.dumpConfiguration(hap.NewErrorPath(), newConf, data)
+		hap.dumpError(newConf)
 		errRollback := hap.rollback(data.Header.CorrelationId)
 		if errRollback != nil {
 			log.WithError(errRollback).Error("error in rollback in addition to error of the reload")
@@ -153,7 +180,8 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 		return ERR_RELOAD, err
 	}
 	// Write syslog fragment
-	err = ioutil.WriteFile(hap.Paths.Syslog, data.Conf.Syslog, 0644)
+	err = hap.Paths.writeSyslog(data.Conf.Syslog)
+
 	if err != nil {
 		hap.Context.Fields().WithFields(log.Fields{
 			"id": hap.properties.Id,
@@ -170,45 +198,47 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	return SUCCESS, nil
 }
 
+func (hap *Haproxy) dumpDebug(newConf []byte) {
+	if log.GetLevel() == log.DebugLevel {
+		baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/dump"
+		prefix := time.Now().Format("20060102150405")
+		debugPath := baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
+		hap.Dumper(hap.Context, debugPath, newConf)
+	}
+}
+
+func (hap *Haproxy) dumpError(newConf []byte) {
+	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/errors"
+	prefix := time.Now().Format("20060102150405")
+	errorPath := baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
+
+	hap.Dumper(hap.Context, errorPath, newConf)
+}
+
+
 // dumpConfiguration dumps the new configuration file with context for debugging purpose
-func (hap *Haproxy) dumpConfiguration(filename string, newConf []byte, data *EventMessageWithConf) {
+func dumpConfiguration(context Context, filename string, newConf []byte) {
 	f, err2 := os.Create(filename)
 	defer f.Close()
 	if err2 == nil {
 		f.WriteString("================================================================\n")
-		f.WriteString(fmt.Sprintf("application: %s\n", data.Header.Application))
-		f.WriteString(fmt.Sprintf("platform: %s\n", data.Header.Platform))
-		f.WriteString(fmt.Sprintf("correlationId: %s\n", data.Header.CorrelationId))
+		f.WriteString(fmt.Sprintf("application: %s\n", context.Application))
+		f.WriteString(fmt.Sprintf("platform: %s\n", context.Platform))
+		f.WriteString(fmt.Sprintf("correlationId: %s\n", context.CorrelationId))
 		f.WriteString("================================================================\n")
 		f.Write(newConf)
 		f.Sync()
 
-		hap.Context.Fields().WithFields(log.Fields{
-			"id":     hap.properties.Id,
+		context.Fields().WithFields(log.Fields{
 			"filename": filename,
 		}).Info("Dump configuration")
 	}
 }
 
-
-// NewErrorPath gives a unique path the error file given the hap context
-// It returns the full path to the file
-func (hap *Haproxy) NewErrorPath() string {
-	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/errors"
-	prefix := time.Now().Format("20060102150405")
-	return baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
-}
-
-func (hap *Haproxy) NewDebugPath() string {
-	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/dump"
-	prefix := time.Now().Format("20060102150405")
-	return baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
-}
-
 // reload calls external shell script to reload haproxy
 // It returns error if the reload fails
 func (hap *Haproxy) reload(correlationId string) error {
-	pid, err := ioutil.ReadFile(hap.Paths.Pid)
+	pid, err := hap.Paths.readPid()
 	if err != nil {
 		log.WithField("pid path", string(hap.Paths.Pid)).Error("can't read pid file")
 		return err
