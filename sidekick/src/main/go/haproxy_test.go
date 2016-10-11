@@ -30,11 +30,10 @@ func mock_command(name string, arg ...string) ([]byte, error) {
 
 var (
 	config = Config{HapHome: "/HOME"}
-
 )
 
 func TestGetReloadScript(t *testing.T) {
-	hap := NewHaproxy(&Config{HapHome: "/HOME"},Context{Application: "TST", Platform: "DEV"})
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
 	config.HapHome = "/HOME"
 	result := hap.getReloadScript()
 	expected := "/HOME/TST/scripts/hapTSTDEV"
@@ -44,7 +43,7 @@ func TestGetReloadScript(t *testing.T) {
 func TestReloadScript(t *testing.T) {
 	// given
 	tmpDir := os.TempDir()
-	hap := NewHaproxy(&Config{HapHome: tmpDir},Context{Application: "TST", Platform: "DEV"})
+	hap := NewHaproxy(&Config{HapHome: tmpDir}, Context{Application: "TST", Platform: "DEV"})
 	hap.Command = mock_command
 	err := os.MkdirAll(tmpDir + "/TST/logs/TSTDEV/", 0644)
 	if err != nil {
@@ -70,11 +69,10 @@ func TestCreateSkeleton(t *testing.T) {
 	// given
 	tmpdir, _ := ioutil.TempDir("", "strowgr")
 	defer os.Remove(tmpdir)
-	hap := NewHaproxy(&Config{HapHome: tmpdir},Context{Application: "TST", Platform: "DEV"})
-
+	hap := NewHaproxy(&Config{HapHome: tmpdir}, Context{Application: "TST", Platform: "DEV"})
 
 	// test
-	hap.createSkeleton("mycorrelationid")
+	hap.ConfigDir.createSkeleton(Context{CorrelationId:"my correlation id"})
 
 	// check
 	AssertFileExists(t, tmpdir + "/TST/Config")
@@ -87,11 +85,11 @@ func TestHapBinLink(t *testing.T) {
 	// given
 	tmpdir, _ := ioutil.TempDir("", "strowgr")
 	defer os.Remove(tmpdir)
-	hap := NewHaproxy(&Config{HapHome: tmpdir},Context{Application: "TST", Platform: "DEV"})
-	hap.createSkeleton("mycorrelationid")
+	hap := NewHaproxy(&Config{HapHome: tmpdir}, Context{Application: "TST", Platform: "DEV"})
+	hap.ConfigDir.createSkeleton(Context{CorrelationId:"my correlation id"})
 
 	// test
-	err := updateSymlink(hap.Context, "mycorrelationid", tmpdir, hap.HaproxyBinLink)
+	err := updateSymlink(hap.Context, tmpdir + "/test", hap.HaproxyBinLink)
 
 	// check
 	if err != nil {
@@ -103,7 +101,7 @@ func TestHapBinLink(t *testing.T) {
 }
 
 func TestArchivePath(t *testing.T) {
-	hap := NewHaproxy(&Config{HapHome: "/HOME"},Context{Application: "TST", Platform: "DEV"})
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
 
 	result := hap.Paths.Archive
 	expected := "/HOME/TST/version-1/hapTSTDEV.conf"
@@ -142,9 +140,9 @@ func AssertEquals(t *testing.T, expected interface{}, result interface{}) {
 func TestDeleteInstance(t *testing.T) {
 	tmpdir, _ := ioutil.TempDir("", "strowgr")
 	defer os.Remove(tmpdir)
-	hap := NewHaproxy(&Config{HapHome: tmpdir},Context{Application: "TST", Platform: "DEV"})
+	hap := NewHaproxy(&Config{HapHome: tmpdir}, Context{Application: "TST", Platform: "DEV"})
 
-	err := hap.createSkeleton("mycorrelationid")
+	err := 	hap.ConfigDir.createSkeleton(Context{CorrelationId:"my correlation id"})
 
 	if err != nil {
 		t.Error(err)

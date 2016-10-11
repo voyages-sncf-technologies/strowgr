@@ -36,12 +36,14 @@ type Paths struct {
 	Pid     string
 }
 
+type ConfigDir map[string]string
+
 func NewHaproxy(properties *Config, context Context) *Haproxy {
 	return &Haproxy{
 		properties: properties,
 		Context:    context,
 		Command: ExecCommand,
-		ConfigDir: map[string]string{
+		ConfigDir: ConfigDir{
 			"Config": properties.HapHome + "/" + context.Application + "/Config",
 			"Logs": properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform,
 			"Scripts": properties.HapHome + "/" + context.Application + "/scripts",
@@ -65,7 +67,7 @@ type Haproxy struct {
 	State          int
 	Context        Context
 	Command        Command
-	ConfigDir      map[string]string
+	ConfigDir      ConfigDir
 	HaproxyBinLink string
 	Paths          Paths
 }
@@ -96,14 +98,13 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	// validate that received haproxy configuration contains a managed version of haproxy
 	if data.Conf.Version == "" || !present {
 		log.WithFields(log.Fields{
-
 			"given haproxy version":data.Conf.Version,
 			"managed versions by sidekick": strings.Join(hap.properties.HapVersions, ",")}).Error("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
 		return ERR_CONF, errors.New("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
 	}
 
-	hap.createSkeleton(data.Header.CorrelationId)
-	updateSymlink(hap.Context, data.Header.CorrelationId, fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", data.Conf.Version), hap.HaproxyBinLink)
+	hap.ConfigDir.createSkeleton(hap.Context)
+	updateSymlink(hap.Context, fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", data.Conf.Version), hap.HaproxyBinLink)
 
 	// get new conf
 	newConf := data.Conf.Haproxy
@@ -240,9 +241,9 @@ func (hap *Haproxy) rollback(correlationId string) error {
 }
 
 // createSkeleton creates the directory tree for a new haproxy context
-func (hap *Haproxy) createSkeleton(correlationId string) error {
-	for _, directory := range hap.ConfigDir {
-		err := createDirectory(hap.Context, correlationId, directory)
+func (configDir *ConfigDir) createSkeleton(context Context) error {
+	for _, directory := range *configDir {
+		err := createDirectory(context, directory)
 		if err != nil {
 			return err
 		}
@@ -252,7 +253,7 @@ func (hap *Haproxy) createSkeleton(correlationId string) error {
 
 
 // updateSymlink create or update a symlink
-func updateSymlink(context Context, correlationId, oldname, newname string) error {
+func updateSymlink(context Context, oldname, newname string) error {
 	newLink := true
 	if _, err := os.Stat(newname); err == nil {
 		os.Remove(newname)
@@ -275,7 +276,7 @@ func updateSymlink(context Context, correlationId, oldname, newname string) erro
 }
 
 // createDirectory recursively creates directory if it doesn't exists
-func createDirectory(context Context, correlationId string, dir string) error {
+func createDirectory(context Context, dir string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
