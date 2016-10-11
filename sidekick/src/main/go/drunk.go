@@ -3,6 +3,7 @@ package sidekick
 import (
 	"errors"
 	"math/rand"
+	log "github.com/Sirupsen/logrus"
 )
 
 type DrunkHaproxy struct {
@@ -13,7 +14,7 @@ type DrunkHaproxy struct {
 func (hap DrunkHaproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) {
 	var err error
 	status := rand.Intn(MAX_STATUS)
-	hap.context.Fields().WithField("status", status).Info("choose a random status")
+	hap.context.Fields(log.Fields{"status": status}).Info("choose a random status")
 	if status <= UNCHANGED {
 		err = errors.New("blop, a new error...")
 	}
@@ -21,11 +22,11 @@ func (hap DrunkHaproxy) ApplyConfiguration(data *EventMessageWithConf) (int, err
 }
 
 func (hap DrunkHaproxy) Stop() error {
-	hap.context.Fields().Info("Stop drunk instance")
+	hap.context.Fields(log.Fields{}).Info("Stop drunk instance")
 	return nil
 }
 func (hap DrunkHaproxy) Delete() error {
-	hap.context.Fields().Info("Delete drunk instance")
+	hap.context.Fields(log.Fields{}).Info("Delete drunk instance")
 	return nil
 }
 

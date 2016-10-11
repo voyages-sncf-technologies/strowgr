@@ -125,9 +125,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	}
 	// validate that received haproxy configuration contains a managed version of haproxy
 	if data.Conf.Version == "" || !present {
-		log.WithFields(log.Fields{
-			"given haproxy version":data.Conf.Version,
-			"managed versions by sidekick": strings.Join(hap.properties.HapVersions, ",")}).Error("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
+		hap.Context.Fields(log.Fields{"given haproxy version":data.Conf.Version, "managed versions by sidekick": strings.Join(hap.properties.HapVersions, ",")}).Error("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
 		return ERR_CONF, errors.New("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
 	}
 
@@ -141,41 +139,31 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	// Check conf diff
 	oldConf, err := hap.Paths.readConfig()
 	if bytes.Equal(oldConf, newConf) {
-		hap.Context.Fields().WithFields(
-			log.Fields{"id": hap.properties.Id}).Debug("Unchanged configuration")
+		hap.Context.Fields(log.Fields{"id": hap.properties.Id}).Debug("Unchanged configuration")
 		return UNCHANGED, nil
 	}
 
 	// Archive previous configuration
 	os.Rename(hap.Paths.Config, hap.Paths.Archive)
-	hap.Context.Fields().WithFields(
-		log.Fields{
-			"id":        hap.properties.Id,
-			"archivePath": hap.Paths.Archive,
-		}).Info("Old configuration saved")
+	hap.Context.Fields(log.Fields{"id": hap.properties.Id, "archivePath": hap.Paths.Archive }).Info("Old configuration saved")
 	err = hap.Paths.writeConfig(newConf)
 
 	if err != nil {
 		return ERR_CONF, err
 	}
 
-	hap.Context.Fields().WithFields(log.Fields{
-		"id": hap.properties.Id,
-		"path": hap.Paths.Config,
-	}).Info("New configuration written")
+	hap.Context.Fields(log.Fields{"id": hap.properties.Id, "path": hap.Paths.Config, }).Info("New configuration written")
 
 	// Reload haproxy
 	err = hap.reload(data.Header.CorrelationId)
 	if err != nil {
-		hap.Context.Fields().WithFields(log.Fields{
-			"id": hap.properties.Id,
-		}).WithError(err).Error("Reload failed")
+		hap.Context.Fields(log.Fields{"id": hap.properties.Id}).WithError(err).Error("Reload failed")
 		hap.dumpError(newConf)
 		errRollback := hap.rollback(data.Header.CorrelationId)
 		if errRollback != nil {
 			log.WithError(errRollback).Error("error in rollback in addition to error of the reload")
 		} else {
-			hap.Context.Fields().Debug("rollback done")
+			hap.Context.Fields(log.Fields{}).Debug("rollback done")
 		}
 		return ERR_RELOAD, err
 	}
@@ -183,17 +171,11 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	err = hap.Paths.writeSyslog(data.Conf.Syslog)
 
 	if err != nil {
-		hap.Context.Fields().WithFields(log.Fields{
-			"id": hap.properties.Id,
-		}).WithError(err).Error("Failed to write syslog fragment")
+		hap.Context.Fields(log.Fields{"id": hap.properties.Id}).WithError(err).Error("Failed to write syslog fragment")
 		// TODO Should we rollback on syslog error ?
 		return ERR_SYSLOG, err
 	}
-	hap.Context.Fields().WithFields(log.Fields{
-		"id":     hap.properties.Id,
-		"content":  string(data.Conf.Syslog),
-		"filename": hap.Paths.Syslog,
-	}).Debug("Write syslog fragment")
+	hap.Context.Fields(log.Fields{"id": hap.properties.Id, "content": string(data.Conf.Syslog), "filename": hap.Paths.Syslog}).Debug("Write syslog fragment")
 
 	return SUCCESS, nil
 }
@@ -229,9 +211,7 @@ func dumpConfiguration(context Context, filename string, newConf []byte) {
 		f.Write(newConf)
 		f.Sync()
 
-		context.Fields().WithFields(log.Fields{
-			"filename": filename,
-		}).Info("Dump configuration")
+		context.Fields(log.Fields{"filename": filename}).Info("Dump configuration")
 	}
 }
 
@@ -240,20 +220,16 @@ func dumpConfiguration(context Context, filename string, newConf []byte) {
 func (hap *Haproxy) reload(correlationId string) error {
 	pid, err := hap.Paths.readPid()
 	if err != nil {
-		log.WithField("pid path", string(hap.Paths.Pid)).Error("can't read pid file")
+		hap.Context.Fields(log.Fields{"pid path": string(hap.Paths.Pid)}).Error("can't read pid file")
 		return err
 	}
-	log.WithFields(log.Fields{"reloadScript":hap.HaproxyBinLink, "confPath":hap.Paths.Config, "pidPath":hap.Paths.Pid, "pid":string(pid)}).Debug("reload haproxy")
+	hap.Context.Fields(log.Fields{"reloadScript":hap.HaproxyBinLink, "confPath":hap.Paths.Config, "pidPath":hap.Paths.Pid, "pid":string(pid)}).Debug("reload haproxy")
 	output, err := hap.Command(hap.HaproxyBinLink, "-f", hap.Paths.Config, "-p", hap.Paths.Pid, "-sf", string(pid))
 
 	if err == nil {
-		hap.Context.Fields().WithFields(log.Fields{
-			"id":         hap.properties.Id,
-			"reloadScript": hap.HaproxyBinLink,
-			"output":          string(output[:]),
-		}).Debug("Reload succeeded")
+		hap.Context.Fields(log.Fields{"id":hap.properties.Id, "reloadScript": hap.HaproxyBinLink, "output": string(output[:]) }).Debug("Reload succeeded")
 	} else {
-		hap.Context.Fields().WithField("output", string(output[:])).WithError(err).Error("Error reloading")
+		hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
 
 	}
 	return err
@@ -291,16 +267,12 @@ func updateSymlink(context Context, oldname, newname string) error {
 	}
 	err := os.Symlink(oldname, newname)
 	if err != nil {
-		context.Fields().WithError(err).WithFields(log.Fields{
-			"path": newname,
-		}).Error("Symlink failed")
+		context.Fields(log.Fields{"path": newname}).WithError(err).Error("Symlink failed")
 		return err
 	}
 
 	if newLink {
-		context.Fields().WithFields(log.Fields{
-			"path": newname,
-		}).Info("Symlink created")
+		context.Fields(log.Fields{"path": newname}).WithError(err).Error("Symlink created")
 	}
 	return nil
 }
@@ -310,14 +282,10 @@ func createDirectory(context Context, dir string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
-			context.Fields().WithError(err).WithFields(log.Fields{
-				"dir": dir,
-			}).Error("Failed to create")
+			context.Fields(log.Fields{"dir": dir}).WithError(err).Error("Failed to create")
 			return err
 		} else {
-			context.Fields().WithFields(log.Fields{
-				"dir": dir,
-			}).Info("Directory created")
+			context.Fields(log.Fields{"dir": dir}).WithError(err).Info("Directory created")
 		}
 	}
 	return nil
@@ -333,13 +301,9 @@ func (hap *Haproxy) Delete() error {
 	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
 	err := os.RemoveAll(baseDir)
 	if err != nil {
-		hap.Context.Fields().WithError(err).WithFields(log.Fields{
-			"dir": baseDir,
-		}).Error("Failed to delete haproxy")
+		hap.Context.Fields(log.Fields{"dir": baseDir}).WithError(err).Error("Failed to delete haproxy")
 	} else {
-		hap.Context.Fields().WithFields(log.Fields{
-			"dir": baseDir,
-		}).Info("HAproxy deleted")
+		hap.Context.Fields(log.Fields{"dir": baseDir}).WithError(err).Info("HAproxy deleted")
 	}
 
 	return err
@@ -349,12 +313,9 @@ func (hap *Haproxy) Stop() error {
 	reloadScript := hap.getReloadScript()
 	output, err := hap.Command("sh", reloadScript, "stop")
 	if err != nil {
-		hap.Context.Fields().WithError(err).Error("Error stop")
+		hap.Context.Fields(log.Fields{}).WithError(err).Error("Error stop")
 	} else {
-		hap.Context.Fields().WithFields(log.Fields{
-			"reloadScript": reloadScript,
-			"cmd":          string(output[:]),
-		}).Debug("Stop succeeded")
+		hap.Context.Fields(log.Fields{"reloadScript": reloadScript, "cmd":string(output[:])}).Debug("Stop succeeded")
 	}
 	return err
 }

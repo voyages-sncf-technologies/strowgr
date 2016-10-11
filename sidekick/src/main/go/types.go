@@ -134,14 +134,14 @@ func (ctx Context) UpdateTimestamp() Context {
 	return ctx
 }
 
-// translate Context to Fields for logging purpose
-func (ctx Context) Fields() *log.Entry {
-	return log.WithFields(log.Fields{
-		"correlationId": ctx.CorrelationId,
-		"timestamp":     ctx.UpdateTimestamp().Timestamp,
-		"application":   ctx.Application,
-		"platform":      ctx.Platform,
-	})
+// log with context headers
+func (ctx Context) Fields(fields log.Fields) *log.Entry {
+	fields["correlationId"] = ctx.CorrelationId
+	fields["timestamp"] = ctx.UpdateTimestamp().Timestamp
+	fields["application"] = ctx.Application
+	fields["platform"] = ctx.Platform
+
+	return log.WithFields(fields)
 }
 
 type ReloadEvent struct {
