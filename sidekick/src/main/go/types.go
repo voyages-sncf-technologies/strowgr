@@ -51,7 +51,6 @@ func (config Config) IsMaster(vip string) (bool, error) {
 	}
 }
 
-
 func DefaultConfig() *Config {
 	return &Config{
 		Port:      5000,
@@ -136,13 +135,13 @@ func (ctx Context) UpdateTimestamp() Context {
 }
 
 // translate Context to Fields for logging purpose
-func (ctx Context) Fields() log.Fields {
-	return log.Fields{
+func (ctx Context) Fields() *log.Entry {
+	return log.WithFields(log.Fields{
 		"correlationId": ctx.CorrelationId,
 		"timestamp":     ctx.UpdateTimestamp().Timestamp,
 		"application":   ctx.Application,
 		"platform":      ctx.Platform,
-	}
+	})
 }
 
 type ReloadEvent struct {
