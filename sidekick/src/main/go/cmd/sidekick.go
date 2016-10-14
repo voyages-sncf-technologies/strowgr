@@ -288,7 +288,7 @@ func onDeleteRequested(message *nsq.Message) error {
 
 // logAndForget is a generic function to just log event
 func logAndForget(data *sidekick.EventMessageWithConf) error {
-	log.WithFields(data.Context().Fields()).Debug("Commit completed")
+	data.Context().Fields(log.WithFields(data.Context().Fields())).Debug("Commit completed")
 	return nil
 }
 
@@ -349,7 +349,7 @@ func reloadHaProxy(data *sidekick.EventMessageWithConf, masterRole bool) error {
 			publishMessage("commit_slave_completed_", data.CloneWithConf(properties.Id), context)
 		}
 	} else {
-		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
+		context.Fields(log.Fields{}).WithError(err).Error("Commit failed")
 		publishMessage("commit_failed_", data.Clone(properties.Id), context)
 	}
 	return nil
@@ -366,6 +366,6 @@ func bodyToData(jsonStream []byte) (*sidekick.EventMessageWithConf, error) {
 func publishMessage(topic_prefix string, data interface{}, context sidekick.Context) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
-	log.WithFields(context.Fields()).WithField("topic", topic).WithField("payload", string(jsonMsg)).Debug("Publish")
+	context.Fields(log.Fields{"topic": topic,"payload": string(jsonMsg)}).Debug("Publish")
 	return producer.Publish(topic, []byte(jsonMsg))
 }

@@ -46,7 +46,7 @@ func NewHaproxy(properties *Config, context Context) *Haproxy {
 			"Syslog":     properties.HapHome + "/SYSLOG/Config/syslog.conf.d"}),
 		Files:  NewPath(context,
 			properties.HapHome + "/" + context.Application + "/Config/hap" + context.Application + context.Platform + ".conf",
-			properties.HapHome + "/SYSLOG/Config/syslog.conf.d" + context.Application + context.Platform + ".conf",
+			properties.HapHome + "/SYSLOG/Config/syslog.conf.d/syslog" + context.Application + context.Platform + ".conf",
 			properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform + ".conf",
 			properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform + "/haproxy.pid",
 			fmt.Sprintf("%s/%s/scripts/hap%s%s", properties.HapHome, context.Application, context.Application, context.Platform)),
