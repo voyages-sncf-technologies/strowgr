@@ -51,6 +51,7 @@ func (files Files) linkNewVersion(version string) error {
 	newVersion := fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", version)
 	newLink := true
 	if files.Checker(files.Bin) {
+		files.Context.Fields(log.Fields{"file link":files.Bin}).Debug("existing link")
 		files.Remover(files.Bin)
 		newLink = false
 	}
@@ -103,7 +104,7 @@ func (files Files) archiveExists() bool {
 }
 
 func osExists(path string) bool {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); err == nil {
 		return true
 	}
 	return false

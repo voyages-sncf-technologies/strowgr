@@ -89,14 +89,6 @@ func TestArchivePath(t *testing.T) {
 	check(t, "Expected '%s', got '%s'", expected, result)
 }
 
-func TestGetReloadScript(t *testing.T) {
-	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
-	config.HapHome = "/HOME"
-	result := hap.getReloadScript()
-	expected := "/HOME/TST/scripts/hapTSTDEV"
-	check(t, "Expected '%s', got '%s'", expected, result)
-}
-
 func TestDeleteInstance(t *testing.T) {
 	// given
 	initContext()

@@ -189,12 +189,6 @@ func (hap *Haproxy) rollback(correlationId string) error {
 }
 
 
-// getReloadScript calculates reload script path given the hap context
-// It returns the full script path
-func (hap *Haproxy) getReloadScript() string {
-	return fmt.Sprintf("%s/%s/scripts/hap%s%s", hap.properties.HapHome, hap.Context.Application, hap.Context.Application, hap.Context.Platform)
-}
-
 func (hap *Haproxy) Delete() error {
 	// remove bin and config files
 	err := hap.Files.removeAll()
