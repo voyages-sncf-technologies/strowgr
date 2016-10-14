@@ -25,24 +25,29 @@ import (
 	"time"
 	"strings"
 	"os/exec"
+	"syscall"
+	"strconv"
 )
 
 type Command func(name string, arg ...string) ([]byte, error)
+type Signal func(pid int, signal os.Signal) error
 type Dumper func(context Context, filename string, newConf []byte)
 
 func NewHaproxy(properties *Config, context Context) *Haproxy {
 	return &Haproxy{
 		properties: properties,
 		Context:    context,
-		Command: ExecCommand,
+		Command: execCommand,
+		Signal: osSignal,
 		Dumper: dumpConfiguration,
 		Directories: NewDirectories(context, map[string]string{
+			"Platform": properties.HapHome + "/" + context.Application + "/" + context.Platform,
 			"Config": properties.HapHome + "/" + context.Application + "/Config",
-			"Logs": properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform,
+			"Logs": properties.HapHome + "/" + context.Application + "/" + context.Platform + "/logs",
 			"Scripts": properties.HapHome + "/" + context.Application + "/scripts",
 			"VersionMinus1": properties.HapHome + "/" + context.Application + "/version-1",
-			"Errors": properties.HapHome + "/" + context.Application + "/errors",
-			"Dump": properties.HapHome + "/" + context.Application + "/dump",
+			"Errors": properties.HapHome + "/" + context.Application + "/" + context.Platform + "/errors",
+			"Dump": properties.HapHome + "/" + context.Application + "/" + context.Platform + "/dump",
 			"Syslog":     properties.HapHome + "/SYSLOG/Config/syslog.conf.d"}),
 		Files:  NewPath(context,
 			properties.HapHome + "/" + context.Application + "/Config/hap" + context.Application + context.Platform + ".conf",
@@ -61,10 +66,7 @@ type Haproxy struct {
 	Directories Directories
 	Files       Files
 	Dumper      Dumper
-}
-
-func ExecCommand(name string, arg ...string) ([]byte, error) {
-	return exec.Command(name, arg...).Output()
+	Signal      Signal
 }
 
 const (
@@ -146,38 +148,14 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 
 func (hap *Haproxy) dumpDebug(newConf []byte) {
 	if log.GetLevel() == log.DebugLevel {
-		baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/dump"
-		prefix := time.Now().Format("20060102150405")
-		debugPath := baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
-		hap.Dumper(hap.Context, debugPath, newConf)
+		hap.Dumper(hap.Context, hap.Directories.Map["Debug"] + "/" + time.Now().Format("20060102150405") + ".log", newConf)
 	}
 }
 
 func (hap *Haproxy) dumpError(newConf []byte) {
-	baseDir := hap.properties.HapHome + "/" + hap.Context.Application + "/errors"
-	prefix := time.Now().Format("20060102150405")
-	errorPath := baseDir + "/" + prefix + "_" + hap.Context.Application + hap.Context.Platform + ".log"
-
-	hap.Dumper(hap.Context, errorPath, newConf)
+	hap.Dumper(hap.Context, hap.Directories.Map["Errors"] + "/" + time.Now().Format("20060102150405") + ".log", newConf)
 }
 
-
-// dumpConfiguration dumps the new configuration file with context for debugging purpose
-func dumpConfiguration(context Context, filename string, newConf []byte) {
-	f, err2 := os.Create(filename)
-	defer f.Close()
-	if err2 == nil {
-		f.WriteString("================================================================\n")
-		f.WriteString(fmt.Sprintf("application: %s\n", context.Application))
-		f.WriteString(fmt.Sprintf("platform: %s\n", context.Platform))
-		f.WriteString(fmt.Sprintf("correlationId: %s\n", context.CorrelationId))
-		f.WriteString("================================================================\n")
-		f.Write(newConf)
-		f.Sync()
-
-		context.Fields(log.Fields{"filename": filename}).Info("Dump configuration")
-	}
-}
 
 // reload calls external shell script to reload haproxy
 // It returns error if the reload fails
@@ -218,26 +196,69 @@ func (hap *Haproxy) getReloadScript() string {
 }
 
 func (hap *Haproxy) Delete() error {
-	baseDir := hap.properties.HapHome + "/" + hap.Context.Application
-	err := os.RemoveAll(baseDir)
+	// remove bin and config files
+	err := hap.Files.removeAll()
 	if err != nil {
-		hap.Context.Fields(log.Fields{"dir": baseDir}).WithError(err).Error("Failed to delete haproxy")
-	} else {
-		hap.Context.Fields(log.Fields{"dir": baseDir}).WithError(err).Info("HAproxy deleted")
+		hap.Context.Fields(log.Fields{}).WithError(err).Error("can't delete a file")
+		return err
 	}
-
+	// remove platform directory (logs, dump, errors)
+	err = hap.Directories.removePlatform()
+	if err != nil {
+		hap.Context.Fields(log.Fields{}).WithError(err).Error("Failed to delete haproxy")
+	}
 	return err
 }
 
 func (hap *Haproxy) Stop() error {
-	reloadScript := hap.getReloadScript()
-	output, err := hap.Command("sh", reloadScript, "stop")
+	pid, err := hap.Files.readPid()
 	if err != nil {
-		hap.Context.Fields(log.Fields{}).WithError(err).Error("Error stop")
-	} else {
-		hap.Context.Fields(log.Fields{"reloadScript": reloadScript, "cmd":string(output[:])}).Debug("Stop succeeded")
+		hap.Context.Fields(log.Fields{"pid file":hap.Files.Pid}).Error("can't read pid file")
+	}
+	pidInt, err := strconv.Atoi(string(pid))
+	if err != nil {
+		hap.Context.Fields(log.Fields{"pid":pid, "pid file":hap.Files.Pid}).Error("can't convert pid to int")
+		return err
+	}
+	err = hap.Signal(pidInt, syscall.SIGTERM)
+
+	if err != nil {
+		hap.Context.Fields(log.Fields{}).WithError(err).Error("SIGTERM sent to haproxy process fails")
 	}
 	return err
+}
+
+/////////////////////////
+// OS implementations  //
+/////////////////////////
+
+func execCommand(name string, arg ...string) ([]byte, error) {
+	return exec.Command(name, arg...).Output()
+}
+
+func osSignal(pid int, signal os.Signal) error {
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return err
+	}
+	return process.Signal(signal)
+}
+
+// dumpConfiguration dumps the new configuration file with context for debugging purpose
+func dumpConfiguration(context Context, filename string, newConf []byte) {
+	f, err2 := os.Create(filename)
+	defer f.Close()
+	if err2 == nil {
+		f.WriteString("================================================================\n")
+		f.WriteString(fmt.Sprintf("application: %s\n", context.Application))
+		f.WriteString(fmt.Sprintf("platform: %s\n", context.Platform))
+		f.WriteString(fmt.Sprintf("correlationId: %s\n", context.CorrelationId))
+		f.WriteString("================================================================\n")
+		f.Write(newConf)
+		f.Sync()
+
+		context.Fields(log.Fields{"filename": filename}).Info("Dump configuration")
+	}
 }
 
 func (hap Haproxy) Fake() bool {

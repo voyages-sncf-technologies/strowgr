@@ -50,8 +50,8 @@ func NewPath(context Context, config, syslog, archive, pid, bin string) Files {
 func (files Files) linkNewVersion(version string) error {
 	newVersion := fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", version)
 	newLink := true
-	if files.Checker(newVersion) {
-		files.Remover(newVersion)
+	if files.Checker(files.Bin) {
+		files.Remover(files.Bin)
 		newLink = false
 	}
 	err := files.Linker(newVersion, files.Bin)
@@ -88,6 +88,14 @@ func (files Files) archive() error {
 
 func (files Files) rollback() error {
 	return files.Renamer(files.Archive, files.Config)
+}
+
+func (files Files) removeAll() error {
+	err := files.Remover(files.Config)
+	if err != nil {
+		return err
+	}
+	return files.Remover(files.Bin)
 }
 
 func (files Files) archiveExists() bool {

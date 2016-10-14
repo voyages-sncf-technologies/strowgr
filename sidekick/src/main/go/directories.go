@@ -9,6 +9,7 @@ type Directories struct {
 	Map     map[string]string
 	Mkdir   Mkdir
 	Context Context
+	Remover Remover
 }
 
 type Mkdir func(context Context, directory string) error
@@ -18,6 +19,7 @@ func NewDirectories(context Context, directories map[string]string) Directories 
 		Map:directories,
 		Context:context,
 		Mkdir:createDirectory,
+		Remover: os.Remove,
 	}
 }
 
@@ -44,4 +46,8 @@ func createDirectory(context Context, dir string) error {
 		}
 	}
 	return nil
+}
+
+func (directories Directories) removePlatform() error {
+	return directories.Remover(directories.Map["Platform"])
 }

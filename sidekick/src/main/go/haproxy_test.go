@@ -17,140 +17,177 @@
 package sidekick
 
 import (
-	"io/ioutil"
 	"os"
-	"runtime"
 	"testing"
-	"fmt"
+	"strings"
+	"syscall"
 )
-
-func mock_command(name string, arg ...string) ([]byte, error) {
-	return []byte("output"), nil
-}
 
 var (
 	config = Config{HapHome: "/HOME"}
 )
+
+func TestReloadScript(t *testing.T) {
+	// given
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+	hap.Command = MockCommand
+	hap.Files.Reader = MockReader
+
+	// test
+	err := hap.reload("my_id")
+
+	// check
+	checkError(t, err)
+	check(t, "reload command is wrong. actual: '%s', expected: '%s'", context.Command, "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234")
+}
+
+func TestCreateDirectory(t *testing.T) {
+	// given & test
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+
+	// check
+	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Config"], "/HOME/TST/Config")
+	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Logs"], "/HOME/TST/DEV/logs")
+	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Scripts"], "/HOME/TST/scripts")
+	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["VersionMinus1"], "/HOME/TST/version-1")
+	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Errors"], "/HOME/TST/DEV/errors")
+	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Dump"], "/HOME/TST/DEV/dump")
+	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Syslog"], "/HOME/SYSLOG/Config/syslog.conf.d")
+}
+
+func TestLinkNewVersion(t *testing.T) {
+	// given
+	initContext()
+	hap := NewHaproxy(&Config{HapHome:"/HOME"}, Context{Application: "TST", Platform: "DEV"})
+	hap.Files.Linker = MockLinker
+	hap.Files.Checker = MockChecker
+	hap.Files.Remover = MockRemover
+	binExpected := "/export/product/haproxy/product/1.2.3/bin/haproxy"
+	newVersionExpected := "/HOME/TST/scripts/hapTSTDEV"
+
+	// test
+	err := hap.Files.linkNewVersion("1.2.3")
+
+	// check
+	checkError(t, err)
+	check(t, "link destination to new bin is wrong. actual %s, expected %s", context.NewVersion, newVersionExpected)
+	check(t, "link origin to new bin is wrong. actual %s, expected %s", context.Bin, binExpected)
+	check(t, "link is not removed as expected. actual %, expected %s", context.Removed, true)
+	check(t, "old link is not removed as expected. actual %, expected %s", context.RemovedPath, ";" + newVersionExpected)
+}
+
+func TestArchivePath(t *testing.T) {
+	// given
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+
+	// test & check
+	result := hap.Files.Archive
+	expected := "/HOME/TST/version-1/hapTSTDEV.conf"
+	check(t, "Expected '%s', got '%s'", expected, result)
+}
 
 func TestGetReloadScript(t *testing.T) {
 	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
 	config.HapHome = "/HOME"
 	result := hap.getReloadScript()
 	expected := "/HOME/TST/scripts/hapTSTDEV"
-	AssertEquals(t, expected, result)
-}
-
-func TestReloadScript(t *testing.T) {
-	// given
-	tmpDir := os.TempDir()
-	hap := NewHaproxy(&Config{HapHome: tmpDir}, Context{Application: "TST", Platform: "DEV"})
-	hap.Command = mock_command
-	err := os.MkdirAll(tmpDir + "/TST/logs/TSTDEV/", 0644)
-	if err != nil {
-		t.Fail()
-	}
-	err = ioutil.WriteFile(tmpDir + "/TST/logs/TSTDEV/haproxy.pid", []byte("1234"), 0644)
-	if err != nil {
-		t.Fail()
-	}
-	config.HapHome = tmpDir
-
-	// test
-	fmt.Println(hap.Files.Pid)
-	err = hap.reload("my_id")
-
-	// check
-	if err != nil {
-		t.Fail()
-	}
-}
-
-func TestCreateSkeleton(t *testing.T) {
-	// given
-	tmpdir, _ := ioutil.TempDir("", "strowgr")
-	defer os.Remove(tmpdir)
-	hap := NewHaproxy(&Config{HapHome: tmpdir}, Context{Application: "TST", Platform: "DEV"})
-
-	// test
-	hap.Directories.mkDirs(Context{CorrelationId:"my correlation id"})
-
-	// check
-	AssertFileExists(t, tmpdir + "/TST/Config")
-	AssertFileExists(t, tmpdir + "/TST/logs/TSTDEV")
-	AssertFileExists(t, tmpdir + "/TST/scripts")
-	AssertFileExists(t, tmpdir + "/TST/version-1")
-}
-
-func TestHapBinLink(t *testing.T) {
-	// given
-	tmpdir, _ := ioutil.TempDir("", "strowgr")
-	defer os.Remove(tmpdir)
-	hap := NewHaproxy(&Config{HapHome: tmpdir}, Context{Application: "TST", Platform: "DEV"})
-	hap.Directories.mkDirs(Context{CorrelationId:"my correlation id"})
-
-	// test
-	err := hap.Files.Linker(tmpdir + "/test", hap.Files.Bin)
-
-	// check
-	if err != nil {
-		t.Error(err)
-	}
-	if runtime.GOOS != "windows" {
-		AssertIsSymlink(t, tmpdir + "/TST/scripts/hapTSTDEV")
-	}
-}
-
-func TestArchivePath(t *testing.T) {
-	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
-
-	result := hap.Files.Archive
-	expected := "/HOME/TST/version-1/hapTSTDEV.conf"
-	AssertEquals(t, expected, result)
-}
-
-func AssertFileExists(t *testing.T, file string) {
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		t.Logf("File or directory '%s' does not exists", file)
-		t.Fail()
-	}
-}
-
-func AssertFileNotExists(t *testing.T, file string) {
-	if _, err := os.Stat(file); os.IsExist(err) {
-		t.Logf("File or directory '%s' exists", file)
-		t.Fail()
-	}
-}
-
-func AssertIsSymlink(t *testing.T, file string) {
-	fi, err := os.Lstat(file)
-	if err != nil || (fi.Mode() & os.ModeSymlink != os.ModeSymlink) {
-		t.Logf("File or directory '%s' does not exists", file)
-		t.Fail()
-	}
-}
-
-func AssertEquals(t *testing.T, expected interface{}, result interface{}) {
-	if result != expected {
-		t.Logf("Expected '%s', got '%s'", expected, result)
-		t.Fail()
-	}
+	check(t, "Expected '%s', got '%s'", expected, result)
 }
 
 func TestDeleteInstance(t *testing.T) {
-	tmpdir, _ := ioutil.TempDir("", "strowgr")
-	defer os.Remove(tmpdir)
-	hap := NewHaproxy(&Config{HapHome: tmpdir}, Context{Application: "TST", Platform: "DEV"})
+	// given
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+	hap.Directories.Remover = MockRemover
+	hap.Files.Remover = MockRemover
 
-	err := hap.Directories.mkDirs(Context{CorrelationId:"my correlation id"})
-
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
-	AssertFileExists(t, tmpdir + "/TST/Config")
+	// test
 	hap.Delete()
 
-	AssertFileNotExists(t, tmpdir + "/TST")
-	AssertFileExists(t, tmpdir)
+	// check
+	check(t, "Actually removed files: %s. One of these files is not removed: %s. ", context.RemovedPath, ";/HOME/TST/Config/hapTSTDEV.conf;/HOME/TST/scripts/hapTSTDEV;/HOME/TST/DEV")
+}
+
+func TestStop(t *testing.T) {
+	// given
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+	hap.Signal = MockSignal
+	hap.Files.Reader = MockReader
+
+	// test
+	err := hap.Stop()
+
+	// check
+	checkError(t, err)
+	check(t, "expected signal sent to haproxy process is %s but should be %s", context.Signal, syscall.SIGTERM)
+}
+
+/////////////////
+// Test tools  //
+/////////////////
+
+type TestContext struct {
+	NewVersion  string
+	Bin         string
+	RemovedPath string
+	Removed     bool
+	Command     string
+	Signal      os.Signal
+}
+
+var context TestContext
+
+func initContext() {
+	context = TestContext{NewVersion:"", Bin:"", Removed:false, RemovedPath:"", Command:""}
+}
+
+func MockCommand(name string, arg ...string) ([]byte, error) {
+	context.Command = name + " " + strings.Join(arg, " ")
+	return []byte("ok"), nil
+}
+
+func MockReader(path string) ([]byte, error) {
+	if strings.HasSuffix(path, "pid") {
+		return []byte("1234"), nil
+	} else {
+		return []byte("nothing"), nil
+	}
+}
+
+func MockLinker(bin, newVersion string) error {
+	context.Bin = bin
+	context.NewVersion = newVersion
+	return nil
+}
+
+func MockChecker(newVersion string) bool {
+	return true
+}
+
+func MockRemover(path string) error {
+	context.Removed = true
+	context.RemovedPath += ";" + path
+	return nil
+}
+
+func MockSignal(pid int, signal os.Signal) error {
+	context.Signal = signal
+	return nil
+}
+func check(t *testing.T, message string, actual, expected interface{}) {
+	if actual != expected {
+		t.Errorf(message, actual, expected)
+		t.Fail()
+	}
+}
+
+func checkError(t *testing.T, err error) {
+	if err != nil {
+		t.Errorf("unexpected error: %s", err)
+		t.Fail()
+	}
 }
