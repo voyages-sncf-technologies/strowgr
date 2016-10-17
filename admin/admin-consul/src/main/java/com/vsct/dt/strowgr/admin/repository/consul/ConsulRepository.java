@@ -126,9 +126,14 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                 }
             }
 
+            if(count >= 10) {
+                LOGGER.error("could not acquire lock for key {} after 10 retries", entryPointKey);
+            }
+
         } catch (IOException e) {
             LOGGER.error("error in consul repository for session " + sessionId + " and key " + entryPointKey, e);
         }
+
         return locked;
     }
 

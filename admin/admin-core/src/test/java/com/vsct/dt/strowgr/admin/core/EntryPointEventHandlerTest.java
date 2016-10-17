@@ -72,6 +72,7 @@ public class EntryPointEventHandlerTest {
 
         AddEntryPointEvent event = new AddEntryPointEvent(CorrelationId.newCorrelationId(), key, config);
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.prepare(key, config)).thenReturn(Optional.of(config));
@@ -106,6 +107,7 @@ public class EntryPointEventHandlerTest {
 
         AddEntryPointEvent event = new AddEntryPointEvent(CorrelationId.newCorrelationId(), key, config);
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(current));
         when(haproxyRepository.getHaproxyProperty("haproxy", "platform")).thenReturn(Optional.of("test"));
@@ -139,6 +141,7 @@ public class EntryPointEventHandlerTest {
 
         AddEntryPointEvent event = new AddEntryPointEvent(CorrelationId.newCorrelationId(), key, config);
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(committing));
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
         when(haproxyRepository.getHaproxyProperty("haproxy", "platform")).thenReturn(Optional.of("test"));
@@ -153,6 +156,7 @@ public class EntryPointEventHandlerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("key");
         UpdateEntryPointEvent event = new UpdateEntryPointEvent("correlation_id", key, new UpdatedEntryPoint(0, "user", new HashMap<>(), new HashSet<>(), new HashSet<>(), "hapVersion"));
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
@@ -175,6 +179,7 @@ public class EntryPointEventHandlerTest {
         /* Create expected configuration */
         EntryPoint expectedConfiguration = getUpdateTestExpectedEntryPoint();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.of(pendingConfiguration));
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
@@ -314,6 +319,7 @@ public class EntryPointEventHandlerTest {
         /* Create expected configuration */
         EntryPoint expectedConfiguration = getUpdateTestExpectedEntryPoint();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(committingConfiguration));
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
@@ -337,6 +343,7 @@ public class EntryPointEventHandlerTest {
         /* Create expected configuration */
         EntryPoint expectedConfiguration = getUpdateTestExpectedEntryPoint();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfiguration));
@@ -362,6 +369,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
@@ -396,6 +404,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.tryCommitCurrent(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
@@ -428,6 +437,8 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
                 .build();
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
@@ -460,6 +471,8 @@ public class EntryPointEventHandlerTest {
                 .definesBackends(ImmutableSet.of())
                 .withGlobalContext(ImmutableMap.of())
                 .build();
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.tryCommitPending(correlationId, key)).thenReturn(Optional.of(entryPoint));
         when(portRepository.getPort(key, EntryPoint.SYSLOG_PORT_ID)).thenReturn(Optional.of(666));
         when(templateLocator.readTemplate(entryPoint)).thenReturn(Optional.of("some template"));
@@ -481,6 +494,8 @@ public class EntryPointEventHandlerTest {
     public void commit_success_event_does_nothing_if_commit_correlationid_does_not_exists() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         CommitSuccessEvent event = new CommitSuccessEvent(CorrelationId.newCorrelationId(), key);
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.empty());
         when(stateManager.commit(key)).thenReturn(Optional.empty());
         handler.handle(event);
@@ -492,6 +507,8 @@ public class EntryPointEventHandlerTest {
     public void commit_success_event_does_nothing_if_commit_correlationid_does_not_match() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         CommitSuccessEvent event = new CommitSuccessEvent(CorrelationId.newCorrelationId(), key);
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(CorrelationId.newCorrelationId()));
         when(stateManager.commit(key)).thenReturn(Optional.empty());
         handler.handle(event);
@@ -504,6 +521,8 @@ public class EntryPointEventHandlerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
         CommitSuccessEvent event = new CommitSuccessEvent(correlationId, key);
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(correlationId));
         when(stateManager.commit(key)).thenReturn(Optional.empty());
         handler.handle(event);
@@ -515,6 +534,8 @@ public class EntryPointEventHandlerTest {
     public void commit_failure_event_does_nothing_if_there_is_no_committing_configuration() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         CommitFailureEvent commitFailureEvent = new CommitFailureEvent(CorrelationId.newCorrelationId(), key);
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.empty());
 
         handler.handle(commitFailureEvent);
@@ -526,6 +547,8 @@ public class EntryPointEventHandlerTest {
     public void commit_failure_event_does_nothing_if_the_correlation_id_does_not_match_the_event_that_trigerred_it() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         CommitFailureEvent commitFailureEvent = new CommitFailureEvent(CorrelationId.newCorrelationId(), key);
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(CorrelationId.newCorrelationId()));
 
         handler.handle(commitFailureEvent);
@@ -538,6 +561,8 @@ public class EntryPointEventHandlerTest {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
         CommitFailureEvent commitFailureEvent = new CommitFailureEvent(correlationId, key);
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(correlationId));
 
         handler.handle(commitFailureEvent);
@@ -552,6 +577,7 @@ public class EntryPointEventHandlerTest {
         IncomingEntryPointBackendServer server = new IncomingEntryPointBackendServer("ijklm", "10.98.71.1", "9090", new HashMap<>());
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), key, "BACKEND", ImmutableSet.of(server));
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.empty());
@@ -607,6 +633,8 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(commmittingConfig));
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.of(pendingConfig));
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
@@ -654,6 +682,8 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.of(commmittingConfig));
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
@@ -692,6 +722,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
@@ -729,6 +760,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
@@ -771,6 +803,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
@@ -819,6 +852,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
@@ -869,6 +903,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));
@@ -921,6 +956,7 @@ public class EntryPointEventHandlerTest {
                 .withGlobalContext(ImmutableMap.of())
                 .build();
 
+        when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getPendingConfiguration(key)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(key)).thenReturn(Optional.of(currentConfig));

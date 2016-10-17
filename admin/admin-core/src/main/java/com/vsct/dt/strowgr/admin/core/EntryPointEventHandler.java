@@ -71,14 +71,15 @@ public class EntryPointEventHandler {
                 this.stateManager.setAutoreload(entryPointKey, true);
             }
 
-            this.stateManager.lock(entryPointKey);
-            if (!stateManager.getCommittingConfiguration(entryPointKey).isPresent() && !stateManager.getCurrentConfiguration(entryPointKey).isPresent()) {
-                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(entryPointKey, entryPoint);
+            if(this.stateManager.lock(entryPointKey)) {
+                if (!stateManager.getCommittingConfiguration(entryPointKey).isPresent() && !stateManager.getCurrentConfiguration(entryPointKey).isPresent()) {
+                    Optional<EntryPoint> preparedConfiguration = stateManager.prepare(entryPointKey, entryPoint);
 
-                if (preparedConfiguration.isPresent()) {
-                    EntryPointAddedEvent entryPointAddedEvent = new EntryPointAddedEvent(event.getCorrelationId(), entryPointKey, preparedConfiguration.get());
-                    LOGGER.info("from handle AddEntryPointEvent new EntryPoint {} added -> {}", entryPointKey.getID(), entryPointAddedEvent);
-                    outputBus.post(entryPointAddedEvent);
+                    if (preparedConfiguration.isPresent()) {
+                        EntryPointAddedEvent entryPointAddedEvent = new EntryPointAddedEvent(event.getCorrelationId(), entryPointKey, preparedConfiguration.get());
+                        LOGGER.info("from handle AddEntryPointEvent new EntryPoint {} added -> {}", entryPointKey.getID(), entryPointAddedEvent);
+                        outputBus.post(entryPointAddedEvent);
+                    }
                 }
             }
         } finally {
@@ -90,23 +91,23 @@ public class EntryPointEventHandler {
     public void handle(UpdateEntryPointEvent event) {
         EntryPointKey key = event.getKey();
         try {
-            this.stateManager.lock(key);
+            if(this.stateManager.lock(key)) {
 
-            Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
-                    stateManager.getPendingConfiguration(key)
-                            .orElseGet(() -> stateManager.getCommittingConfiguration(key)
-                                    .orElseGet(() -> stateManager.getCurrentConfiguration(key)
-                                            .orElse(null)))
-            );
+                Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
+                        stateManager.getPendingConfiguration(key)
+                                .orElseGet(() -> stateManager.getCommittingConfiguration(key)
+                                        .orElseGet(() -> stateManager.getCurrentConfiguration(key)
+                                                .orElse(null)))
+                );
 
-            existingConfiguration.map(c -> c.mergeWithUpdate(event.getUpdatedEntryPoint()))
-                    .ifPresent(c -> {
-                        Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
-                        if (preparedConfiguration.isPresent()) {
-                            outputBus.post(new EntryPointUpdatedEvent(event.getCorrelationId(), key, preparedConfiguration.get()));
-                        }
-                    });
-
+                existingConfiguration.map(c -> c.mergeWithUpdate(event.getUpdatedEntryPoint()))
+                        .ifPresent(c -> {
+                            Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
+                            if (preparedConfiguration.isPresent()) {
+                                outputBus.post(new EntryPointUpdatedEvent(event.getCorrelationId(), key, preparedConfiguration.get()));
+                            }
+                        });
+            }
         } finally {
             this.stateManager.release(key);
         }
@@ -116,10 +117,11 @@ public class EntryPointEventHandler {
     public void handle(SwapAutoreloadRequestedEvent swapAutoreloadRequestedEvent) {
         EntryPointKey key = swapAutoreloadRequestedEvent.getKey();
         try {
-            this.stateManager.lock(key);
-            boolean isAutoreloaded = this.stateManager.isAutoreloaded(swapAutoreloadRequestedEvent.getKey());
-            this.stateManager.setAutoreload(key, !isAutoreloaded);
-            outputBus.post(new AutoreloadSwappedEvent(swapAutoreloadRequestedEvent.getCorrelationId(), key, true));
+            if(this.stateManager.lock(key)) {
+                boolean isAutoreloaded = this.stateManager.isAutoreloaded(swapAutoreloadRequestedEvent.getKey());
+                this.stateManager.setAutoreload(key, !isAutoreloaded);
+                outputBus.post(new AutoreloadSwappedEvent(swapAutoreloadRequestedEvent.getCorrelationId(), key, true));
+            }
         } catch (Throwable throwable) {
             LOGGER.error("can't change autoreload of entrypoint " + key, throwable);
         } finally {
@@ -133,34 +135,36 @@ public class EntryPointEventHandler {
         LOGGER.info("receive RegisterServerEvent {}", event);
         EntryPointKey key = event.getKey();
         try {
-            this.stateManager.lock(key);
-            Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
-                    stateManager.getPendingConfiguration(key)
-                            .orElseGet(() -> stateManager.getCommittingConfiguration(key)
-                                    .orElseGet(() -> stateManager.getCurrentConfiguration(key)
-                                            .orElseGet(() -> {
-                                                LOGGER.warn("can't find an entrypoint for key {} from register server event {}", key, event);
-                                                return null;
-                                            })))
-            );
+            if(this.stateManager.lock(key)) {
+                Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
+                        stateManager.getPendingConfiguration(key)
+                                .orElseGet(() -> stateManager.getCommittingConfiguration(key)
+                                        .orElseGet(() -> stateManager.getCurrentConfiguration(key)
+                                                .orElseGet(() -> {
+                                                    LOGGER.warn("can't find an entrypoint for key {} from register server event {}", key, event);
+                                                    return null;
+                                                })))
+                );
 
-            existingConfiguration.map(c -> c.registerServers(event.getBackend(), event.getServers())).ifPresent(c -> {
-                Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
+                existingConfiguration.map(c -> c.registerServers(event.getBackend(), event.getServers())).ifPresent(c -> {
+                    Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
 
-                if (preparedConfiguration.isPresent()) {
-                    LOGGER.info("new servers registered for EntryPoint {}", event.getKey().getID());
-                    if (LOGGER.isDebugEnabled()) {
-                        for (IncomingEntryPointBackendServer server : event.getServers()) {
-                            LOGGER.debug("- registered server {}", server);
+                    if (preparedConfiguration.isPresent()) {
+                        LOGGER.info("new servers registered for EntryPoint {}", event.getKey().getID());
+                        if (LOGGER.isDebugEnabled()) {
+                            for (IncomingEntryPointBackendServer server : event.getServers()) {
+                                LOGGER.debug("- registered server {}", server);
+                            }
                         }
+                        ServerRegisteredEvent serverRegisteredEvent = new ServerRegisteredEvent(event.getCorrelationId(), event.getKey(), event.getBackend(), event.getServers());
+                        LOGGER.debug("post to event bus event {}", serverRegisteredEvent);
+                        outputBus.post(serverRegisteredEvent);
                     }
-                    ServerRegisteredEvent serverRegisteredEvent = new ServerRegisteredEvent(event.getCorrelationId(), event.getKey(), event.getBackend(), event.getServers());
-                    LOGGER.debug("post to event bus event {}", serverRegisteredEvent);
-                    outputBus.post(serverRegisteredEvent);
-                } else {
-                    LOGGER.warn("can't prepare configuration on key {}", key);
-                }
-            });
+                    else {
+                        LOGGER.warn("can't prepare configuration on key {}", key);
+                    }
+                });
+            }
 
         } finally {
             this.stateManager.release(key);
@@ -171,22 +175,24 @@ public class EntryPointEventHandler {
     public void handle(TryCommitCurrentConfigurationEvent event) throws IncompleteConfigurationException {
         EntryPointKey entryPointKey = event.getKey();
         try {
-            this.stateManager.lock(entryPointKey);
-            Optional<EntryPoint> entryPoint = stateManager.tryCommitCurrent(event.getCorrelationId(), entryPointKey);
-            if (entryPoint.isPresent()) {
-                EntryPoint configuration = entryPoint.get();
-                if (!haproxyRepository.isAutoreload(configuration.getHaproxy()) || !stateManager.isAutoreloaded(entryPointKey)) {
-                    stateManager.cancelCommit(entryPointKey);
-                    LOGGER.info("skip tryCommitCurrent for event {} because haproxy {} or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
-                } else {
-                    String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
-                    Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
-                    String conf = templateGenerator.generate(template, configuration, portsMapping);
-                    String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                    String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/"+configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
-                    CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
-                    LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
-                    outputBus.post(commitRequestedEvent);
+            if(this.stateManager.lock(entryPointKey)) {
+                Optional<EntryPoint> entryPoint = stateManager.tryCommitCurrent(event.getCorrelationId(), entryPointKey);
+                if (entryPoint.isPresent()) {
+                    EntryPoint configuration = entryPoint.get();
+                    if (!haproxyRepository.isAutoreload(configuration.getHaproxy()) || !stateManager.isAutoreloaded(entryPointKey)) {
+                        stateManager.cancelCommit(entryPointKey);
+                        LOGGER.info("skip tryCommitCurrent for event {} because haproxy {} or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
+                    }
+                    else {
+                        String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
+                        Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
+                        String conf = templateGenerator.generate(template, configuration, portsMapping);
+                        String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
+                        String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/" + configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
+                        CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
+                        LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
+                        outputBus.post(commitRequestedEvent);
+                    }
                 }
             }
         } finally {
@@ -198,23 +204,25 @@ public class EntryPointEventHandler {
     public void handle(TryCommitPendingConfigurationEvent event) throws IncompleteConfigurationException {
         EntryPointKey entryPointKey = event.getKey();
         try {
-            this.stateManager.lock(entryPointKey);
-            Optional<EntryPoint> entryPoint = stateManager.tryCommitPending(event.getCorrelationId(), entryPointKey);
-            if (entryPoint.isPresent()) {
-                EntryPoint configuration = entryPoint.get();
-                if (!haproxyRepository.isAutoreload(configuration.getHaproxy()) || !stateManager.isAutoreloaded(entryPointKey)) {
-                    stateManager.cancelCommit(entryPointKey);
-                    stateManager.prepare(entryPointKey, configuration);
-                    LOGGER.info("skip tryCommitPending for event {} because haproxy {}  or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
-                } else {
-                    String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
-                    Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
-                    String conf = templateGenerator.generate(template, configuration, portsMapping);
-                    String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                    String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/"+configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
-                    CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
-                    LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
-                    outputBus.post(commitRequestedEvent);
+            if(this.stateManager.lock(entryPointKey)) {
+                Optional<EntryPoint> entryPoint = stateManager.tryCommitPending(event.getCorrelationId(), entryPointKey);
+                if (entryPoint.isPresent()) {
+                    EntryPoint configuration = entryPoint.get();
+                    if (!haproxyRepository.isAutoreload(configuration.getHaproxy()) || !stateManager.isAutoreloaded(entryPointKey)) {
+                        stateManager.cancelCommit(entryPointKey);
+                        stateManager.prepare(entryPointKey, configuration);
+                        LOGGER.info("skip tryCommitPending for event {} because haproxy {}  or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
+                    }
+                    else {
+                        String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
+                        Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
+                        String conf = templateGenerator.generate(template, configuration, portsMapping);
+                        String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
+                        String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/" + configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
+                        CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
+                        LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
+                        outputBus.post(commitRequestedEvent);
+                    }
                 }
             }
         } finally {
@@ -227,13 +235,14 @@ public class EntryPointEventHandler {
         LOGGER.debug("Handle CommitSuccessEvent");
         EntryPointKey key = event.getKey();
         try {
-            this.stateManager.lock(key);
-            Optional<String> optionalCorrelationId = stateManager.getCommitCorrelationId(key);
-            if (optionalCorrelationId.isPresent() && optionalCorrelationId.get().equals(event.getCorrelationId())) {
-                Optional<EntryPoint> currentConfiguration = stateManager.commit(key);
-                if (currentConfiguration.isPresent()) {
-                    LOGGER.info("Configuration for EntryPoint {} has been committed", event.getKey().getID());
-                    outputBus.post(new CommitCompletedEvent(event.getCorrelationId(), key, currentConfiguration.get()));
+            if(this.stateManager.lock(key)) {
+                Optional<String> optionalCorrelationId = stateManager.getCommitCorrelationId(key);
+                if (optionalCorrelationId.isPresent() && optionalCorrelationId.get().equals(event.getCorrelationId())) {
+                    Optional<EntryPoint> currentConfiguration = stateManager.commit(key);
+                    if (currentConfiguration.isPresent()) {
+                        LOGGER.info("Configuration for EntryPoint {} has been committed", event.getKey().getID());
+                        outputBus.post(new CommitCompletedEvent(event.getCorrelationId(), key, currentConfiguration.get()));
+                    }
                 }
             }
         } finally {
@@ -259,13 +268,15 @@ public class EntryPointEventHandler {
     public void handle(CommitFailureEvent event) {
         EntryPointKey key = event.getKey();
         try {
-            this.stateManager.lock(key);
-            Optional<String> commitCorrelationId = stateManager.getCommitCorrelationId(key);
-            if (commitCorrelationId.isPresent() && commitCorrelationId.get().equals(event.getCorrelationId())) {
-                LOGGER.info("Configuration for EntryPoint {} failed. Commit is canceled.", key);
-                stateManager.cancelCommit(key);
-            } else {
-                LOGGER.info("Received a failed event but either there is no committing configuration or the correlation id does not match.");
+            if(this.stateManager.lock(key)) {
+                Optional<String> commitCorrelationId = stateManager.getCommitCorrelationId(key);
+                if (commitCorrelationId.isPresent() && commitCorrelationId.get().equals(event.getCorrelationId())) {
+                    LOGGER.info("Configuration for EntryPoint {} failed. Commit is canceled.", key);
+                    stateManager.cancelCommit(key);
+                }
+                else {
+                    LOGGER.info("Received a failed event but either there is no committing configuration or the correlation id does not match.");
+                }
             }
         } finally {
             this.stateManager.release(key);
