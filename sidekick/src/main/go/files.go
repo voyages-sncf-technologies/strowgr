@@ -13,6 +13,7 @@ type Renamer func(oldpath, newpath string) error
 type Checker func(path string) bool
 type Linker func(oldpath, newpath string) error
 type Remover func(path string) error
+type ReadlLinker func(path string) (string,error)
 
 type Files struct {
 	Config        string
@@ -28,6 +29,7 @@ type Files struct {
 	Checker       Checker
 	Linker        Linker
 	Remover       Remover
+	ReadLinker   ReadlLinker
 }
 
 func NewPath(context Context, config, syslog, archive, pid, bin, binArchive string) Files {
@@ -38,6 +40,7 @@ func NewPath(context Context, config, syslog, archive, pid, bin, binArchive stri
 		Checker: osExists,
 		Linker:  os.Symlink,
 		Remover: os.Remove,
+		ReadLinker: os.Readlink,
 	}
 	files.Context = context
 	files.ConfigArchive = archive
@@ -51,20 +54,14 @@ func NewPath(context Context, config, syslog, archive, pid, bin, binArchive stri
 
 func (files Files) linkNewVersion(version string) error {
 	newVersion := fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", version)
-	newLink := true
 	if files.Checker(files.Bin) {
-		files.Context.Fields(log.Fields{"file link": files.Bin}).Debug("existing link")
+		files.Context.Fields(log.Fields{"file link": files.Bin}).Debug("remove existing link")
 		files.Remover(files.Bin)
-		newLink = false
-	}
-	err := files.Linker(newVersion, files.Bin)
-	if err != nil {
-		files.Context.Fields(log.Fields{"path": newVersion}).WithError(err).Error("Symlink failed")
-		return err
 	}
 
-	if newLink {
-		files.Context.Fields(log.Fields{"path": newVersion}).WithError(err).Error("Symlink created")
+	if err := files.Linker(newVersion, files.Bin); err != nil {
+		files.Context.Fields(log.Fields{"path": newVersion}).WithError(err).Error("Symlink failed")
+		return err
 	}
 	return nil
 }
@@ -86,15 +83,38 @@ func (files Files) writeSyslog(content []byte) error {
 }
 
 func (files Files) archive() error {
-	err := files.Renamer(files.Config, files.ConfigArchive)
-	if err != nil {
+	if err := files.Renamer(files.Config, files.ConfigArchive); err != nil {
+		files.Context.Fields(log.Fields{"archivePath": files.ConfigArchive}).WithError(err).Error("can't archive config file")
 		return err
+	} else {
+		files.Context.Fields(log.Fields{"archivePath": files.ConfigArchive}).Debug("Old configuration archived")
 	}
-	return files.Renamer(files.Bin, files.BinArchive)
+
+	if files.binArchiveExists() {
+		files.Remover(files.BinArchive)
+	}
+	binDestination, _ := files.ReadLinker(files.Bin)
+	if err := files.Linker(binDestination, files.BinArchive); err != nil {
+		files.Context.Fields(log.Fields{"archivePath": files.BinArchive}).WithError(err).Error("can't archive bin file")
+		return err
+	} else {
+		files.Context.Fields(log.Fields{"archivePath": files.BinArchive}).Debug("Old bin archived")
+	}
+	return nil
 }
 
 func (files Files) rollback() error {
-	return files.Renamer(files.ConfigArchive, files.Config)
+	if err := files.Renamer(files.ConfigArchive, files.Config); err != nil {
+		files.Context.Fields(log.Fields{"archived config":files.ConfigArchive, "used config":files.Config}).WithError(err).Error("can't rename config archive to used config path")
+		return err
+	}
+
+	if err := files.Renamer(files.BinArchive, files.Bin); err != nil {
+		files.Context.Fields(log.Fields{"archived bin":files.ConfigArchive, "used config":files.Config}).WithError(err).Error("can't rename config archive to used config path")
+		return err
+	}
+
+	return nil
 }
 
 func (files Files) removeAll() error {
@@ -105,8 +125,12 @@ func (files Files) removeAll() error {
 	return files.Remover(files.Bin)
 }
 
-func (files Files) archiveExists() bool {
+func (files Files) configArchiveExists() bool {
 	return files.Checker(files.ConfigArchive)
+}
+
+func (files Files) binArchiveExists() bool {
+	return files.Checker(files.BinArchive)
 }
 
 func osExists(path string) bool {

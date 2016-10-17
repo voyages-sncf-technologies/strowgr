@@ -50,12 +50,12 @@ func NewHaproxy(properties *Config, context Context) *Haproxy {
 			"Dump":          properties.HapHome + "/" + context.Application + "/" + context.Platform + "/dump",
 			"Syslog":        properties.HapHome + "/SYSLOG/Config/syslog.conf.d"}),
 		Files: NewPath(context,
-			properties.HapHome+"/"+context.Application+"/Config/hap"+context.Application+context.Platform+".conf",
-			properties.HapHome+"/SYSLOG/Config/syslog.conf.d/syslog"+context.Application+context.Platform+".conf",
-			properties.HapHome+"/"+context.Application+"/version-1/hap"+context.Application+context.Platform+".conf",
-			properties.HapHome+"/"+context.Application+"/logs/"+context.Application+context.Platform+"/haproxy.pid",
-			properties.HapHome+"/"+context.Application+"/scripts/hap"+context.Application+context.Platform,
-			properties.HapHome+"/"+context.Application+"/version-1/hap"+context.Application+context.Platform,
+			properties.HapHome + "/" + context.Application + "/Config/hap" + context.Application + context.Platform + ".conf",
+			properties.HapHome + "/SYSLOG/Config/syslog.conf.d/syslog" + context.Application + context.Platform + ".conf",
+			properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform + ".conf",
+			properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform + "/haproxy.pid",
+			properties.HapHome + "/" + context.Application + "/scripts/hap" + context.Application + context.Platform,
+			properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform,
 		),
 	}
 }
@@ -72,10 +72,10 @@ type Haproxy struct {
 }
 
 const (
-	SUCCESS    int = iota
-	UNCHANGED  int = iota
+	SUCCESS int = iota
+	UNCHANGED int = iota
 	ERR_SYSLOG int = iota
-	ERR_CONF   int = iota
+	ERR_CONF int = iota
 	ERR_RELOAD int = iota
 	MAX_STATUS int = iota
 )
@@ -103,41 +103,42 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	hap.dumpDebug(newConf)
 
 	// Check conf diff
-	oldConf, err := hap.Files.readConfig()
-	if bytes.Equal(oldConf, newConf) {
-		hap.Context.Fields(log.Fields{"id": hap.properties.Id}).Debug("Unchanged configuration")
-		return UNCHANGED, nil
+	if hap.Files.Checker(hap.Files.Config) {
+		// a configuration file already exists, should be archived
+		if oldConf, err := hap.Files.readConfig(); err != nil {
+			return ERR_CONF, err
+		} else {
+			if bytes.Equal(oldConf, newConf) {
+				hap.Context.Fields(log.Fields{"id": hap.properties.Id}).Debug("Unchanged configuration")
+				return UNCHANGED, nil
+			}
+			// Archive previous configuration
+			hap.Files.archive()
+		}
 	}
 
-	// Archive previous configuration
-	hap.Files.archive()
-
-	hap.Context.Fields(log.Fields{"id": hap.properties.Id, "archivePath": hap.Files.ConfigArchive}).Info("Old configuration saved")
+	// Change configuration and link to new version
 	hap.Files.linkNewVersion(data.Conf.Version)
-	err = hap.Files.writeConfig(newConf)
-	if err != nil {
+	if err := hap.Files.writeConfig(newConf); err != nil {
 		return ERR_CONF, err
 	}
 
 	hap.Context.Fields(log.Fields{"id": hap.properties.Id, "path": hap.Files.Config}).Info("New configuration written")
 
 	// Reload haproxy
-	err = hap.reload(data.Header.CorrelationId)
-	if err != nil {
+	if err := hap.reload(data.Header.CorrelationId); err != nil {
 		hap.Context.Fields(log.Fields{"id": hap.properties.Id}).WithError(err).Error("Reload failed")
 		hap.dumpError(newConf)
-		errRollback := hap.rollback(data.Header.CorrelationId)
-		if errRollback != nil {
+		if errRollback := hap.rollback(data.Header.CorrelationId); errRollback != nil {
 			log.WithError(errRollback).Error("error in rollback in addition to error of the reload")
 		} else {
 			hap.Context.Fields(log.Fields{}).Debug("rollback done")
 		}
 		return ERR_RELOAD, err
 	}
-	// Write syslog fragment
-	err = hap.Files.writeSyslog(data.Conf.Syslog)
 
-	if err != nil {
+	// Write syslog fragment
+	if err := hap.Files.writeSyslog(data.Conf.Syslog); err != nil {
 		hap.Context.Fields(log.Fields{"id": hap.properties.Id}).WithError(err).Error("Failed to write syslog fragment")
 		// TODO Should we rollback on syslog error ?
 		return ERR_SYSLOG, err
@@ -149,40 +150,54 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 
 func (hap *Haproxy) dumpDebug(newConf []byte) {
 	if log.GetLevel() == log.DebugLevel {
-		hap.Dumper(hap.Context, hap.Directories.Map["Debug"]+"/"+time.Now().Format("20060102150405")+".log", newConf)
+		hap.Dumper(hap.Context, hap.Directories.Map["Debug"] + "/" + time.Now().Format("20060102150405") + ".log", newConf)
 	}
 }
 
 func (hap *Haproxy) dumpError(newConf []byte) {
-	hap.Dumper(hap.Context, hap.Directories.Map["Errors"]+"/"+time.Now().Format("20060102150405")+".log", newConf)
+	hap.Dumper(hap.Context, hap.Directories.Map["Errors"] + "/" + time.Now().Format("20060102150405") + ".log", newConf)
 }
 
 // reload calls external shell script to reload haproxy
 // It returns error if the reload fails
 func (hap *Haproxy) reload(correlationId string) error {
-	pid, err := hap.Files.readPid()
-	if err != nil {
-		hap.Context.Fields(log.Fields{"pid path": string(hap.Files.Pid)}).Error("can't read pid file")
-		return err
-	}
-	hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config, "pidPath": hap.Files.Pid, "pid": string(pid)}).Debug("reload haproxy")
-	output, err := hap.Command(hap.Files.Bin, "-f", hap.Files.Config, "-p", hap.Files.Pid, "-sf", string(pid))
+	configurationExists := hap.Files.Checker(hap.Files.Pid)
+	if configurationExists {
+		pid, err := hap.Files.readPid()
+		if err != nil {
+			hap.Context.Fields(log.Fields{"pid path": string(hap.Files.Pid)}).Error("can't read pid file")
+			return err
+		}
+		hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config, "pidPath": hap.Files.Pid, "pid": string(pid)}).Debug("reload haproxy")
 
-	if err == nil {
-		hap.Context.Fields(log.Fields{"id": hap.properties.Id, "reloadScript": hap.Files.Bin, "output": string(output[:])}).Debug("Reload succeeded")
+		if output, err := hap.Command(hap.Files.Bin, "-f", hap.Files.Config, "-p", hap.Files.Pid, "-sf", string(pid)); err == nil {
+			hap.Context.Fields(log.Fields{"id": hap.properties.Id, "reloadScript": hap.Files.Bin, "output": string(output[:])}).Debug("Reload succeeded")
+		} else {
+			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
+		}
 	} else {
-		hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
-
+		hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config}).Info("load haproxy")
+		output, err := hap.Command(hap.Files.Bin, "-f", hap.Files.Config, "-p", hap.Files.Pid)
+		if err == nil {
+			hap.Context.Fields(log.Fields{"id": hap.properties.Id, "reloadScript": hap.Files.Bin, "output": string(output[:])}).Debug("Reload succeeded")
+		} else {
+			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
+			return err
+		}
 	}
-	return err
+	return nil
 }
 
 // rollback reverts configuration files and call for reload
 func (hap *Haproxy) rollback(correlationId string) error {
-	if hap.Files.archiveExists() {
+	if hap.Files.configArchiveExists() {
+		hap.Context.Fields(log.Fields{}).Error("No configuration file to rollback")
 		return errors.New("No configuration file to rollback")
 	}
-	// TODO remove current hap.confPath() ?
+	if hap.Files.binArchiveExists() {
+		hap.Context.Fields(log.Fields{}).Error("No bin file to rollback")
+		return errors.New("No bin file to rollback")
+	}
 	hap.Files.rollback()
 	hap.reload(correlationId)
 	return nil
@@ -210,7 +225,7 @@ func (hap *Haproxy) Stop() error {
 	}
 	pidInt, err := strconv.Atoi(string(pid))
 	if err != nil {
-		hap.Context.Fields(log.Fields{"pid": pid, "pid file": hap.Files.Pid}).Error("can't convert pid to int")
+		hap.Context.Fields(log.Fields{"pid": string(pid), "pid file": hap.Files.Pid}).Error("can't convert pid to int")
 		return err
 	}
 	err = hap.Signal(pidInt, syscall.SIGTERM)

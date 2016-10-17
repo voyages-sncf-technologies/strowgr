@@ -21,6 +21,7 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"errors"
 )
 
 var (
@@ -30,9 +31,7 @@ var (
 func TestReloadScript(t *testing.T) {
 	// given
 	initContext()
-	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
-	hap.Command = MockCommand
-	hap.Files.Reader = MockReader
+	hap := newMockHaproxy()
 
 	// test
 	err := hap.reload("my_id")
@@ -75,7 +74,7 @@ func TestLinkNewVersion(t *testing.T) {
 	check(t, "link destination to new bin is wrong. actual %s, expected %s", context.NewVersion, newVersionExpected)
 	check(t, "link origin to new bin is wrong. actual %s, expected %s", context.Bin, binExpected)
 	check(t, "link is not removed as expected. actual %, expected %s", context.Removed, true)
-	check(t, "old link is not removed as expected. actual %, expected %s", context.RemovedPath, ";"+newVersionExpected)
+	check(t, "old link is not removed as expected. actual %, expected %s", context.RemovedPath, ";" + newVersionExpected)
 }
 
 func TestArchivePath(t *testing.T) {
@@ -159,15 +158,11 @@ func TestUnchangedConfiguration(t *testing.T) {
 func TestChangedConfiguration(t *testing.T) {
 	// given
 	initContext()
-	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
-	hap.properties.HapVersions = []string{"1", "2", "3"}
-	hap.Files.Reader = MockReader
-	hap.Files.Writer = MockWriter
-	hap.Files.Renamer = MockRenamer
-	hap.Files.Checker = MockChecker
+	hap := newMockHaproxy()
 
-	hap.Command = MockCommand
-	hap.Directories.Mkdir = MockMkdir
+	binExpected := "/export/product/haproxy/product/1/bin/haproxy"
+	newVersionExpected := "/HOME/TST/scripts/hapTSTDEV"
+
 	conf := Conf{Version: "1"}
 	conf.Haproxy = []byte("new conf")
 	event := &EventMessageWithConf{Conf: conf}
@@ -175,13 +170,51 @@ func TestChangedConfiguration(t *testing.T) {
 	// test
 	result, err := hap.ApplyConfiguration(event)
 
-	// given
+	// check
 	checkError(t, err)
 	check(t, "expected result is %s but actually got %s", SUCCESS, result)
+	// check archive configuration
 	check(t, "expected configuration to archive %s but actually got %s", "/HOME/TST/Config/hapTSTDEV.conf", context.OldPaths[0])
 	check(t, "expected archive path %s but actually got %s", "/HOME/TST/version-1/hapTSTDEV.conf", context.NewPaths[0])
-	check(t, "expected archive link %s but actually got %s", "/HOME/TST/scripts/hapTSTDEV", context.OldPaths[1])
-	check(t, "expected archive link %s but actually got %s", "/HOME/TST/version-1/hapTSTDEV", context.NewPaths[1])
+	// check archive bin
+	//check(t, "expected archive link %s but actually got %s", "/export/product/haproxy/product/1/bin/haproxy", context.Bin)
+	//check(t, "expected archive link %s but actually got %s", "/HOME/TST/version-1/hapTSTDEV", context.NewVersion)
+	// check executions
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234", context.Command)
+	// check links
+	check(t, "link destination to new bin is wrong. actual %s, expected %s", context.NewVersion, newVersionExpected)
+	check(t, "link origin to new bin is wrong. actual %s, expected %s", context.Bin, binExpected)
+	// check new conf
+	check(t, "configuration file is %s but should be %s ", context.Writes["/HOME/TST/Config/hapTSTDEV.conf"], "new conf")
+}
+
+func TestEmptyConfiguration(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+	hap.Files.Reader = MockReaderEmpty
+	hap.Files.Checker = MockCheckerAbsent
+
+	binExpected := "/export/product/haproxy/product/1/bin/haproxy"
+	newVersionExpected := "/HOME/TST/scripts/hapTSTDEV"
+
+	conf := Conf{Version: "1"}
+	conf.Haproxy = []byte("completly new conf")
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, err := hap.ApplyConfiguration(event)
+
+	// check
+	checkError(t, err)
+	check(t, "expected result is %s but actually got %s", SUCCESS, result)
+	// check executions
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid", context.Command)
+	// check links
+	check(t, "link destination to new bin is wrong. actual %s, expected %s", context.NewVersion, newVersionExpected)
+	check(t, "link origin to new bin is wrong. actual %s, expected %s", context.Bin, binExpected)
+	// check new conf
+	check(t, "configuration file is %s but should be %s ", context.Writes["/HOME/TST/Config/hapTSTDEV.conf"], "completly new conf")
 }
 
 /////////////////
@@ -197,12 +230,18 @@ type TestContext struct {
 	OldPaths    []string
 	NewPaths    []string
 	Signal      os.Signal
+	Writes      map[string]string
 }
 
 var context TestContext
 
 func initContext() {
-	context = TestContext{NewVersion: "", Bin: "", Removed: false, RemovedPath: "", Command: ""}
+	context = TestContext{NewVersion: "", Bin: "", Removed: false, RemovedPath: "", Command: "", Writes:make(map[string]string)}
+}
+
+func MockWriter(path string, content []byte, perm os.FileMode) error {
+	context.Writes[path] = string(content)
+	return nil
 }
 
 func MockRenamer(oldPath, newPath string) error {
@@ -226,6 +265,16 @@ func MockReader(path string) ([]byte, error) {
 	}
 }
 
+func MockReaderEmpty(path string) ([]byte, error) {
+	if strings.HasSuffix(path, "pid") {
+		return nil, errors.New("pid is not present")
+	} else if strings.HasSuffix(path, "conf") {
+		return nil, errors.New("conf is not present")
+	} else {
+		return []byte("nothing"), nil
+	}
+}
+
 func MockLinker(bin, newVersion string) error {
 	context.Bin = bin
 	context.NewVersion = newVersion
@@ -234,6 +283,10 @@ func MockLinker(bin, newVersion string) error {
 
 func MockChecker(newVersion string) bool {
 	return true
+}
+
+func MockCheckerAbsent(newVersion string) bool {
+	return false
 }
 
 func MockRemover(path string) error {
@@ -251,9 +304,24 @@ func MockMkdir(Context Context, directory string) error {
 	return nil
 }
 
-func MockWriter(path string, content []byte, perm os.FileMode) error {
-	return nil
+func MockReadLinker(link string) (string, error) {
+	return "/HOME/hapadm/DEM/version-1/hapDEMGAR1", nil
 }
+
+func newMockHaproxy() *Haproxy {
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+	hap.properties.HapVersions = []string{"1", "2", "3"}
+	hap.Files.Reader = MockReader
+	hap.Files.Writer = MockWriter
+	hap.Files.Renamer = MockRenamer
+	hap.Files.Checker = MockChecker
+	hap.Files.Linker = MockLinker
+	hap.Files.ReadLinker = MockReadLinker
+	hap.Command = MockCommand
+	hap.Directories.Mkdir = MockMkdir
+	return hap
+}
+
 func check(t *testing.T, message string, actual, expected interface{}) {
 	if actual != expected {
 		t.Errorf(message, actual, expected)
