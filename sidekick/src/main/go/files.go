@@ -15,21 +15,22 @@ type Linker func(oldpath, newpath string) error
 type Remover func(path string) error
 
 type Files struct {
-	Config  string
-	Syslog  string
-	Archive string
-	Pid     string
-	Bin     string
-	Context Context
-	Reader  Reader
-	Writer  Writer
-	Renamer Renamer
-	Checker Checker
-	Linker  Linker
-	Remover Remover
+	Config        string
+	Syslog        string
+	ConfigArchive string
+	BinArchive    string
+	Pid           string
+	Bin           string
+	Context       Context
+	Reader        Reader
+	Writer        Writer
+	Renamer       Renamer
+	Checker       Checker
+	Linker        Linker
+	Remover       Remover
 }
 
-func NewPath(context Context, config, syslog, archive, pid, bin string) Files {
+func NewPath(context Context, config, syslog, archive, pid, bin, binArchive string) Files {
 	files := Files{
 		Reader:  ioutil.ReadFile,
 		Writer:  ioutil.WriteFile,
@@ -39,11 +40,12 @@ func NewPath(context Context, config, syslog, archive, pid, bin string) Files {
 		Remover: os.Remove,
 	}
 	files.Context = context
-	files.Archive = archive
+	files.ConfigArchive = archive
 	files.Config = config
 	files.Syslog = syslog
 	files.Pid = pid
 	files.Bin = bin
+	files.BinArchive = binArchive
 	return files
 }
 
@@ -84,11 +86,15 @@ func (files Files) writeSyslog(content []byte) error {
 }
 
 func (files Files) archive() error {
-	return files.Renamer(files.Config, files.Archive)
+	err := files.Renamer(files.Config, files.ConfigArchive)
+	if err != nil {
+		return err
+	}
+	return files.Renamer(files.Bin, files.BinArchive)
 }
 
 func (files Files) rollback() error {
-	return files.Renamer(files.Archive, files.Config)
+	return files.Renamer(files.ConfigArchive, files.Config)
 }
 
 func (files Files) removeAll() error {
@@ -100,7 +106,7 @@ func (files Files) removeAll() error {
 }
 
 func (files Files) archiveExists() bool {
-	return files.Checker(files.Archive)
+	return files.Checker(files.ConfigArchive)
 }
 
 func osExists(path string) bool {

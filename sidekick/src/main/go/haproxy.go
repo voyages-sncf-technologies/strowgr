@@ -54,7 +54,9 @@ func NewHaproxy(properties *Config, context Context) *Haproxy {
 			properties.HapHome+"/SYSLOG/Config/syslog.conf.d/syslog"+context.Application+context.Platform+".conf",
 			properties.HapHome+"/"+context.Application+"/version-1/hap"+context.Application+context.Platform+".conf",
 			properties.HapHome+"/"+context.Application+"/logs/"+context.Application+context.Platform+"/haproxy.pid",
-			fmt.Sprintf("%s/%s/scripts/hap%s%s", properties.HapHome, context.Application, context.Application, context.Platform)),
+			properties.HapHome+"/"+context.Application+"/scripts/hap"+context.Application+context.Platform,
+			properties.HapHome+"/"+context.Application+"/version-1/hap"+context.Application+context.Platform,
+		),
 	}
 }
 
@@ -110,7 +112,7 @@ func (hap *Haproxy) ApplyConfiguration(data *EventMessageWithConf) (int, error) 
 	// Archive previous configuration
 	hap.Files.archive()
 
-	hap.Context.Fields(log.Fields{"id": hap.properties.Id, "archivePath": hap.Files.Archive}).Info("Old configuration saved")
+	hap.Context.Fields(log.Fields{"id": hap.properties.Id, "archivePath": hap.Files.ConfigArchive}).Info("Old configuration saved")
 	hap.Files.linkNewVersion(data.Conf.Version)
 	err = hap.Files.writeConfig(newConf)
 	if err != nil {

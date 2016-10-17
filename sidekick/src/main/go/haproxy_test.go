@@ -84,7 +84,7 @@ func TestArchivePath(t *testing.T) {
 	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
 
 	// test & check
-	result := hap.Files.Archive
+	result := hap.Files.ConfigArchive
 	expected := "/HOME/TST/version-1/hapTSTDEV.conf"
 	check(t, "Expected '%s', got '%s'", expected, result)
 }
@@ -180,8 +180,8 @@ func TestChangedConfiguration(t *testing.T) {
 	check(t, "expected result is %s but actually got %s", SUCCESS, result)
 	check(t, "expected configuration to archive %s but actually got %s", "/HOME/TST/Config/hapTSTDEV.conf", context.OldPaths[0])
 	check(t, "expected archive path %s but actually got %s", "/HOME/TST/version-1/hapTSTDEV.conf", context.NewPaths[0])
-//	check(t, "expected archive link %s but actually got %s", "/HOME/TST/version-1/hap", context.OldPaths[1])
-//	check(t, "expected archive link %s but actually got %s", "/HOME/TST/version-1/hap", context.NewPaths[1])
+	check(t, "expected archive link %s but actually got %s", "/HOME/TST/scripts/hapTSTDEV", context.OldPaths[1])
+	check(t, "expected archive link %s but actually got %s", "/HOME/TST/version-1/hapTSTDEV", context.NewPaths[1])
 }
 
 /////////////////
