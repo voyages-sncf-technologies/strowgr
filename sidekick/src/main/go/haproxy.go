@@ -168,9 +168,9 @@ func (hap *Haproxy) reload(correlationId string) error {
 			hap.Context.Fields(log.Fields{"pid path": string(hap.Files.Pid)}).Error("can't read pid file")
 			return err
 		}
-		hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config, "pidPath": hap.Files.Pid, "pid": string(pid)}).Debug("reload haproxy")
+		hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config, "pidPath": hap.Files.Pid, "pid": strings.TrimSpace(string(pid))}).Debug("reload haproxy")
 
-		if output, err := hap.Command(hap.Files.Bin, "-f", hap.Files.Config, "-p", hap.Files.Pid, "-sf", string(pid)); err == nil {
+		if output, err := hap.Command(hap.Files.Bin, "-f", hap.Files.Config, "-p", hap.Files.Pid, "-sf", strings.TrimSpace(string(pid))); err == nil {
 			hap.Context.Fields(log.Fields{"id": hap.properties.Id, "reloadScript": hap.Files.Bin, "output": string(output[:])}).Debug("Reload succeeded")
 		} else {
 			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
@@ -223,9 +223,9 @@ func (hap *Haproxy) Stop() error {
 	if err != nil {
 		hap.Context.Fields(log.Fields{"pid file": hap.Files.Pid}).Error("can't read pid file")
 	}
-	pidInt, err := strconv.Atoi(string(pid))
+	pidInt, err := strconv.Atoi(strings.TrimSpace(string(pid)))
 	if err != nil {
-		hap.Context.Fields(log.Fields{"pid": string(pid), "pid file": hap.Files.Pid}).Error("can't convert pid to int")
+		hap.Context.Fields(log.Fields{"pid":strings.TrimSpace(string(pid)), "pid file": hap.Files.Pid}).Error("can't convert pid to int")
 		return err
 	}
 	err = hap.Signal(pidInt, syscall.SIGTERM)
