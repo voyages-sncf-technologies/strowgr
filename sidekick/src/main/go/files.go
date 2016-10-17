@@ -1,10 +1,10 @@
 package sidekick
 
 import (
-	"os"
-	"io/ioutil"
-	log "github.com/Sirupsen/logrus"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
+	"io/ioutil"
+	"os"
 )
 
 type Reader func(path string) ([]byte, error)
@@ -31,11 +31,11 @@ type Files struct {
 
 func NewPath(context Context, config, syslog, archive, pid, bin string) Files {
 	files := Files{
-		Reader: ioutil.ReadFile,
-		Writer: ioutil.WriteFile,
+		Reader:  ioutil.ReadFile,
+		Writer:  ioutil.WriteFile,
 		Renamer: os.Rename,
 		Checker: osExists,
-		Linker: os.Symlink,
+		Linker:  os.Symlink,
 		Remover: os.Remove,
 	}
 	files.Context = context
@@ -51,7 +51,7 @@ func (files Files) linkNewVersion(version string) error {
 	newVersion := fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", version)
 	newLink := true
 	if files.Checker(files.Bin) {
-		files.Context.Fields(log.Fields{"file link":files.Bin}).Debug("existing link")
+		files.Context.Fields(log.Fields{"file link": files.Bin}).Debug("existing link")
 		files.Remover(files.Bin)
 		newLink = false
 	}

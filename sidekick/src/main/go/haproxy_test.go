@@ -18,9 +18,9 @@ package sidekick
 
 import (
 	"os"
-	"testing"
 	"strings"
 	"syscall"
+	"testing"
 )
 
 var (
@@ -60,7 +60,7 @@ func TestCreateDirectory(t *testing.T) {
 func TestLinkNewVersion(t *testing.T) {
 	// given
 	initContext()
-	hap := NewHaproxy(&Config{HapHome:"/HOME"}, Context{Application: "TST", Platform: "DEV"})
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
 	hap.Files.Linker = MockLinker
 	hap.Files.Checker = MockChecker
 	hap.Files.Remover = MockRemover
@@ -75,7 +75,7 @@ func TestLinkNewVersion(t *testing.T) {
 	check(t, "link destination to new bin is wrong. actual %s, expected %s", context.NewVersion, newVersionExpected)
 	check(t, "link origin to new bin is wrong. actual %s, expected %s", context.Bin, binExpected)
 	check(t, "link is not removed as expected. actual %, expected %s", context.Removed, true)
-	check(t, "old link is not removed as expected. actual %, expected %s", context.RemovedPath, ";" + newVersionExpected)
+	check(t, "old link is not removed as expected. actual %, expected %s", context.RemovedPath, ";"+newVersionExpected)
 }
 
 func TestArchivePath(t *testing.T) {
@@ -118,6 +118,72 @@ func TestStop(t *testing.T) {
 	check(t, "expected signal sent to haproxy process is %s but should be %s", context.Signal, syscall.SIGTERM)
 }
 
+func TestUnversionedConfiguration(t *testing.T) {
+	// given
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+	hap.properties.HapVersions = []string{"1", "2", "3"}
+	hap.Files.Reader = MockReader
+	conf := Conf{Version: "123"}
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, _ := hap.ApplyConfiguration(event)
+
+	// given
+	check(t, "expected result is %s but actually got %s", ERR_CONF, result)
+}
+
+func TestUnchangedConfiguration(t *testing.T) {
+	// given
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+	hap.properties.HapVersions = []string{"1", "2", "3"}
+	hap.Files.Reader = MockReader
+	hap.Files.Renamer = MockRenamer
+	hap.Files.Linker = MockLinker
+	hap.Command = MockCommand
+	conf := Conf{Version: "1"}
+	conf.Haproxy = []byte("my conf")
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, err := hap.ApplyConfiguration(event)
+
+	// given
+	checkError(t, err)
+	check(t, "expected result is %s but actually got %s", UNCHANGED, result)
+	check(t, "actual command %s should be empty but got %s", "", context.Command)
+}
+
+func TestChangedConfiguration(t *testing.T) {
+	// given
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+	hap.properties.HapVersions = []string{"1", "2", "3"}
+	hap.Files.Reader = MockReader
+	hap.Files.Writer = MockWriter
+	hap.Files.Renamer = MockRenamer
+	hap.Files.Checker = MockChecker
+
+	hap.Command = MockCommand
+	hap.Directories.Mkdir = MockMkdir
+	conf := Conf{Version: "1"}
+	conf.Haproxy = []byte("new conf")
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, err := hap.ApplyConfiguration(event)
+
+	// given
+	checkError(t, err)
+	check(t, "expected result is %s but actually got %s", SUCCESS, result)
+	check(t, "expected configuration to archive %s but actually got %s", "/HOME/TST/Config/hapTSTDEV.conf", context.OldPaths[0])
+	check(t, "expected archive path %s but actually got %s", "/HOME/TST/version-1/hapTSTDEV.conf", context.NewPaths[0])
+//	check(t, "expected archive link %s but actually got %s", "/HOME/TST/version-1/hap", context.OldPaths[1])
+//	check(t, "expected archive link %s but actually got %s", "/HOME/TST/version-1/hap", context.NewPaths[1])
+}
+
 /////////////////
 // Test tools  //
 /////////////////
@@ -128,13 +194,21 @@ type TestContext struct {
 	RemovedPath string
 	Removed     bool
 	Command     string
+	OldPaths    []string
+	NewPaths    []string
 	Signal      os.Signal
 }
 
 var context TestContext
 
 func initContext() {
-	context = TestContext{NewVersion:"", Bin:"", Removed:false, RemovedPath:"", Command:""}
+	context = TestContext{NewVersion: "", Bin: "", Removed: false, RemovedPath: "", Command: ""}
+}
+
+func MockRenamer(oldPath, newPath string) error {
+	context.OldPaths = append(context.OldPaths, oldPath)
+	context.NewPaths = append(context.NewPaths, newPath)
+	return nil
 }
 
 func MockCommand(name string, arg ...string) ([]byte, error) {
@@ -145,6 +219,8 @@ func MockCommand(name string, arg ...string) ([]byte, error) {
 func MockReader(path string) ([]byte, error) {
 	if strings.HasSuffix(path, "pid") {
 		return []byte("1234"), nil
+	} else if strings.HasSuffix(path, "conf") {
+		return []byte("my conf"), nil
 	} else {
 		return []byte("nothing"), nil
 	}
@@ -168,6 +244,14 @@ func MockRemover(path string) error {
 
 func MockSignal(pid int, signal os.Signal) error {
 	context.Signal = signal
+	return nil
+}
+
+func MockMkdir(Context Context, directory string) error {
+	return nil
+}
+
+func MockWriter(path string, content []byte, perm os.FileMode) error {
 	return nil
 }
 func check(t *testing.T, message string, actual, expected interface{}) {
