@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class Server {
 
@@ -61,5 +62,22 @@ public class Server {
 
     public Map<String, String> getContext() {
         return context;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Server server = (Server) o;
+        return Objects.equals(id, server.id) &&
+                Objects.equals(backendId, server.backendId) &&
+                Objects.equals(ip, server.ip) &&
+                Objects.equals(port, server.port) &&
+                Objects.equals(context, server.context);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, backendId, ip, port, context);
     }
 }

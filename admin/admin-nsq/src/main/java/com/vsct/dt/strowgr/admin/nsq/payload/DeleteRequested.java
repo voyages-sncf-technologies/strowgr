@@ -22,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
+import java.util.Objects;
+
 public class DeleteRequested {
 
     private final Header header;
@@ -37,5 +39,18 @@ public class DeleteRequested {
 
     public Header getHeader() {
         return header;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DeleteRequested that = (DeleteRequested) o;
+        return Objects.equals(header, that.header);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(header);
     }
 }

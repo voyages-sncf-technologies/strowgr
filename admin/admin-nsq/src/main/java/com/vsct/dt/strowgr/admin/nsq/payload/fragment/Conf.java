@@ -20,6 +20,8 @@ package com.vsct.dt.strowgr.admin.nsq.payload.fragment;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Objects;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -69,5 +71,21 @@ public class Conf {
 
     public String getHaproxyVersion() {
         return haproxyVersion;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Conf conf = (Conf) o;
+        return Objects.equals(haproxy, conf.haproxy) &&
+                Objects.equals(syslog, conf.syslog) &&
+                Objects.equals(bind, conf.bind) &&
+                Objects.equals(haproxyVersion, conf.haproxyVersion);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(haproxy, syslog, bind, haproxyVersion);
     }
 }
