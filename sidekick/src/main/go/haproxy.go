@@ -53,7 +53,7 @@ func NewHaproxy(properties *Config, context Context) *Haproxy {
 			properties.HapHome + "/" + context.Application + "/Config/hap" + context.Application + context.Platform + ".conf",
 			properties.HapHome + "/SYSLOG/Config/syslog.conf.d/syslog" + context.Application + context.Platform + ".conf",
 			properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform + ".conf",
-			properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform + "/haproxy.pid",
+			properties.HapHome + "/" + context.Application + "/" + context.Platform + "/logs/haproxy.pid",
 			properties.HapHome + "/" + context.Application + "/scripts/hap" + context.Application + context.Platform,
 			properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform,
 		),
@@ -65,7 +65,7 @@ type Haproxy struct {
 	State       int
 	Context     Context
 	Command     Command
-	Directories Directories
+	Directories Directories // TODO merge directories and files models
 	Files       Files
 	Dumper      Dumper
 	Signal      Signal
@@ -165,7 +165,7 @@ func (hap *Haproxy) reload(correlationId string) error {
 	if configurationExists {
 		pid, err := hap.Files.readPid()
 		if err != nil {
-			hap.Context.Fields(log.Fields{"pid path": string(hap.Files.Pid)}).Error("can't read pid file")
+			hap.Context.Fields(log.Fields{"pid path": hap.Files.Pid}).Error("can't read pid file")
 			return err
 		}
 		hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config, "pidPath": hap.Files.Pid, "pid": strings.TrimSpace(string(pid))}).Debug("reload haproxy")
@@ -174,9 +174,10 @@ func (hap *Haproxy) reload(correlationId string) error {
 			hap.Context.Fields(log.Fields{"id": hap.properties.Id, "reloadScript": hap.Files.Bin, "output": string(output[:])}).Debug("Reload succeeded")
 		} else {
 			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
+			return err
 		}
 	} else {
-		hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config}).Info("load haproxy")
+		hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config, "pid file":hap.Files.Pid}).Info("load haproxy")
 		output, err := hap.Command(hap.Files.Bin, "-f", hap.Files.Config, "-p", hap.Files.Pid)
 		if err == nil {
 			hap.Context.Fields(log.Fields{"id": hap.properties.Id, "reloadScript": hap.Files.Bin, "output": string(output[:])}).Debug("Reload succeeded")
@@ -190,17 +191,10 @@ func (hap *Haproxy) reload(correlationId string) error {
 
 // rollback reverts configuration files and call for reload
 func (hap *Haproxy) rollback(correlationId string) error {
-	if hap.Files.configArchiveExists() {
-		hap.Context.Fields(log.Fields{}).Error("No configuration file to rollback")
-		return errors.New("No configuration file to rollback")
+	if err := hap.Files.rollback(); err != nil {
+		return err
 	}
-	if hap.Files.binArchiveExists() {
-		hap.Context.Fields(log.Fields{}).Error("No bin file to rollback")
-		return errors.New("No bin file to rollback")
-	}
-	hap.Files.rollback()
-	hap.reload(correlationId)
-	return nil
+	return hap.reload(correlationId)
 }
 
 func (hap *Haproxy) Delete() error {

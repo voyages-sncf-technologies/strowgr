@@ -212,6 +212,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     .map(s -> s.replace("/disabled", "")) // @deprecated TODO remove
                     .map(s -> s.replace("/autoreload", ""))
                     .map(s -> s.replace("/haproxyversion", ""))
+                    .filter(s -> !s.isEmpty())
                     .distinct()
                     .collect(Collectors.toSet());
 

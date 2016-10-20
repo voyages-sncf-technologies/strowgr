@@ -46,7 +46,10 @@ func (config Config) IsMaster(vip string) (bool, error) {
 		log.WithField("http status", resp.Status).Debug("response ip")
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
-		log.WithField("id", body).Debug("retrieve master id")
+		isMaster := string(body) == config.Id
+		if log.GetLevel() == log.DebugLevel {
+			log.WithField("id", string(body)).WithField("isMaster", isMaster).Debug("retrieve master id")
+		}
 		return string(body) == config.Id, err
 	}
 }

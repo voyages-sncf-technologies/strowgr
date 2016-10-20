@@ -37,6 +37,7 @@ var (
 	configFile = flag.String("config", "sidekick.conf", "Configuration file")
 	version = flag.Bool("version", false, "Print current version")
 	verbose = flag.Bool("verbose", false, "Log in verbose mode")
+	mono = flag.Bool("mono", false, "only one haproxy instance which play slave/master roles.")
 	fake = flag.String("fake", "", "Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.")
 	config = nsq.NewConfig()
 	properties       *sidekick.Config
@@ -297,7 +298,7 @@ func reloadSlave(data *sidekick.EventMessageWithConf) error {
 	if err != nil {
 		log.WithField("bind", data.Conf.Bind).WithError(err).Info("can't find if binding to vip")
 	}
-	if isMaster {
+	if isMaster && !*mono {
 		return nil
 	} else {
 		return reloadHaProxy(data, false)
@@ -343,7 +344,7 @@ func reloadHaProxy(data *sidekick.EventMessageWithConf, masterRole bool) error {
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		if (masterRole || hap.Fake()) {
+		if (masterRole || hap.Fake() || *mono) {
 			publishMessage("commit_completed_", data.Clone(properties.Id), context)
 		} else {
 			publishMessage("commit_slave_completed_", data.CloneWithConf(properties.Id), context)

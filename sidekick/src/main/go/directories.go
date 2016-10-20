@@ -19,7 +19,7 @@ func NewDirectories(context Context, directories map[string]string) Directories 
 		Map:directories,
 		Context:context,
 		Mkdir:createDirectory,
-		Remover: os.Remove,
+		Remover: os.RemoveAll,
 	}
 }
 
