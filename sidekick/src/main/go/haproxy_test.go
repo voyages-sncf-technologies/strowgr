@@ -115,7 +115,7 @@ func TestUnversionedConfiguration(t *testing.T) {
 	// given
 	initContext()
 	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
-	hap.properties.HapVersions = []string{"1", "2", "3"}
+	hap.Config.HapVersions = []string{"1", "2", "3"}
 	hap.Files.Reader = MockReader
 	conf := Conf{Version: "123"}
 	event := &EventMessageWithConf{Conf: conf}

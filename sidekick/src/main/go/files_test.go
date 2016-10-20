@@ -22,7 +22,7 @@ func TestArchive(t *testing.T) {
 	// check
 	checkError(t, err)
 	checkMap(t, files.ConfigArchive, files.Config, context.Links)
-	checkMap(t, files.BinArchive, "/export/product/haproxy/product/1/bin/haproxy", context.Links
+	checkMap(t, files.BinArchive, "/export/product/haproxy/product/1/bin/haproxy", context.Links)
 	// TODO test remove
 }
 
