@@ -107,7 +107,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                 LOGGER.warn("reuse session for key {}");
             }
 
-            LOGGER.debug("attempt to acquire lock for key {} on session {}", entryPointKey, sessionId);
+            LOGGER.trace("attempt to acquire lock for key {} on session {}", entryPointKey, sessionId);
             HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey + "/lock?acquire=" + sessionId);
 
             int count = 0;
@@ -121,7 +121,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                         LOGGER.error("error in consul repository for session " + sessionId + " and key " + entryPointKey, e);
                     }
                 } else {
-                    LOGGER.debug("lock acquired for key {} on session {}", entryPointKey, sessionId);
+                    LOGGER.trace("lock acquired for key {} on session {}", entryPointKey, sessionId);
                 }
             }
 
@@ -172,10 +172,10 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     @Override
     public void release(EntryPointKey key) {
         try {
-            LOGGER.debug("attempt to release lock for key " + key + " on session " + sessionLocal.get());
+            LOGGER.trace("attempt to release lock for key " + key + " on session " + sessionLocal.get());
             HttpPut releaseEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/lock?release=" + sessionLocal.get());
             client.execute(releaseEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
-            LOGGER.debug("lock released for key " + key + " on session " + sessionLocal.get());
+            LOGGER.trace("lock released for key " + key + " on session " + sessionLocal.get());
         } catch (IOException e) {
             LOGGER.error("error in consul repository", e);
         } finally {

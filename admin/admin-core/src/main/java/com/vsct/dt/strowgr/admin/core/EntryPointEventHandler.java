@@ -60,6 +60,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(AddEntryPointEvent event) {
+        LOGGER.debug("handles AddEntryPointEvent");
         EntryPointKey entryPointKey = event.getKey();
         try {
             EntryPoint entryPoint = event.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + event));
@@ -77,7 +78,7 @@ public class EntryPointEventHandler {
 
                     if (preparedConfiguration.isPresent()) {
                         EntryPointAddedEvent entryPointAddedEvent = new EntryPointAddedEvent(event.getCorrelationId(), entryPointKey, preparedConfiguration.get());
-                        LOGGER.info("from handle AddEntryPointEvent new EntryPoint {} added -> {}", entryPointKey.getID(), entryPointAddedEvent);
+                        LOGGER.trace("from handle AddEntryPointEvent new EntryPoint {} added -> {}", entryPointKey.getID(), entryPointAddedEvent);
                         outputBus.post(entryPointAddedEvent);
                     }
                 }
@@ -132,7 +133,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(RegisterServerEvent event) {
-        LOGGER.info("receive RegisterServerEvent {}", event);
+        LOGGER.info("handles RegisterServerEvent {}", event);
         EntryPointKey key = event.getKey();
         try {
             if(this.stateManager.lock(key)) {
@@ -173,6 +174,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(TryCommitCurrentConfigurationEvent event) throws IncompleteConfigurationException {
+        LOGGER.debug("handles TryCommitCurrentConfigurationEvent");
         EntryPointKey entryPointKey = event.getKey();
         try {
             if(this.stateManager.lock(entryPointKey)) {
@@ -190,7 +192,7 @@ public class EntryPointEventHandler {
                         String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
                         String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/" + configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
                         CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
-                        LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
+                        LOGGER.trace("from handle -> post to event bus event {}", commitRequestedEvent);
                         outputBus.post(commitRequestedEvent);
                     }
                 }
@@ -202,6 +204,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(TryCommitPendingConfigurationEvent event) throws IncompleteConfigurationException {
+        LOGGER.debug("handles TryCommitPendingConfigurationEvent");
         EntryPointKey entryPointKey = event.getKey();
         try {
             if(this.stateManager.lock(entryPointKey)) {
@@ -220,7 +223,7 @@ public class EntryPointEventHandler {
                         String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
                         String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/" + configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
                         CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
-                        LOGGER.debug("from handle -> post to event bus event {}", commitRequestedEvent);
+                        LOGGER.trace("from handle -> post to event bus event {}", commitRequestedEvent);
                         outputBus.post(commitRequestedEvent);
                     }
                 }
@@ -232,7 +235,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(CommitSuccessEvent event) {
-        LOGGER.debug("Handle CommitSuccessEvent");
+        LOGGER.debug("handles CommitSuccessEvent");
         EntryPointKey key = event.getKey();
         try {
             if(this.stateManager.lock(key)) {
@@ -266,6 +269,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(CommitFailureEvent event) {
+        LOGGER.debug("handles CommitFailureEvent");
         EntryPointKey key = event.getKey();
         try {
             if(this.stateManager.lock(key)) {
