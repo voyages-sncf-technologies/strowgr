@@ -29,58 +29,39 @@ import (
 	"time"
 )
 
-
 // Haproxy manager for a given Application/Platform
 type Haproxy struct {
-				// config of sidekick
-	Config      *Config
-				// context of this haproxy (current application/platform/correlationid etc...)
-	Context     Context
-				// files managed by sidekick for this haproxy instance
-	Files       Files
-				// directories managed by sidekick for this haproxy instance
-	Directories Directories // TODO merge directories and files models to a more generic 'filesystem' model
-				// command wrapping real command execution
-	Command     Command
-				// dump abstraction to a file
-	Dumper      Dumper
-				// signal abstraction for sending signal
-	Signal      Signal
+	// config of sidekick
+	Config *Config
+	// context of this haproxy (current application/platform/correlationid etc...)
+	Context Context
+
+	Filesystem Filesystem // directories managed by sidekick for this haproxy instance
+	// command wrapping real command execution
+	Command Command
+	// dump abstraction to a file
+	Dumper Dumper
+	// signal abstraction for sending signal
+	Signal Signal
 }
 
 func NewHaproxy(properties *Config, context Context) *Haproxy {
 	// TODO manage a cache of Haproxy
 	return &Haproxy{
-		Config: properties,
+		Config:     properties,
 		Context:    context,
 		Command:    execCommand,
 		Signal:     osSignal,
 		Dumper:     dumpConfiguration,
-		Directories: NewDirectories(context, map[string]string{// TODO more generic 'filesystem' model for avoiding code repetition
-			"Platform":      properties.HapHome + "/" + context.Application + "/" + context.Platform,
-			"Config":        properties.HapHome + "/" + context.Application + "/Config",
-			"Logs":          properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform,
-			"Scripts":       properties.HapHome + "/" + context.Application + "/scripts",
-			"VersionMinus1": properties.HapHome + "/" + context.Application + "/version-1",
-			"Errors":        properties.HapHome + "/" + context.Application + "/" + context.Platform + "/errors",
-			"Dump":          properties.HapHome + "/" + context.Application + "/" + context.Platform + "/dump",
-			"Syslog":        properties.HapHome + "/SYSLOG/Config/syslog.conf.d"}),
-		Files: NewPath(context,
-			properties.HapHome + "/" + context.Application + "/Config/hap" + context.Application + context.Platform + ".conf",
-			properties.HapHome + "/SYSLOG/Config/syslog.conf.d/syslog" + context.Application + context.Platform + ".conf",
-			properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform + ".conf",
-			properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform + "/haproxy.pid",
-			properties.HapHome + "/" + context.Application + "/scripts/hap" + context.Application + context.Platform,
-			properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform,
-		),
+		Filesystem: NewFilesystem(properties.HapHome, context.Application, context.Platform),
 	}
 }
 
 const (
-	SUCCESS int = iota
-	UNCHANGED int = iota
+	SUCCESS    int = iota
+	UNCHANGED  int = iota
 	ERR_SYSLOG int = iota
-	ERR_CONF int = iota
+	ERR_CONF   int = iota
 	ERR_RELOAD int = iota
 	MAX_STATUS int = iota
 )
@@ -88,6 +69,8 @@ const (
 // ApplyConfiguration write the new configuration and reload
 // A rollback is called on failure
 func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (int, error) {
+	fs := hap.Filesystem
+	cmd := fs.Commands
 	// validate version
 	if event.Conf.Version == "" || !hap.isManagedVersion(event.Conf.Version) || event.Conf.Haproxy == nil {
 		hap.Context.Fields(log.Fields{"given haproxy version": event.Conf.Version, "managed versions by sidekick": strings.Join(hap.Config.HapVersions, ",")}).Error("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance or configuration is missing")
@@ -95,32 +78,47 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (int, error)
 	}
 
 	// create skeleton of directories
-	hap.Directories.mkDirs(hap.Context)
+	fs.Mkdirs(hap.Context)
 
 	// dump received haproxy configuration in debug mode
 	hap.dumpDebug(event.Conf.Haproxy)
 
 	// Check conf diff
-	if hap.Files.Checker(hap.Files.Config) {
+	if cmd.Exists(fs.Files.ConfigFile) {
 		// a configuration file already exists, should be archived
-		if oldConf, err := hap.Files.readConfig(); err != nil {
+		if oldConf, err := cmd.Reader(fs.Files.ConfigFile); err != nil {
 			return ERR_CONF, err
 		} else if bytes.Equal(oldConf, event.Conf.Haproxy) {
 			hap.Context.Fields(log.Fields{"id": hap.Config.Id}).Debug("Unchanged configuration")
 			return UNCHANGED, nil
 		} else {
 			// Archive previous configuration
-			hap.Files.archive()
+			if err := cmd.Renamer(fs.Files.ConfigFile, fs.Files.ConfigArchive); err != nil {
+				hap.Context.Fields(log.Fields{"archivePath": fs.Files.ConfigArchive}).WithError(err).Error("can't archive config file")
+				return ERR_CONF, err
+			} else {
+				hap.Context.Fields(log.Fields{"archivePath": fs.Files.ConfigArchive}).Debug("Old configuration archived")
+			}
+			// Archive previous binary (link)
+			binOrigin, _ := cmd.ReadLinker(fs.Files.Binary)
+			if err := cmd.Linker(binOrigin, fs.Files.BinaryArchive); err != nil {
+				hap.Context.Fields(log.Fields{"bin archive": fs.Files.BinaryArchive}).WithError(err).Error("can't archive binary")
+			} else {
+				hap.Context.Fields(log.Fields{"archivePath": fs.Files.BinaryArchive}).Debug("Old bin archived")
+			}
 		}
 	}
 
-	// Change configuration and link to new version
-	hap.Files.linkNewVersion(event.Conf.Version)
-	if err := hap.Files.writeConfig(event.Conf.Haproxy); err != nil {
+	// new version
+	newVersion := fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", event.Conf.Version) // TODO externalize the binary path
+	if err := cmd.Linker(newVersion, fs.Files.Binary); err != nil {
+		hap.Context.Fields(log.Fields{"origin": newVersion, "destination": fs.Files.Binary}).WithError(err).Error("symlink failed")
+	}
+	if err := cmd.Writer(fs.Files.ConfigFile, event.Conf.Haproxy, 0644); err != nil {
 		return ERR_CONF, err
 	}
 
-	hap.Context.Fields(log.Fields{"id": hap.Config.Id, "path": hap.Files.Config}).Info("New configuration written")
+	hap.Context.Fields(log.Fields{"id": hap.Config.Id, "path": fs.Files.ConfigFile}).Info("New configuration written")
 
 	// Reload haproxy
 	if err := hap.reload(event.Header.CorrelationId); err != nil {
@@ -135,12 +133,12 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (int, error)
 	}
 
 	// Write syslog fragment
-	if err := hap.Files.writeSyslog(event.Conf.Syslog); err != nil {
+	if err := cmd.Writer(fs.Syslog.Path, event.Conf.Syslog, 0644); err != nil {
 		hap.Context.Fields(log.Fields{"id": hap.Config.Id}).WithError(err).Error("Failed to write syslog fragment")
 		// TODO Should we rollback on syslog error ?
 		return ERR_SYSLOG, err
 	}
-	hap.Context.Fields(log.Fields{"id": hap.Config.Id, "content": string(event.Conf.Syslog), "filename": hap.Files.Syslog}).Debug("Write syslog fragment")
+	hap.Context.Fields(log.Fields{"id": hap.Config.Id, "content": string(event.Conf.Syslog), "filename": fs.Syslog}).Debug("Write syslog fragment")
 
 	return SUCCESS, nil
 }
@@ -159,37 +157,39 @@ func (hap *Haproxy) isManagedVersion(version string) bool {
 
 func (hap *Haproxy) dumpDebug(newConf []byte) {
 	if log.GetLevel() == log.DebugLevel {
-		hap.Dumper(hap.Context, hap.Directories.Map["Debug"] + "/" + time.Now().Format("20060102150405") + ".log", newConf)
+		hap.Dumper(hap.Context, hap.Filesystem.Platform.Dump+"/"+time.Now().Format("20060102150405")+".log", newConf)
 	}
 }
 
 func (hap *Haproxy) dumpError(newConf []byte) {
-	hap.Dumper(hap.Context, hap.Directories.Map["Errors"] + "/" + time.Now().Format("20060102150405") + ".log", newConf)
+	hap.Dumper(hap.Context, hap.Filesystem.Platform.Errors+"/"+time.Now().Format("20060102150405")+".log", newConf)
 }
 
 // reload calls external shell script to reload haproxy
 // It returns error if the reload fails
 func (hap *Haproxy) reload(correlationId string) error {
-	configurationExists := hap.Files.Checker(hap.Files.Pid)
+	fs := hap.Filesystem
+	cmd := fs.Commands
+	configurationExists := cmd.Exists(fs.Files.PidFile)
 	if configurationExists {
-		pid, err := hap.Files.readPid()
+		pid, err := cmd.Reader(fs.Files.PidFile)
 		if err != nil {
-			hap.Context.Fields(log.Fields{"pid path": hap.Files.Pid}).Error("can't read pid file")
+			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile}).Error("can't read pid file")
 			return err
 		}
-		hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config, "pidPath": hap.Files.Pid, "pid": strings.TrimSpace(string(pid))}).Debug("reload haproxy")
+		hap.Context.Fields(log.Fields{"reloadScript": fs.Files.Binary, "confPath": fs.Files.ConfigFile, "pidPath": fs.Files.PidFile, "pid": strings.TrimSpace(string(pid))}).Debug("reload haproxy")
 
-		if output, err := hap.Command(hap.Files.Bin, "-f", hap.Files.Config, "-p", hap.Files.Pid, "-sf", strings.TrimSpace(string(pid))); err == nil {
-			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "reloadScript": hap.Files.Bin, "output": string(output[:])}).Debug("Reload succeeded")
+		if output, err := hap.Command(fs.Files.Binary, "-f", fs.Files.ConfigFile, "-p", fs.Files.PidFile, "-sf", strings.TrimSpace(string(pid))); err == nil {
+			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "reloadScript": fs.Files.Binary, "output": string(output[:])}).Debug("Reload succeeded")
 		} else {
 			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
 			return err
 		}
 	} else {
-		hap.Context.Fields(log.Fields{"reloadScript": hap.Files.Bin, "confPath": hap.Files.Config, "pid file":hap.Files.Pid}).Info("load haproxy")
-		output, err := hap.Command(hap.Files.Bin, "-f", hap.Files.Config, "-p", hap.Files.Pid)
+		hap.Context.Fields(log.Fields{"reloadScript": fs.Files.Binary, "confPath": fs.Files.ConfigFile, "pid file": fs.Files.PidFile}).Info("load haproxy")
+		output, err := hap.Command(fs.Files.Binary, "-f", fs.Files.ConfigFile, "-p", fs.Files.PidFile)
 		if err == nil {
-			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "reloadScript": hap.Files.Bin, "output": string(output[:])}).Debug("Reload succeeded")
+			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "reloadScript": fs.Files.Binary, "output": string(output[:])}).Debug("Reload succeeded")
 		} else {
 			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
 			return err
@@ -200,35 +200,58 @@ func (hap *Haproxy) reload(correlationId string) error {
 
 // rollback reverts configuration files and call for reload
 func (hap *Haproxy) rollback(correlationId string) error {
-	if err := hap.Files.rollback(); err != nil {
+	fs := hap.Filesystem
+	cmd := fs.Commands
+
+	if err := cmd.Renamer(fs.Files.ConfigArchive, fs.Files.ConfigFile); err != nil {
+		hap.Context.Fields(log.Fields{"archived config": fs.Files.ConfigArchive, "used config": fs.Files.ConfigFile}).WithError(err).Error("can't rename config archive to used config path")
 		return err
 	}
+
+	if originBinArchived, err := cmd.ReadLinker(fs.Files.BinaryArchive); err != nil {
+		hap.Context.Fields(log.Fields{"archived config": fs.Files.BinaryArchive}).WithError(err).Error("can't read origin of link to bin archive")
+		return err
+	} else {
+		if err = cmd.Linker(originBinArchived, fs.Files.Binary); err != nil {
+			hap.Context.Fields(log.Fields{"origin of link to binary": originBinArchived, "destination of link to binary": fs.Files.Binary}).WithError(err).Error("can't link binary to bin")
+			return err
+		} else {
+			// success
+			hap.Context.Fields(log.Fields{"origin of link to binary": originBinArchived, "destination of link to binary": fs.Files.Binary}).Debug("rollback of link to haproxy binary")
+		}
+	}
+
 	return hap.reload(correlationId)
 }
 
 func (hap *Haproxy) Delete() error {
+	fs := hap.Filesystem
+	cmd := hap.Filesystem.Commands
+	defer func() {
+		if r := recover(); r != nil {
+			hap.Context.Fields(log.Fields{"panic": r}).Error("Failed to delete haproxy configuration files or directories")
+		}
+	}()
+
 	// remove bin and config files
-	err := hap.Files.removeAll()
-	if err != nil {
-		hap.Context.Fields(log.Fields{}).WithError(err).Error("can't delete a file")
-		return err
-	}
-	// remove platform directory (logs, dump, errors)
-	err = hap.Directories.removePlatform()
-	if err != nil {
-		hap.Context.Fields(log.Fields{}).WithError(err).Error("Failed to delete haproxy")
-	}
-	return err
+	cmd.Remover(fs.Files.ConfigArchive)
+	cmd.Remover(fs.Files.BinaryArchive)
+	cmd.Remover(fs.Files.ConfigFile)
+	cmd.Remover(fs.Files.Binary)
+	cmd.Remover(fs.Platform.Path)
+	return nil
 }
 
 func (hap *Haproxy) Stop() error {
-	pid, err := hap.Files.readPid()
+	fs := hap.Filesystem
+	cmd := hap.Filesystem.Commands
+	pid, err := cmd.Reader(fs.Files.PidFile)
 	if err != nil {
-		hap.Context.Fields(log.Fields{"pid file": hap.Files.Pid}).Error("can't read pid file")
+		hap.Context.Fields(log.Fields{"pid file": fs.Files.PidFile}).Error("can't read pid file")
 	}
 	pidInt, err := strconv.Atoi(strings.TrimSpace(string(pid)))
 	if err != nil {
-		hap.Context.Fields(log.Fields{"pid":strings.TrimSpace(string(pid)), "pid file": hap.Files.Pid}).Error("can't convert pid to int")
+		hap.Context.Fields(log.Fields{"pid": strings.TrimSpace(string(pid)), "pid file": fs.Files.PidFile}).Error("can't convert pid to int")
 		return err
 	}
 	err = hap.Signal(pidInt, syscall.SIGTERM)
@@ -239,15 +262,16 @@ func (hap *Haproxy) Stop() error {
 	return err
 }
 
-
 /////////////////////////
 //         types       //
 /////////////////////////
 
 // type abstraction for exec.Command(...).Output()
 type Command func(name string, arg ...string) ([]byte, error)
+
 // type abstraction for os.Signal
 type Signal func(pid int, signal os.Signal) error
+
 // type abstraction for dumping content to a file
 type Dumper func(context Context, filename string, newConf []byte)
 

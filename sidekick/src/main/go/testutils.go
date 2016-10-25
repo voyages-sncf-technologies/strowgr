@@ -26,12 +26,14 @@ func initContext() {
 	context = TestContext{Removed: []string{}, Command: "", Writes:make(map[string]string), Renames:make(map[string]string), Links:make(map[string]string)}
 }
 
-func MockWriter(path string, content []byte, perm os.FileMode) error {
+type MockCommands struct{}
+
+func (mc MockCommands) Writer(path string, content []byte, perm os.FileMode) error {
 	context.Writes[path] = string(content)
 	return nil
 }
 
-func MockRenamer(oldPath, newPath string) error {
+func (mc MockCommands) Renamer(oldPath, newPath string) error {
 	context.Renames[newPath] = oldPath
 	return nil
 }
@@ -41,7 +43,7 @@ func MockCommand(name string, arg ...string) ([]byte, error) {
 	return []byte("ok"), nil
 }
 
-func MockReader(path string) ([]byte, error) {
+func (mc MockCommands) Reader(path string) ([]byte, error) {
 	if strings.HasSuffix(path, "pid") {
 		return []byte("1234"), nil
 	} else if strings.HasSuffix(path, "conf") {
@@ -51,7 +53,7 @@ func MockReader(path string) ([]byte, error) {
 	}
 }
 
-func MockReaderEmpty(path string) ([]byte, error) {
+func (mc MockCommands) ReaderEmpty(path string) ([]byte, error) {
 	if strings.HasSuffix(path, "pid") {
 		return nil, errors.New("pid is not present")
 	} else if strings.HasSuffix(path, "conf") {
@@ -61,34 +63,34 @@ func MockReaderEmpty(path string) ([]byte, error) {
 	}
 }
 
-func MockLinker(origin, destination string) error {
+func (mc MockCommands) Linker(origin, destination string) error {
 	context.Links[destination] = origin
 	return nil
 }
 
-func MockChecker(newVersion string) bool {
+func (mc MockCommands) Exists(newVersion string) bool {
 	return true
 }
 
-func MockCheckerAbsent(newVersion string) bool {
+func (mc MockCommands) CheckerAbsent(newVersion string) bool {
 	return false
 }
 
-func MockRemover(path string) error {
+func (mc MockCommands) Remover(path string) error {
 	context.Removed = append(context.Removed, path)
 	return nil
 }
 
-func MockSignal(pid int, signal os.Signal) error {
+func  MockSignal(pid int, signal os.Signal) error {
 	context.Signal = signal
 	return nil
 }
 
-func MockMkdir(Context Context, directory string) error {
+func (mc MockCommands)  MkdirAll(directory string) error {
 	return nil
 }
 
-func MockReadLinker(link string) (string, error) {
+func (mc MockCommands)  ReadLinker(link string) (string, error) {
 	if strings.Contains(link, "archived") {
 		return "/export/product/haproxy/product/2/bin/haproxy", nil
 	}
@@ -97,15 +99,9 @@ func MockReadLinker(link string) (string, error) {
 
 func newMockHaproxy() *Haproxy {
 	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
-	hap.Config.HapVersions = []string{"1", "2", "3"}
-	hap.Files.Reader = MockReader
-	hap.Files.Writer = MockWriter
-	hap.Files.Renamer = MockRenamer
-	hap.Files.Checker = MockChecker
-	hap.Files.Linker = MockLinker
-	hap.Files.ReadLinker = MockReadLinker
+	hap.Filesystem.Commands = MockCommands{}
 	hap.Command = MockCommand
-	hap.Directories.Mkdir = MockMkdir
+	hap.Config.HapVersions = []string{"1", "2", "3"}
 	return hap
 }
 
