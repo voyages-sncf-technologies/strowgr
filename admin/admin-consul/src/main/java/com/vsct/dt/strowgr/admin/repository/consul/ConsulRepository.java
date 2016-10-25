@@ -178,7 +178,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             LOGGER.trace("lock released for key " + key + " on session " + sessionLocal.get());
 
             HttpPut destroySessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/destroy/" + sessionLocal.get());
-            client.execute(destroySessionURI);
+            client.execute(destroySessionURI).close();
 
         } catch (IOException e) {
             LOGGER.error("error in consul repository", e);
