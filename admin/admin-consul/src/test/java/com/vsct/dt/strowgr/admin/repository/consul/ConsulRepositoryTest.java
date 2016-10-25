@@ -82,7 +82,7 @@ public class ConsulRepositoryTest {
         // check
         assertThat(locked).isFalse();
         verify(consulRepository).createSession(entryPointKey);
-        verify(closeableHttpClient, times(10)).execute(any(HttpPut.class), any(ResponseHandler.class));
+        verify(closeableHttpClient, times(100)).execute(any(HttpPut.class), any(ResponseHandler.class));
     }
 
     @Test

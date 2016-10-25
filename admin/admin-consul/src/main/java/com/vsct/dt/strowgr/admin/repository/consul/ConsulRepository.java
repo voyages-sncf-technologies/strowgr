@@ -110,9 +110,8 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             LOGGER.debug("attempt to acquire lock for key {} on session {}", entryPointKey, sessionId);
             HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey + "/lock?acquire=" + sessionId);
 
-            /* TODO, implement wait with a blocking query */
             int count = 0;
-            while (!locked && (count++ < 10)) {
+            while (!locked && (count++ < 100)) {
                 locked = client.execute(acquireEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity)).orElse(Boolean.FALSE);
                 if (!locked) {
                     /* Avoid crazy spinning*/
@@ -126,8 +125,8 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                 }
             }
 
-            if(count >= 10) {
-                LOGGER.error("could not acquire lock for key {} after 10 retries", entryPointKey);
+            if(count >= 100) {
+                LOGGER.error("could not acquire lock for key {} after 100 retries", entryPointKey);
             }
 
         } catch (IOException e) {
