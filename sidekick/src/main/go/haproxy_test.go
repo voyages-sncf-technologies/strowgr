@@ -145,8 +145,7 @@ func TestChangedConfiguration(t *testing.T) {
 	check(t, "actual %s, expected %s", contains, true)
 	check(t, "actual archive link %s but expected is %s", actualArchivedVersion, "/export/product/haproxy/product/1/bin/haproxy")
 
-	//check(t, "expected archive link %s but actually got %s", "/export/product/haproxy/product/1/bin/haproxy", context.Bin)
-	//check(t, "expected archive link %s but actually got %s", "/HOME/TST/version-1/hapTSTDEV", context.NewVersion)
+	check(t, "expected archive link %s but actually got %s", "/export/product/haproxy/product/1/bin/haproxy", context.Links["/HOME/TST/version-1/hapTSTDEV"])
 	// check executions
 	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234", context.Command)
 	// check links

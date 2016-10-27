@@ -31,39 +31,35 @@ import (
 
 // Haproxy manager for a given Application/Platform
 type Haproxy struct {
-	// config of sidekick
-	Config *Config
-	// context of this haproxy (current application/platform/correlationid etc...)
-	Context Context
-
-	Filesystem Filesystem // directories managed by sidekick for this haproxy instance
-	// command wrapping real command execution
-	Command Command
-	// dump abstraction to a file
-	Dumper Dumper
-	// signal abstraction for sending signal
-	Signal Signal
+	Config     *Config    // config of sidekick
+	Context    Context    // context of this haproxy (current application/platform/correlationid etc...)
+	Filesystem Filesystem // filesystem with haproxy configuration files
+	Command    Command    // wrapping os command execution
+	Dumper     Dumper     // wrapping for dumping contents on files
+	Signal     Signal     // signal abstraction for sending signal
 }
 
-func NewHaproxy(properties *Config, context Context) *Haproxy {
+// create a new haproxy
+func NewHaproxy(config *Config, context Context) *Haproxy {
 	// TODO manage a cache of Haproxy
 	return &Haproxy{
-		Config:     properties,
+		Config:     config,
 		Context:    context,
 		Command:    execCommand,
 		Signal:     osSignal,
 		Dumper:     dumpConfiguration,
-		Filesystem: NewFilesystem(properties.HapHome, context.Application, context.Platform),
+		Filesystem: NewFilesystem(config.HapHome, context.Application, context.Platform),
 	}
 }
 
+// status of applying a new configuration
 const (
-	SUCCESS    int = iota
-	UNCHANGED  int = iota
-	ERR_SYSLOG int = iota
-	ERR_CONF   int = iota
-	ERR_RELOAD int = iota
-	MAX_STATUS int = iota
+	SUCCESS    int = iota // configuration application has succeed
+	UNCHANGED  int = iota // configuration has not been changed
+	ERR_SYSLOG int = iota // error during syslog configuration change
+	ERR_CONF   int = iota // error with given configuration
+	ERR_RELOAD int = iota // error during haproxy reload
+	MAX_STATUS int = iota // technical status for enumerating status
 )
 
 // ApplyConfiguration write the new configuration and reload
@@ -155,14 +151,16 @@ func (hap *Haproxy) isManagedVersion(version string) bool {
 	return isManagedVersion
 }
 
-func (hap *Haproxy) dumpDebug(newConf []byte) {
+// dump configuration to dump directory if debug level is enabled
+func (hap *Haproxy) dumpDebug(config []byte) {
 	if log.GetLevel() == log.DebugLevel {
-		hap.Dumper(hap.Context, hap.Filesystem.Platform.Dump+"/"+time.Now().Format("20060102150405")+".log", newConf)
+		hap.Dumper(hap.Context, hap.Filesystem.Platform.Dump+"/"+time.Now().Format("20060102150405")+".log", config)
 	}
 }
 
-func (hap *Haproxy) dumpError(newConf []byte) {
-	hap.Dumper(hap.Context, hap.Filesystem.Platform.Errors+"/"+time.Now().Format("20060102150405")+".log", newConf)
+// dump configuration to error directory
+func (hap *Haproxy) dumpError(config []byte) {
+	hap.Dumper(hap.Context, hap.Filesystem.Platform.Errors+"/"+time.Now().Format("20060102150405")+".log", config)
 }
 
 // reload calls external shell script to reload haproxy
@@ -224,6 +222,7 @@ func (hap *Haproxy) rollback(correlationId string) error {
 	return hap.reload(correlationId)
 }
 
+// delete configuration files
 func (hap *Haproxy) Delete() error {
 	fs := hap.Filesystem
 	cmd := hap.Filesystem.Commands
@@ -234,14 +233,15 @@ func (hap *Haproxy) Delete() error {
 	}()
 
 	// remove bin and config files
-	cmd.Remover(fs.Files.ConfigArchive)
-	cmd.Remover(fs.Files.BinaryArchive)
-	cmd.Remover(fs.Files.ConfigFile)
-	cmd.Remover(fs.Files.Binary)
-	cmd.Remover(fs.Platform.Path)
+	cmd.Remover(fs.Files.ConfigArchive, false)
+	cmd.Remover(fs.Files.BinaryArchive, false)
+	cmd.Remover(fs.Files.ConfigFile, true)
+	cmd.Remover(fs.Files.Binary, true)
+	cmd.Remover(fs.Platform.Path, true)
 	return nil
 }
 
+// stop haproxy process
 func (hap *Haproxy) Stop() error {
 	fs := hap.Filesystem
 	cmd := hap.Filesystem.Commands

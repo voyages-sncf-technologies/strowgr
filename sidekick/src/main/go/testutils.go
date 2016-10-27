@@ -76,17 +76,23 @@ func (mc MockCommands) CheckerAbsent(newVersion string) bool {
 	return false
 }
 
-func (mc MockCommands) Remover(path string) error {
+func (mc MockCommands) Remover(path string, isPanic bool) error {
+	if strings.Contains(path, "version") {
+		if isPanic {
+			panic("archive file " + path + " is not present")
+		}
+		return errors.New("archive file " + path + " is not present")
+	}
 	context.Removed = append(context.Removed, path)
 	return nil
 }
 
-func  MockSignal(pid int, signal os.Signal) error {
+func MockSignal(pid int, signal os.Signal) error {
 	context.Signal = signal
 	return nil
 }
 
-func (mc MockCommands)  MkdirAll(directory string) error {
+func (mc MockCommands) MkdirAll(directory string) error {
 	return nil
 }
 

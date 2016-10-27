@@ -13,7 +13,7 @@ type Commands interface {
 	Renamer(oldpath, newpath string) error
 	Exists(path string) bool
 	Linker(oldpath, newpath string) error
-	Remover(path string) error
+	Remover(path string, isPanic bool) error
 	ReadLinker(path string) (string, error)
 	MkdirAll(path string) error
 }
@@ -45,7 +45,7 @@ func (osCmd OsCommands) Exists(path string) bool {
 
 func (osCmd OsCommands) Linker(oldpath, newpath string) error {
 	if err := os.Symlink(oldpath, newpath); os.IsExist(err) {
-		if err = osCmd.Remover(newpath); err != nil {
+		if err = osCmd.Remover(newpath, false); err != nil {
 			return err
 		} else {
 			return osCmd.Linker(oldpath, newpath)
@@ -55,9 +55,13 @@ func (osCmd OsCommands) Linker(oldpath, newpath string) error {
 	}
 }
 
-func (osCmd OsCommands) Remover(path string) error {
-	if err := os.Remove(path); err != nil {
-		panic(err)
+func (osCmd OsCommands) Remover(path string, isPanic bool) (err error) {
+	if isPanic {
+		if err := os.Remove(path); err != nil {
+			panic(err)
+		}
+	} else {
+		return os.Remove(path)
 	}
 	return nil
 }
