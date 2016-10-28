@@ -28,12 +28,12 @@ func initContext() {
 
 type MockCommands struct{}
 
-func (mc MockCommands) Writer(path string, content []byte, perm os.FileMode) error {
+func (mc MockCommands) Writer(path string, content []byte, perm os.FileMode, isPanic bool) error {
 	context.Writes[path] = string(content)
 	return nil
 }
 
-func (mc MockCommands) Renamer(oldPath, newPath string) error {
+func (mc MockCommands) Renamer(oldPath, newPath string, isPanic bool) error {
 	context.Renames[newPath] = oldPath
 	return nil
 }
@@ -43,7 +43,11 @@ func MockCommand(name string, arg ...string) ([]byte, error) {
 	return []byte("ok"), nil
 }
 
-func (mc MockCommands) Reader(path string) ([]byte, error) {
+func MockFailedCommand(name string, arg ...string) ([]byte, error) {
+	return nil, errors.New("fails...")
+}
+
+func (mc MockCommands) Reader(path string, isPanic bool) ([]byte, error) {
 	if strings.HasSuffix(path, "pid") {
 		return []byte("1234"), nil
 	} else if strings.HasSuffix(path, "conf") {
@@ -63,7 +67,7 @@ func (mc MockCommands) ReaderEmpty(path string) ([]byte, error) {
 	}
 }
 
-func (mc MockCommands) Linker(origin, destination string) error {
+func (mc MockCommands) Linker(origin, destination string, isPanic bool) error {
 	context.Links[destination] = origin
 	return nil
 }
@@ -72,7 +76,7 @@ func (mc MockCommands) Exists(newVersion string) bool {
 	return true
 }
 
-func (mc MockCommands) CheckerAbsent(newVersion string) bool {
+func (mc MockCommands) CheckerAbsent(newVersion string, isPanic bool) bool {
 	return false
 }
 
@@ -96,7 +100,7 @@ func (mc MockCommands) MkdirAll(directory string) error {
 	return nil
 }
 
-func (mc MockCommands)  ReadLinker(link string) (string, error) {
+func (mc MockCommands)  ReadLinker(link string, isPanic bool) (string, error) {
 	if strings.Contains(link, "archived") {
 		return "/export/product/haproxy/product/2/bin/haproxy", nil
 	}

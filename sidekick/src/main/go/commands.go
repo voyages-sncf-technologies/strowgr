@@ -8,13 +8,13 @@ import (
 
 // commands
 type Commands interface {
-	Reader(path string) ([]byte, error)
-	Writer(path string, content []byte, perm os.FileMode) error
-	Renamer(oldpath, newpath string) error
+	Reader(path string, isPanic bool) ([]byte, error)
+	Writer(path string, content []byte, perm os.FileMode, isPanic bool) error
+	Renamer(oldpath, newpath string, isPanic bool) error
 	Exists(path string) bool
-	Linker(oldpath, newpath string) error
+	Linker(oldpath, newpath string, isPanic bool) error
 	Remover(path string, isPanic bool) error
-	ReadLinker(path string) (string, error)
+	ReadLinker(path string, isPanic bool) (string, error)
 	MkdirAll(path string) error
 }
 
@@ -24,16 +24,28 @@ type OsCommands struct {
 
 }
 
-func (osCmd OsCommands) Reader(path string) ([]byte, error) {
-	return ioutil.ReadFile(path)
+func (osCmd OsCommands) Reader(path string, isPanic bool) ([]byte, error) {
+	result, err := ioutil.ReadFile(path)
+	if isPanic {
+		panic(err)
+	}
+	return result, err
 }
 
-func (osCmd OsCommands) Writer(path string, content []byte, perm os.FileMode) error {
-	return ioutil.WriteFile(path, content, perm)
+func (osCmd OsCommands) Writer(path string, content []byte, perm os.FileMode, isPanic bool) error {
+	err := ioutil.WriteFile(path, content, perm)
+	if isPanic {
+		panic(err)
+	}
+	return err
 }
 
-func (osCmd OsCommands) Renamer(oldpath, newpath string) error {
-	return os.Rename(oldpath, newpath)
+func (osCmd OsCommands) Renamer(oldpath, newpath string, isPanic bool) error {
+	err := os.Rename(oldpath, newpath)
+	if isPanic {
+		panic(err)
+	}
+	return err
 }
 
 func (osCmd OsCommands) Exists(path string) bool {
@@ -43,12 +55,16 @@ func (osCmd OsCommands) Exists(path string) bool {
 	return false
 }
 
-func (osCmd OsCommands) Linker(oldpath, newpath string) error {
+func (osCmd OsCommands) Linker(oldpath, newpath string, isPanic bool) error {
 	if err := os.Symlink(oldpath, newpath); os.IsExist(err) {
 		if err = osCmd.Remover(newpath, false); err != nil {
-			return err
+			if isPanic {
+				panic(err)
+			} else {
+				return err
+			}
 		} else {
-			return osCmd.Linker(oldpath, newpath)
+			return osCmd.Linker(oldpath, newpath, isPanic)
 		}
 	} else {
 		return err
@@ -66,8 +82,12 @@ func (osCmd OsCommands) Remover(path string, isPanic bool) (err error) {
 	return nil
 }
 
-func (osCmd OsCommands) ReadLinker(path string) (string, error) {
-	return os.Readlink(path)
+func (osCmd OsCommands) ReadLinker(path string, isPanic bool) (string, error) {
+	if result, err := os.Readlink(path); err != nil && isPanic {
+		panic(err)
+	} else {
+		return result, err
+	}
 }
 
 func (osCmd OsCommands) MkdirAll(path string) error {

@@ -64,56 +64,52 @@ const (
 
 // ApplyConfiguration write the new configuration and reload
 // A rollback is called on failure
-func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (int, error) {
+func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int, err error) {
 	fs := hap.Filesystem
 	cmd := fs.Commands
-	// validate version
-	if event.Conf.Version == "" || !hap.isManagedVersion(event.Conf.Version) || event.Conf.Haproxy == nil {
-		hap.Context.Fields(log.Fields{"given haproxy version": event.Conf.Version, "managed versions by sidekick": strings.Join(hap.Config.HapVersions, ",")}).Error("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance or configuration is missing")
-		return ERR_CONF, errors.New("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance")
-	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			hap.Context.Fields(log.Fields{}).Error("error on configuration")
+			// if panic during io executions, return status
+			status, err = ERR_CONF, nil // TODO send right error
+		}
+	}()
+
+	// validate event
+	hap.validate(event)
 
 	// create skeleton of directories
 	fs.Mkdirs(hap.Context)
 
-	// dump received haproxy configuration in debug mode
+	// dump received haproxy configuration in verbose mode
 	hap.dumpDebug(event.Conf.Haproxy)
 
-	// Check conf diff
 	if cmd.Exists(fs.Files.ConfigFile) {
-		// a configuration file already exists, should be archived
-		if oldConf, err := cmd.Reader(fs.Files.ConfigFile); err != nil {
-			return ERR_CONF, err
-		} else if bytes.Equal(oldConf, event.Conf.Haproxy) {
+		// configuration already exists for this haproxy
+		oldConf, _ := cmd.Reader(fs.Files.ConfigFile, true)
+
+		if bytes.Equal(oldConf, event.Conf.Haproxy) {
+			// unchanged configuration file
 			hap.Context.Fields(log.Fields{"id": hap.Config.Id}).Debug("Unchanged configuration")
 			return UNCHANGED, nil
-		} else {
-			// Archive previous configuration
-			if err := cmd.Renamer(fs.Files.ConfigFile, fs.Files.ConfigArchive); err != nil {
-				hap.Context.Fields(log.Fields{"archivePath": fs.Files.ConfigArchive}).WithError(err).Error("can't archive config file")
-				return ERR_CONF, err
-			} else {
-				hap.Context.Fields(log.Fields{"archivePath": fs.Files.ConfigArchive}).Debug("Old configuration archived")
-			}
-			// Archive previous binary (link)
-			binOrigin, _ := cmd.ReadLinker(fs.Files.Binary)
-			if err := cmd.Linker(binOrigin, fs.Files.BinaryArchive); err != nil {
-				hap.Context.Fields(log.Fields{"bin archive": fs.Files.BinaryArchive}).WithError(err).Error("can't archive binary")
-			} else {
-				hap.Context.Fields(log.Fields{"archivePath": fs.Files.BinaryArchive}).Debug("Old bin archived")
-			}
 		}
+
+		// Archive previous configuration
+		hap.archiveConfigurationFile()
+
+		// Archive previous binary (link)
+		hap.archiveBinary()
+	} else {
+		hap.Context.Fields(log.Fields{}).Info("create configuration file for the first time")
 	}
 
-	// new version
+	// override link to new version (if needed)
 	newVersion := fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", event.Conf.Version) // TODO externalize the binary path
-	if err := cmd.Linker(newVersion, fs.Files.Binary); err != nil {
-		hap.Context.Fields(log.Fields{"origin": newVersion, "destination": fs.Files.Binary}).WithError(err).Error("symlink failed")
-	}
-	if err := cmd.Writer(fs.Files.ConfigFile, event.Conf.Haproxy, 0644); err != nil {
-		return ERR_CONF, err
-	}
+	cmd.Linker(newVersion, fs.Files.Binary, true)
 
+	// write new configuration file
+	cmd.Writer(fs.Files.ConfigFile, event.Conf.Haproxy, 0644, true)
 	hap.Context.Fields(log.Fields{"id": hap.Config.Id, "path": fs.Files.ConfigFile}).Info("New configuration written")
 
 	// Reload haproxy
@@ -129,14 +125,44 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (int, error)
 	}
 
 	// Write syslog fragment
-	if err := cmd.Writer(fs.Syslog.Path, event.Conf.Syslog, 0644); err != nil {
-		hap.Context.Fields(log.Fields{"id": hap.Config.Id}).WithError(err).Error("Failed to write syslog fragment")
-		// TODO Should we rollback on syslog error ?
-		return ERR_SYSLOG, err
-	}
-	hap.Context.Fields(log.Fields{"id": hap.Config.Id, "content": string(event.Conf.Syslog), "filename": fs.Syslog}).Debug("Write syslog fragment")
+	cmd.Writer(fs.Syslog.Path, event.Conf.Syslog, 0644, true)
 
 	return SUCCESS, nil
+}
+
+// validate input event
+func (hap *Haproxy) validate(event *EventMessageWithConf) error {
+	if event.Conf.Version == "" || !hap.isManagedVersion(event.Conf.Version) || event.Conf.Haproxy == nil {
+		hap.Context.Fields(log.Fields{"given haproxy version": event.Conf.Version, "managed versions by sidekick": strings.Join(hap.Config.HapVersions, ",")}).Error("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance or configuration is missing")
+		panic(errors.New("received configuration hasn't haproxy version or one which has not been configured in this sidekick instance"))
+	}
+	return nil
+}
+
+// archive configuration file
+func (hap *Haproxy) archiveConfigurationFile() {
+	fs := hap.Filesystem
+	if err := hap.Filesystem.Commands.Renamer(fs.Files.ConfigFile, fs.Files.ConfigArchive, true); err != nil {
+		hap.Context.Fields(log.Fields{"archivePath": fs.Files.ConfigArchive}).WithError(err).Error("can't archive config file")
+		panic(err)
+	} else {
+		hap.Context.Fields(log.Fields{"archivePath": fs.Files.ConfigArchive}).Debug("Old configuration archived")
+	}
+}
+
+// archive binary
+func (hap *Haproxy) archiveBinary() {
+	fs := hap.Filesystem
+
+	if binOrigin, err := hap.Filesystem.Commands.ReadLinker(fs.Files.Binary, true); err != nil {
+		hap.Context.Fields(log.Fields{"bin archive": fs.Files.BinaryArchive, "bin": fs.Files.Binary}).WithError(err).Error("can't read link destination of binary")
+		panic(err)
+	} else if err := hap.Filesystem.Commands.Linker(binOrigin, fs.Files.BinaryArchive, true); err != nil {
+		hap.Context.Fields(log.Fields{"bin archive": fs.Files.BinaryArchive}).WithError(err).Error("can't archive binary")
+		panic(err)
+	} else {
+		hap.Context.Fields(log.Fields{"archivePath": fs.Files.BinaryArchive}).Debug("Old bin archived")
+	}
 }
 
 // is a managed version by sidekick
@@ -170,7 +196,7 @@ func (hap *Haproxy) reload(correlationId string) error {
 	cmd := fs.Commands
 	configurationExists := cmd.Exists(fs.Files.PidFile)
 	if configurationExists {
-		pid, err := cmd.Reader(fs.Files.PidFile)
+		pid, err := cmd.Reader(fs.Files.PidFile, true)
 		if err != nil {
 			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile}).Error("can't read pid file")
 			return err
@@ -201,16 +227,16 @@ func (hap *Haproxy) rollback(correlationId string) error {
 	fs := hap.Filesystem
 	cmd := fs.Commands
 
-	if err := cmd.Renamer(fs.Files.ConfigArchive, fs.Files.ConfigFile); err != nil {
+	if err := cmd.Renamer(fs.Files.ConfigArchive, fs.Files.ConfigFile, false); err != nil {
 		hap.Context.Fields(log.Fields{"archived config": fs.Files.ConfigArchive, "used config": fs.Files.ConfigFile}).WithError(err).Error("can't rename config archive to used config path")
 		return err
 	}
 
-	if originBinArchived, err := cmd.ReadLinker(fs.Files.BinaryArchive); err != nil {
+	if originBinArchived, err := cmd.ReadLinker(fs.Files.BinaryArchive, false); err != nil {
 		hap.Context.Fields(log.Fields{"archived config": fs.Files.BinaryArchive}).WithError(err).Error("can't read origin of link to bin archive")
 		return err
 	} else {
-		if err = cmd.Linker(originBinArchived, fs.Files.Binary); err != nil {
+		if err = cmd.Linker(originBinArchived, fs.Files.Binary, false); err != nil {
 			hap.Context.Fields(log.Fields{"origin of link to binary": originBinArchived, "destination of link to binary": fs.Files.Binary}).WithError(err).Error("can't link binary to bin")
 			return err
 		} else {
@@ -245,7 +271,7 @@ func (hap *Haproxy) Delete() error {
 func (hap *Haproxy) Stop() error {
 	fs := hap.Filesystem
 	cmd := hap.Filesystem.Commands
-	pid, err := cmd.Reader(fs.Files.PidFile)
+	pid, err := cmd.Reader(fs.Files.PidFile, true)
 	if err != nil {
 		hap.Context.Fields(log.Fields{"pid file": fs.Files.PidFile}).Error("can't read pid file")
 	}

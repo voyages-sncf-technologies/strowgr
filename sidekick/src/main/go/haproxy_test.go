@@ -34,6 +34,19 @@ func TestReLoadScript(t *testing.T) {
 	check(t, "reload command is wrong. actual: '%s', expected: '%s'", context.Command, "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234")
 }
 
+func TestReloadFails(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+	hap.Command = MockFailedCommand
+
+	//test
+	err := hap.reload("my_id")
+
+	// check
+	check(t, "actual error '%s', error expected '%s'", err.Error(), "fails...")
+}
+
 func TestCreateDirectory(t *testing.T) {
 	// given & test
 	initContext()
@@ -154,6 +167,25 @@ func TestChangedConfiguration(t *testing.T) {
 	check(t, "link origin to new bin is wrong. actual '%s', expected '%s'", actualVersion, binExpected)
 	// check new conf
 	check(t, "configuration file is '%s' but should be '%s' ", context.Writes["/HOME/TST/Config/hapTSTDEV.conf"], "new conf")
+}
+
+func TestApplyConfigurationWithFailedReload(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+	hap.Command = MockFailedCommand
+
+	conf := Conf{Version: "1"}
+	conf.Haproxy = []byte("new conf")
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, err := hap.ApplyConfiguration(event)
+
+	// check
+	check(t, "actual error '%s', error expected '%s'", err.Error(), "fails...")
+	check(t, "actual return status is '%s', ", result, ERR_RELOAD)
+
 }
 
 func TestEmptyConfiguration(t *testing.T) {
