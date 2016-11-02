@@ -59,7 +59,7 @@ func NewHaproxy(properties *Config, context Context) *Haproxy {
 		Directories: NewDirectories(context, map[string]string{// TODO more generic 'filesystem' model for avoiding code repetition
 			"Platform":      properties.HapHome + "/" + context.Application + "/" + context.Platform,
 			"Config":        properties.HapHome + "/" + context.Application + "/Config",
-			"Logs":          properties.HapHome + "/" + context.Application + "/" + context.Platform + "/logs",
+			"Logs":          properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform,
 			"Scripts":       properties.HapHome + "/" + context.Application + "/scripts",
 			"VersionMinus1": properties.HapHome + "/" + context.Application + "/version-1",
 			"Errors":        properties.HapHome + "/" + context.Application + "/" + context.Platform + "/errors",
@@ -69,7 +69,7 @@ func NewHaproxy(properties *Config, context Context) *Haproxy {
 			properties.HapHome + "/" + context.Application + "/Config/hap" + context.Application + context.Platform + ".conf",
 			properties.HapHome + "/SYSLOG/Config/syslog.conf.d/syslog" + context.Application + context.Platform + ".conf",
 			properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform + ".conf",
-			properties.HapHome + "/" + context.Application + "/" + context.Platform + "/logs/haproxy.pid",
+			properties.HapHome + "/" + context.Application + "/logs/" + context.Application + context.Platform + "/haproxy.pid",
 			properties.HapHome + "/" + context.Application + "/scripts/hap" + context.Application + context.Platform,
 			properties.HapHome + "/" + context.Application + "/version-1/hap" + context.Application + context.Platform,
 		),
