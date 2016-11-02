@@ -31,7 +31,7 @@ func TestReloadScript(t *testing.T) {
 
 	// check
 	checkError(t, err)
-	check(t, "reload command is wrong. actual: '%s', expected: '%s'", context.Command, "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/DEV/logs/haproxy.pid -sf 1234")
+	check(t, "reload command is wrong. actual: '%s', expected: '%s'", context.Command, "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234")
 }
 
 func TestCreateDirectory(t *testing.T) {
@@ -41,7 +41,7 @@ func TestCreateDirectory(t *testing.T) {
 
 	// check
 	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Config"], "/HOME/TST/Config")
-	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Logs"], "/HOME/TST/DEV/logs")
+	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Logs"], "/HOME/TST/logs/TSTDEV")
 	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Scripts"], "/HOME/TST/scripts")
 	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["VersionMinus1"], "/HOME/TST/version-1")
 	check(t, "actual directory path: %s, expected: %s", hap.Directories.Map["Errors"], "/HOME/TST/DEV/errors")
@@ -172,7 +172,7 @@ func TestChangedConfiguration(t *testing.T) {
 	//check(t, "expected archive link %s but actually got %s", "/export/product/haproxy/product/1/bin/haproxy", context.Bin)
 	//check(t, "expected archive link %s but actually got %s", "/HOME/TST/version-1/hapTSTDEV", context.NewVersion)
 	// check executions
-	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/DEV/logs/haproxy.pid -sf 1234", context.Command)
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234", context.Command)
 	// check links
 	actualVersion, contains := context.Links[newVersionExpected]
 	check(t, "link destination to new bin is wrong. actual %s, expected %s", contains, true)
@@ -202,7 +202,7 @@ func TestEmptyConfiguration(t *testing.T) {
 	checkError(t, err)
 	check(t, "expected result is %s but actually got %s", SUCCESS, result)
 	// check executions
-	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/DEV/logs/haproxy.pid", context.Command)
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid", context.Command)
 	// check links
 	actualVersion, contains := context.Links[newVersionExpected]
 	check(t, "link destination to new bin is wrong. actual %s, expected %s", contains, true)
