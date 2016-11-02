@@ -56,7 +56,7 @@ func TestCreateDirectory(t *testing.T) {
 	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Config, "/HOME/TST/Config")
 	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Scripts, "/HOME/TST/scripts")
 	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Archives, "/HOME/TST/version-1")
-	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Logs, "/HOME/TST/DEV/logs")
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Logs, "/HOME/TST/logs/TSTDEV")
 	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Errors, "/HOME/TST/DEV/errors")
 	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Dump, "/HOME/TST/DEV/dump")
 	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Syslog.Path, "/HOME/SYSLOG/Config/syslog.conf.d")
@@ -207,7 +207,7 @@ func TestEmptyConfiguration(t *testing.T) {
 	checkError(t, err)
 	check(t, "expected result is %s but actually got %s", SUCCESS, result)
 	// check executions
-	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/DEV/logs/haproxy.pid -sf 1234", context.Command)
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234", context.Command)
 
 	// check links
 	actualVersion, contains := context.Links[newVersionExpected]

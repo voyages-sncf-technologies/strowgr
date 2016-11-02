@@ -61,7 +61,7 @@ func NewFilesystem(home, application, platform string) Filesystem {
 		},
 		Platform: Platform{
 			Path:join(home, application, platform),
-			Logs:join(home, application, platform, "logs"),
+			Logs:join(home, application, "logs", application + platform),
 			Errors:join(home, application, platform, "errors"),
 			Dump:join(home, application, platform, "dump"),
 		},
