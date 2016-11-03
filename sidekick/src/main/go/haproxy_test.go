@@ -130,7 +130,7 @@ func TestUnchangedConfiguration(t *testing.T) {
 	// given
 	checkError(t, err)
 	check(t, "expected result is %s but actually got %s", UNCHANGED, result)
-	check(t, "actual command %s should be empty but got %s", "", context.Command)
+	check(t, "actual command %s should be empty but got %s", "ps -p 1234", context.Command)
 }
 
 func TestChangedConfiguration(t *testing.T) {
