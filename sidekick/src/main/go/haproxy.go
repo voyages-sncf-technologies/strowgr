@@ -54,10 +54,10 @@ func NewHaproxy(config *Config, context Context) *Haproxy {
 
 // status of applying a new configuration
 const (
-	SUCCESS    int = iota // configuration application has succeed
-	UNCHANGED  int = iota // configuration has not been changed
+	SUCCESS int = iota // configuration application has succeed
+	UNCHANGED int = iota // configuration has not been changed
 	ERR_SYSLOG int = iota // error during syslog configuration change
-	ERR_CONF   int = iota // error with given configuration
+	ERR_CONF int = iota // error with given configuration
 	ERR_RELOAD int = iota // error during haproxy reload
 	MAX_STATUS int = iota // technical status for enumerating status
 )
@@ -73,6 +73,8 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 			hap.Context.Fields(log.Fields{}).Error("error on configuration")
 			// if panic during io executions, return status
 			status, err = ERR_CONF, nil // TODO send right error
+		} else {
+			hap.Context.Fields(log.Fields{}).Debug("end of apply configuration")
 		}
 	}()
 
@@ -86,10 +88,15 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 	hap.dumpDebug(event.Conf.Haproxy)
 
 	if cmd.Exists(fs.Files.ConfigFile) {
+		hap.Context.Fields(log.Fields{"config":fs.Files.ConfigFile}).Debug("configuration file found")
+
 		// configuration already exists for this haproxy
 		oldConf, _ := cmd.Reader(fs.Files.ConfigFile, true)
 
 		if bytes.Equal(oldConf, event.Conf.Haproxy) {
+			// check and restart killed haproxy
+			hap.restart_killed_haproxy()
+
 			// unchanged configuration file
 			hap.Context.Fields(log.Fields{"id": hap.Config.Id}).Debug("Unchanged configuration")
 			return UNCHANGED, nil
@@ -128,6 +135,35 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 	cmd.Writer(fs.Syslog.Path, event.Conf.Syslog, 0644, true)
 
 	return SUCCESS, nil
+}
+
+func (hap *Haproxy) restart_killed_haproxy() error {
+	hap.Context.Fields(log.Fields{}).Debug("check haproxy is up, restart otherwise")
+
+	fs := hap.Filesystem
+	cmd := fs.Commands
+	if cmd.Exists(fs.Files.PidFile) {
+		pid, err := cmd.Reader(fs.Files.PidFile, true)
+		if err != nil {
+			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile}).Error("can't read pid file")
+			return err
+		}
+		hap.Context.Fields(log.Fields{"pidPath": fs.Files.PidFile, "pid": strings.TrimSpace(string(pid))}).Debug("reload haproxy")
+
+		if output, err := hap.Command("ps", "-p", strings.TrimSpace(string(pid))); err == nil {
+			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "output": string(output[:])}).Debug("process haproxy is running. nothing to do.")
+			return nil
+		} else {
+			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("process haproxy is not running. attempt to restart it.")
+			if err = hap.reload(hap.Context.CorrelationId); err != nil {
+				hap.Context.Fields(log.Fields{}).WithError(err).Error("can't restart haproxy process")
+			} else {
+				hap.Context.Fields(log.Fields{}).Info("haproxy process restarted")
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 // validate input event
@@ -180,13 +216,13 @@ func (hap *Haproxy) isManagedVersion(version string) bool {
 // dump configuration to dump directory if debug level is enabled
 func (hap *Haproxy) dumpDebug(config []byte) {
 	if log.GetLevel() == log.DebugLevel {
-		hap.Dumper(hap.Context, hap.Filesystem.Platform.Dump+"/"+time.Now().Format("20060102150405")+".log", config)
+		hap.Dumper(hap.Context, hap.Filesystem.Platform.Dump + "/" + time.Now().Format("20060102150405") + ".log", config)
 	}
 }
 
 // dump configuration to error directory
 func (hap *Haproxy) dumpError(config []byte) {
-	hap.Dumper(hap.Context, hap.Filesystem.Platform.Errors+"/"+time.Now().Format("20060102150405")+".log", config)
+	hap.Dumper(hap.Context, hap.Filesystem.Platform.Errors + "/" + time.Now().Format("20060102150405") + ".log", config)
 }
 
 // reload calls external shell script to reload haproxy

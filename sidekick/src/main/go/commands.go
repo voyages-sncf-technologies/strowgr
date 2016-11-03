@@ -26,7 +26,7 @@ type OsCommands struct {
 
 func (osCmd OsCommands) Reader(path string, isPanic bool) ([]byte, error) {
 	result, err := ioutil.ReadFile(path)
-	if isPanic {
+	if err != nil && isPanic {
 		panic(err)
 	}
 	return result, err
@@ -34,7 +34,7 @@ func (osCmd OsCommands) Reader(path string, isPanic bool) ([]byte, error) {
 
 func (osCmd OsCommands) Writer(path string, content []byte, perm os.FileMode, isPanic bool) error {
 	err := ioutil.WriteFile(path, content, perm)
-	if isPanic {
+	if err != nil && isPanic {
 		panic(err)
 	}
 	return err
@@ -42,7 +42,7 @@ func (osCmd OsCommands) Writer(path string, content []byte, perm os.FileMode, is
 
 func (osCmd OsCommands) Renamer(oldpath, newpath string, isPanic bool) error {
 	err := os.Rename(oldpath, newpath)
-	if isPanic {
+	if err != nil && isPanic {
 		panic(err)
 	}
 	return err
