@@ -31,12 +31,14 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"sort"
 )
 
 var (
 	configFile = flag.String("config", "sidekick.conf", "Configuration file")
 	version = flag.Bool("version", false, "Print current version")
 	verbose = flag.Bool("verbose", false, "Log in verbose mode")
+	logCompact = flag.Bool("log-compact", false, "compacting log")
 	mono = flag.Bool("mono", false, "only one haproxy instance which play slave/master roles.")
 	fake = flag.String("fake", "", "Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.")
 	config = nsq.NewConfig()
@@ -59,8 +61,13 @@ func (sdkLogger SdkLogger) Output(calldepth int, s string) error {
 }
 
 func main() {
-	log.SetFormatter(&log.TextFormatter{})
 	flag.Parse()
+
+	if *logCompact {
+		log.SetFormatter(&CompactFormatter{})
+	} else {
+		log.SetFormatter(&log.TextFormatter{})
+	}
 
 	if *version {
 		println(sidekick.VERSION)
@@ -89,11 +96,10 @@ func main() {
 	}).Info("Starting sidekick")
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
-	if *verbose {
-		producer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-	} else {
-		producer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-	}
+	nsqlogger := log.New()
+	nsqlogger.Formatter = log.StandardLogger().Formatter
+	nsqlogger.Level = log.WarnLevel
+	producer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 
 	createTopicsAndChannels()
 	time.Sleep(1 * time.Second)
@@ -115,11 +121,7 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), properties.Id, config)
-		if *verbose {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-		} else {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-		}
+		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onDeleteRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -132,11 +134,7 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.Id, config)
-		if *verbose {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-		} else {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-		}
+		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -149,11 +147,7 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s", properties.ClusterId), properties.Id, config)
-		if *verbose {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-		} else {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-		}
+		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitSlaveRequested))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
 		if err != nil {
@@ -168,11 +162,7 @@ func main() {
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), properties.Id, config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
 		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
-		if *verbose {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-		} else {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-		}
+		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		if err != nil {
 			log.Panic("Could not connect")
 		}
@@ -253,7 +243,11 @@ func loadProperties() {
 func filteredHandler(event string, message *nsq.Message, f sidekick.HandlerFunc) error {
 	defer message.Finish()
 
-	log.WithField("event", event).WithField("raw", string(message.Body)).Debug("Handle event")
+	if *logCompact {
+		log.WithField("event", event).WithField("nsq id", message.ID).Debug("Handle event")
+	} else {
+		log.WithField("event", event).WithField("nsq id", message.ID).WithField("raw", string(message.Body)).Debug("Handle event")
+	}
 	data, err := bodyToData(message.Body)
 	if err != nil {
 		log.WithError(err).Error("Unable to read data")
@@ -369,4 +363,71 @@ func publishMessage(topic_prefix string, data interface{}, context sidekick.Cont
 	topic := topic_prefix + properties.ClusterId
 	context.Fields(log.Fields{"topic": topic, "payload": string(jsonMsg)}).Debug("Publish")
 	return producer.Publish(topic, []byte(jsonMsg))
+}
+
+// log formatter
+
+type CompactFormatter struct {
+
+}
+
+func (f *CompactFormatter) Format(entry *log.Entry) ([]byte, error) {
+	var keys []string = make([]string, 0, len(entry.Data))
+
+	b := &bytes.Buffer{}
+
+	b.WriteString(entry.Time.Format(time.RFC3339))
+	b.WriteByte(' ')
+	b.WriteByte(entry.Level.String()[0])
+	b.WriteByte(' ')
+
+	if cid, ok := entry.Data["correlationId"]; ok {
+		fmt.Fprintf(b, "%7s", (cid.(string))[:7])
+	} else {
+		b.WriteString("       ")
+	}
+	b.WriteByte(' ')
+
+	if app, ok := entry.Data["application"]; ok {
+		fmt.Fprintf(b, "%5s", app)
+	} else {
+		b.WriteString("     ")
+	}
+	b.WriteByte(' ')
+
+	if pltf, ok := entry.Data["platform"]; ok {
+		fmt.Fprintf(b, "%5s", pltf)
+	} else {
+		b.WriteString("     ")
+	}
+	b.WriteByte(' ')
+
+	length := len(entry.Message)
+	if length > 40 {
+		length = 40
+	}
+	fmt.Fprintf(b, "'%-40s' ", entry.Message[:length])
+
+	for k := range entry.Data {
+		if k == "application" || k == "correlationId" || k == "platform" || k == "timestamp" {
+			continue
+		} else {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		switch value := entry.Data[k].(type) {
+		case string:
+			fmt.Fprintf(b, "'%s=%s' ", k, entry.Data[k].(string))
+		case error:
+			fmt.Fprintf(b, "%q ", value)
+		default:
+			fmt.Fprintf(b, "'%s=%s' ", k, value)
+		}
+
+	}
+
+	b.WriteByte('\n')
+	return b.Bytes(), nil
 }
