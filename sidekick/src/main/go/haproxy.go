@@ -300,6 +300,7 @@ func (hap *Haproxy) Delete() error {
 	cmd.Remover(fs.Files.ConfigFile, true)
 	cmd.Remover(fs.Files.Binary, true)
 	cmd.Remover(fs.Platform.Path, true)
+	cmd.Remover(fs.Platform.Logs, true)
 	return nil
 }
 

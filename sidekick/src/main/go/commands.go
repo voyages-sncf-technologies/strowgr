@@ -73,7 +73,7 @@ func (osCmd OsCommands) Linker(oldpath, newpath string, isPanic bool) error {
 
 func (osCmd OsCommands) Remover(path string, isPanic bool) (err error) {
 	if isPanic {
-		if err := os.Remove(path); err != nil {
+		if err := os.RemoveAll(path); err != nil {
 			panic(err)
 		}
 	} else {
