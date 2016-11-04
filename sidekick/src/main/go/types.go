@@ -25,11 +25,10 @@ import (
 )
 
 type Config struct {
-	LookupdAddr      string
+	LookupdAddresses []string
 	ProducerAddr     string
 	ProducerRestAddr string
 	ClusterId        string
-	Vip              string
 	Port             int32
 	HapHome          string
 	Id               string
@@ -59,10 +58,6 @@ func DefaultConfig() *Config {
 		HapHome:   "/HOME/hapadm",
 		ClusterId: "default-name",
 	}
-}
-
-func (config *Config) NodeId() string {
-	return config.ClusterId + "-" + config.Status
 }
 
 type Header struct {

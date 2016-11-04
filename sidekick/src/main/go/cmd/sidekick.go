@@ -123,7 +123,7 @@ func main() {
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), properties.Id, config)
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onDeleteRequested))
-		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
 		if err != nil {
 			log.Panic("Could not connect")
 		}
@@ -136,7 +136,7 @@ func main() {
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.Id, config)
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
-		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
 		if err != nil {
 			log.Panic("Could not connect")
 		}
@@ -149,7 +149,7 @@ func main() {
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s", properties.ClusterId), properties.Id, config)
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitSlaveRequested))
-		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
 		if err != nil {
 			log.Panic("Could not connect")
 		}
@@ -161,7 +161,7 @@ func main() {
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), properties.Id, config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
-		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		if err != nil {
 			log.Panic("Could not connect")
@@ -318,8 +318,7 @@ func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
 	if err != nil {
 		return err
 	}
-	err = hap.Delete()
-	return err
+	return hap.Delete()
 }
 
 // reload an haproxy with content of data in according to role (slave or master)
