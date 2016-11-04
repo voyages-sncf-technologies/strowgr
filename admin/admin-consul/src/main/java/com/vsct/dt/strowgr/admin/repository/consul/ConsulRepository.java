@@ -160,7 +160,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         try {
             Optional<Boolean> autoreload = client.execute(getEntryPointAutoreloadKey, response -> consulReader.parseHttpResponseAccepting404(response, consulReader::parseBooleanFromHttpEntity));
             if (autoreload.isPresent() && autoreload.get()) {
-                LOGGER.info("The entrypoint {} will be autoreloaded. Uri {} returns true content.", entryPointKey, getEntryPointAutoreloadKey.getRequestLine().getUri());
+                LOGGER.debug("The entrypoint {} will be autoreloaded. Uri {} returns true content.", entryPointKey, getEntryPointAutoreloadKey.getRequestLine().getUri());
                 isAutoreloaded = true;
             }
         } catch (IOException e) {

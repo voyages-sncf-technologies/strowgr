@@ -183,7 +183,7 @@ public class EntryPointEventHandler {
                     EntryPoint configuration = entryPoint.get();
                     if (!haproxyRepository.isAutoreload(configuration.getHaproxy()) || !stateManager.isAutoreloaded(entryPointKey)) {
                         stateManager.cancelCommit(entryPointKey);
-                        LOGGER.info("skip tryCommitCurrent for event {} because haproxy {} or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
+                        LOGGER.debug("skip tryCommitCurrent for event {} because haproxy {} or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
                     }
                     else {
                         String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
@@ -214,7 +214,7 @@ public class EntryPointEventHandler {
                     if (!haproxyRepository.isAutoreload(configuration.getHaproxy()) || !stateManager.isAutoreloaded(entryPointKey)) {
                         stateManager.cancelCommit(entryPointKey);
                         stateManager.prepare(entryPointKey, configuration);
-                        LOGGER.info("skip tryCommitPending for event {} because haproxy {}  or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
+                        LOGGER.debug("skip tryCommitPending for event {} because haproxy {}  or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
                     }
                     else {
                         String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
@@ -243,7 +243,7 @@ public class EntryPointEventHandler {
                 if (optionalCorrelationId.isPresent() && optionalCorrelationId.get().equals(event.getCorrelationId())) {
                     Optional<EntryPoint> currentConfiguration = stateManager.commit(key);
                     if (currentConfiguration.isPresent()) {
-                        LOGGER.info("Configuration for EntryPoint {} has been committed", event.getKey().getID());
+                        LOGGER.debug("Configuration for EntryPoint {} has been committed", event.getKey().getID());
                         outputBus.post(new CommitCompletedEvent(event.getCorrelationId(), key, currentConfiguration.get()));
                     }
                 }
