@@ -70,11 +70,17 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 
 	defer func() {
 		if r := recover(); r != nil {
-			hap.Context.Fields(log.Fields{}).Error("error on configuration")
 			// if panic during io executions, return status
-			status, err = ERR_CONF, nil // TODO send right error
+			switch r.(type) {
+			case error:
+				hap.Context.Fields(log.Fields{}).WithError(r.(error)).Error("error on configuration")
+				status, err = ERR_CONF, r.(error)
+			default:
+				hap.Context.Fields(log.Fields{"recover":r}).Error("error on configuration")
+				status, err = ERR_CONF, nil
+			}
 		} else {
-			hap.Context.Fields(log.Fields{}).Debug("end of apply configuration")
+			hap.Context.Fields(log.Fields{}).Debug("end of applying received configuration")
 		}
 	}()
 
@@ -98,7 +104,7 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 			hap.restart_killed_haproxy()
 
 			// unchanged configuration file
-			hap.Context.Fields(log.Fields{"id": hap.Config.Id}).Debug("Unchanged configuration")
+			hap.Context.Fields(log.Fields{"id": hap.Config.Id}).Debug("unchanged configuration")
 			return UNCHANGED, nil
 		}
 
@@ -117,7 +123,7 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 
 	// write new configuration file
 	cmd.Writer(fs.Files.ConfigFile, event.Conf.Haproxy, 0644, true)
-	hap.Context.Fields(log.Fields{"id": hap.Config.Id, "path": fs.Files.ConfigFile}).Info("New configuration written")
+	hap.Context.Fields(log.Fields{"id": hap.Config.Id, "path": fs.Files.ConfigFile}).Info("write received configuration (first time or detected changes)")
 
 	// Reload haproxy
 	if err := hap.reload(event.Header.CorrelationId); err != nil {
@@ -132,7 +138,7 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 	}
 
 	// Write syslog fragment
-	cmd.Writer(fs.Syslog.Path, event.Conf.Syslog, 0644, true)
+	cmd.Writer(fs.Files.SyslogFile, event.Conf.Syslog, 0644, true)
 
 	return SUCCESS, nil
 }
@@ -148,7 +154,6 @@ func (hap *Haproxy) restart_killed_haproxy() error {
 			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile}).Error("can't read pid file")
 			return err
 		}
-		hap.Context.Fields(log.Fields{"pidPath": fs.Files.PidFile, "pid": strings.TrimSpace(string(pid))}).Debug("reload haproxy")
 
 		if output, err := hap.Command("ps", "-p", strings.TrimSpace(string(pid))); err == nil {
 			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "output": string(output[:])}).Debug("process haproxy is running. nothing to do.")
@@ -158,7 +163,7 @@ func (hap *Haproxy) restart_killed_haproxy() error {
 			if err = hap.reload(hap.Context.CorrelationId); err != nil {
 				hap.Context.Fields(log.Fields{}).WithError(err).Error("can't restart haproxy process")
 			} else {
-				hap.Context.Fields(log.Fields{}).Info("haproxy process restarted")
+				hap.Context.Fields(log.Fields{}).Info("haproxy process restarted after detecting it was killed.")
 			}
 			return err
 		}
@@ -237,21 +242,20 @@ func (hap *Haproxy) reload(correlationId string) error {
 			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile}).Error("can't read pid file")
 			return err
 		}
-		hap.Context.Fields(log.Fields{"reloadScript": fs.Files.Binary, "confPath": fs.Files.ConfigFile, "pidPath": fs.Files.PidFile, "pid": strings.TrimSpace(string(pid))}).Debug("reload haproxy")
-
+		hap.Context.Fields(log.Fields{"reloadScript": fs.Files.Binary, "confPath": fs.Files.ConfigFile, "pidPath": fs.Files.PidFile, "pid": strings.TrimSpace(string(pid))}).Debug("attempt reload haproxy command")
 		if output, err := hap.Command(fs.Files.Binary, "-f", fs.Files.ConfigFile, "-p", fs.Files.PidFile, "-sf", strings.TrimSpace(string(pid))); err == nil {
-			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "reloadScript": fs.Files.Binary, "output": string(output[:])}).Debug("Reload succeeded")
+			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "reloadScript": fs.Files.Binary, "output": string(output[:])}).Debug("reload succeeded")
 		} else {
-			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
+			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("error reloading")
 			return err
 		}
 	} else {
-		hap.Context.Fields(log.Fields{"reloadScript": fs.Files.Binary, "confPath": fs.Files.ConfigFile, "pid file": fs.Files.PidFile}).Info("load haproxy")
+		hap.Context.Fields(log.Fields{"reloadScript": fs.Files.Binary, "confPath": fs.Files.ConfigFile, "pid file": fs.Files.PidFile}).Info("start haproxy for the first time")
 		output, err := hap.Command(fs.Files.Binary, "-f", fs.Files.ConfigFile, "-p", fs.Files.PidFile)
 		if err == nil {
-			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "reloadScript": fs.Files.Binary, "output": string(output[:])}).Debug("Reload succeeded")
+			hap.Context.Fields(log.Fields{"id": hap.Config.Id, "reloadScript": fs.Files.Binary, "output": string(output[:])}).Info("success of the first haproxy start")
 		} else {
-			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("Error reloading")
+			hap.Context.Fields(log.Fields{"output": string(output[:])}).WithError(err).Error("fail of the first haproxy start")
 			return err
 		}
 	}
@@ -286,11 +290,13 @@ func (hap *Haproxy) rollback(correlationId string) error {
 
 // delete configuration files
 func (hap *Haproxy) Delete() error {
+	hap.Context.Fields(log.Fields{}).Info("delete all files and directory for this entrypoint")
+
 	fs := hap.Filesystem
 	cmd := hap.Filesystem.Commands
 	defer func() {
 		if r := recover(); r != nil {
-			hap.Context.Fields(log.Fields{"panic": r}).Error("Failed to delete haproxy configuration files or directories")
+			hap.Context.Fields(log.Fields{"panic": r}).Error("failed to delete haproxy configuration files or directories")
 		}
 	}()
 
@@ -306,6 +312,7 @@ func (hap *Haproxy) Delete() error {
 
 // stop haproxy process
 func (hap *Haproxy) Stop() error {
+	hap.Context.Fields(log.Fields{}).Info("stop haproxy process")
 	fs := hap.Filesystem
 	cmd := hap.Filesystem.Commands
 	pid, err := cmd.Reader(fs.Files.PidFile, true)
@@ -367,7 +374,7 @@ func dumpConfiguration(context Context, filename string, newConf []byte) {
 		f.Write(newConf)
 		f.Sync()
 
-		context.Fields(log.Fields{"filename": filename}).Info("Dump configuration")
+		context.Fields(log.Fields{"filename": filename}).Debug("dump configuration to filesystem")
 	}
 }
 

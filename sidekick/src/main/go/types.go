@@ -43,12 +43,11 @@ func (config Config) IsMaster(vip string) (bool, error) {
 		log.WithField("vip", vip).WithField("port", config.Port).WithError(err).Error("can't request in http the vip")
 		return false, err
 	} else {
-		log.WithField("http status", resp.Status).Debug("response ip")
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		isMaster := string(body) == config.Id
 		if log.GetLevel() == log.DebugLevel {
-			log.WithField("id", string(body)).WithField("isMaster", isMaster).Debug("retrieve master id")
+			log.WithField("id", string(body)).WithField("isMaster", isMaster).Debug("check if this instance is master")
 		}
 		return string(body) == config.Id, err
 	}

@@ -244,13 +244,13 @@ func filteredHandler(event string, message *nsq.Message, f sidekick.HandlerFunc)
 	defer message.Finish()
 
 	if *logCompact {
-		log.WithField("event", event).WithField("nsq id", message.ID).Debug("Handle event")
+		log.WithField("event", event).WithField("nsq id", message.ID).Debug("new received message from nsq")
 	} else {
-		log.WithField("event", event).WithField("nsq id", message.ID).WithField("raw", string(message.Body)).Debug("Handle event")
+		log.WithField("event", event).WithField("nsq id", message.ID).WithField("raw", string(message.Body)).Debug("new received message from nsq")
 	}
 	data, err := bodyToData(message.Body)
 	if err != nil {
-		log.WithError(err).Error("Unable to read data")
+		log.WithError(err).Error("unable to read body from message")
 		return err
 	}
 
@@ -283,7 +283,7 @@ func onDeleteRequested(message *nsq.Message) error {
 
 // logAndForget is a generic function to just log event
 func logAndForget(data *sidekick.EventMessageWithConf) error {
-	data.Context().Fields(log.Fields{}).Debug("Commit completed")
+	data.Context().Fields(log.Fields{}).Debug("receive commit completed event")
 	return nil
 }
 
@@ -361,7 +361,11 @@ func bodyToData(jsonStream []byte) (*sidekick.EventMessageWithConf, error) {
 func publishMessage(topic_prefix string, data interface{}, context sidekick.Context) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
-	context.Fields(log.Fields{"topic": topic, "payload": string(jsonMsg)}).Debug("Publish")
+	if *logCompact {
+		context.Fields(log.Fields{"topic": topic}).Debug("publish on topic")
+	} else {
+		context.Fields(log.Fields{"topic": topic, "payload": string(jsonMsg)}).Debug("publish on topic")
+	}
 	return producer.Publish(topic, []byte(jsonMsg))
 }
 
