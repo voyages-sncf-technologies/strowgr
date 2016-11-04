@@ -16,12 +16,14 @@ type Filesystem struct {
 }
 
 type AllFiles struct {
-	ConfigFile    string
-	SyslogFile    string
-	PidFile       string
-	ConfigArchive string
-	Binary        string
-	BinaryArchive string
+	ConfigFile     string
+	SyslogFile     string
+	PidFile        string
+	ConfigArchive  string
+	Binary         string
+	BinaryArchive  string
+	Version        string
+	VersionArchive string
 }
 
 type Application struct {
@@ -74,6 +76,8 @@ func NewFilesystem(home, application, platform string) Filesystem {
 		SyslogFile: join(filesystem.Syslog.Path, "syslog" + application + platform + ".conf"),
 		Binary: join(filesystem.Application.Scripts, "hap" + application + platform),
 		BinaryArchive: join(filesystem.Application.Archives, "hap" + application + platform),
+		Version:join(filesystem.Platform.Path, "VERSION"),
+		VersionArchive:join(filesystem.Application.Archives, "VERSION_" + platform),
 	}
 	filesystem.Files = files
 	return *filesystem

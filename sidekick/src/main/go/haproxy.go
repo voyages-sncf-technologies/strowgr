@@ -99,7 +99,9 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 		// configuration already exists for this haproxy
 		oldConf, _ := cmd.Reader(fs.Files.ConfigFile, true)
 
-		if bytes.Equal(oldConf, event.Conf.Haproxy) {
+		oldVersion, _ := cmd.Reader(fs.Files.Version, true)
+
+		if bytes.Equal(oldConf, event.Conf.Haproxy) && string(oldVersion) == event.Conf.Version {
 			// check and restart killed haproxy
 			hap.restart_killed_haproxy()
 
@@ -118,8 +120,10 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 	}
 
 	// override link to new version (if needed)
+	cmd.Writer(fs.Files.Version, []byte(event.Conf.Version), 0644, true)
 	newVersion := fmt.Sprintf("/export/product/haproxy/product/%s/bin/haproxy", event.Conf.Version) // TODO externalize the binary path
 	cmd.Linker(newVersion, fs.Files.Binary, true)
+	hap.Context.Fields(log.Fields{"version": newVersion, "path bin": fs.Files.Binary}).Debug("link to binary haproxy")
 
 	// write new configuration file
 	cmd.Writer(fs.Files.ConfigFile, event.Conf.Haproxy, 0644, true)
@@ -183,12 +187,9 @@ func (hap *Haproxy) validate(event *EventMessageWithConf) error {
 // archive configuration file
 func (hap *Haproxy) archiveConfigurationFile() {
 	fs := hap.Filesystem
-	if err := hap.Filesystem.Commands.Renamer(fs.Files.ConfigFile, fs.Files.ConfigArchive, true); err != nil {
-		hap.Context.Fields(log.Fields{"archivePath": fs.Files.ConfigArchive}).WithError(err).Error("can't archive config file")
-		panic(err)
-	} else {
-		hap.Context.Fields(log.Fields{"archivePath": fs.Files.ConfigArchive}).Debug("Old configuration archived")
-	}
+	hap.Filesystem.Commands.Renamer(fs.Files.ConfigFile, fs.Files.ConfigArchive, true)
+	hap.Filesystem.Commands.Renamer(fs.Files.Version, fs.Files.VersionArchive, true)
+	hap.Context.Fields(log.Fields{"archivePath": fs.Files.ConfigArchive}).Debug("old configuration files archived")
 }
 
 // archive binary
@@ -269,6 +270,9 @@ func (hap *Haproxy) rollback(correlationId string) error {
 
 	if err := cmd.Renamer(fs.Files.ConfigArchive, fs.Files.ConfigFile, false); err != nil {
 		hap.Context.Fields(log.Fields{"archived config": fs.Files.ConfigArchive, "used config": fs.Files.ConfigFile}).WithError(err).Error("can't rename config archive to used config path")
+		return err
+	} else if err = cmd.Renamer(fs.Files.VersionArchive, fs.Files.Version, false); err != nil {
+		hap.Context.Fields(log.Fields{"archived config": fs.Files.VersionArchive, "used config": fs.Files.Version}).WithError(err).Error("can't rename version archive to used version path")
 		return err
 	}
 
