@@ -21,9 +21,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class Header {
+
+    private static final String UNKNOWN_SOURCE = "unknown";
 
     private final String correlationId;
     private final String application;
@@ -37,11 +43,11 @@ public class Header {
                   @JsonProperty("platform") String platform,
                   @JsonProperty("timestamp") Long timestamp,
                   @JsonProperty("source") String source) {
-        this.correlationId = checkNotNull(correlationId);
+        this.correlationId = Optional.ofNullable(correlationId).orElseGet(() -> UUID.randomUUID().toString());
         this.application = checkNotNull(application);
         this.platform = checkNotNull(platform);
-        this.timestamp = timestamp;
-        this.source = source;
+        this.timestamp = Optional.ofNullable(timestamp).orElseGet(() -> System.currentTimeMillis());
+        this.source = Optional.ofNullable(source).orElseGet(() -> UNKNOWN_SOURCE);
     }
 
     public Header(String correlationId, String application, String platform){
@@ -66,5 +72,22 @@ public class Header {
 
     public String getSource() {
         return source;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Header header = (Header) o;
+        return Objects.equals(correlationId, header.correlationId) &&
+                Objects.equals(application, header.application) &&
+                Objects.equals(platform, header.platform) &&
+                Objects.equals(timestamp, header.timestamp) &&
+                Objects.equals(source, header.source);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(correlationId, application, platform, timestamp, source);
     }
 }

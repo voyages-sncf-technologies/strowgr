@@ -107,12 +107,11 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                 LOGGER.warn("reuse session for key {}");
             }
 
-            LOGGER.debug("attempt to acquire lock for key {} on session {}", entryPointKey, sessionId);
+            LOGGER.trace("attempt to acquire lock for key {} on session {}", entryPointKey, sessionId);
             HttpPut acquireEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + entryPointKey + "/lock?acquire=" + sessionId);
 
-            /* TODO, implement wait with a blocking query */
             int count = 0;
-            while (!locked && (count++ < 10)) {
+            while (!locked && (count++ < 100)) {
                 locked = client.execute(acquireEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity)).orElse(Boolean.FALSE);
                 if (!locked) {
                     /* Avoid crazy spinning*/
@@ -122,13 +121,18 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                         LOGGER.error("error in consul repository for session " + sessionId + " and key " + entryPointKey, e);
                     }
                 } else {
-                    LOGGER.debug("lock acquired for key {} on session {}", entryPointKey, sessionId);
+                    LOGGER.trace("lock acquired for key {} on session {}", entryPointKey, sessionId);
                 }
+            }
+
+            if(count >= 100) {
+                LOGGER.error("could not acquire lock for key {} after 100 retries", entryPointKey);
             }
 
         } catch (IOException e) {
             LOGGER.error("error in consul repository for session " + sessionId + " and key " + entryPointKey, e);
         }
+
         return locked;
     }
 
@@ -156,7 +160,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         try {
             Optional<Boolean> autoreload = client.execute(getEntryPointAutoreloadKey, response -> consulReader.parseHttpResponseAccepting404(response, consulReader::parseBooleanFromHttpEntity));
             if (autoreload.isPresent() && autoreload.get()) {
-                LOGGER.info("The entrypoint {} will be autoreloaded. Uri {} returns true content.", entryPointKey, getEntryPointAutoreloadKey.getRequestLine().getUri());
+                LOGGER.debug("The entrypoint {} will be autoreloaded. Uri {} returns true content.", entryPointKey, getEntryPointAutoreloadKey.getRequestLine().getUri());
                 isAutoreloaded = true;
             }
         } catch (IOException e) {
@@ -168,10 +172,14 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     @Override
     public void release(EntryPointKey key) {
         try {
-            LOGGER.debug("attempt to release lock for key " + key + " on session " + sessionLocal.get());
+            LOGGER.trace("attempt to release lock for key " + key + " on session " + sessionLocal.get());
             HttpPut releaseEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/lock?release=" + sessionLocal.get());
             client.execute(releaseEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
-            LOGGER.debug("lock released for key " + key + " on session " + sessionLocal.get());
+            LOGGER.trace("lock released for key " + key + " on session " + sessionLocal.get());
+
+            HttpPut destroySessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/destroy/" + sessionLocal.get());
+            client.execute(destroySessionURI).close();
+
         } catch (IOException e) {
             LOGGER.error("error in consul repository", e);
         } finally {
@@ -207,6 +215,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     .map(s -> s.replace("/disabled", "")) // @deprecated TODO remove
                     .map(s -> s.replace("/autoreload", ""))
                     .map(s -> s.replace("/haproxyversion", ""))
+                    .filter(s -> !s.isEmpty())
                     .distinct()
                     .collect(Collectors.toSet());
 

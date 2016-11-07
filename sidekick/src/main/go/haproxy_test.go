@@ -17,83 +17,202 @@
 package sidekick
 
 import (
-	"io/ioutil"
-	"os"
-	"runtime"
+	"syscall"
 	"testing"
 )
 
-var (
-	config = Config{HapHome: "/HOME"}
-	hap    = NewHaproxy("master", &config, Context{Application: "TST", Platform: "DEV"})
-)
+func TestReLoadScript(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
 
-func TestGetReloadScript(t *testing.T) {
-	config.HapHome = "/HOME"
-	result := hap.getReloadScript()
-	expected := "/HOME/TST/scripts/hapctlTSTDEV"
-	AssertEquals(t, expected, result)
+	// test
+	err := hap.reload("my_id")
+
+	// check
+	checkError(t, err)
+	check(t, "reload command is wrong. actual: '%s', expected: '%s'", context.Command, "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234")
 }
 
-func TestCreateSkeleton(t *testing.T) {
-	tmpdir, _ := ioutil.TempDir("", "strowgr")
-	defer os.Remove(tmpdir)
-	config.HapHome = tmpdir
-	hap.createSkeleton("mycorrelationid")
-	AssertFileExists(t, tmpdir+"/TST/Config")
-	AssertFileExists(t, tmpdir+"/TST/logs/TSTDEV")
-	AssertFileExists(t, tmpdir+"/TST/scripts")
-	AssertFileExists(t, tmpdir+"/TST/version-1")
-	if runtime.GOOS != "windows" {
-		AssertIsSymlink(t, tmpdir+"/TST/Config/haproxy")
-		AssertIsSymlink(t, tmpdir+"/TST/scripts/hapctlTSTDEV")
-	}
+func TestReloadFails(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+	hap.Command = MockFailedCommand
+
+	//test
+	err := hap.reload("my_id")
+
+	// check
+	check(t, "actual error '%s', error expected '%s'", err.Error(), "fails...")
+}
+
+func TestCreateDirectory(t *testing.T) {
+	// given & test
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+
+	// check
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Config, "/HOME/TST/Config")
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Scripts, "/HOME/TST/scripts")
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Archives, "/HOME/TST/version-1")
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Logs, "/HOME/TST/logs/TSTDEV")
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Errors, "/HOME/TST/DEV/errors")
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Dump, "/HOME/TST/DEV/dump")
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Syslog.Path, "/HOME/SYSLOG/Config/syslog.conf.d")
 }
 
 func TestArchivePath(t *testing.T) {
-	config.HapHome = "/HOME"
-	result := hap.confArchivePath()
+	// given
+	initContext()
+	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
+
+	// test & check
+	result := hap.Filesystem.Files.ConfigArchive
 	expected := "/HOME/TST/version-1/hapTSTDEV.conf"
-	AssertEquals(t, expected, result)
-}
-
-func AssertFileExists(t *testing.T, file string) {
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		t.Logf("File or directory '%s' does not exists", file)
-		t.Fail()
-	}
-}
-
-func AssertFileNotExists(t *testing.T, file string) {
-	if _, err := os.Stat(file); os.IsExist(err) {
-		t.Logf("File or directory '%s' exists", file)
-		t.Fail()
-	}
-}
-
-func AssertIsSymlink(t *testing.T, file string) {
-	fi, err := os.Lstat(file)
-	if err != nil || (fi.Mode()&os.ModeSymlink != os.ModeSymlink) {
-		t.Logf("File or directory '%s' does not exists", file)
-		t.Fail()
-	}
-}
-
-func AssertEquals(t *testing.T, expected interface{}, result interface{}) {
-	if result != expected {
-		t.Logf("Expected '%s', got '%s'", expected, result)
-		t.Fail()
-	}
+	check(t, "Expected '%s', got '%s'", expected, result)
 }
 
 func TestDeleteInstance(t *testing.T) {
-	tmpdir, _ := ioutil.TempDir("", "strowgr")
-	defer os.Remove(tmpdir)
-	config.HapHome = tmpdir
-	hap.createSkeleton("mycorrelationid")
-	AssertFileExists(t, tmpdir+"/TST/Config")
+	// given
+	initContext()
+	hap := newMockHaproxy()
+
+	// test
 	hap.Delete()
 
-	AssertFileNotExists(t, tmpdir+"/TST")
-	AssertFileExists(t, tmpdir)
+	// check
+	checkContains(t, "/HOME/TST/Config/hapTSTDEV.conf", context.Removed)
+	checkContains(t, "/HOME/TST/scripts/hapTSTDEV", context.Removed)
+	checkContains(t, "/HOME/TST/DEV", context.Removed)
+}
+
+func TestStop(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+	hap.Signal = MockSignal
+
+	// test
+	err := hap.Stop()
+
+	// check
+	checkError(t, err)
+	check(t, "expected signal sent to haproxy process is %s but should be %s", context.Signal, syscall.SIGTERM)
+}
+
+func TestUnversionedConfiguration(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+	hap.Config.HapVersions = []string{"1", "2", "3"}
+	conf := Conf{Version: "123"}
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, _ := hap.ApplyConfiguration(event)
+
+	// given
+	check(t, "expected result is %s but actually got %s", ERR_CONF, result)
+}
+
+func TestUnchangedConfiguration(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+	conf := Conf{Version: "1"}
+	conf.Haproxy = []byte("my conf")
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, err := hap.ApplyConfiguration(event)
+
+	// given
+	checkError(t, err)
+	check(t, "expected result is %s but actually got %s", UNCHANGED, result)
+	check(t, "actual command %s should be empty but got %s", "ps -p 1234", context.Command)
+}
+
+func TestChangedConfiguration(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+
+	binExpected := "/export/product/haproxy/product/1/bin/haproxy"
+	newVersionExpected := "/HOME/TST/scripts/hapTSTDEV"
+
+	conf := Conf{Version: "1"}
+	conf.Haproxy = []byte("new conf")
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, err := hap.ApplyConfiguration(event)
+
+	// check
+	checkError(t, err)
+	check(t, "expected result is %s but actually got %s", SUCCESS, result)
+	// check archive configuration
+	checkMap(t, "/HOME/TST/version-1/hapTSTDEV.conf", "/HOME/TST/Config/hapTSTDEV.conf", context.Renames)
+	// check archive bin
+	actualArchivedVersion, contains := context.Links["/HOME/TST/version-1/hapTSTDEV"]
+	check(t, "actual %s, expected %s", contains, true)
+	check(t, "actual archive link %s but expected is %s", actualArchivedVersion, "/export/product/haproxy/product/1/bin/haproxy")
+
+	check(t, "expected archive link %s but actually got %s", "/export/product/haproxy/product/1/bin/haproxy", context.Links["/HOME/TST/version-1/hapTSTDEV"])
+	// check executions
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234", context.Command)
+	// check links
+	actualVersion, contains := context.Links[newVersionExpected]
+	check(t, "link destination to new bin is wrong. actual %s, expected %s", contains, true)
+	check(t, "link origin to new bin is wrong. actual '%s', expected '%s'", actualVersion, binExpected)
+	// check new conf
+	check(t, "configuration file is '%s' but should be '%s' ", context.Writes["/HOME/TST/Config/hapTSTDEV.conf"], "new conf")
+}
+
+func TestApplyConfigurationWithFailedReload(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+	hap.Command = MockFailedCommand
+
+	conf := Conf{Version: "1"}
+	conf.Haproxy = []byte("new conf")
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, err := hap.ApplyConfiguration(event)
+
+	// check
+	check(t, "actual error '%s', error expected '%s'", err.Error(), "fails...")
+	check(t, "actual return status is '%s', ", result, ERR_RELOAD)
+
+}
+
+func TestEmptyConfiguration(t *testing.T) {
+	// given
+	initContext()
+	hap := newMockHaproxy()
+
+	binExpected := "/export/product/haproxy/product/1/bin/haproxy"
+	newVersionExpected := "/HOME/TST/scripts/hapTSTDEV"
+
+	conf := Conf{Version: "1"}
+	conf.Haproxy = []byte("completly new conf")
+	event := &EventMessageWithConf{Conf: conf}
+
+	// test
+	result, err := hap.ApplyConfiguration(event)
+
+	// check
+	checkError(t, err)
+	check(t, "expected result is %s but actually got %s", SUCCESS, result)
+	// check executions
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234", context.Command)
+
+	// check links
+	actualVersion, contains := context.Links[newVersionExpected]
+	check(t, "link destination to new bin is wrong. actual %s, expected %s", contains, true)
+	check(t, "link origin to new bin is wrong. actual %s, expected %s", actualVersion, binExpected)
+	// check new conf
+	check(t, "configuration file is %s but should be %s ", context.Writes["/HOME/TST/Config/hapTSTDEV.conf"], "completly new conf")
 }

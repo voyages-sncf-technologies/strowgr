@@ -30,7 +30,7 @@ func (factory *LoadbalancerFactory) CreateHaproxy(context Context) Loadbalancer 
 		log.Debug("mode yesman")
 		return &YesmanHaproxy{}
 	} else {
-		log.Debug("mode normal")
+		log.Debug("process haproxy on normal mode")
 		return NewHaproxy(factory.Properties, context)
 	}
 }

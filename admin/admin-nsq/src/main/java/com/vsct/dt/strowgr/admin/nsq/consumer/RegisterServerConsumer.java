@@ -51,12 +51,9 @@ public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServer
     protected RegisterServerEvent transform(NSQMessage nsqMessage) throws Exception {
         RegisterServer payload = objectMapper.readValue(nsqMessage.getMessage(), RegisterServer.class);
 
-        String correlationId = Optional.ofNullable(payload.getHeader().getCorrelationId()).orElseGet(() -> Arrays.toString(nsqMessage.getId()));
-        long timestamp = Optional.ofNullable(payload.getHeader().getTimestamp()).orElseGet(() -> nsqMessage.getTimestamp().getTime());
+        LOGGER.debug("received an new RegisterServerEvent with cid {}", payload.getHeader().getCorrelationId());
 
-        LOGGER.debug("received an new RegisterServerEvent with cid {}", correlationId);
-
-        return new RegisterServerEvent(correlationId,
+        return new RegisterServerEvent(payload.getHeader().getCorrelationId(),
                 new EntryPointKeyVsctImpl(payload.getHeader().getApplication(), payload.getHeader().getPlatform()),
                 payload.getServer().getBackendId(),
                 Sets.newHashSet(new IncomingEntryPointBackendServer(

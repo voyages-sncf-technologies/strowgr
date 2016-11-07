@@ -17,10 +17,14 @@
 
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -33,6 +37,6 @@ public class AdminResources {
     @GET
     @Path("/version")
     public String getVersion() throws IOException, URISyntaxException {
-        return new String(Files.readAllBytes(Paths.get(ClassLoader.getSystemResource("version").toURI())));
+        return new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/version"))).readLine();
     }
 }

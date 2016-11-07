@@ -1,8 +1,6 @@
 package sidekick
 
-import (
-	log "github.com/Sirupsen/logrus"
-)
+import log "github.com/Sirupsen/logrus"
 
 type YesmanHaproxy struct {
 	role    string
@@ -15,11 +13,11 @@ func (hap YesmanHaproxy) ApplyConfiguration(data *EventMessageWithConf) (int, er
 }
 
 func (hap YesmanHaproxy) Stop() error {
-	log.WithFields(hap.context.Fields()).Info("Stop yesman instance")
+	hap.context.Fields(log.Fields{}).Info("Stop yesman instance")
 	return nil
 }
 func (hap YesmanHaproxy) Delete() error {
-	log.WithFields(hap.context.Fields()).Info("Delete yesman instance")
+	hap.context.Fields(log.Fields{}).Info("Delete yesman instance")
 	return nil
 }
 
