@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -34,17 +34,9 @@ import java.nio.file.Paths;
 @Path("/admin")
 public class AdminResources {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdminResources.class);
-
     @GET
     @Path("/version")
     public String getVersion() throws IOException, URISyntaxException {
-        URL versionURL = getClass().getClassLoader().getResource("version");
-        if (versionURL == null) {
-            LOGGER.error("can't find version file uri relative to classpath. Check 'version' is in root classpath.");
-            throw new IllegalStateException("can't find version file uri relative to classpath. Check 'version' is in root classpath.");
-        } else {
-            return new String(Files.readAllBytes(Paths.get(versionURL.toURI())));
-        }
+        return new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/version"))).readLine();
     }
 }
