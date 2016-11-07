@@ -52,6 +52,8 @@ func (mc MockCommands) Reader(path string, isPanic bool) ([]byte, error) {
 		return []byte("1234"), nil
 	} else if strings.HasSuffix(path, "conf") {
 		return []byte("my conf"), nil
+	} else if strings.HasSuffix(path, "VERSION") {
+		return []byte("1"), nil
 	} else {
 		return []byte("nothing"), nil
 	}
