@@ -154,8 +154,8 @@ func (hap *Haproxy) restart_killed_haproxy() error {
 	cmd := fs.Commands
 	if cmd.Exists(fs.Files.PidFile) {
 		pid, err := cmd.Reader(fs.Files.PidFile, true)
-		if err != nil {
-			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile}).Error("can't read pid file")
+		if err != nil || pid == nil || len(pid) == 0 {
+			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile, "pid": pid}).Error("can't read pid file")
 			return err
 		}
 
@@ -239,8 +239,8 @@ func (hap *Haproxy) reload(correlationId string) error {
 	configurationExists := cmd.Exists(fs.Files.PidFile)
 	if configurationExists {
 		pid, err := cmd.Reader(fs.Files.PidFile, true)
-		if err != nil {
-			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile}).Error("can't read pid file")
+		if err != nil || pid == nil || len(pid) == 0 {
+			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile, "pid":pid}).Error("can't read pid file")
 			return err
 		}
 		hap.Context.Fields(log.Fields{"reloadScript": fs.Files.Binary, "confPath": fs.Files.ConfigFile, "pidPath": fs.Files.PidFile, "pid": strings.TrimSpace(string(pid))}).Debug("attempt reload haproxy command")
@@ -354,7 +354,7 @@ type Dumper func(context Context, filename string, newConf []byte)
 /////////////////////////
 
 func execCommand(name string, arg ...string) ([]byte, error) {
-	return exec.Command(name, arg...).Output()
+	return exec.Command(name, arg...).CombinedOutput()
 }
 
 func osSignal(pid int, signal os.Signal) error {
