@@ -17,10 +17,14 @@
 
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -30,9 +34,17 @@ import java.nio.file.Paths;
 @Path("/admin")
 public class AdminResources {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminResources.class);
+
     @GET
     @Path("/version")
     public String getVersion() throws IOException, URISyntaxException {
-        return new String(Files.readAllBytes(Paths.get(ClassLoader.getSystemResource("version").toURI())));
+        URL versionURL = getClass().getClassLoader().getResource("version");
+        if (versionURL == null) {
+            LOGGER.error("can't find version file uri relative to classpath. Check 'version' is in root classpath.");
+            throw new IllegalStateException("can't find version file uri relative to classpath. Check 'version' is in root classpath.");
+        } else {
+            return new String(Files.readAllBytes(Paths.get(versionURL.toURI())));
+        }
     }
 }

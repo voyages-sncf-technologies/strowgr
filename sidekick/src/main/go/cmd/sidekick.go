@@ -293,6 +293,7 @@ func reloadSlave(data *sidekick.EventMessageWithConf) error {
 		log.WithField("bind", data.Conf.Bind).WithError(err).Info("can't find if binding to vip")
 	}
 	if isMaster && !*mono {
+		log.Debug("skipped message because server is master and not mono instance")
 		return nil
 	} else {
 		return reloadHaProxy(data, false)
@@ -305,6 +306,7 @@ func reloadMaster(data *sidekick.EventMessageWithConf) error {
 		log.WithField("bind", data.Conf.Bind).WithError(err).Info("can't find if binding to vip")
 	}
 	if isMaster {
+		log.Debug("skipped message because server is slave")
 		return reloadHaProxy(data, true)
 	} else {
 		return nil
