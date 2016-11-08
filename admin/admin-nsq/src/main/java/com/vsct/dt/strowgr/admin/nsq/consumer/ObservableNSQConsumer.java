@@ -61,6 +61,7 @@ public abstract class ObservableNSQConsumer<T> {
                     this.emitter = emitter;
 
                     consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
+                    consumer.setMessagesPerBatch(10);
 
                     //We tell the NSQConsumer to use its own eventloop as the executor for message handling
                     //This prevent the use of the default cachedThreadPool, which spawns a huge amount of threads when a lot of messages arrives
