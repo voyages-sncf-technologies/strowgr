@@ -29,7 +29,7 @@
     </parent>
 
     <artifactId>sidekick</artifactId>
-    <packaging>pom</packaging>
+    <packaging>mvn-golang</packaging>
 
     <profiles>
         <profile>
@@ -63,15 +63,66 @@
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
             </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-            </plugin>
-
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
                 <artifactId>mvn-golang-wrapper</artifactId>
-                <version>2.1.1</version>
+                <version>2.1.2</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <goVersion>${go.sdk.version}</goVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-get</id>
+                        <goals>
+                            <goal>get</goal>
+                        </goals>
+                        <configuration>
+                            <targetOs>${target.os}</targetOs>
+                            <targetArch>${target.arch}</targetArch>
+                            <buildFlags>
+                                <flag>-u</flag>
+                            </buildFlags>
+                            <autofixGitCache>true</autofixGitCache>
+                            <packages>
+                                <package>github.com/Sirupsen/logrus</package>
+                                <package>github.com/BurntSushi/toml</package>
+                                <package>github.com/bitly/go-nsq</package>
+                            </packages>
+                            <goVersion>${go.sdk.version}</goVersion>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <env><CGO_ENABLED>0</CGO_ENABLED></env>
+                            <packages>
+                                <package>cmd/sidekick.go</package>
+                            </packages>
+                            <targetOs>${target.os}</targetOs>
+                            <targetArch>${target.arch}</targetArch>
+                            <resultName>${project.build.finalName}${target.ext}</resultName>
+                            <goVersion>${go.sdk.version}</goVersion>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <testFlags>
+                                <flag>-v</flag>
+                            </testFlags>
+                            <goVersion>${go.sdk.version}</goVersion>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--
+            <plugin>
+                <groupId>com.igormaznitsa</groupId>
+                <artifactId>mvn-golang-wrapper</artifactId>
+                <version>2.1.2</version>
                 <extensions>true</extensions>
                 <configuration>
                     <goVersion>${go.sdk.version}</goVersion>
@@ -116,7 +167,6 @@
                     </execution>
                     <execution>
                         <id>default-test</id>
-                        <phase>test</phase>
                         <configuration>
                             <testFlags>
                                 <flag>-x</flag>
@@ -126,7 +176,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin>  -->
         </plugins>
     </build>
 </project>
