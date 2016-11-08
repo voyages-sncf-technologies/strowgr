@@ -28,10 +28,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sort"
 	"sync"
 	"syscall"
 	"time"
-	"sort"
 )
 
 var (
@@ -48,7 +48,7 @@ var (
 	reloadChan = make(chan sidekick.ReloadEvent)
 	deleteChan = make(chan sidekick.ReloadEvent)
 	lastSyslogReload = time.Now()
-	haFactory *sidekick.LoadbalancerFactory
+	haFactory        *sidekick.LoadbalancerFactory
 )
 
 type SdkLogger struct {
@@ -91,8 +91,8 @@ func main() {
 	syslog = sidekick.NewSyslog(properties)
 	syslog.Init()
 	log.WithFields(log.Fields{
-		"id":     properties.Id,
-		"clusterId":     properties.ClusterId,
+		"id":        properties.Id,
+		"clusterId": properties.ClusterId,
 	}).Info("Starting sidekick")
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
@@ -121,6 +121,7 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), properties.Id, config)
+		log.WithField("topic", "delete_requested_" + properties.ClusterId).Debug("add topic consumer")
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onDeleteRequested))
 		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
@@ -134,6 +135,7 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.Id, config)
+		log.WithField("topic", "commit_requested_" + properties.ClusterId).Debug("add topic consumer")
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
 		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
@@ -147,6 +149,7 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s", properties.ClusterId), properties.Id, config)
+		log.WithField("topic", "commit_slave_completed_" + properties.ClusterId).Debug("add topic consumer")
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitSlaveRequested))
 		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
@@ -161,6 +164,7 @@ func main() {
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), properties.Id, config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
+		log.WithField("topic", "commit_completed_" + properties.ClusterId).Debug("add topic consumer")
 		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		if err != nil {
@@ -200,11 +204,11 @@ func main() {
 
 func createTopicsAndChannels() {
 	// Create required topics
-	topics := []string{"commit_slave_completed", "commit_completed", "commit_failed"}
+	topics := []string{"commit_requested", "commit_slave_completed", "commit_completed", "commit_failed"}
 
 	for _, topic := range topics {
 		// create the topic
-		log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Info("Creating topic")
+		log.WithField("topic", topic).WithField("clusterId", properties.ClusterId).Info("creating topic")
 		url := fmt.Sprintf("%s/topic/create?topic=%s_%s", properties.ProducerRestAddr, topic, properties.ClusterId)
 		respTopic, err := http.PostForm(url, nil)
 		if err == nil && respTopic.StatusCode == 200 {
@@ -214,7 +218,7 @@ func createTopicsAndChannels() {
 		}
 
 		// create the channels of the topics
-		log.WithField("channel", properties.Id).Info("Creating channel")
+		log.WithField("topic", topic).WithField("channel", properties.Id).Info("creating channel")
 		url = fmt.Sprintf("%s/channel/create?topic=%s_%s&channel=%s", properties.ProducerRestAddr, topic, properties.ClusterId, properties.Id)
 		respChannel, err := http.PostForm(url, nil)
 		if err == nil && respChannel.StatusCode == 200 {
@@ -339,7 +343,7 @@ func reloadHaProxy(data *sidekick.EventMessageWithConf, masterRole bool) error {
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		if (masterRole || hap.Fake() || *mono) {
+		if masterRole || hap.Fake() || *mono {
 			publishMessage("commit_completed_", data.Clone(properties.Id), context)
 		} else {
 			publishMessage("commit_slave_completed_", data.CloneWithConf(properties.Id), context)
@@ -373,7 +377,6 @@ func publishMessage(topic_prefix string, data interface{}, context sidekick.Cont
 // log formatter
 
 type CompactFormatter struct {
-
 }
 
 func (f *CompactFormatter) Format(entry *log.Entry) ([]byte, error) {

@@ -54,10 +54,10 @@ func NewHaproxy(config *Config, context Context) *Haproxy {
 
 // status of applying a new configuration
 const (
-	SUCCESS int = iota // configuration application has succeed
-	UNCHANGED int = iota // configuration has not been changed
+	SUCCESS    int = iota // configuration application has succeed
+	UNCHANGED  int = iota // configuration has not been changed
 	ERR_SYSLOG int = iota // error during syslog configuration change
-	ERR_CONF int = iota // error with given configuration
+	ERR_CONF   int = iota // error with given configuration
 	ERR_RELOAD int = iota // error during haproxy reload
 	MAX_STATUS int = iota // technical status for enumerating status
 )
@@ -76,7 +76,7 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 				hap.Context.Fields(log.Fields{}).WithError(r.(error)).Error("error on configuration")
 				status, err = ERR_CONF, r.(error)
 			default:
-				hap.Context.Fields(log.Fields{"recover":r}).Error("error on configuration")
+				hap.Context.Fields(log.Fields{"recover": r}).Error("error on configuration")
 				status, err = ERR_CONF, nil
 			}
 		} else {
@@ -94,7 +94,7 @@ func (hap *Haproxy) ApplyConfiguration(event *EventMessageWithConf) (status int,
 	hap.dumpDebug(event.Conf.Haproxy)
 
 	if cmd.Exists(fs.Files.ConfigFile) {
-		hap.Context.Fields(log.Fields{"config":fs.Files.ConfigFile}).Debug("configuration file found")
+		hap.Context.Fields(log.Fields{"config": fs.Files.ConfigFile}).Debug("configuration file found")
 
 		// configuration already exists for this haproxy
 		oldConf, _ := cmd.Reader(fs.Files.ConfigFile, true)
@@ -222,13 +222,13 @@ func (hap *Haproxy) isManagedVersion(version string) bool {
 // dump configuration to dump directory if debug level is enabled
 func (hap *Haproxy) dumpDebug(config []byte) {
 	if log.GetLevel() == log.DebugLevel {
-		hap.Dumper(hap.Context, hap.Filesystem.Platform.Dump + "/" + time.Now().Format("20060102150405") + ".log", config)
+		hap.Dumper(hap.Context, hap.Filesystem.Platform.Dump+"/"+time.Now().Format("20060102150405")+".log", config)
 	}
 }
 
 // dump configuration to error directory
 func (hap *Haproxy) dumpError(config []byte) {
-	hap.Dumper(hap.Context, hap.Filesystem.Platform.Errors + "/" + time.Now().Format("20060102150405") + ".log", config)
+	hap.Dumper(hap.Context, hap.Filesystem.Platform.Errors+"/"+time.Now().Format("20060102150405")+".log", config)
 }
 
 // reload calls external shell script to reload haproxy
@@ -240,7 +240,7 @@ func (hap *Haproxy) reload(correlationId string) error {
 	if configurationExists {
 		pid, err := cmd.Reader(fs.Files.PidFile, true)
 		if err != nil || pid == nil || len(pid) == 0 {
-			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile, "pid":pid}).Error("can't read pid file")
+			hap.Context.Fields(log.Fields{"pid path": fs.Files.PidFile, "pid": pid}).Error("can't read pid file")
 			return err
 		}
 		hap.Context.Fields(log.Fields{"reloadScript": fs.Files.Binary, "confPath": fs.Files.ConfigFile, "pidPath": fs.Files.PidFile, "pid": strings.TrimSpace(string(pid))}).Debug("attempt reload haproxy command")

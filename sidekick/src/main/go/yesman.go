@@ -24,4 +24,3 @@ func (hap YesmanHaproxy) Delete() error {
 func (hap YesmanHaproxy) Fake() bool {
 	return true
 }
-

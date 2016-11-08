@@ -1,10 +1,9 @@
 package sidekick
 
 import (
-	"os"
 	"io/ioutil"
+	"os"
 )
-
 
 // commands
 type Commands interface {
@@ -18,10 +17,8 @@ type Commands interface {
 	MkdirAll(path string) error
 }
 
-
 // os implementation
 type OsCommands struct {
-
 }
 
 func (osCmd OsCommands) Reader(path string, isPanic bool) ([]byte, error) {

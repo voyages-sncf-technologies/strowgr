@@ -1,9 +1,9 @@
 package sidekick
 
 import (
+	log "github.com/Sirupsen/logrus"
 	"os"
 	"strings"
-	log "github.com/Sirupsen/logrus"
 )
 
 type Filesystem struct {
@@ -51,33 +51,33 @@ func NewFilesystem(home, application, platform string) Filesystem {
 	filesystem := &Filesystem{
 		Home: home,
 		Syslog: SyslogDir{
-			Path:join(home, "SYSLOG", "Config", "syslog.conf.d"),
-			Config:join(home, "SYSLOG", "Config"),
-			Logs:join(home, "SYSLOG", "logs"),
+			Path:   join(home, "SYSLOG", "Config", "syslog.conf.d"),
+			Config: join(home, "SYSLOG", "Config"),
+			Logs:   join(home, "SYSLOG", "logs"),
 		},
 		Application: Application{
-			Path:join(home, application),
-			Config:join(home, application, "Config"),
-			Scripts:join(home, application, "scripts"),
-			Archives:join(home, application, "version-1"),
+			Path:     join(home, application),
+			Config:   join(home, application, "Config"),
+			Scripts:  join(home, application, "scripts"),
+			Archives: join(home, application, "version-1"),
 		},
 		Platform: Platform{
-			Path:join(home, application, platform),
-			Logs:join(home, application, "logs", application + platform),
-			Errors:join(home, application, platform, "errors"),
-			Dump:join(home, application, platform, "dump"),
+			Path:   join(home, application, platform),
+			Logs:   join(home, application, "logs", application+platform),
+			Errors: join(home, application, platform, "errors"),
+			Dump:   join(home, application, platform, "dump"),
 		},
 		Commands: OsCommands{},
 	}
 	files := AllFiles{
-		ConfigFile: join(filesystem.Application.Config, "hap" + application + platform + ".conf"),
-		ConfigArchive: join(filesystem.Application.Archives, "hap" + application + platform + ".conf"),
-		PidFile: join(filesystem.Platform.Logs, "haproxy.pid"),
-		SyslogFile: join(filesystem.Syslog.Path, "syslog" + application + platform + ".conf"),
-		Binary: join(filesystem.Application.Scripts, "hap" + application + platform),
-		BinaryArchive: join(filesystem.Application.Archives, "hap" + application + platform),
-		Version:join(filesystem.Platform.Path, "VERSION"),
-		VersionArchive:join(filesystem.Application.Archives, "VERSION_" + platform),
+		ConfigFile:     join(filesystem.Application.Config, "hap"+application+platform+".conf"),
+		ConfigArchive:  join(filesystem.Application.Archives, "hap"+application+platform+".conf"),
+		PidFile:        join(filesystem.Platform.Logs, "haproxy.pid"),
+		SyslogFile:     join(filesystem.Syslog.Path, "syslog"+application+platform+".conf"),
+		Binary:         join(filesystem.Application.Scripts, "hap"+application+platform),
+		BinaryArchive:  join(filesystem.Application.Archives, "hap"+application+platform),
+		Version:        join(filesystem.Platform.Path, "VERSION"),
+		VersionArchive: join(filesystem.Application.Archives, "VERSION_"+platform),
 	}
 	filesystem.Files = files
 	return *filesystem
@@ -87,7 +87,7 @@ func NewFilesystem(home, application, platform string) Filesystem {
 func (fs *Filesystem) Mkdirs(context Context) {
 	defer func() {
 		if r := recover(); r != nil {
-			context.Fields(log.Fields{"recovery":r}).Error("can't create a directory")
+			context.Fields(log.Fields{"recovery": r}).Error("can't create a directory")
 		}
 	}()
 	// create application directories
@@ -109,8 +109,6 @@ func (fs *Filesystem) Mkdirs(context Context) {
 }
 
 // join path elements with os separators
-func join(paths... string) string {
+func join(paths ...string) string {
 	return strings.Join(paths, string(os.PathSeparator))
 }
-
-

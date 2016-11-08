@@ -26,7 +26,7 @@ func (factory *LoadbalancerFactory) CreateHaproxy(context Context) Loadbalancer 
 		return &DrunkHaproxy{
 			context: context,
 		}
-	} else if ( factory.Fake == "yesman") {
+	} else if factory.Fake == "yesman" {
 		log.Debug("mode yesman")
 		return &YesmanHaproxy{}
 	} else {

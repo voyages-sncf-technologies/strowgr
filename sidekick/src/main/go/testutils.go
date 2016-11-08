@@ -1,10 +1,10 @@
 package sidekick
 
 import (
-	"os"
-	"testing"
-	"strings"
 	"errors"
+	"os"
+	"strings"
+	"testing"
 )
 
 /////////////////
@@ -23,7 +23,7 @@ type TestContext struct {
 var context TestContext
 
 func initContext() {
-	context = TestContext{Removed: []string{}, Command: "", Writes:make(map[string]string), Renames:make(map[string]string), Links:make(map[string]string)}
+	context = TestContext{Removed: []string{}, Command: "", Writes: make(map[string]string), Renames: make(map[string]string), Links: make(map[string]string)}
 }
 
 type MockCommands struct{}
@@ -102,7 +102,7 @@ func (mc MockCommands) MkdirAll(directory string) error {
 	return nil
 }
 
-func (mc MockCommands)  ReadLinker(link string, isPanic bool) (string, error) {
+func (mc MockCommands) ReadLinker(link string, isPanic bool) (string, error) {
 	if strings.Contains(link, "archived") {
 		return "/export/product/haproxy/product/2/bin/haproxy", nil
 	}

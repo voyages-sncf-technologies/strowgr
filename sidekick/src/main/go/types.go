@@ -17,11 +17,11 @@
 package sidekick
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"time"
-	"net/http"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
+	"net/http"
+	"time"
 )
 
 type Config struct {

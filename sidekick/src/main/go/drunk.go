@@ -2,8 +2,8 @@ package sidekick
 
 import (
 	"errors"
-	"math/rand"
 	log "github.com/Sirupsen/logrus"
+	"math/rand"
 )
 
 type DrunkHaproxy struct {
