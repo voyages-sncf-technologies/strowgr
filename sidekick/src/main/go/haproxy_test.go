@@ -105,7 +105,7 @@ func TestUnversionedConfiguration(t *testing.T) {
 	// given
 	initContext()
 	hap := newMockHaproxy()
-	hap.Config.HapVersions = []string{"1", "2", "3"}
+	hap.Config.Hap = createHapInstallations()
 	conf := Conf{Version: "123"}
 	event := &EventMessageWithConf{Conf: conf}
 

@@ -17,12 +17,16 @@
 package sidekick
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"time"
-	"net/http"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
+	"net/http"
+	"time"
 )
+
+type HapInstallation struct {
+	Path string
+}
 
 type Config struct {
 	LookupdAddresses []string
@@ -33,7 +37,7 @@ type Config struct {
 	HapHome          string
 	Id               string
 	Status           string
-	HapVersions      []string
+	Hap              map[string]HapInstallation
 }
 
 func (config Config) IsMaster(vip string) (bool, error) {
