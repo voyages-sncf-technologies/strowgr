@@ -31,7 +31,7 @@ func TestReLoadScript(t *testing.T) {
 
 	// check
 	checkError(t, err)
-	check(t, "reload command is wrong. actual: '%s', expected: '%s'", context.Command, "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234")
+	check(t, "reload command is wrong. actual: '%s', expected: '%s'", context.Command, join("/HOME", "TST", "scripts", "hapTSTDEV") + " -f " + join("/HOME", "TST", "Config", "hapTSTDEV.conf") + " -p " + join("/HOME", "TST", "logs", "TSTDEV", "haproxy.pid") + " -sf 1234")
 }
 
 func TestReloadFails(t *testing.T) {
@@ -53,13 +53,13 @@ func TestCreateDirectory(t *testing.T) {
 	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
 
 	// check
-	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Config, "/HOME/TST/Config")
-	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Scripts, "/HOME/TST/scripts")
-	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Archives, "/HOME/TST/version-1")
-	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Logs, "/HOME/TST/logs/TSTDEV")
-	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Errors, "/HOME/TST/DEV/errors")
-	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Dump, "/HOME/TST/DEV/dump")
-	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Syslog.Path, "/HOME/SYSLOG/Config/syslog.conf.d")
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Config, join("/HOME", "TST", "Config"))
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Scripts, join("/HOME", "TST", "scripts"))
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Application.Archives, join("/HOME", "TST", "version-1"))
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Logs, join("/HOME", "TST", "logs", "TSTDEV"))
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Errors, join("/HOME", "TST", "DEV", "errors"))
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Platform.Dump, join("/HOME", "TST", "DEV", "dump"))
+	check(t, "actual directory path: %s, expected: %s", hap.Filesystem.Syslog.Path, join("/HOME", "SYSLOG", "Config", "syslog.conf.d"))
 }
 
 func TestArchivePath(t *testing.T) {
@@ -69,8 +69,7 @@ func TestArchivePath(t *testing.T) {
 
 	// test & check
 	result := hap.Filesystem.Files.ConfigArchive
-	expected := "/HOME/TST/version-1/hapTSTDEV.conf"
-	check(t, "Expected '%s', got '%s'", expected, result)
+	check(t, "Expected '%s', got '%s'", join("/HOME", "TST", "version-1", "hapTSTDEV.conf"), result)
 }
 
 func TestDeleteInstance(t *testing.T) {
@@ -82,9 +81,9 @@ func TestDeleteInstance(t *testing.T) {
 	hap.Delete()
 
 	// check
-	checkContains(t, "/HOME/TST/Config/hapTSTDEV.conf", context.Removed)
-	checkContains(t, "/HOME/TST/scripts/hapTSTDEV", context.Removed)
-	checkContains(t, "/HOME/TST/DEV", context.Removed)
+	checkContains(t, join("/HOME", "TST", "Config", "hapTSTDEV.conf"), context.Removed)
+	checkContains(t, join("/HOME", "TST", "scripts", "hapTSTDEV"), context.Removed)
+	checkContains(t, join("/HOME", "TST", "DEV"), context.Removed)
 }
 
 func TestStop(t *testing.T) {
@@ -139,7 +138,7 @@ func TestChangedConfiguration(t *testing.T) {
 	hap := newMockHaproxy()
 
 	binExpected := "/export/product/haproxy/product/1/bin/haproxy"
-	newVersionExpected := "/HOME/TST/scripts/hapTSTDEV"
+	newVersionExpected := join("/HOME", "TST", "scripts", "hapTSTDEV")
 
 	conf := Conf{Version: "1"}
 	conf.Haproxy = []byte("new conf")
@@ -152,21 +151,21 @@ func TestChangedConfiguration(t *testing.T) {
 	checkError(t, err)
 	check(t, "expected result is %s but actually got %s", SUCCESS, result)
 	// check archive configuration
-	checkMap(t, "/HOME/TST/version-1/hapTSTDEV.conf", "/HOME/TST/Config/hapTSTDEV.conf", context.Renames)
+	checkMap(t, "/HOME/TST/version-1/hapTSTDEV.conf", join("/HOME", "TST", "Config", "hapTSTDEV.conf"), context.Renames)
 	// check archive bin
-	actualArchivedVersion, contains := context.Links["/HOME/TST/version-1/hapTSTDEV"]
+	actualArchivedVersion, contains := context.Links[join("/HOME", "TST", "version-1", "hapTSTDEV") ]
 	check(t, "actual %s, expected %s", contains, true)
 	check(t, "actual archive link %s but expected is %s", actualArchivedVersion, "/export/product/haproxy/product/1/bin/haproxy")
 
-	check(t, "expected archive link %s but actually got %s", "/export/product/haproxy/product/1/bin/haproxy", context.Links["/HOME/TST/version-1/hapTSTDEV"])
+	check(t, "expected archive link %s but actually got %s", "/export/product/haproxy/product/1/bin/haproxy", context.Links[join("/HOME", "TST", "version-1", "hapTSTDEV")])
 	// check executions
-	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234", context.Command)
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", join("/HOME", "TST", "scripts", "hapTSTDEV") + " -f " + join("/HOME", "TST", "Config", "hapTSTDEV.conf") + " -p " + join("/HOME", "TST", "logs", "TSTDEV", "haproxy.pid") + " -sf 1234", context.Command)
 	// check links
 	actualVersion, contains := context.Links[newVersionExpected]
 	check(t, "link destination to new bin is wrong. actual %s, expected %s", contains, true)
 	check(t, "link origin to new bin is wrong. actual '%s', expected '%s'", actualVersion, binExpected)
 	// check new conf
-	check(t, "configuration file is '%s' but should be '%s' ", context.Writes["/HOME/TST/Config/hapTSTDEV.conf"], "new conf")
+	check(t, "configuration file is '%s' but should be '%s' ", context.Writes[join("/HOME", "TST", "Config", "hapTSTDEV.conf")], "new conf")
 }
 
 func TestApplyConfigurationWithFailedReload(t *testing.T) {
@@ -194,7 +193,7 @@ func TestEmptyConfiguration(t *testing.T) {
 	hap := newMockHaproxy()
 
 	binExpected := "/export/product/haproxy/product/1/bin/haproxy"
-	newVersionExpected := "/HOME/TST/scripts/hapTSTDEV"
+	newVersionExpected := join("/HOME", "TST", "scripts", "hapTSTDEV")
 
 	conf := Conf{Version: "1"}
 	conf.Haproxy = []byte("completly new conf")
@@ -207,12 +206,12 @@ func TestEmptyConfiguration(t *testing.T) {
 	checkError(t, err)
 	check(t, "expected result is %s but actually got %s", SUCCESS, result)
 	// check executions
-	check(t, "reload command should be executed. expected command is '%s' but got '%s'", "/HOME/TST/scripts/hapTSTDEV -f /HOME/TST/Config/hapTSTDEV.conf -p /HOME/TST/logs/TSTDEV/haproxy.pid -sf 1234", context.Command)
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", join("/HOME", "TST", "scripts", "hapTSTDEV") + " -f " + join("/HOME", "TST", "Config", "hapTSTDEV.conf") + " -p " + join("/HOME", "TST", "logs", "TSTDEV", "haproxy.pid") + " -sf 1234", context.Command)
 
 	// check links
 	actualVersion, contains := context.Links[newVersionExpected]
 	check(t, "link destination to new bin is wrong. actual %s, expected %s", contains, true)
 	check(t, "link origin to new bin is wrong. actual %s, expected %s", actualVersion, binExpected)
 	// check new conf
-	check(t, "configuration file is %s but should be %s ", context.Writes["/HOME/TST/Config/hapTSTDEV.conf"], "completly new conf")
+	check(t, "configuration file is %s but should be %s ", context.Writes[join("/HOME", "TST", "Config", "hapTSTDEV.conf")], "completly new conf")
 }
