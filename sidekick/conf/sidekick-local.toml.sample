@@ -20,4 +20,5 @@ HapHome = './'
 Status = 'slave'
 
 # haproxy version
-HapVersion = "1.4.22"
+[Hap."1.4.22"]
+Path = '/export/product/haproxy/product/1.4.22'

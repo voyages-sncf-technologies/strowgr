@@ -24,6 +24,10 @@ import (
 	"time"
 )
 
+type HapInstallation struct {
+	Path string
+}
+
 type Config struct {
 	LookupdAddresses []string
 	ProducerAddr     string
@@ -33,7 +37,7 @@ type Config struct {
 	HapHome          string
 	Id               string
 	Status           string
-	HapVersions      []string
+	Hap              map[string]HapInstallation
 }
 
 func (config Config) IsMaster(vip string) (bool, error) {

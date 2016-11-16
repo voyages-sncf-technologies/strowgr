@@ -113,8 +113,22 @@ func newMockHaproxy() *Haproxy {
 	hap := NewHaproxy(&Config{HapHome: "/HOME"}, Context{Application: "TST", Platform: "DEV"})
 	hap.Filesystem.Commands = MockCommands{}
 	hap.Command = MockCommand
-	hap.Config.HapVersions = []string{"1", "2", "3"}
+	hap.Config.Hap = createHapInstallations()
 	return hap
+}
+
+func createHapInstallations() map[string]HapInstallation {
+	versions := make(map[string]HapInstallation)
+	versions["1"] = HapInstallation{
+		Path: "/export/product/haproxy/product/1",
+	}
+	versions["2"] = HapInstallation{
+		Path: "/export/product/haproxy/product/2",
+	}
+	versions["3"] = HapInstallation{
+		Path: "/export/product/haproxy/product/3",
+	}
+	return versions
 }
 
 func check(t *testing.T, message string, actual, expected interface{}) {
