@@ -18,10 +18,10 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQConfig;
-import com.github.brainlag.nsq.NSQProducer;
-import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.*;
+import com.vsct.dt.nsq.NSQConfig;
+import com.vsct.dt.nsq.NSQProducer;
+import com.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;

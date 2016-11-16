@@ -1,9 +1,9 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
-import com.github.brainlag.nsq.NSQConfig;
-import com.github.brainlag.nsq.NSQConsumer;
-import com.github.brainlag.nsq.NSQMessage;
-import com.github.brainlag.nsq.lookup.NSQLookup;
+import com.vsct.dt.nsq.NSQConfig;
+import com.vsct.dt.nsq.NSQConsumer;
+import com.vsct.dt.nsq.NSQMessage;
+import com.vsct.dt.nsq.lookup.NSQLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.AsyncEmitter;

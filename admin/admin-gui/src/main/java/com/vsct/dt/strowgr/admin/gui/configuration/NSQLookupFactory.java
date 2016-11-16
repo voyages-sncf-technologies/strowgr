@@ -18,8 +18,8 @@
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.github.brainlag.nsq.lookup.DefaultNSQLookup;
-import com.github.brainlag.nsq.lookup.NSQLookup;
+import com.vsct.dt.nsq.lookup.DefaultNSQLookup;
+import com.vsct.dt.nsq.lookup.NSQLookup;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.constraints.Max;

@@ -18,7 +18,7 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.brainlag.nsq.exceptions.NSQException;
+import com.vsct.dt.nsq.exceptions.NSQException;
 import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;

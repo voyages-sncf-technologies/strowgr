@@ -63,9 +63,9 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.github.brainlag</groupId>
+                <groupId>com.vsct.dt</groupId>
                 <artifactId>nsq-client</artifactId>
-                <version>1.0.0.RC2</version>
+                <version>1.0.0</version>
             </dependency>
 
             <dependency>

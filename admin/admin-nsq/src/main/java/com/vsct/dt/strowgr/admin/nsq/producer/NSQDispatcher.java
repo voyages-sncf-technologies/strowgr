@@ -18,8 +18,8 @@ package com.vsct.dt.strowgr.admin.nsq.producer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQProducer;
-import com.github.brainlag.nsq.exceptions.NSQException;
+import com.vsct.dt.nsq.NSQProducer;
+import com.vsct.dt.nsq.exceptions.NSQException;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitRequested;
 import com.vsct.dt.strowgr.admin.nsq.payload.DeleteRequested;
