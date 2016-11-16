@@ -45,8 +45,8 @@ public class EntryPointStateManager {
      *
      * @param key of the entrypoint
      */
-    void lock(EntryPointKey key) {
-        this.repository.lock(key);
+    boolean lock(EntryPointKey key) {
+        return this.repository.lock(key);
     }
 
     /**

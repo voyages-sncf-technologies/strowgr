@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Conf;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Server;
-import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Sidekick;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -95,20 +94,7 @@ public class PayloadTest {
     }
 
     @Test
-    public void registerSidekick() throws IOException, URISyntaxException {
-        Sidekick sidekick = new Sidekick();
-        sidekick.setId("sidekcik-id");
-        sidekick.setHost("host");
-        sidekick.setRole("master");
-        sidekick.setVip("2.3.4.5");
-        sidekick.setVersion("1.0");
-
-        RegisterSidekick message = new RegisterSidekick(new Header("test-id", "TST", "REL1", 1L, "test"), sidekick);
-        assertSerialization(message, "registerSidekick.expected.json");
-    }
-
-    @Test
-    public void should_deserialized_commit_completed_message() throws IOException {
+    public void should_deserialize_commit_completed_message() throws IOException {
         // given
         String payload = "{\"header\":{\"correlationId\":\"16f484b9-3935-415b-bd8e-aaeaaf1020ac\",\"application\":\"STR\",\"platform\":\"REL1\",\"timestamp\":1467824168749,\"source\":\"sidekick-default-name-master\"}}";
 
@@ -119,5 +105,29 @@ public class PayloadTest {
         assertNotNull(commitCompleted);
         assertNotNull(commitCompleted.getHeader());
         Assert.assertEquals("16f484b9-3935-415b-bd8e-aaeaaf1020ac", commitCompleted.getHeader().getCorrelationId());
+    }
+
+    @Test
+    public void should_deserialize_header_with_corelationId() throws IOException {
+        String payload = "{\"application\":\"DEM\",\"platform\": \"REL1\",\"correlationId\":\"cid\",\"timestamp\":\"1\",\"source\":\"source\"}";
+
+        Header header = new ObjectMapper().readValue(payload.getBytes(), Header.class);
+
+        Header expected = new Header("cid", "DEM", "REL1", 1L, "source");
+        assertEquals(expected, header);
+    }
+
+    @Test
+    public void should_deserialize_header_without_corelationId_timestamp_source() throws IOException {
+
+        String payload = "{\"application\":\"DEM\",\"platform\": \"REL1\"}";
+
+        Header header = new ObjectMapper().readValue(payload.getBytes(), Header.class);
+
+        assertEquals("DEM", header.getApplication());
+        assertEquals("REL1", header.getPlatform());
+        assertNotNull(header.getCorrelationId());
+        assertNotNull(header.getTimestamp());
+        assertEquals("unknown", header.getSource());
     }
 }

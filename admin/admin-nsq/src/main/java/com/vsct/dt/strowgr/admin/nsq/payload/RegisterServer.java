@@ -23,6 +23,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Server;
 
+import java.util.Objects;
+
 public class RegisterServer {
 
     private final Header header;
@@ -40,5 +42,19 @@ public class RegisterServer {
 
     public Header getHeader() {
         return header;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RegisterServer that = (RegisterServer) o;
+        return Objects.equals(header, that.header) &&
+                Objects.equals(server, that.server);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(header, server);
     }
 }

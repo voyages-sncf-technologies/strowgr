@@ -31,12 +31,15 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"sort"
 )
 
 var (
 	configFile = flag.String("config", "sidekick.conf", "Configuration file")
 	version = flag.Bool("version", false, "Print current version")
 	verbose = flag.Bool("verbose", false, "Log in verbose mode")
+	logCompact = flag.Bool("log-compact", false, "compacting log")
+	mono = flag.Bool("mono", false, "only one haproxy instance which play slave/master roles.")
 	fake = flag.String("fake", "", "Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.")
 	config = nsq.NewConfig()
 	properties       *sidekick.Config
@@ -58,8 +61,13 @@ func (sdkLogger SdkLogger) Output(calldepth int, s string) error {
 }
 
 func main() {
-	log.SetFormatter(&log.TextFormatter{})
 	flag.Parse()
+
+	if *logCompact {
+		log.SetFormatter(&CompactFormatter{})
+	} else {
+		log.SetFormatter(&log.TextFormatter{})
+	}
 
 	if *version {
 		println(sidekick.VERSION)
@@ -88,11 +96,10 @@ func main() {
 	}).Info("Starting sidekick")
 
 	producer, _ = nsq.NewProducer(properties.ProducerAddr, config)
-	if *verbose {
-		producer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-	} else {
-		producer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-	}
+	nsqlogger := log.New()
+	nsqlogger.Formatter = log.StandardLogger().Formatter
+	nsqlogger.Level = log.WarnLevel
+	producer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 
 	createTopicsAndChannels()
 	time.Sleep(1 * time.Second)
@@ -114,13 +121,9 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), properties.Id, config)
-		if *verbose {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-		} else {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-		}
+		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onDeleteRequested))
-		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
 		if err != nil {
 			log.Panic("Could not connect")
 		}
@@ -131,13 +134,9 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.Id, config)
-		if *verbose {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-		} else {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-		}
+		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
-		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
 		if err != nil {
 			log.Panic("Could not connect")
 		}
@@ -148,13 +147,9 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s", properties.ClusterId), properties.Id, config)
-		if *verbose {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-		} else {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-		}
+		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitSlaveRequested))
-		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
+		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
 		if err != nil {
 			log.Panic("Could not connect")
 		}
@@ -166,12 +161,8 @@ func main() {
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), properties.Id, config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
-		err := consumer.ConnectToNSQLookupd(properties.LookupdAddr)
-		if *verbose {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelDebug)
-		} else {
-			consumer.SetLogger(SdkLogger{logrus: log.New()}, nsq.LogLevelWarning)
-		}
+		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
+		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		if err != nil {
 			log.Panic("Could not connect")
 		}
@@ -252,10 +243,14 @@ func loadProperties() {
 func filteredHandler(event string, message *nsq.Message, f sidekick.HandlerFunc) error {
 	defer message.Finish()
 
-	log.WithField("event", event).WithField("raw", string(message.Body)).Debug("Handle event")
+	if *logCompact {
+		log.WithField("event", event).WithField("nsq id", message.ID).Debug("new received message from nsq")
+	} else {
+		log.WithField("event", event).WithField("nsq id", message.ID).WithField("raw", string(message.Body)).Debug("new received message from nsq")
+	}
 	data, err := bodyToData(message.Body)
 	if err != nil {
-		log.WithError(err).Error("Unable to read data")
+		log.WithError(err).Error("unable to read body from message")
 		return err
 	}
 
@@ -288,7 +283,7 @@ func onDeleteRequested(message *nsq.Message) error {
 
 // logAndForget is a generic function to just log event
 func logAndForget(data *sidekick.EventMessageWithConf) error {
-	log.WithFields(data.Context().Fields()).Debug("Commit completed")
+	data.Context().Fields(log.Fields{}).Debug("receive commit completed event")
 	return nil
 }
 
@@ -297,7 +292,8 @@ func reloadSlave(data *sidekick.EventMessageWithConf) error {
 	if err != nil {
 		log.WithField("bind", data.Conf.Bind).WithError(err).Info("can't find if binding to vip")
 	}
-	if isMaster {
+	if isMaster && !*mono {
+		log.Debug("skipped message because server is master and not mono instance")
 		return nil
 	} else {
 		return reloadHaProxy(data, false)
@@ -310,6 +306,7 @@ func reloadMaster(data *sidekick.EventMessageWithConf) error {
 		log.WithField("bind", data.Conf.Bind).WithError(err).Info("can't find if binding to vip")
 	}
 	if isMaster {
+		log.Debug("skipped message because server is slave")
 		return reloadHaProxy(data, true)
 	} else {
 		return nil
@@ -323,8 +320,7 @@ func deleteHaproxy(data *sidekick.EventMessageWithConf) error {
 	if err != nil {
 		return err
 	}
-	err = hap.Delete()
-	return err
+	return hap.Delete()
 }
 
 // reload an haproxy with content of data in according to role (slave or master)
@@ -343,13 +339,13 @@ func reloadHaProxy(data *sidekick.EventMessageWithConf, masterRole bool) error {
 				log.WithField("elapsed time in second", elapsed.Seconds()).Debug("skip syslog reload")
 			}
 		}
-		if (masterRole || hap.Fake()) {
+		if (masterRole || hap.Fake() || *mono) {
 			publishMessage("commit_completed_", data.Clone(properties.Id), context)
 		} else {
 			publishMessage("commit_slave_completed_", data.CloneWithConf(properties.Id), context)
 		}
 	} else {
-		log.WithFields(context.Fields()).WithError(err).Error("Commit failed")
+		context.Fields(log.Fields{}).WithError(err).Error("Commit failed")
 		publishMessage("commit_failed_", data.Clone(properties.Id), context)
 	}
 	return nil
@@ -366,6 +362,77 @@ func bodyToData(jsonStream []byte) (*sidekick.EventMessageWithConf, error) {
 func publishMessage(topic_prefix string, data interface{}, context sidekick.Context) error {
 	jsonMsg, _ := json.Marshal(data)
 	topic := topic_prefix + properties.ClusterId
-	log.WithFields(context.Fields()).WithField("topic", topic).WithField("payload", string(jsonMsg)).Debug("Publish")
+	if *logCompact {
+		context.Fields(log.Fields{"topic": topic}).Debug("publish on topic")
+	} else {
+		context.Fields(log.Fields{"topic": topic, "payload": string(jsonMsg)}).Debug("publish on topic")
+	}
 	return producer.Publish(topic, []byte(jsonMsg))
+}
+
+// log formatter
+
+type CompactFormatter struct {
+
+}
+
+func (f *CompactFormatter) Format(entry *log.Entry) ([]byte, error) {
+	var keys []string = make([]string, 0, len(entry.Data))
+
+	b := &bytes.Buffer{}
+
+	b.WriteString(entry.Time.Format(time.RFC3339))
+	b.WriteByte(' ')
+	b.WriteByte(entry.Level.String()[0])
+	b.WriteByte(' ')
+
+	if cid, ok := entry.Data["correlationId"]; ok {
+		fmt.Fprintf(b, "%7s", (cid.(string))[:7])
+	} else {
+		b.WriteString("       ")
+	}
+	b.WriteByte(' ')
+
+	if app, ok := entry.Data["application"]; ok {
+		fmt.Fprintf(b, "%5s", app)
+	} else {
+		b.WriteString("     ")
+	}
+	b.WriteByte(' ')
+
+	if pltf, ok := entry.Data["platform"]; ok {
+		fmt.Fprintf(b, "%5s", pltf)
+	} else {
+		b.WriteString("     ")
+	}
+	b.WriteByte(' ')
+
+	length := len(entry.Message)
+	if length > 40 {
+		length = 40
+	}
+	fmt.Fprintf(b, "'%-40s' ", entry.Message[:length])
+
+	for k := range entry.Data {
+		if k == "application" || k == "correlationId" || k == "platform" || k == "timestamp" {
+			continue
+		} else {
+			keys = append(keys, k)
+		}
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		switch value := entry.Data[k].(type) {
+		case string:
+			fmt.Fprintf(b, "'%s=%s' ", k, entry.Data[k].(string))
+		case error:
+			fmt.Fprintf(b, "%q ", value)
+		default:
+			fmt.Fprintf(b, "'%s=%s' ", k, value)
+		}
+
+	}
+
+	b.WriteByte('\n')
+	return b.Bytes(), nil
 }

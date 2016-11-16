@@ -17,24 +17,27 @@
 package sidekick
 
 import (
-	log "github.com/Sirupsen/logrus"
-	"time"
-	"net/http"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
+	"net/http"
+	"time"
 )
 
+type HapInstallation struct {
+	Path string
+}
+
 type Config struct {
-	LookupdAddr      string
+	LookupdAddresses []string
 	ProducerAddr     string
 	ProducerRestAddr string
 	ClusterId        string
-	Vip              string
 	Port             int32
 	HapHome          string
 	Id               string
 	Status           string
-	HapVersions      []string
+	Hap              map[string]HapInstallation
 }
 
 func (config Config) IsMaster(vip string) (bool, error) {
@@ -43,14 +46,15 @@ func (config Config) IsMaster(vip string) (bool, error) {
 		log.WithField("vip", vip).WithField("port", config.Port).WithError(err).Error("can't request in http the vip")
 		return false, err
 	} else {
-		log.WithField("http status", resp.Status).Debug("response ip")
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
-		log.WithField("id", body).Debug("retrieve master id")
+		isMaster := string(body) == config.Id
+		if log.GetLevel() == log.DebugLevel {
+			log.WithField("id", string(body)).WithField("isMaster", isMaster).Debug("check if this instance is master")
+		}
 		return string(body) == config.Id, err
 	}
 }
-
 
 func DefaultConfig() *Config {
 	return &Config{
@@ -58,10 +62,6 @@ func DefaultConfig() *Config {
 		HapHome:   "/HOME/hapadm",
 		ClusterId: "default-name",
 	}
-}
-
-func (config *Config) NodeId() string {
-	return config.ClusterId + "-" + config.Status
 }
 
 type Header struct {
@@ -135,14 +135,14 @@ func (ctx Context) UpdateTimestamp() Context {
 	return ctx
 }
 
-// translate Context to Fields for logging purpose
-func (ctx Context) Fields() log.Fields {
-	return log.Fields{
-		"correlationId": ctx.CorrelationId,
-		"timestamp":     ctx.UpdateTimestamp().Timestamp,
-		"application":   ctx.Application,
-		"platform":      ctx.Platform,
-	}
+// log with context headers
+func (ctx Context) Fields(fields log.Fields) *log.Entry {
+	fields["correlationId"] = ctx.CorrelationId
+	fields["timestamp"] = ctx.UpdateTimestamp().Timestamp
+	fields["application"] = ctx.Application
+	fields["platform"] = ctx.Platform
+
+	return log.WithFields(fields)
 }
 
 type ReloadEvent struct {

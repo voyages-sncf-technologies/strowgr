@@ -22,6 +22,8 @@ import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Conf;
 import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
 
+import java.util.Objects;
+
 public class CommitRequested {
 
     private final Header header;
@@ -43,5 +45,19 @@ public class CommitRequested {
 
     public Conf getConf() {
         return conf;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CommitRequested that = (CommitRequested) o;
+        return Objects.equals(header, that.header) &&
+                Objects.equals(conf, that.conf);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(header, conf);
     }
 }

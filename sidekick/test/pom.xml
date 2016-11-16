@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.vsct.dt.strowgr</groupId>
         <artifactId>strowgr-parent</artifactId>
-        <version>0.2.3-SNAPSHOT</version>
+        <version>0.2.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -71,7 +71,6 @@
             <plugin>
                 <groupId>com.igormaznitsa</groupId>
                 <artifactId>mvn-golang-wrapper</artifactId>
-                <version>2.1.1</version>
                 <extensions>true</extensions>
                 <configuration>
                     <goVersion>${go.sdk.version}</goVersion>

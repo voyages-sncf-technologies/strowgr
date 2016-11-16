@@ -39,11 +39,9 @@ func NewRestApi(properties *Config) *RestApi {
 func (api *RestApi) Start() error {
 	sm := http.NewServeMux()
 	sm.HandleFunc("/id", func(writer http.ResponseWriter, request *http.Request) {
-		log.Debug("GET /id")
 		fmt.Fprintf(writer, "%s", api.properties.Id)
 	})
 	sm.HandleFunc("/ismaster", func(writer http.ResponseWriter, request *http.Request) {
-		log.Debug("GET /id")
 		isMaster, err := api.properties.IsMaster(request.URL.Query().Get("vip"))
 		if err == nil {
 			fmt.Fprintf(writer, "%s", strconv.FormatBool(isMaster))
@@ -61,7 +59,7 @@ func (api *RestApi) Start() error {
 		return err
 	}
 
-	log.WithField("port", api.properties.Port).Info("Start listening")
+	log.WithField("port", api.properties.Port).Info("start http server")
 	http.Serve(api.listener, sm)
 
 	return nil
