@@ -115,15 +115,8 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>default-test</id>
-                        <phase>test</phase>
-                        <configuration>
-                            <testFlags>
-                                <flag>-x</flag>
-                                <flag>-v</flag>
-                            </testFlags>
-                            <goVersion>${go.sdk.version}</goVersion>
-                        </configuration>
+                        <id>default-deploy</id>
+                        <phase>none</phase>
                     </execution>
                 </executions>
             </plugin>
