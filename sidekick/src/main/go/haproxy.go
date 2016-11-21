@@ -317,7 +317,7 @@ func (hap *Haproxy) Stop() error {
 	hap.Context.Fields(log.Fields{}).Info("stop haproxy process")
 	fs := hap.Filesystem
 	cmd := hap.Filesystem.Commands
-	pid, err := cmd.Reader(fs.Files.PidFile, true)
+	pid, err := cmd.Reader(fs.Files.PidFile, false)
 	if err != nil {
 		hap.Context.Fields(log.Fields{"pid file": fs.Files.PidFile}).Error("can't read pid file")
 	}
