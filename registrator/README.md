@@ -1,3 +1,20 @@
+## Prepare your image
+Use labels to provide metadata for your image
+
+*Dockerfile*
+```
+LABEL application.name="myapp" \
+      application.desc="my app" \
+      service.8080_tcp.name="myapp-api" \
+      service.8080_tcp.desc="my app rest API"
+```
+
+Then you only need to provide the platform to register the container:
+
+```
+docker run --name CONT01 -l platform.name REC1 example/myapp 
+```
+
 ## Naming strategy
 
 Two naming strategy are available
