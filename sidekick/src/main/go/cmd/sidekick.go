@@ -35,18 +35,18 @@ import (
 )
 
 var (
-	configFile = flag.String("config", "sidekick.conf", "Configuration file")
-	version = flag.Bool("version", false, "Print current version")
-	verbose = flag.Bool("verbose", false, "Log in verbose mode")
-	logCompact = flag.Bool("log-compact", false, "compacting log")
-	mono = flag.Bool("mono", false, "only one haproxy instance which play slave/master roles.")
-	fake = flag.String("fake", "", "Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.")
-	config = nsq.NewConfig()
+	configFile       = flag.String("config", "sidekick.conf", "Configuration file")
+	version          = flag.Bool("version", false, "Print current version")
+	verbose          = flag.Bool("verbose", false, "Log in verbose mode")
+	logCompact       = flag.Bool("log-compact", false, "compacting log")
+	mono             = flag.Bool("mono", false, "only one haproxy instance which play slave/master roles.")
+	fake             = flag.String("fake", "", "Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.")
+	config           = nsq.NewConfig()
 	properties       *sidekick.Config
 	producer         *nsq.Producer
 	syslog           *sidekick.Syslog
-	reloadChan = make(chan sidekick.ReloadEvent)
-	deleteChan = make(chan sidekick.ReloadEvent)
+	reloadChan       = make(chan sidekick.ReloadEvent)
+	deleteChan       = make(chan sidekick.ReloadEvent)
 	lastSyslogReload = time.Now()
 	haFactory        *sidekick.LoadbalancerFactory
 )
@@ -121,7 +121,7 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("delete_requested_%s", properties.ClusterId), properties.Id, config)
-		log.WithField("topic", "delete_requested_" + properties.ClusterId).Debug("add topic consumer")
+		log.WithField("topic", "delete_requested_"+properties.ClusterId).Debug("add topic consumer")
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onDeleteRequested))
 		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
@@ -135,7 +135,7 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_requested_%s", properties.ClusterId), properties.Id, config)
-		log.WithField("topic", "commit_requested_" + properties.ClusterId).Debug("add topic consumer")
+		log.WithField("topic", "commit_requested_"+properties.ClusterId).Debug("add topic consumer")
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitRequested))
 		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
@@ -149,7 +149,7 @@ func main() {
 		defer wg.Done()
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_slave_completed_%s", properties.ClusterId), properties.Id, config)
-		log.WithField("topic", "commit_slave_completed_" + properties.ClusterId).Debug("add topic consumer")
+		log.WithField("topic", "commit_slave_completed_"+properties.ClusterId).Debug("add topic consumer")
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitSlaveRequested))
 		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
@@ -164,7 +164,7 @@ func main() {
 		wg.Add(1)
 		consumer, _ := nsq.NewConsumer(fmt.Sprintf("commit_completed_%s", properties.ClusterId), properties.Id, config)
 		consumer.AddHandler(nsq.HandlerFunc(onCommitCompleted))
-		log.WithField("topic", "commit_completed_" + properties.ClusterId).Debug("add topic consumer")
+		log.WithField("topic", "commit_completed_"+properties.ClusterId).Debug("add topic consumer")
 		err := consumer.ConnectToNSQLookupds(properties.LookupdAddresses)
 		consumer.SetLogger(SdkLogger{logrus: nsqlogger}, nsq.LogLevelWarning)
 		if err != nil {
@@ -239,8 +239,8 @@ func loadProperties() {
 		os.Exit(1)
 	}
 	len := len(properties.HapHome)
-	if properties.HapHome[len - 1] == '/' {
-		properties.HapHome = properties.HapHome[:len - 1]
+	if properties.HapHome[len-1] == '/' {
+		properties.HapHome = properties.HapHome[:len-1]
 	}
 }
 

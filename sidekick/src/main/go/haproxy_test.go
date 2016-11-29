@@ -31,7 +31,7 @@ func TestReLoadScript(t *testing.T) {
 
 	// check
 	checkError(t, err)
-	check(t, "reload command is wrong. actual: '%s', expected: '%s'", context.Command, join("/HOME", "TST", "scripts", "hapTSTDEV") + " -f " + join("/HOME", "TST", "Config", "hapTSTDEV.conf") + " -p " + join("/HOME", "TST", "logs", "TSTDEV", "haproxy.pid") + " -sf 1234")
+	check(t, "reload command is wrong. actual: '%s', expected: '%s'", context.Command, join("/HOME", "TST", "scripts", "hapTSTDEV")+" -f "+join("/HOME", "TST", "Config", "hapTSTDEV.conf")+" -p "+join("/HOME", "TST", "logs", "TSTDEV", "haproxy.pid")+" -sf 1234")
 }
 
 func TestReloadFails(t *testing.T) {
@@ -153,13 +153,13 @@ func TestChangedConfiguration(t *testing.T) {
 	// check archive configuration
 	checkMap(t, "/HOME/TST/version-1/hapTSTDEV.conf", join("/HOME", "TST", "Config", "hapTSTDEV.conf"), context.Renames)
 	// check archive bin
-	actualArchivedVersion, contains := context.Links[join("/HOME", "TST", "version-1", "hapTSTDEV") ]
+	actualArchivedVersion, contains := context.Links[join("/HOME", "TST", "version-1", "hapTSTDEV")]
 	check(t, "actual %s, expected %s", contains, true)
 	check(t, "actual archive link %s but expected is %s", actualArchivedVersion, "/export/product/haproxy/product/1/bin/haproxy")
 
 	check(t, "expected archive link %s but actually got %s", "/export/product/haproxy/product/1/bin/haproxy", context.Links[join("/HOME", "TST", "version-1", "hapTSTDEV")])
 	// check executions
-	check(t, "reload command should be executed. expected command is '%s' but got '%s'", join("/HOME", "TST", "scripts", "hapTSTDEV") + " -f " + join("/HOME", "TST", "Config", "hapTSTDEV.conf") + " -p " + join("/HOME", "TST", "logs", "TSTDEV", "haproxy.pid") + " -sf 1234", context.Command)
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", join("/HOME", "TST", "scripts", "hapTSTDEV")+" -f "+join("/HOME", "TST", "Config", "hapTSTDEV.conf")+" -p "+join("/HOME", "TST", "logs", "TSTDEV", "haproxy.pid")+" -sf 1234", context.Command)
 	// check links
 	actualVersion, contains := context.Links[newVersionExpected]
 	check(t, "link destination to new bin is wrong. actual %s, expected %s", contains, true)
@@ -206,7 +206,7 @@ func TestEmptyConfiguration(t *testing.T) {
 	checkError(t, err)
 	check(t, "expected result is %s but actually got %s", SUCCESS, result)
 	// check executions
-	check(t, "reload command should be executed. expected command is '%s' but got '%s'", join("/HOME", "TST", "scripts", "hapTSTDEV") + " -f " + join("/HOME", "TST", "Config", "hapTSTDEV.conf") + " -p " + join("/HOME", "TST", "logs", "TSTDEV", "haproxy.pid") + " -sf 1234", context.Command)
+	check(t, "reload command should be executed. expected command is '%s' but got '%s'", join("/HOME", "TST", "scripts", "hapTSTDEV")+" -f "+join("/HOME", "TST", "Config", "hapTSTDEV.conf")+" -p "+join("/HOME", "TST", "logs", "TSTDEV", "haproxy.pid")+" -sf 1234", context.Command)
 
 	// check links
 	actualVersion, contains := context.Links[newVersionExpected]
