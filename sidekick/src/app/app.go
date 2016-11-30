@@ -17,7 +17,6 @@
 package main
 
 import (
-	"sidekick"
 	"bytes"
 	"encoding/json"
 	"flag"
@@ -28,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sidekick"
 	"sort"
 	"sync"
 	"syscall"
