@@ -29,7 +29,7 @@
     </parent>
 
     <artifactId>sidekick</artifactId>
-    <!--packaging>mvn-golang</packaging-->
+    <packaging>mvn-golang</packaging>
 
     <profiles>
         <profile>
