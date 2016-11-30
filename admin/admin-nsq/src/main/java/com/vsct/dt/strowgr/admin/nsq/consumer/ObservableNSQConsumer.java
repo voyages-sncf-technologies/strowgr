@@ -1,9 +1,9 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
-import com.vsct.dt.nsq.NSQConfig;
-import com.vsct.dt.nsq.NSQConsumer;
-import com.vsct.dt.nsq.NSQMessage;
-import com.vsct.dt.nsq.lookup.NSQLookup;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.NSQConsumer;
+import fr.vsct.dt.nsq.NSQMessage;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.AsyncEmitter;

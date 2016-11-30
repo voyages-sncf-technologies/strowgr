@@ -17,9 +17,9 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vsct.dt.nsq.NSQConfig;
-import com.vsct.dt.nsq.NSQMessage;
-import com.vsct.dt.nsq.lookup.NSQLookup;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.NSQMessage;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;

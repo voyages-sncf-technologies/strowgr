@@ -19,9 +19,9 @@ package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.*;
-import com.vsct.dt.nsq.NSQConfig;
-import com.vsct.dt.nsq.NSQProducer;
-import com.vsct.dt.nsq.lookup.NSQLookup;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.NSQProducer;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;

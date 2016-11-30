@@ -36,7 +36,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.vsct.dt</groupId>
+            <groupId>fr.vsct.dt</groupId>
             <artifactId>nsq-client</artifactId>
         </dependency>
 
