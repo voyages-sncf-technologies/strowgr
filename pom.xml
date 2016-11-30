@@ -30,8 +30,6 @@
         <!--Java modules-->
         <module>admin</module>
         <module>aggregator</module>
-        <!--GO modules-->
-        <module>sidekick</module>
     </modules>
 
     <scm>

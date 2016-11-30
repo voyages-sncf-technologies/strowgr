@@ -17,7 +17,7 @@
 package main
 
 import (
-	".."
+	"sidekick"
 	"bytes"
 	"encoding/json"
 	"flag"
