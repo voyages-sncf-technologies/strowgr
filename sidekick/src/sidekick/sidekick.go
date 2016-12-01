@@ -206,7 +206,7 @@ func main() {
 
 func createTopicsAndChannels() {
 	// Create required topics
-	topics := []string{"commit_requested", "commit_slave_completed", "commit_completed", "commit_failed"}
+	topics := []string{"commit_slave_completed", "commit_completed", "commit_failed"}
 
 	for _, topic := range topics {
 		// create the topic
