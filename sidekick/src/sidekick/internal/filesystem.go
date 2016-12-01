@@ -1,4 +1,4 @@
-package sidekick
+package internal
 
 import (
 	log "github.com/Sirupsen/logrus"

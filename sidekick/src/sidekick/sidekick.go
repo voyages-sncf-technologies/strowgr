@@ -27,7 +27,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sidekick"
+	sidekick "sidekick/internal"
 	"sort"
 	"sync"
 	"syscall"

@@ -14,7 +14,7 @@
  *  limitations under the License.
  *
  */
-package sidekick
+package internal
 
 import (
 	"bytes"

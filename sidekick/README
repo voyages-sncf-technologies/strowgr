@@ -1,5 +1,25 @@
-Install
+Build
+
+```
+$ GOPATH=$PWD go build -o sidekick app
+```
 
 Run
 
-sidekick
+
+```
+$ ./sidekick -h
+Usage of ./sidekick:
+  -config string
+    	Configuration file (default "sidekick.conf")
+  -fake string
+    	Force response without reload for testing purpose. 'yesman': always say ok, 'drunk': random status/errors for entrypoint updates. Just for test purpose.
+  -log-compact
+    	compacting log
+  -mono
+    	only one haproxy instance which play slave/master roles.
+  -verbose
+    	Log in verbose mode
+  -version
+    	Print current version
+```

@@ -1,4 +1,4 @@
-package sidekick
+package internal
 
 import (
 	"errors"
