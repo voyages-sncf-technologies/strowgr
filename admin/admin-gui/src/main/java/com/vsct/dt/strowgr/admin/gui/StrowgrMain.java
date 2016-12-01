@@ -103,7 +103,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         LOGGER.info("start dropwizard configuration");
 
         /* Allow the use of another NSQ channel for development purposes */
-        if(configuration.getNsqChannel() != null){
+        if (configuration.getNsqChannel() != null) {
             NSQ.CHANNEL = configuration.getNsqChannel();
         }
 
@@ -122,6 +122,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* Repository */
         ConsulRepository repository = configuration.getConsulRepositoryFactory().buildAndManageBy(environment);
+        repository.initPorts();
 
         /* EntryPoint State Machine */
         EntryPointEventHandler eventHandler = EntryPointEventHandler
@@ -150,7 +151,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         IncomingEvents incomingEvents = IncomingEvents.watch(hapRegistrationActionsObservable, nsqConsumersFactory);
 
         Observable<EntryPointEvent> nsqEventsObservable = incomingEvents.registerServerEventObservable()
-                .map(e -> (EntryPointEvent)e)//Downcast
+                .map(e -> (EntryPointEvent) e)//Downcast
                 .mergeWith(incomingEvents.commitFailureEventObservale())
                 .mergeWith(incomingEvents.commitSuccessEventObservale());
 

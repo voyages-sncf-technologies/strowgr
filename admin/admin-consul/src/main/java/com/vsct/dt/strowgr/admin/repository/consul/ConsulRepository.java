@@ -125,7 +125,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                 }
             }
 
-            if(count >= 100) {
+            if (count >= 100) {
                 LOGGER.error("could not acquire lock for key {} after 100 retries", entryPointKey);
             }
 
@@ -474,7 +474,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxyversions?raw");
             result = client.execute(getHaproxyURI, httpResponse ->
                     consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parseAsSet)
-                            .orElse(new HashSet<>()));
+                            .orElseGet(HashSet::new));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
