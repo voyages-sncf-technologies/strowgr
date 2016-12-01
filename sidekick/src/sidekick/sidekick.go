@@ -49,7 +49,8 @@ var (
 	deleteChan       = make(chan sidekick.ReloadEvent)
 	lastSyslogReload = time.Now()
 	haFactory        *sidekick.LoadbalancerFactory
-	VERSION          = "undefined"
+
+	Version, GitCommit, GitBranch, GitState, GitSummary, BuildDate string
 )
 
 type SdkLogger struct {
@@ -62,6 +63,7 @@ func (sdkLogger SdkLogger) Output(calldepth int, s string) error {
 }
 
 func main() {
+	fmt.Printf("Version: %s\nBuild date: %s\nGitCommit: %s\nGitBranch: %s\nGitState: %s\nGitSummary: %s\n", Version, BuildDate, GitCommit, GitBranch, GitState, GitSummary)
 	flag.Parse()
 
 	if *logCompact {
@@ -71,7 +73,6 @@ func main() {
 	}
 
 	if *version {
-		println(VERSION)
 		os.Exit(0)
 	}
 

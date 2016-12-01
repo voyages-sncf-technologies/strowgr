@@ -1,10 +1,27 @@
-Build
+# Build
 
 ```
-$ GOPATH=$PWD go build -o sidekick app
+$ GOPATH=$PWD go build sidekick
 ```
 
-Run
+# Build with govvv
+
+govvv is a tool for versioning binaries
+ 
+```
+$ export GOPATH=$PWD
+$ go get github.com/ahmetalpbalkan/govvv
+$ govvv build sidekick
+$ ./sidekick -version
+Version: 0.2.3-SNAPSHOT
+Build date: 2016-12-01T22:18:43Z
+GitCommit: 290f97d
+GitBranch: nomaven
+GitState: dirty
+```
+
+
+# Run
 
 
 ```
