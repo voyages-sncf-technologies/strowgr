@@ -49,6 +49,7 @@ var (
 	deleteChan       = make(chan sidekick.ReloadEvent)
 	lastSyslogReload = time.Now()
 	haFactory        *sidekick.LoadbalancerFactory
+	VERSION          = "undefined"
 )
 
 type SdkLogger struct {
@@ -70,7 +71,7 @@ func main() {
 	}
 
 	if *version {
-		println(sidekick.VERSION)
+		println(VERSION)
 		os.Exit(0)
 	}
 
