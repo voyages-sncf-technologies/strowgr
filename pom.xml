@@ -24,7 +24,7 @@
     <groupId>com.vsct.dt.strowgr</groupId>
     <artifactId>strowgr-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.2.3-SNAPSHOT</version>
+    <version>0.2.3</version>
 
     <modules>
         <!--Java modules-->
