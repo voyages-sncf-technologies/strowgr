@@ -18,8 +18,8 @@
 package com.vsct.strowgr.monitoring.aggregator;
 
 import com.datastax.driver.core.*;
-import com.github.brainlag.nsq.lookup.DefaultNSQLookup;
-import com.github.brainlag.nsq.lookup.NSQLookup;
+import fr.vsct.dt.nsq.lookup.DefaultNSQLookup;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.strowgr.monitoring.aggregator.cassandra.ParsedPayloadWriter;
 import com.vsct.strowgr.monitoring.aggregator.cassandra.ErrorRecordWriter;
 import com.vsct.strowgr.monitoring.aggregator.nsq.Consumer;

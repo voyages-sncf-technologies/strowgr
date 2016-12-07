@@ -17,7 +17,7 @@
 
 package com.vsct.dt.strowgr.admin.gui.managed;
 
-import com.github.brainlag.nsq.NSQProducer;
+import fr.vsct.dt.nsq.NSQProducer;
 import io.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -18,12 +18,12 @@
 package com.vsct.strowgr.monitoring.aggregator.nsq;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQConsumer;
-import com.github.brainlag.nsq.callbacks.NSQMessageCallback;
-import com.github.brainlag.nsq.lookup.NSQLookup;
+import fr.vsct.dt.nsq.NSQConsumer;
+import fr.vsct.dt.nsq.callbacks.NSQMessageCallback;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.strowgr.monitoring.aggregator.MessageRecorder;
-import com.vsct.strowgr.monitoring.aggregator.cassandra.ParsedPayload;
 import com.vsct.strowgr.monitoring.aggregator.cassandra.ErrorRecord;
+import com.vsct.strowgr.monitoring.aggregator.cassandra.ParsedPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

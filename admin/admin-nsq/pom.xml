@@ -22,7 +22,7 @@
     <parent>
         <artifactId>admin</artifactId>
         <groupId>com.vsct.dt.strowgr</groupId>
-        <version>0.2.3-SNAPSHOT</version>
+        <version>0.2.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -36,7 +36,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.brainlag</groupId>
+            <groupId>fr.vsct.dt</groupId>
             <artifactId>nsq-client</artifactId>
         </dependency>
 
@@ -67,6 +67,10 @@
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-healthchecks</artifactId>
             <version>3.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
     </dependencies>
 

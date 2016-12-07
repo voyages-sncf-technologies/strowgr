@@ -17,7 +17,7 @@
 
 package com.vsct.strowgr.monitoring.aggregator.cassandra;
 
-import com.github.brainlag.nsq.NSQMessage;
+import fr.vsct.dt.nsq.NSQMessage;
 import com.vsct.strowgr.monitoring.aggregator.StringDates;
 
 import java.util.Date;

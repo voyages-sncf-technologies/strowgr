@@ -1,8 +1,8 @@
 package com.vsct.dt.strowgr.admin.gui.factory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQConfig;
-import com.github.brainlag.nsq.lookup.NSQLookup;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;

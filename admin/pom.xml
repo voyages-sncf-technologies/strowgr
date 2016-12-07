@@ -23,7 +23,7 @@
     <parent>
         <groupId>com.vsct.dt.strowgr</groupId>
         <artifactId>strowgr-parent</artifactId>
-        <version>0.2.3-SNAPSHOT</version>
+        <version>0.2.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>admin</artifactId>
@@ -63,9 +63,9 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.github.brainlag</groupId>
+                <groupId>fr.vsct.dt</groupId>
                 <artifactId>nsq-client</artifactId>
-                <version>1.0.0.RC2</version>
+                <version>1.0.0</version>
             </dependency>
 
             <dependency>

@@ -1,9 +1,9 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
-import com.github.brainlag.nsq.NSQConfig;
-import com.github.brainlag.nsq.NSQConsumer;
-import com.github.brainlag.nsq.NSQMessage;
-import com.github.brainlag.nsq.lookup.NSQLookup;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.NSQConsumer;
+import fr.vsct.dt.nsq.NSQMessage;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.AsyncEmitter;
@@ -61,6 +61,7 @@ public abstract class ObservableNSQConsumer<T> {
                     this.emitter = emitter;
 
                     consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
+                    consumer.setMessagesPerBatch(10);
 
                     //We tell the NSQConsumer to use its own eventloop as the executor for message handling
                     //This prevent the use of the default cachedThreadPool, which spawns a huge amount of threads when a lot of messages arrives

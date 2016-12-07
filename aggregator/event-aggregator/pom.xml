@@ -22,7 +22,7 @@
     <parent>
         <artifactId>aggregator</artifactId>
         <groupId>com.vsct.dt.strowgr</groupId>
-        <version>0.2.3-SNAPSHOT</version>
+        <version>0.2.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -46,8 +46,9 @@
             <artifactId>logback-classic</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.brainlag</groupId>
+            <groupId>fr.vsct.dt</groupId>
             <artifactId>nsq-client</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.datastax.cassandra</groupId>

@@ -18,10 +18,10 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQConfig;
-import com.github.brainlag.nsq.NSQProducer;
-import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.google.common.eventbus.*;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.NSQProducer;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
@@ -103,7 +103,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         LOGGER.info("start dropwizard configuration");
 
         /* Allow the use of another NSQ channel for development purposes */
-        if(configuration.getNsqChannel() != null){
+        if (configuration.getNsqChannel() != null) {
             NSQ.CHANNEL = configuration.getNsqChannel();
         }
 
@@ -122,6 +122,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* Repository */
         ConsulRepository repository = configuration.getConsulRepositoryFactory().buildAndManageBy(environment);
+        repository.initPorts();
 
         /* EntryPoint State Machine */
         EntryPointEventHandler eventHandler = EntryPointEventHandler
@@ -150,7 +151,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         IncomingEvents incomingEvents = IncomingEvents.watch(hapRegistrationActionsObservable, nsqConsumersFactory);
 
         Observable<EntryPointEvent> nsqEventsObservable = incomingEvents.registerServerEventObservable()
-                .map(e -> (EntryPointEvent)e)//Downcast
+                .map(e -> (EntryPointEvent) e)//Downcast
                 .mergeWith(incomingEvents.commitFailureEventObservale())
                 .mergeWith(incomingEvents.commitSuccessEventObservale());
 

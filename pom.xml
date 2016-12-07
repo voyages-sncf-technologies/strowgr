@@ -24,14 +24,12 @@
     <groupId>com.vsct.dt.strowgr</groupId>
     <artifactId>strowgr-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.2.3-SNAPSHOT</version>
+    <version>0.2.4-SNAPSHOT</version>
 
     <modules>
         <!--Java modules-->
         <module>admin</module>
         <module>aggregator</module>
-        <!--GO modules-->
-        <module>sidekick</module>
     </modules>
 
     <scm>
@@ -149,6 +147,27 @@
     </profiles>
 
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.7.7.201606060606</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -190,24 +209,6 @@
                             </manifest>
                         </archive>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <inherited>true</inherited>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>2.5.3</version>
-                    <configuration>
-                        <descriptor>src/assembly/assembly.xml</descriptor>
-                        <tarLongFileMode>posix</tarLongFileMode>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>create-archive</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>single</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                 </plugin>
 
                 <plugin>

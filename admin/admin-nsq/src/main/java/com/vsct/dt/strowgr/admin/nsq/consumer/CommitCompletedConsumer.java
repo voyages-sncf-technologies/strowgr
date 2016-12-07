@@ -18,9 +18,9 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.brainlag.nsq.NSQConfig;
-import com.github.brainlag.nsq.NSQMessage;
-import com.github.brainlag.nsq.lookup.NSQLookup;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.NSQMessage;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitCompleted;
