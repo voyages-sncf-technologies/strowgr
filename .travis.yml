@@ -7,7 +7,7 @@ services:
 script:
   - mvn test
   - maze/build-sidekick.sh
-  - docker pull centos:6.8
+  - docker pull java:8
   - docker pull nsqio/nsq:v0.3.7
   - docker pull verb/socat
   - docker pull gliderlabs/consul-server
