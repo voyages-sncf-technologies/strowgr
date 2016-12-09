@@ -4,10 +4,10 @@ jdk:
 sudo: required
 services:
   - docker
-before_install:
-  - maze/build-sidekick.sh
 script:
-  - mvn clean install -P docker-build -Ddocker.registry=''
+  - maze/build-sidekick.sh
+  - mvn package -P build-docker -Ddocker.registry='' -pl :admin-gui
+  - mvn test
 cache:
   directories:
   - $HOME/.m2
