@@ -118,7 +118,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
         ip = backend.ip,
         port = backend.servicePort,
         onBackend = "BACKEND")
-    ) butNoLongerThan (2 minutes)
+    ) butNoLongerThan (20 minutes)
 
     logger.info("Register second server")
     exec(backendNsq.registerServer("TEST", "TEST", backend.hostname, backend.ip, 443, "BACKEND"))
