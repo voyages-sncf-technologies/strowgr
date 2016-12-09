@@ -22,7 +22,7 @@ object Strowgr extends StrictLogging {
   }
 
   class AdminNode(consulHost: String, lookupHost: String, nsqHost: String) extends SingleContainerClusterNode with HttpEnabled {
-    override def serviceContainer: CreateContainerCmd = "dockerregistrydev.socrate.vsct.fr/strowgr/admin"
+    override def serviceContainer: CreateContainerCmd = "strowgr/admin:latest"
       .withEntrypoint("java", s"-Ddw.repository.host=$consulHost", s"-Ddw.nsqLookup.host=$lookupHost", s"-Ddw.nsqProducer.host=$nsqHost", "-jar", "/app.jar", "server", "/server.yaml")
 
     override def servicePort: Int = 8080
