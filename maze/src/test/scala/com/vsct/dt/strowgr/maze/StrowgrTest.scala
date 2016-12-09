@@ -58,12 +58,12 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     waitFor(5 seconds)
 
     // Create required topics
-    waitUntil(backendNsq.httpPost("/topic/create?topic=register_server", "", "text/plain") isOk)
-    waitUntil(adminNsq.httpPost("/topic/create?topic=delete_requested_preproduction", "", "text/plain") isOk)
-    waitUntil(adminNsq.httpPost("/topic/create?topic=commit_requested_preproduction", "", "text/plain") isOk)
-    waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_completed_preproduction", "", "text/plain") isOk)
-    waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain") isOk)
-    waitUntil(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain") isOk)
+    exec(backendNsq.httpPost("/topic/create?topic=register_server", "", "text/plain"))
+    exec(adminNsq.httpPost("/topic/create?topic=delete_requested_preproduction", "", "text/plain"))
+    exec(adminNsq.httpPost("/topic/create?topic=commit_requested_preproduction", "", "text/plain"))
+    exec(sidekickNsq.httpPost("/topic/create?topic=commit_completed_preproduction", "", "text/plain"))
+    exec(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain"))
+    exec(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain"))
 
     backend.start()
     strowgrAdmin.start()
@@ -94,7 +94,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
 
     var ambassador: AmbassadorNode = 1.node named "ambassador" constructedLike new AmbassadorNode(sidekick.internalIp, port) buildSingle()
     ambassador.start()
-    waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (10 seconds)
+    waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (30 seconds)
     ambassador.clear()
 
     logger.info("Entrypoint TEST/TEST successfully created.")
@@ -129,7 +129,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
 
     ambassador = 1.node named "ambassador" constructedLike new AmbassadorNode(sidekick.internalIp, port2) buildSingle()
     ambassador.start()
-    val createEndpointDelay2 = waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (10 seconds)
+    val createEndpointDelay2 = waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (30 seconds)
     ambassador.clear()
     logger.info(s"Create endpoint TEST2 took ${createEndpointDelay2.toMillis}ms")
 
