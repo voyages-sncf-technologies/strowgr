@@ -55,15 +55,13 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     backendNsq.start()
     nsqUi.start()
 
-    waitFor(5 seconds)
-
     // Create required topics
-    exec(backendNsq.httpPost("/topic/create?topic=register_server", "", "text/plain"))
-    exec(adminNsq.httpPost("/topic/create?topic=delete_requested_preproduction", "", "text/plain"))
-    exec(adminNsq.httpPost("/topic/create?topic=commit_requested_preproduction", "", "text/plain"))
-    exec(sidekickNsq.httpPost("/topic/create?topic=commit_completed_preproduction", "", "text/plain"))
-    exec(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain"))
-    exec(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain"))
+    waitUntil(backendNsq.httpPost("/topic/create?topic=register_server", "", "text/plain") isOk) butNoLongerThan (5 seconds)
+    waitUntil(adminNsq.httpPost("/topic/create?topic=delete_requested_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
+    waitUntil(adminNsq.httpPost("/topic/create?topic=commit_requested_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
+    waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_completed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
+    waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
+    waitUntil(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
 
     backend.start()
     strowgrAdmin.start()
