@@ -69,12 +69,12 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
     waitUntil(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
 
-    waitUntil(nsqUi.httpGet("/topics/register_server").status is 200) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.httpGet("/topics/delete_requested_preproduction").status is 200) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.httpGet("/topics/commit_requested_preproduction").status is 200) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.httpGet("/topics/commit_completed_preproduction").status is 200) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.httpGet("/topics/commit_failed_preproduction").status is 200) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.httpGet("/topics/commit_slave_completed_preproduction").status is 200) butNoLongerThan(10 seconds)
+    waitUntil(nsqUi.httpGet("/api/topics/register_server").status is 200) butNoLongerThan(10 seconds)
+    waitUntil(nsqUi.httpGet("/api/topics/delete_requested_preproduction").status is 200) butNoLongerThan(10 seconds)
+    waitUntil(nsqUi.httpGet("/api/topics/commit_requested_preproduction").status is 200) butNoLongerThan(10 seconds)
+    waitUntil(nsqUi.httpGet("/api/topics/commit_completed_preproduction").status is 200) butNoLongerThan(10 seconds)
+    waitUntil(nsqUi.httpGet("/api/topics/commit_failed_preproduction").status is 200) butNoLongerThan(10 seconds)
+    waitUntil(nsqUi.httpGet("/api/topics/commit_slave_completed_preproduction").status is 200) butNoLongerThan(10 seconds)
 
     backend.start()
     strowgrAdmin.start()
