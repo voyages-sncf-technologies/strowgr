@@ -8,7 +8,8 @@ import com.vsct.dt.strowgr.maze.Nsq.{NsqAdmin, NsqLookup, Nsqd}
 import com.vsct.dt.strowgr.maze.Sidekick.SidekickNode
 import com.vsct.dt.strowgr.maze.Strowgr.{AdminNode, CreateEntryPoint}
 import fr.vsct.dt.maze.TechnicalTest
-import fr.vsct.dt.maze.core.Commands.{exec, print, waitUntil}
+import fr.vsct.dt.maze.core.Commands
+import fr.vsct.dt.maze.core.Commands.{exec, print, waitFor, waitUntil}
 import fr.vsct.dt.maze.core.Predef._
 import fr.vsct.dt.maze.topology.DockerClusterNode
 
@@ -68,6 +69,8 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_completed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
     waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
     waitUntil(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
+
+    waitFor(1 second)
 
     backend.start()
     strowgrAdmin.start()
