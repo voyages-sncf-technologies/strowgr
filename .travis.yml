@@ -6,14 +6,15 @@ services:
   - docker
 script:
   - mvn test
-  - maze/build-sidekick.sh
-  - docker pull java:8
-  - docker pull nsqio/nsq:v0.3.7
-  - docker pull verb/socat
-  - docker pull gliderlabs/consul-server
-  - docker pull nginx
-  - mvn process-resources docker:build -P build-docker -Ddocker.registry='' -pl :admin-gui
-  - mvn scalatest:test -pl maze
+  - docker info
+#  - maze/build-sidekick.sh
+#  - docker pull java:8
+#  - docker pull nsqio/nsq:v0.3.7
+#  - docker pull verb/socat
+#  - docker pull gliderlabs/consul-server
+#  - docker pull nginx
+#  - mvn process-resources docker:build -P build-docker -Ddocker.registry='' -pl :admin-gui
+#  - mvn scalatest:test -pl maze
 cache:
   directories:
   - $HOME/.m2
