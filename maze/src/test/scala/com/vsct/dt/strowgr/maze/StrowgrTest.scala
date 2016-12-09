@@ -128,7 +128,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
         ip = backend.ip,
         port = 443,
         onBackend = "BACKEND")
-    ) butNoLongerThan (2 minutes)
+    ) butNoLongerThan (20 minutes)
 
     logger.info(s"register 1 took ${registerDuration.toMillis}ms")
     logger.info(s"register 2 took ${registerDuration2.toMillis}ms")
