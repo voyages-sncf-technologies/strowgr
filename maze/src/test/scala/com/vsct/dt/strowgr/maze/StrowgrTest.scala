@@ -78,8 +78,8 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
   }
 
   // Comment / uncomment the requested lines to run or ignore the test
-//  "a strowgr architecture" should "start normally" in {
-  ignore should "start normally" in {
+  "a strowgr architecture" should "start normally" in {
+//  ignore should "start normally" in {
 
     exec(backend.shellExecution("/bin/mkdir", "-p", "/usr/share/nginx/html/haproxy"))
     backend.createFile("/usr/share/nginx/html/haproxy/default.conf", readResource("haproxy/default.conf"))
