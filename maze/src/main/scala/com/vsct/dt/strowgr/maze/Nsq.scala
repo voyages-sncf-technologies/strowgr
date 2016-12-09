@@ -45,7 +45,7 @@ object Nsq {
     override def servicePort: Int = 4161
   }
 
-  class NsqAdmin(lookup: String) extends SingleContainerClusterNode {
+  class NsqAdmin(lookup: String) extends SingleContainerClusterNode with HttpEnabled {
     override def serviceContainer: CreateContainerCmd = image.withCmd("/nsqadmin", s"-http-address=$hostname:4171", s"--lookupd-http-address=$lookup:4161")
 
     override def servicePort: Int = 4171
