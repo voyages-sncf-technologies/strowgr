@@ -1,6 +1,13 @@
 language: java
 jdk:
   - oraclejdk8
+sudo: required
+services:
+  - docker
+before_install:
+  - maze/build-sidekick.sh
+script:
+  - mvn clean install -P docker-build -Ddocker.registry=''
 cache:
   directories:
   - $HOME/.m2

@@ -29,6 +29,7 @@
     <artifactId>admin-gui</artifactId>
     <properties>
         <project.build.finalNameWithExt>${project.build.finalName}.jar</project.build.finalNameWithExt>
+        <docker.image>admin</docker.image>
     </properties>
 
     <dependencies>
