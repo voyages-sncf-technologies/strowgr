@@ -55,15 +55,15 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     backendNsq.start()
     nsqUi.start()
 
-    waitFor(1 seconds)
+    waitFor(5 seconds)
 
     // Create required topics
-    exec(backendNsq.httpPost("/topic/create?topic=register_server", "", "text/plain"))
-    exec(adminNsq.httpPost("/topic/create?topic=delete_requested_preproduction", "", "text/plain"))
-    exec(adminNsq.httpPost("/topic/create?topic=commit_requested_preproduction", "", "text/plain"))
-    exec(sidekickNsq.httpPost("/topic/create?topic=commit_completed_preproduction", "", "text/plain"))
-    exec(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain"))
-    exec(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain"))
+    waitUntil(backendNsq.httpPost("/topic/create?topic=register_server", "", "text/plain") isOk)
+    waitUntil(adminNsq.httpPost("/topic/create?topic=delete_requested_preproduction", "", "text/plain") isOk)
+    waitUntil(adminNsq.httpPost("/topic/create?topic=commit_requested_preproduction", "", "text/plain") isOk)
+    waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_completed_preproduction", "", "text/plain") isOk)
+    waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain") isOk)
+    waitUntil(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain") isOk)
 
     backend.start()
     strowgrAdmin.start()
@@ -84,6 +84,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     exec(backend.shellExecution("/bin/mkdir", "-p", "/usr/share/nginx/html/haproxy"))
     backend.createFile("/usr/share/nginx/html/haproxy/default.conf", readResource("haproxy/default.conf"))
 
+    logger.info("Creating endpoint TEST/TEST...")
     print(strowgrAdmin.createEntrypoint(CreateEntryPoint(
       context = Map("application" -> "TEST", "platform" -> "TEST", "templateUri" -> s"http://${backend.hostname}/haproxy/default.conf")
     )))
@@ -95,6 +96,8 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     ambassador.start()
     waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (10 seconds)
     ambassador.clear()
+
+    logger.info("Entrypoint TEST/TEST successfully created.")
 
     exec(backendNsq.registerServer("TEST", "TEST", backend.hostname, backend.ip, backend.servicePort, "BACKEND"))
 
