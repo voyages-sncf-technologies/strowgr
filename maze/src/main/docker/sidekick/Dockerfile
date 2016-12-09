@@ -10,8 +10,8 @@ RUN yum install -y gcc && curl http://www.haproxy.org/download/1.4/src/haproxy-1
     && curl http://www.haproxy.org/download/1.4/src/haproxy-1.4.27.tar.gz |tar -xzC /tmp/ \
     && curl http://www.haproxy.org/download/1.5/src/haproxy-1.5.18.tar.gz |tar -xzC /tmp/ \
     && cd /tmp/haproxy-1.4.22 && make TARGET=linux26 && mkdir -p /opt/haproxy-1.4.22/bin && cp haproxy /opt/haproxy-1.4.22/bin \
-    && cd /tmp/haproxy-1.4.22 && make TARGET=linux26 && mkdir -p /opt/haproxy-1.4.27/bin && cp haproxy /opt/haproxy-1.4.27/bin \
-    && cd /tmp/haproxy-1.4.22 && make TARGET=linux26 && mkdir -p /opt/haproxy-1.5.18/bin && cp haproxy /opt/haproxy-1.5.18/bin \
+    && cd /tmp/haproxy-1.4.27 && make TARGET=linux26 && mkdir -p /opt/haproxy-1.4.27/bin && cp haproxy /opt/haproxy-1.4.27/bin \
+    && cd /tmp/haproxy-1.5.18 && make TARGET=linux26 && mkdir -p /opt/haproxy-1.5.18/bin && cp haproxy /opt/haproxy-1.5.18/bin \
     && curl -L https://github.com/voyages-sncf-technologies/strowgr-sidekick/releases/download/v0.2.3/sidekick-0.2.3 > /sidekick \
     && chmod +x /sidekick && chmod +x /entrypoint.sh \
     && yum remove -y gcc && yum clean all && rm -rf /tmp/haproxy*
