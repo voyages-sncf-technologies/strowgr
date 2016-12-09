@@ -8,7 +8,7 @@ import com.vsct.dt.strowgr.maze.Nsq.{NsqAdmin, NsqLookup, Nsqd}
 import com.vsct.dt.strowgr.maze.Sidekick.SidekickNode
 import com.vsct.dt.strowgr.maze.Strowgr.{AdminNode, CreateEntryPoint}
 import fr.vsct.dt.maze.TechnicalTest
-import fr.vsct.dt.maze.core.Commands.{exec, print, waitFor, waitUntil}
+import fr.vsct.dt.maze.core.Commands.{exec, print, waitUntil}
 import fr.vsct.dt.maze.core.Predef._
 import fr.vsct.dt.maze.topology.DockerClusterNode
 
@@ -93,11 +93,11 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
       context = Map("application" -> "TEST", "platform" -> "TEST", "templateUri" -> s"http://${backend.hostname}/haproxy/default.conf")
     )))
 
-    waitUntil(consulNode.portOfFrontend("TEST", "TEST", "FRONTEND").isSuccess) butNoLongerThan (10 seconds)
+    waitUntil(consulNode.portOfFrontend("TEST", "TEST", "FRONTEND").isSuccess) butNoLongerThan (30 seconds)
     val port: Int = exec(consulNode.portOfFrontend("TEST", "TEST", "FRONTEND"))
 
     var ambassador: AmbassadorNode = 1.node named "ambassador" constructedLike new AmbassadorNode(sidekick.internalIp, port) buildSingle()
-    extraContainers += ambassador
+    extraContainers = ambassador :: extraContainers
     ambassador.start()
     waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (30 seconds)
 
@@ -128,11 +128,11 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
       context = Map("application" -> "TEST", "platform" -> "TEST2", "templateUri" -> s"http://${backend.hostname}/haproxy/default.conf")
     )))
 
-    waitUntil(consulNode.portOfFrontend("TEST", "TEST2", "FRONTEND").isSuccess) butNoLongerThan (10 seconds)
+    waitUntil(consulNode.portOfFrontend("TEST", "TEST2", "FRONTEND").isSuccess) butNoLongerThan (30 seconds)
     val port2: Int = exec(consulNode.portOfFrontend("TEST", "TEST2", "FRONTEND"))
 
     ambassador = 1.node named "ambassador" constructedLike new AmbassadorNode(sidekick.internalIp, port2) buildSingle()
-    extraContainers += ambassador
+    extraContainers = ambassador :: extraContainers
     ambassador.start()
     val createEndpointDelay2 = waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (30 seconds)
     logger.info(s"Create endpoint TEST2 took ${createEndpointDelay2.toMillis}ms")
