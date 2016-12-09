@@ -8,8 +8,7 @@ import com.vsct.dt.strowgr.maze.Nsq.{NsqAdmin, NsqLookup, Nsqd}
 import com.vsct.dt.strowgr.maze.Sidekick.SidekickNode
 import com.vsct.dt.strowgr.maze.Strowgr.{AdminNode, CreateEntryPoint}
 import fr.vsct.dt.maze.TechnicalTest
-import fr.vsct.dt.maze.core.Commands
-import fr.vsct.dt.maze.core.Commands.{exec, print, waitFor, waitUntil}
+import fr.vsct.dt.maze.core.Commands.{exec, print, waitUntil}
 import fr.vsct.dt.maze.core.Predef._
 import fr.vsct.dt.maze.topology.DockerClusterNode
 
@@ -111,6 +110,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
 
     logger.info("Entrypoint TEST/TEST successfully created.")
 
+    logger.info("Register first server")
     exec(backendNsq.registerServer("TEST", "TEST", backend.hostname, backend.ip, backend.servicePort, "BACKEND"))
 
     val registerDuration = waitUntil(
@@ -120,6 +120,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
         onBackend = "BACKEND")
     ) butNoLongerThan (2 minutes)
 
+    logger.info("Register second server")
     exec(backendNsq.registerServer("TEST", "TEST", backend.hostname, backend.ip, 443, "BACKEND"))
 
     val registerDuration2 = waitUntil(
