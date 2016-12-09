@@ -30,6 +30,7 @@
         <!--Java modules-->
         <module>admin</module>
         <module>aggregator</module>
+        <module>maze</module>
     </modules>
 
     <scm>
