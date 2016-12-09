@@ -8,7 +8,8 @@ import com.vsct.dt.strowgr.maze.Nsq.{NsqAdmin, NsqLookup, Nsqd}
 import com.vsct.dt.strowgr.maze.Sidekick.SidekickNode
 import com.vsct.dt.strowgr.maze.Strowgr.{AdminNode, CreateEntryPoint}
 import fr.vsct.dt.maze.TechnicalTest
-import fr.vsct.dt.maze.core.Commands.{exec, print, waitUntil}
+import fr.vsct.dt.maze.core.Commands
+import fr.vsct.dt.maze.core.Commands.{exec, print, waitFor, waitUntil}
 import fr.vsct.dt.maze.core.Predef._
 import fr.vsct.dt.maze.topology.DockerClusterNode
 
@@ -76,6 +77,8 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     waitUntil(nsqUi.httpGet("/api/topics/commit_failed_preproduction").status is 200) butNoLongerThan(10 seconds)
     waitUntil(nsqUi.httpGet("/api/topics/commit_slave_completed_preproduction").status is 200) butNoLongerThan(10 seconds)
 
+    waitFor(10 seconds)
+
     backend.start()
     strowgrAdmin.start()
     sidekick.start()
@@ -86,6 +89,8 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     exec(strowgrAdmin.createHap("preproduction", "preproduction", sidekick.hostname, "preproduction"))
 
     logger.info(s"Done creating all in ${System.currentTimeMillis() - start}ms, test can start.")
+
+    waitFor(10 seconds)
   }
 
   // Comment / uncomment the requested lines to run or ignore the test
