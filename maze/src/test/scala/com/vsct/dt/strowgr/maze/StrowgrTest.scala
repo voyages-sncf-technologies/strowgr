@@ -10,9 +10,11 @@ import com.vsct.dt.strowgr.maze.Strowgr.{AdminNode, CreateEntryPoint}
 import fr.vsct.dt.maze.TechnicalTest
 import fr.vsct.dt.maze.core.Commands.{exec, print, waitFor, waitUntil}
 import fr.vsct.dt.maze.core.Predef._
+import fr.vsct.dt.maze.topology.DockerClusterNode
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import scala.util.Try
 
 class StrowgrTest extends TechnicalTest with StrictLogging {
 
@@ -28,7 +30,11 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
   var sidekickSlave: SidekickNode = _
   var backend: BackendApp = _
 
+  var extraContainers: List[DockerClusterNode] = _
+
   override protected def beforeEach(): Unit = {
+    extraContainers = List()
+
     logger.info("Creating strowgr infrastructure...")
     val start = System.currentTimeMillis()
 
@@ -91,9 +97,9 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     val port: Int = exec(consulNode.portOfFrontend("TEST", "TEST", "FRONTEND"))
 
     var ambassador: AmbassadorNode = 1.node named "ambassador" constructedLike new AmbassadorNode(sidekick.internalIp, port) buildSingle()
+    extraContainers += ambassador
     ambassador.start()
     waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (30 seconds)
-    ambassador.clear()
 
     logger.info("Entrypoint TEST/TEST successfully created.")
 
@@ -126,9 +132,9 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     val port2: Int = exec(consulNode.portOfFrontend("TEST", "TEST2", "FRONTEND"))
 
     ambassador = 1.node named "ambassador" constructedLike new AmbassadorNode(sidekick.internalIp, port2) buildSingle()
+    extraContainers += ambassador
     ambassador.start()
     val createEndpointDelay2 = waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (30 seconds)
-    ambassador.clear()
     logger.info(s"Create endpoint TEST2 took ${createEndpointDelay2.toMillis}ms")
 
     logger.info("rock and roll")
@@ -146,5 +152,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     lookupNode.clear()
     consulNode.clear()
     backend.clear()
+
+    extraContainers.foreach{c => Try(c.clear())}
   }
 }
