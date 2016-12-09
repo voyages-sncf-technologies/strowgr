@@ -7,11 +7,12 @@ services:
 script:
   - mvn test
   - maze/build-sidekick.sh
-  - mvn package -P build-docker -Ddocker.registry='' -pl :admin-gui
+  - docker pull centos:6.8
   - docker pull nsqio/nsq:v0.3.7
   - docker pull verb/socat
   - docker pull gliderlabs/consul-server
   - docker pull nginx
+  - mvn package -P build-docker -Ddocker.registry='' -pl :admin-gui
   - mvn scalatest:test -pl maze
 cache:
   directories:
