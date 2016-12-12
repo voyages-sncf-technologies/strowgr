@@ -70,12 +70,12 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
     waitUntil(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
 
-    waitUntil(nsqUi.topicInfo("register_server").hasServer(backendNsq.hostname)) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasServer(adminNsq.hostname)) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasServer(adminNsq.hostname)) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasServer(sidekickNsq.hostname)) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.topicInfo("commit_failed_preproduction").hasServer(sidekickNsq.hostname)) butNoLongerThan(10 seconds)
-    waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasServer(sidekickSlaveNsq.hostname)) butNoLongerThan(10 seconds)
+    waitUntil(nsqUi.topicInfo("register_server").hasServer(backendNsq.hostname)) butNoLongerThan (10 seconds)
+    waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasServer(adminNsq.hostname)) butNoLongerThan (10 seconds)
+    waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasServer(adminNsq.hostname)) butNoLongerThan (10 seconds)
+    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasServer(sidekickNsq.hostname)) butNoLongerThan (10 seconds)
+    waitUntil(nsqUi.topicInfo("commit_failed_preproduction").hasServer(sidekickNsq.hostname)) butNoLongerThan (10 seconds)
+    waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasServer(sidekickSlaveNsq.hostname)) butNoLongerThan (10 seconds)
 
     backend.start()
     strowgrAdmin.start()
@@ -86,14 +86,28 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
 
     exec(strowgrAdmin.createHap("preproduction", "preproduction", sidekick.hostname, "preproduction"))
 
-    logger.info(s"Done creating all in ${System.currentTimeMillis() - start}ms, test can start.")
+    waitUntil(nsqUi.topicInfo("register_server").hasChannel("admin")) butNoLongerThan(30 seconds)
 
-    waitFor(2 seconds)
+    waitUntil(nsqUi.topicInfo("commit_failed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
+
+    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
+
+    waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
+
+    waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
+
+    waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
+    waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
+
+    logger.info(s"Done creating all in ${System.currentTimeMillis() - start}ms, test can start.")
   }
 
   // Comment / uncomment the requested lines to run or ignore the test
   "a strowgr architecture" should "start normally" in {
-//  ignore should "start normally" in {
+    //  ignore should "start normally" in {
 
     print(nsqUi.topicInfo("register_server"))
 
@@ -167,6 +181,6 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     consulNode.clear()
     backend.clear()
 
-    extraContainers.foreach{c => Try(c.clear())}
+    extraContainers.foreach { c => Try(c.clear()) }
   }
 }

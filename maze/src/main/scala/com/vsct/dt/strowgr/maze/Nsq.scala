@@ -88,7 +88,7 @@ case class TopicInformationChannel(
                                     @JsonProperty("requeue_count") requeueCount: Int,
                                     @JsonProperty("timeout_count") timeoutCount: Int,
                                     @JsonProperty("message_count") messageCount: Int,
-                                    @JsonProperty("nodes") nodes: List[TopicInformation],
+                                    @JsonProperty("nodes") nodes: List[TopicInformationChannelNode],
                                     @JsonProperty("clients") clients: List[TopicInformationClient],
                                     @JsonProperty("paused") paused: Boolean,
                                     @JsonProperty("e2e_processing_latency") e2eProcessingLatency: LatencyInformation
@@ -123,3 +123,22 @@ case class TopicInformationClient(
                                    @JsonProperty("tls_negotiated_protocol") tlsNegotiatedProtocol: String,
                                    @JsonProperty("tls_negotiated_protocol_is_mutual") tlsNegotiatedProtocolIsMutual: Boolean
                                  )
+
+case class TopicInformationChannelNode(
+                                        @JsonProperty("node") node: String,
+                                        @JsonProperty("hostname") hostname: String,
+                                        @JsonProperty("topic_name") topicName: String,
+                                        @JsonProperty("channel_name") channelName: String,
+                                        @JsonProperty("depth") depth: Int,
+                                        @JsonProperty("memory_depth") memoryDepth: Int,
+                                        @JsonProperty("backend_depth") backendDepth: Int,
+                                        @JsonProperty("in_flight_count") inFlightCount: Int,
+                                        @JsonProperty("deferred_count") deferredCount: Int,
+                                        @JsonProperty("requeue_count") requeueCount: Int,
+                                        @JsonProperty("timeout_count") timeoutCount: Int,
+                                        @JsonProperty("message_count") messageCount: Int,
+                                        @JsonProperty("paused") paused: Boolean,
+                                        @JsonProperty("nodes") nodes: List[TopicInformationChannelNode],
+                                        @JsonProperty("clients") clients: List[TopicInformationClient],
+                                        @JsonProperty("e2e_processing_latency") e2eProcessingLatency: LatencyInformation
+                                      )

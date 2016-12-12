@@ -43,6 +43,13 @@ package object maze {
       )
     }
 
+    def hasChannel(name: String): Predicate = self.toPredicate(s"${self.label} has channel $name?") {
+      case configuration if Option(configuration.channels).getOrElse(List()).exists(_.channelName == name) => Result.success
+      case configuration => Result.failure(
+        s"channel with $name wasn't found on topic, found: ${Option(configuration.channels).getOrElse(List()).map(_.channelName).mkString(",")}"
+      )
+    }
+
   }
 
 }
