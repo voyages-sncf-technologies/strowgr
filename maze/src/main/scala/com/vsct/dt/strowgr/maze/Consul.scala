@@ -23,9 +23,16 @@ object Consul {
       httpGet(s"/v1/kv/$key?raw")
     }
 
-    def init(): Unit = {
+    def init(vip: String): Unit = {
       exec(write("ports", "{}"))
       exec(write("haproxyversions", """["1.4.22","1.4.27","1.5.18"]"""))
+      exec(write("haproxyversions", """["1.4.22","1.4.27","1.5.18"]"""))
+      exec(write("haproxy/preproduction/autoreload", "true"))
+      exec(write("haproxy/preproduction/disabled", "false"))
+      exec(write("haproxy/preproduction/name", "preproduction"))
+      exec(write("haproxy/preproduction/platform", "preproduction"))
+      exec(write("haproxy/preproduction/vip", vip))
+      exec(write("haproxy/preproduction/binding/0", vip))
     }
 
     def isReady(): Predicate = {

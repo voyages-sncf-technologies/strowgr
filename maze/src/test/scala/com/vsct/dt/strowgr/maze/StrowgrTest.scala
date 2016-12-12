@@ -8,8 +8,7 @@ import com.vsct.dt.strowgr.maze.Nsq.{NsqAdmin, NsqLookup, Nsqd}
 import com.vsct.dt.strowgr.maze.Sidekick.SidekickNode
 import com.vsct.dt.strowgr.maze.Strowgr.{AdminNode, CreateEntryPoint}
 import fr.vsct.dt.maze.TechnicalTest
-import fr.vsct.dt.maze.core.Commands
-import fr.vsct.dt.maze.core.Commands.{exec, print, waitFor, waitUntil}
+import fr.vsct.dt.maze.core.Commands.{exec, print, waitUntil}
 import fr.vsct.dt.maze.core.Predef._
 import fr.vsct.dt.maze.topology.DockerClusterNode
 
@@ -54,7 +53,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     consulNode.start()
     lookupNode.start()
     waitUntil(consulNode.isReady()) butNoLongerThan (10 seconds)
-    consulNode.init()
+    consulNode.init(sidekick.hostname)
 
     adminNsq.start()
     sidekickNsq.start()
@@ -84,21 +83,17 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
 
     waitUntil(strowgrAdmin.isReady()) butNoLongerThan (30 seconds)
 
-    exec(strowgrAdmin.createHap("preproduction", "preproduction", sidekick.hostname, "preproduction"))
-
+    // Ensure all required channels are created
     waitUntil(nsqUi.topicInfo("register_server").hasChannel("admin")) butNoLongerThan(30 seconds)
-
+    waitUntil(nsqUi.topicInfo("commit_failed_preproduction").hasChannel("admin")) butNoLongerThan(30 seconds)
     waitUntil(nsqUi.topicInfo("commit_failed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
-
+    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel("admin")) butNoLongerThan(30 seconds)
     waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
     waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
-
     waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
     waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
-
     waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
     waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
-
     waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
     waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
 
