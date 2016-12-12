@@ -34,4 +34,15 @@ package object maze {
     new String(buffer.getBytes, "utf-8")
   }
 
+  implicit class TopicInformationExecution(val self: Execution[TopicInformation]) extends AnyVal {
+
+    def hasServer(hostname: String): Predicate = self.toPredicate(s"${self.label} has server $hostname?") {
+      case configuration if Option(configuration.nodes).getOrElse(List()).exists(_.hostname == hostname) => Result.success
+      case configuration => Result.failure(
+        s"$hostname wasn't found on topic, found: ${Option(configuration.nodes).getOrElse(List()).map(_.hostname).mkString(",")}"
+      )
+    }
+
+  }
+
 }
