@@ -4,11 +4,12 @@ import com.typesafe.scalalogging.StrictLogging
 import com.vsct.dt.strowgr.maze.Ambassador.AmbassadorNode
 import com.vsct.dt.strowgr.maze.Backend.BackendApp
 import com.vsct.dt.strowgr.maze.Consul.ConsulNode
-import com.vsct.dt.strowgr.maze.Nsq.{NsqAdmin, NsqLookup, Nsqd}
+import com.vsct.dt.strowgr.maze.Nsq.{NsqAdmin, NsqLookup, NsqTail, Nsqd}
 import com.vsct.dt.strowgr.maze.Sidekick.SidekickNode
 import com.vsct.dt.strowgr.maze.Strowgr.{AdminNode, CreateEntryPoint}
 import fr.vsct.dt.maze.TechnicalTest
-import fr.vsct.dt.maze.core.Commands.{exec, print, waitUntil}
+import fr.vsct.dt.maze.core.Commands
+import fr.vsct.dt.maze.core.Commands.{exec, print, waitFor, waitUntil}
 import fr.vsct.dt.maze.core.Predef._
 import fr.vsct.dt.maze.topology.DockerClusterNode
 
@@ -84,28 +85,24 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     waitUntil(strowgrAdmin.isReady()) butNoLongerThan (30 seconds)
 
     // Ensure all required channels are created
-    waitUntil(nsqUi.topicInfo("register_server").hasChannel("admin")) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("commit_failed_preproduction").hasChannel("admin")) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("commit_failed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel("admin")) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan(30 seconds)
-    waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan(30 seconds)
+    waitUntil(nsqUi.topicInfo("register_server").hasChannel("admin")) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_failed_preproduction").hasChannel("admin")) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_failed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel("admin")) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("commit_slave_completed_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasChannel(sidekick.hostname)) butNoLongerThan (30 seconds)
+    waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasChannel(sidekickSlave.hostname)) butNoLongerThan (30 seconds)
 
     logger.info(s"Done creating all in ${System.currentTimeMillis() - start}ms, test can start.")
   }
 
   // Comment / uncomment the requested lines to run or ignore the test
   "a strowgr architecture" should "start normally" in {
-    //  ignore should "start normally" in {
-
-    print(nsqUi.topicInfo("register_server"))
-
     exec(backend.shellExecution("/bin/mkdir", "-p", "/usr/share/nginx/html/haproxy"))
     backend.createFile("/usr/share/nginx/html/haproxy/default.conf", readResource("haproxy/default.conf"))
 
@@ -161,6 +158,29 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     logger.info(s"Create endpoint TEST2 took ${createEndpointDelay2.toMillis}ms")
 
     logger.info("rock and roll")
+  }
+
+  "configuration" should "not be committed if it's not valid" in {
+    exec(backend.shellExecution("/bin/mkdir", "-p", "/usr/share/nginx/html/haproxy"))
+    backend.createFile("/usr/share/nginx/html/haproxy/notvalid.conf", readResource("haproxy/notvalid.conf"))
+
+    val nsqTail = 1.node named "nsqTail" constructedLike new NsqTail(lookupNode.hostname, "commit_failed_preproduction") buildSingle()
+    extraContainers = nsqTail :: extraContainers
+    nsqTail.start()
+
+    waitFor(3 seconds)
+
+    print(strowgrAdmin.createEntrypoint(CreateEntryPoint(
+      context = Map("application" -> "TEST", "platform" -> "TEST", "templateUri" -> s"http://${backend.hostname}/haproxy/notvalid.conf")
+    )))
+
+    waitFor(10 seconds)
+    print(nsqTail.logs)
+
+    waitUntil(
+        nsqTail.logs.first
+    ) butNoLongerThan(10 seconds)
+
   }
 
   override protected def afterEach(): Unit = {
