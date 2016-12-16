@@ -1,6 +1,7 @@
 package com.vsct.dt.strowgr.maze
 
 import com.typesafe.scalalogging.StrictLogging
+import com.vsct.dt.strowgr.admin.nsq.payload.CommitFailed
 import com.vsct.dt.strowgr.maze.Ambassador.AmbassadorNode
 import com.vsct.dt.strowgr.maze.Backend.BackendApp
 import com.vsct.dt.strowgr.maze.Consul.ConsulNode
@@ -8,7 +9,7 @@ import com.vsct.dt.strowgr.maze.Nsq.{NsqAdmin, NsqLookup, NsqTail, Nsqd}
 import com.vsct.dt.strowgr.maze.Sidekick.SidekickNode
 import com.vsct.dt.strowgr.maze.Strowgr.{AdminNode, CreateEntryPoint}
 import fr.vsct.dt.maze.TechnicalTest
-import fr.vsct.dt.maze.core.Commands
+import fr.vsct.dt.maze.core.{Commands, Result}
 import fr.vsct.dt.maze.core.Commands.{exec, print, waitFor, waitUntil}
 import fr.vsct.dt.maze.core.Predef._
 import fr.vsct.dt.maze.topology.DockerClusterNode
@@ -176,8 +177,13 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     )))
 
     waitUntil(
-        nsqTail.logs.map(_.filter(_.startsWith("""{"header":"""))).length > 0
-    ) butNoLongerThan(10 seconds)
+      nsqTail.messages().length is 1
+    ) butNoLongerThan (10 seconds)
+
+    Commands.expectThat(nsqTail.messages().first.toPredicate("check application name") {
+      case message: CommitFailed if "TEST" == message.getHeader.getApplication => Result.success
+      case message => Result.failure(s"${message.toString} doesn't belong to TEST")
+    })
 
     print(nsqTail.logs)
 
