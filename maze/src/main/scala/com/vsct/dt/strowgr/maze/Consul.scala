@@ -26,7 +26,6 @@ object Consul {
     def init(vip: String): Unit = {
       exec(write("ports", "{}"))
       exec(write("haproxyversions", """["1.4.22","1.4.27","1.5.18"]"""))
-      exec(write("haproxyversions", """["1.4.22","1.4.27","1.5.18"]"""))
       exec(write("haproxy/preproduction/autoreload", "true"))
       exec(write("haproxy/preproduction/disabled", "false"))
       exec(write("haproxy/preproduction/name", "preproduction"))
