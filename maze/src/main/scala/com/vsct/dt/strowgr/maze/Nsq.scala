@@ -55,9 +55,13 @@ object Nsq {
     def topicInfo(topicName: String): Execution[TopicInformation] = {
       httpGet(s"/api/topics/$topicName").responseAs(classOf[TopicInformation])
     }
-
   }
 
+
+  class NsqTail(lookup: String, topic: String) extends   SingleContainerClusterNode {
+    override def serviceContainer: CreateContainerCmd = image.withCmd("/nsq_tail", s"--lookupd-http-address=$lookup:4161", s"--channel=$hostname", s"--topic=$topic")
+    override def servicePort: Int = 1234
+  }
 }
 
 case class TopicInformation(

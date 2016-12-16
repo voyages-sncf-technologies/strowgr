@@ -78,7 +78,7 @@ object Strowgr extends StrictLogging {
 
       logger.debug("Creating entrypoint with value: {}", data)
 
-      httpPut(s"/api/entrypoints/${configuration.context("application").toUpperCase()}/${configuration.context("platform").toUpperCase()}", data, "application/json;charset=UTF-8")
+      httpPut(s"/api/entrypoints/${configuration.context("application").toUpperCase()}/${configuration.context("platform").toUpperCase()}", data, "application/json")
     }
 
     private def configuration(application: String, platform: String, state: String): Execution[Option[EntryPointConfiguration]] = {

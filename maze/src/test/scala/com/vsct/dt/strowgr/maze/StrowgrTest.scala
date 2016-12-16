@@ -162,6 +162,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
 
   "configuration" should "not be committed if it's not valid" in {
     exec(backend.shellExecution("/bin/mkdir", "-p", "/usr/share/nginx/html/haproxy"))
+    waitFor(2 seconds)
     backend.createFile("/usr/share/nginx/html/haproxy/notvalid.conf", readResource("haproxy/notvalid.conf"))
 
     val nsqTail = 1.node named "nsqTail" constructedLike new NsqTail(lookupNode.hostname, "commit_failed_preproduction") buildSingle()
@@ -174,12 +175,11 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
       context = Map("application" -> "TEST", "platform" -> "TEST", "templateUri" -> s"http://${backend.hostname}/haproxy/notvalid.conf")
     )))
 
-    waitFor(10 seconds)
-    print(nsqTail.logs)
-
     waitUntil(
-        nsqTail.logs.first
+        nsqTail.logs.map(_.filter(_.startsWith("""{"header":"""))).length > 0
     ) butNoLongerThan(10 seconds)
+
+    print(nsqTail.logs)
 
   }
 
