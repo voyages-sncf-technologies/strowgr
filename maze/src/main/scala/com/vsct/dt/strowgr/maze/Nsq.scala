@@ -1,11 +1,16 @@
 package com.vsct.dt.strowgr.maze
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.github.dockerjava.api.command.CreateContainerCmd
+import com.vsct.dt.strowgr.admin.nsq.payload.CommitFailed
 import fr.vsct.dt.maze.core.Execution
 import fr.vsct.dt.maze.helpers.Http.{HttpEnabled, HttpResponse}
 import fr.vsct.dt.maze.topology.SingleContainerClusterNode
 import fr.vsct.dt.maze.core.Predef._
+
+import scala.util.Try
 
 object Nsq {
 
@@ -26,18 +31,18 @@ object Nsq {
         topic = "register_server",
         message =
           s"""{
-             |  "header": {
-             |    "application":"$application",
-             |    "platform": "$platform"
-             |  },
-             |  "server": {
-             |    "id": "$host-$port-$backend",
-             |    "backendId":"$backend",
-             |    "ip":"$ip",
-             |    "port": $port,
-             |    "context":{$context}
-             |  }
-             |}""".stripMargin)
+              |  "header": {
+              |    "application":"$application",
+              |    "platform": "$platform"
+              |  },
+              |  "server": {
+              |    "id": "$host-$port-$backend",
+              |    "backendId":"$backend",
+              |    "ip":"$ip",
+              |    "port": $port,
+              |    "context":{$context}
+              |  }
+              |}""".stripMargin)
     }
   }
 
@@ -55,7 +60,24 @@ object Nsq {
     def topicInfo(topicName: String): Execution[TopicInformation] = {
       httpGet(s"/api/topics/$topicName").responseAs(classOf[TopicInformation])
     }
+  }
 
+  private val objectMapper = new ObjectMapper()
+  objectMapper.registerModule(DefaultScalaModule)
+
+  class NsqTail(lookup: String, topic: String) extends SingleContainerClusterNode {
+    override def serviceContainer: CreateContainerCmd = image.withCmd("/nsq_tail", s"--lookupd-http-address=$lookup:4161", s"--channel=$hostname", s"--topic=$topic")
+
+    override def servicePort: Int = 1234
+
+    def messages(): Execution[Array[CommitFailed]] = {
+      logs.map { log =>
+        log.flatMap { s => Try {
+          Some(objectMapper.readValue(s, classOf[CommitFailed]))
+        }.getOrElse(None)
+        }
+      }
+    }
   }
 
 }
