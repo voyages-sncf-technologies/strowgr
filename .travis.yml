@@ -25,3 +25,13 @@ cache:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
   - ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
+deploy:
+  provider: releases
+  api_key:
+    secure: N8vJT1UCWSCDNLY4LwdfCHTeeWqqcOVpuL/c+gjHdgeNXCqtyn496t7/L1IgTCcQPjIL9vXiFQ0ubLa9/xBjcG2hor++9Yi9pvqqyZZldhiaLi6lI2wOfWO7METZgcP1U9+Sv5ZfzAHOp3I2kaaVJMedZQnbuo2kKFbCE4o8cz9ItmaDUxRHoHFwzCpOSDeyCV9Mk2RweX0AOnO6MfxTPZILj9IF4+QhzywmT0MJN5vaBLgr+SCPI5QgFdNIgIL+fwgTIzmRua0b2ajW6MAD/jgDAHavo92W1TbS27pwz4t9q/v94vDwjCIGEuYaysQqijwZyVNxhZwBuFN9CWI0rszwZP4jO37jc4VpdBa2/czY37a7p37le+cVpwavqrESi+iCek+nZzED1pyjyxtPFbML52Mqw8tUPX8GfveWBtZwNB6wq5+7XZT37gyIEkZaYdrdvfEpFmVVLmIyEGEBAYgywZ48DI3QAI7SIiRHUJlcRlB+zPN/wg/EKawiOk/7Bdr4aWUsNPSRQUBUxIj+frmwKNXHvlRSJzER4oQY6rTlwDcvDzKQTT7vxfcd5ZVZXgwKwnEGosyXGhc0o3ZwYzZGhbQGh8HVEu9FKgVtQXCjz2J38SMsP0qJRk8ug5bNL6dxH/oNziWzPOvldOHbs/ex9uTSygCvS7hcB35800A=
+  file: "admin/admin-gui/target/admin-gui-${TRAVIS_TAG}.jar"
+  skip_cleanup: true
+  on:
+    tags: true      
+    repo: voyages-sncf-technologies/strowgr
+    branch: 0.2.x
