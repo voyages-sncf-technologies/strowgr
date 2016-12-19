@@ -45,6 +45,7 @@
         <dependency>
             <groupId>fr.vsct.dt</groupId>
             <artifactId>nsq-client</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>

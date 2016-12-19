@@ -24,6 +24,7 @@
         <groupId>com.vsct.dt.strowgr</groupId>
         <artifactId>strowgr-parent</artifactId>
         <version>0.2.4-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>admin</artifactId>
@@ -36,13 +37,6 @@
         <module>admin-nsq</module>
         <module>admin-template</module>
     </modules>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <dropwizard.version>0.9.1</dropwizard.version>
-        <jackson.version>2.6.4</jackson.version>
-        <docker.image>admin</docker.image>
-    </properties>
 
     <build>
         <plugins>
