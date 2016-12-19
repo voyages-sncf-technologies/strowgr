@@ -24,4 +24,4 @@ cache:
   - $HOME/.m2
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-  - ~/jpm/bin/codacy-coverage-reporter -l Java -r build/reports/jacoco/test/jacocoTestReport.xml
+  - ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
