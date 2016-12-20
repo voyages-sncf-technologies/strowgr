@@ -19,7 +19,7 @@ script:
 - docker pull gliderlabs/consul-server
 - docker pull nginx
 - mvn process-resources docker:build -P build-docker -Ddocker.registry='' -pl :admin-gui
-- mvn scalatest:test -pl maze
+  #- mvn scalatest:test -pl maze
 cache:
   directories:
   - $HOME/.m2
