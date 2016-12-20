@@ -24,8 +24,8 @@ cache:
     - $HOME/.m2
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-  - ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
-  - tree  
+    #  - ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
+  - ls -l ${TRAVIS_BUILD_DIR}/admin/admin-gui/target/  
 deploy:
   provider: releases
   api_key:
