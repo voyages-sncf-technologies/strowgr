@@ -26,14 +26,14 @@ $ mvn package -Pbuild-docker -Ptarget-linux
 For instance, the release of 0.2.5:
 
 ```shell
-$ mvn versions:set -Dversion=0.2.5
+$ mvn versions:set -DnewVersion=0.2.5
 $ mvn versions:commit
 $ git add .
 $ git commit -m "[release] 0.2.5"
 $ git push
 $ git tag 0.2.5
 $ git push --tags origin master
-$ mvn versions:set -Dversion=0.2.6-SNAPSHOT
+$ mvn versions:set -DnewVersion=0.2.6-SNAPSHOT
 $ mvn versions:commit
 $ git add .
 $ git commit -m "[build] 0.2.6-SNAPSHOT"
