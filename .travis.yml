@@ -1,31 +1,30 @@
 language: java
 jdk:
-- oraclejdk8
+  - oraclejdk8
 sudo: required
 services:
-- docker
+  - docker
 before_install:
-- curl -sL https://github.com/jpm4j/jpm4j.installers/raw/master/dist/biz.aQute.jpm.run.jar
-  >jpm4j.jar
-- java -jar jpm4j.jar -u init
-- ~/jpm/bin/jpm install com.codacy:codacy-coverage-reporter:assembly
+  - curl -sL https://github.com/jpm4j/jpm4j.installers/raw/master/dist/biz.aQute.jpm.run.jar >jpm4j.jar
+  - java -jar jpm4j.jar -u init
+  - ~/jpm/bin/jpm install com.codacy:codacy-coverage-reporter:assembly
 script:
-- mvn test
-- docker info
-- maze/build-sidekick.sh
-- docker pull java:8
-- docker pull nsqio/nsq:v0.3.7
-- docker pull verb/socat
-- docker pull gliderlabs/consul-server
-- docker pull nginx
-- mvn process-resources docker:build -P build-docker -Ddocker.registry='' -pl :admin-gui
-  #- mvn scalatest:test -pl maze
+  - mvn test
+  - docker info
+  - maze/build-sidekick.sh
+  - docker pull java:8
+  - docker pull nsqio/nsq:v0.3.7
+  - docker pull verb/socat
+  - docker pull gliderlabs/consul-server
+  - docker pull nginx
+  - mvn process-resources docker:build -P build-docker -Ddocker.registry='' -pl :admin-gui
+  - mvn scalatest:test -pl maze
 cache:
   directories:
-  - $HOME/.m2
+    - $HOME/.m2
 after_success:
-- bash <(curl -s https://codecov.io/bash)
-- ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
+  - bash <(curl -s https://codecov.io/bash)
+  - ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
 deploy:
   provider: releases
   api_key:
