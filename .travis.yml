@@ -24,13 +24,13 @@ cache:
     - $HOME/.m2
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-    #  - ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
+  - ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
   - ls -l ${TRAVIS_BUILD_DIR}/admin/admin-gui/target/  
 deploy:
   provider: releases
   api_key:
     secure: VbcfSpaI8QBfQ22+EjQ/UCA1uUs9JzDlw2ImH28MtnkuY1JV1FMPVjzEZoTFc4elnOMgKqfdhPSdagNh9758b1chqUEAEF24yYQnpt5BVWYLKLeOC4lEy2wXeLW1Qxuy0NE+aP0oIxP5i/RnyVYF91i/K2W4MmYBkngfTC401++sTB+KsUnhg5wGZ/dw7I9Qh72bC+tg7gI0mH16U2uckQS10Hm+yPauTOfb1X/tvkNCRC8RH4yWZGr6RVVQUc/nAp8SYMG4Q0S1VYlRpLXco9Fd7uWvWKk7XiJgvf3R4nOjF40oz+jmYjaZ4gBhkZzHx8NvNwa7PpfRL2/xUisf2MRckuBErxIN6uYifKEunS+Kt9BFsaHpwL8htE129coHNoFZX99f8Td0GQV4wlwR0kAPbhY1jYkXDyDdcjN6qs1zTSgvIIRXLCGu/zMAwNklxZ/MyyK4fagA4ynvTCtJmDvNpxIQiitOAwxyn6EYjQwow9/EeElIyw7j+N5LF6XjxlRKK1emAGdzvuTqi8UT6Swz26Q3h3lzefyxtP15RkmJgrYGDBBNS+W7p6RCfeS1apLB02FJ9SrVgh43Ol0fttxQlDw+VcPS+cc8Z1vXGHOKzQOuuLa/+Fxiq8E8BYIupedou060PT2IIs352wh5M2d9LjX1fS0MgdTwsSYqPCo=
-  file: ${TRAVIS_BUILD_DIR}/admin/admin-gui/target/admin-gui-${TRAVIS_TAG}-shaded.jar
+  file: ${TRAVIS_BUILD_DIR}/admin/admin-gui/target/admin-gui-${TRAVIS_TAG}.jar
   skip_cleanup: true
   on:
     tags: true      
