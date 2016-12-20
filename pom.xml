@@ -22,7 +22,7 @@
     <groupId>com.vsct.dt.strowgr</groupId>
     <artifactId>strowgr-parent</artifactId>
     <packaging>pom</packaging>
-    <version>0.2.4</version>
+    <version>0.2.5-SNAPSHOT</version>
 
     <modules>
         <!--Java modules-->
@@ -33,7 +33,7 @@
 
     <scm>
         <developerConnection>scm:git:git@github.com:voyages-sncf-technologies/strowgr.git</developerConnection>
-      <tag>v0.2.4</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <properties>
