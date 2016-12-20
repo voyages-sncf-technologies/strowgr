@@ -20,3 +20,26 @@ Build additionally docker images of `admin` and `sidekick`:
 $ mvn package -Pbuild-docker -Ptarget-linux
 ```
 
+
+## Release
+
+For instance, the release of 0.2.5:
+
+```shell
+$ mvn versions:set -Dversion=0.2.5
+$ mvn versions:commit
+$ git add .
+$ git commit -m "[release] 0.2.5"
+$ git push
+$ git tag 0.2.5
+$ git push --tags origin master
+$ mvn versions:set -Dversion=0.2.6-SNAPSHOT
+$ mvn versions:commit
+$ git add .
+$ git commit -m "[build] 0.2.6-SNAPSHOT"
+$ git push
+```
+
+All these steps could be done by _mvn release:prepare_ and _mvn release:perform_ but some issues must be fixed for not publishing in a classical maven repo (perform failed because dependencies on submodules has not been found).
+
+
