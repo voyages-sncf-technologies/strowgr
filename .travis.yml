@@ -1,37 +1,37 @@
 language: java
 jdk:
-  - oraclejdk8
+- oraclejdk8
 sudo: required
 services:
-  - docker
+- docker
 before_install:
-  - curl -sL https://github.com/jpm4j/jpm4j.installers/raw/master/dist/biz.aQute.jpm.run.jar >jpm4j.jar
-  - java -jar jpm4j.jar -u init
-  - ~/jpm/bin/jpm install com.codacy:codacy-coverage-reporter:assembly
+- curl -sL https://github.com/jpm4j/jpm4j.installers/raw/master/dist/biz.aQute.jpm.run.jar
+  >jpm4j.jar
+- java -jar jpm4j.jar -u init
+- ~/jpm/bin/jpm install com.codacy:codacy-coverage-reporter:assembly
 script:
-  - mvn test
-  - docker info
-  - maze/build-sidekick.sh
-  - docker pull java:8
-  - docker pull nsqio/nsq:v0.3.7
-  - docker pull verb/socat
-  - docker pull gliderlabs/consul-server
-  - docker pull nginx
-  - mvn process-resources docker:build -P build-docker -Ddocker.registry='' -pl :admin-gui
-  - mvn scalatest:test -pl maze
+- mvn test
+- docker info
+- maze/build-sidekick.sh
+- docker pull java:8
+- docker pull nsqio/nsq:v0.3.7
+- docker pull verb/socat
+- docker pull gliderlabs/consul-server
+- docker pull nginx
+- mvn process-resources docker:build -P build-docker -Ddocker.registry='' -pl :admin-gui
+- mvn scalatest:test -pl maze
 cache:
   directories:
   - $HOME/.m2
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
-  - ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
+- bash <(curl -s https://codecov.io/bash)
+- ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
 deploy:
   provider: releases
   api_key:
-    secure: N8vJT1UCWSCDNLY4LwdfCHTeeWqqcOVpuL/c+gjHdgeNXCqtyn496t7/L1IgTCcQPjIL9vXiFQ0ubLa9/xBjcG2hor++9Yi9pvqqyZZldhiaLi6lI2wOfWO7METZgcP1U9+Sv5ZfzAHOp3I2kaaVJMedZQnbuo2kKFbCE4o8cz9ItmaDUxRHoHFwzCpOSDeyCV9Mk2RweX0AOnO6MfxTPZILj9IF4+QhzywmT0MJN5vaBLgr+SCPI5QgFdNIgIL+fwgTIzmRua0b2ajW6MAD/jgDAHavo92W1TbS27pwz4t9q/v94vDwjCIGEuYaysQqijwZyVNxhZwBuFN9CWI0rszwZP4jO37jc4VpdBa2/czY37a7p37le+cVpwavqrESi+iCek+nZzED1pyjyxtPFbML52Mqw8tUPX8GfveWBtZwNB6wq5+7XZT37gyIEkZaYdrdvfEpFmVVLmIyEGEBAYgywZ48DI3QAI7SIiRHUJlcRlB+zPN/wg/EKawiOk/7Bdr4aWUsNPSRQUBUxIj+frmwKNXHvlRSJzER4oQY6rTlwDcvDzKQTT7vxfcd5ZVZXgwKwnEGosyXGhc0o3ZwYzZGhbQGh8HVEu9FKgVtQXCjz2J38SMsP0qJRk8ug5bNL6dxH/oNziWzPOvldOHbs/ex9uTSygCvS7hcB35800A=
-  file: "admin/admin-gui/target/admin-gui-${TRAVIS_TAG}.jar"
-  skip_cleanup: true
+    secure: VbcfSpaI8QBfQ22+EjQ/UCA1uUs9JzDlw2ImH28MtnkuY1JV1FMPVjzEZoTFc4elnOMgKqfdhPSdagNh9758b1chqUEAEF24yYQnpt5BVWYLKLeOC4lEy2wXeLW1Qxuy0NE+aP0oIxP5i/RnyVYF91i/K2W4MmYBkngfTC401++sTB+KsUnhg5wGZ/dw7I9Qh72bC+tg7gI0mH16U2uckQS10Hm+yPauTOfb1X/tvkNCRC8RH4yWZGr6RVVQUc/nAp8SYMG4Q0S1VYlRpLXco9Fd7uWvWKk7XiJgvf3R4nOjF40oz+jmYjaZ4gBhkZzHx8NvNwa7PpfRL2/xUisf2MRckuBErxIN6uYifKEunS+Kt9BFsaHpwL8htE129coHNoFZX99f8Td0GQV4wlwR0kAPbhY1jYkXDyDdcjN6qs1zTSgvIIRXLCGu/zMAwNklxZ/MyyK4fagA4ynvTCtJmDvNpxIQiitOAwxyn6EYjQwow9/EeElIyw7j+N5LF6XjxlRKK1emAGdzvuTqi8UT6Swz26Q3h3lzefyxtP15RkmJgrYGDBBNS+W7p6RCfeS1apLB02FJ9SrVgh43Ol0fttxQlDw+VcPS+cc8Z1vXGHOKzQOuuLa/+Fxiq8E8BYIupedou060PT2IIs352wh5M2d9LjX1fS0MgdTwsSYqPCo=
+  file: admin/admin-gui/target/admin-gui-${TRAVIS_TAG}.jar
   on:
     tags: true      
     repo: voyages-sncf-technologies/strowgr
-    branch: 0.2.x
+    branch: master 
