@@ -42,7 +42,8 @@ object Nsq {
               |    "port": $port,
               |    "context":{$context}
               |  }
-              |}""".stripMargin)
+              |}""".stripMargin,
+        contentType = "utf-8")
     }
   }
 

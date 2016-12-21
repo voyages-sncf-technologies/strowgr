@@ -71,7 +71,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     waitUntil(sidekickNsq.httpPost("/topic/create?topic=commit_failed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
     waitUntil(sidekickSlaveNsq.httpPost("/topic/create?topic=commit_slave_completed_preproduction", "", "text/plain") isOk) butNoLongerThan (5 seconds)
 
-    waitUntil(nsqUi.topicInfo("register_server").hasServer(backendNsq.hostname)) butNoLongerThan (10 seconds)
+    waitUntil(nsqUi.topicInfo("register_server").hasServer(backendNsq.hostname)) butNoLongerThan (20 seconds)
     waitUntil(nsqUi.topicInfo("delete_requested_preproduction").hasServer(adminNsq.hostname)) butNoLongerThan (10 seconds)
     waitUntil(nsqUi.topicInfo("commit_requested_preproduction").hasServer(adminNsq.hostname)) butNoLongerThan (10 seconds)
     waitUntil(nsqUi.topicInfo("commit_completed_preproduction").hasServer(sidekickNsq.hostname)) butNoLongerThan (10 seconds)
@@ -178,7 +178,7 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
 
     waitUntil(
       nsqTail.messages().length is 1
-    ) butNoLongerThan (10 seconds)
+    ) butNoLongerThan (20 seconds)
 
     Commands.expectThat(nsqTail.messages().first.toPredicate("check application name") {
       case message: CommitFailed if "TEST" == message.getHeader.getApplication => Result.success
