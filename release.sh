@@ -9,6 +9,7 @@ fi
 RELEASE_VERSION=$1
 NEW_VERSION=$2
 
+git checkout master
 mvn versions:set -DnewVersion=$RELEASE_VERSION
 mvn versions:commit
 git add .
