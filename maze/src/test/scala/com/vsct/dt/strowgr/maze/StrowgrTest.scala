@@ -84,6 +84,8 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
     sidekickSlave.start()
 
     waitUntil(strowgrAdmin.isReady()) butNoLongerThan (30 seconds)
+    waitUntil(sidekick.isReady()) butNoLongerThan (30 seconds)
+    waitUntil(sidekickSlave.isReady()) butNoLongerThan (30 seconds)
 
     // Ensure all required channels are created
     waitUntil(nsqUi.topicInfo("register_server").hasChannel("admin")) butNoLongerThan (30 seconds)

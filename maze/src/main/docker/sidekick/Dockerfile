@@ -29,4 +29,6 @@ ENV HAP_HOME="/data"
 ENV STATUS="master"
 ENV ID="sidekick"
 
+EXPOSE 50000
+
 ENTRYPOINT [ "/entrypoint.sh"]
