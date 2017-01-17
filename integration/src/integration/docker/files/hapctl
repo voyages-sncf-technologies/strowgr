@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "hapctl called with parameters $@"
-exit 0
