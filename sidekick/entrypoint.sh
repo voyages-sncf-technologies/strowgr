@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cat > /etc/sidekick.conf <<-EOF-aaaaaaaaaa
+cat > /etc/sidekick.conf <<-EOF
 LookupdAddresses = ["$LOOKUP_ADDR"]
 ProducerAddr = "$PRODUCER_ADDR"
 ProducerRestAddr = "$PRODUCER_REST_ADDR"
@@ -9,7 +9,6 @@ Port = $HTTP_PORT
 HapHome = "$HAP_HOME"
 Id = "$ID"
 Status = "$STATUS"
-Vip = "$VIP"
 
 [Hap."1.4.22"]
 Path="/opt/haproxy-1.4.22"
@@ -19,7 +18,7 @@ Path="/opt/haproxy-1.4.27"
 
 [Hap."1.5.18"]
 Path="/opt/haproxy-1.5.18"
-EOF-aaaaaaaaaa
+EOF
 
 echo "Starting sidekick with config: "
 cat /etc/sidekick.conf

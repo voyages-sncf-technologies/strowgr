@@ -1,0 +1,52 @@
+server:
+  type: simple
+  rootPath: /api/
+  applicationContextPath: /
+  connector:
+    type: http
+    port: 8080
+  requestLog:
+    timeZone: UTC
+    appenders:
+      - type: file
+        currentLogFilename: ./target/admin/admin-gui/logs/access.log
+        threshold: INFO
+        archive: true
+        archivedLogFilenamePattern: ./target/admin/admin-gui/logs/access.%d{yyyy-MM-dd}-%i.log.gz
+        archivedFileCount: 10
+        timeZone: UTC
+        maxFileSize: 20MB
+threads: 200
+repository:
+  host: localhost
+  port: 8500
+  minGeneratedPort: 54001
+  maxGeneratedPort: 54003
+nsqLookup:
+  host: localhost
+  port: 4160
+nsqProducer:
+  host: localhost
+  tcpPort: 4150
+  httpPort: 4151
+periodicScheduler:
+  current:
+    periodMilli: 11000
+  pending:
+    periodMilli: 7000
+logging:
+    level: INFO
+    loggers:
+      com.vsct.dt: INFO
+    appenders:
+      - type: file
+        threshold: INFO
+        logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
+        currentLogFilename: ./target/admin/admin-gui/logs/admin.log
+        archive: true
+        archivedLogFilenamePattern: ./target/admin/admin-gui/logs/application-%d{yyyy-MM-dd}-%i.log.gz
+        archivedFileCount: 10
+        timeZone: UTC
+        maxFileSize: 20MB
+commitTimeout: 13
+handledHaproxyRefreshPeriodSecond: 20

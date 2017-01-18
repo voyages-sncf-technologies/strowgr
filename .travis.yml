@@ -12,7 +12,7 @@ before_install:
 script:
   - mvn package
   - docker info
-  - maze/build-sidekick.sh
+  - docker build -t strowgr/sidekick:0.2.4 sidekick
   - docker pull java:8
   - docker pull nsqio/nsq:v0.3.7
   - docker pull verb/socat

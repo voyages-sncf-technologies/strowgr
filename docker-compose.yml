@@ -2,117 +2,111 @@ version: '2'
 
 services:
 
-  # Single instance of consul
   consul:
-    image: gliderlabs/consul-server
+    image: consul:v0.6.4
     container_name: consul
-    command: -bootstrap
+    command: consul agent -dev -ui -client 0.0.0.0 -data-dir /consul/data
     ports:
       - 8500:8500
+    networks:
+      - strowgr
 
-  # Single instance of nsqlookupd
   nsqlookupd:
-    image: nsqio/nsq
+    image: nsqio/nsq:v0.3.7
     container_name: nsqlookupd
-    command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160
+    command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160 -http-address=nsqlookupd:4161
     ports:
-      - "4160:4160"
-      - "4161:4161"
+      - 4160:4160
+      - 4161:4161
+    networks:
+      - strowgr
 
-  # Only one producer
-  nsqd-slave:
-    image: nsqio/nsq
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-slave  -tcp-address=nsqd-slave:4150
+  nsqd:
+    image: nsqio/nsq:v0.3.7
+    container_name: nsqd
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd -http-address=nsqd:4151 -tcp-address=nsqd:4150
     ports:
-      - "14150:4150"
-      - "14151:4151"
+      - 4150:4150
+      - 4151:4151
+    networks:
+      - strowgr
     depends_on:
       - nsqlookupd
 
-  nsqd-master:
-    image: nsqio/nsq
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-master -tcp-address=nsqd-master:4150
+  nsqadmin:
+    image: nsqio/nsq:v0.3.7
+    container_name: nsqd-admin
+    command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
     ports:
-      - "24150:4150"
-      - "24151:4151"
+      - 4171:4171
     depends_on:
       - nsqlookupd
+      - nsqd
 
-  #  HA proxies
   sidekick-master:
-    image: dockerregistrydev.socrate.vsct.fr/strowgr/sidekick
-    volumes:
-      - ./data/master/sidekick.conf:/sidekick.conf
+    build: ./sidekick
+    image: strowgr/sidekick:0.2.4
+    container_name: sidekick-master
     ports:
-      - 52000:52000
-      - 50000
-      - 50080:50080
-    extra_hosts:
-      - "larimar:1.2.3.4"
+      - 53000:53000
+      # haproxy ports
+      - 53001:53001
+      - 53002:53002
+      - 53003:53003
+    environment:
+      - LOOKUP_ADDR=nsqlookupd:4161
+      - PRODUCER_ADDR=nsqd:4150
+      - PRODUCER_REST_ADDR=http://nsqd:4151
+      - CLUSTER_ID=local
+      - HTTP_PORT=50000
+      - HAP_HOME=/data
+      - STATUS=master
+      - ID=sidekick-master
+    networks:
+      - strowgr
+    depends_on:
+      - nsqlookupd
+      - nsqd
 
   sidekick-slave:
-    image: dockerregistrydev.socrate.vsct.fr/strowgr/sidekick
-    volumes:
-      - ./data/slave/sidekick.conf:/sidekick.conf
+    build: ./sidekick
+    image: strowgr/sidekick:0.2.4
+    container_name: sidekick-slave
     ports:
-      - 50000
-      - 52001:52000
-    extra_hosts:
-      - "larimar:1.2.3.4"
-
-  # NSQ admin
-  nsq-admin:
-    image: nsqio/nsq
-    ports:
-      - "4171:4171"
-    command: /nsqadmin -http-address="nsq-admin:4171" --lookupd-http-address=nsqlookupd:4161
+      - 54000:54000
+      # haproxy ports
+      - 54001:54001
+      - 54002:54002
+      - 54003:54003
+    environment:
+      - LOOKUP_ADDR=nsqlookupd:4161
+      - PRODUCER_ADDR=nsqd:4150
+      - PRODUCER_REST_ADDR=http://nsqd:4151
+      - CLUSTER_ID=local
+      - HTTP_PORT=50001
+      - HAP_HOME=/data
+      - STATUS=slave
+      - ID=sidekick-slave
+    networks:
+      - strowgr
     depends_on:
       - nsqlookupd
-      - nsqd-slave
-      - nsqd-master
-
-  registrator:
-    image: dockerregistrydev.socrate.vsct.fr/strowgr/registrator
-    command: -url http://192.168.99.100:8080 -address 192.168.99.100 -verbose
-#    privileged: true
-    volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-     - nsq-admin
-
-  admin:
-    image: dockerregistrydev.socrate.vsct.fr/strowgr/admin
-    ports:
-      - 8080:8080
-    volumes:
-      - ./data/admin/server.yml:/server.yml
-
-  nsqd-admin:
-    image: nsqio/nsq
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd-admin  -tcp-address=nsqd-admin:4150
-    ports:
-      - "4150"
-      - "4151"
-    depends_on:
-      - nsqlookupd
-
-  # FANCY STUFF
+      - nsqd
 
   webpage:
-    image: nginx
+    image: nginx:1.11.8-alpine
+    container_name: webpage
     ports:
-     - 80:80
+      - 80:80
+    networks:
+      - strowgr
     volumes:
-     - ./static/:/usr/share/nginx/html
-     - ./static/nginx.conf:/etc/nginx/nginx.conf
+      - ./static/:/usr/share/nginx/html
+      - ./static/nginx.conf:/etc/nginx/nginx.conf
 
+networks:
+  strowgr:
+    driver: bridge
 
-
-#networks:
-#  default:
-#    driver: bridge
-#    ipam:
-#     driver: default
-#     config:
-#       - subnet: 192.168.10.0/24
-#         gateway: 192.168.10.254
+volumes:
+  static:

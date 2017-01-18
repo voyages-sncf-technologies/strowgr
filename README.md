@@ -32,3 +32,13 @@ $ ./release.sh 0.2.5 0.2.6-SNAPSHOT
 All these steps could be done by _mvn release:prepare_ and _mvn release:perform_ but some issues must be fixed for not publishing in a classical maven repo (perform failed because dependencies on submodules has not been found).
 
 
+## Start Admin locally
+
+```bash
+# start side services
+docker-compose up
+
+# start admin app
+mvn clean package -f admin
+java -jar admin/admin-gui/target/admin-gui-*.jar server admin/admin-gui/src/main/resources/local-configuration.yaml
+```

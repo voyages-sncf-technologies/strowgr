@@ -31,4 +31,4 @@ ENV ID="sidekick"
 
 EXPOSE 50000
 
-ENTRYPOINT [ "/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
