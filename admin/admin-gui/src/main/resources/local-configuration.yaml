@@ -39,14 +39,6 @@ logging:
     loggers:
       com.vsct.dt: INFO
     appenders:
-      - type: file
-        threshold: INFO
-        logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
-        currentLogFilename: ./target/admin/admin-gui/logs/admin.log
-        archive: true
-        archivedLogFilenamePattern: ./target/admin/admin-gui/logs/application-%d{yyyy-MM-dd}-%i.log.gz
-        archivedFileCount: 10
-        timeZone: UTC
-        maxFileSize: 20MB
+      - type: console
 commitTimeout: 13
 handledHaproxyRefreshPeriodSecond: 20
