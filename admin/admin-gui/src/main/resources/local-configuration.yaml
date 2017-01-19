@@ -6,16 +6,8 @@ server:
     type: http
     port: 8080
   requestLog:
-    timeZone: UTC
     appenders:
-      - type: file
-        currentLogFilename: ./target/admin/admin-gui/logs/access.log
-        threshold: INFO
-        archive: true
-        archivedLogFilenamePattern: ./target/admin/admin-gui/logs/access.%d{yyyy-MM-dd}-%i.log.gz
-        archivedFileCount: 10
-        timeZone: UTC
-        maxFileSize: 20MB
+      - type: console
 threads: 200
 repository:
   host: localhost
