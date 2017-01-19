@@ -14,10 +14,10 @@ Build the whole project:
 $ mvn package
 ```
 
-Build additionally docker images of `admin` and `sidekick`:
+Build additionally docker images of `admin`:
                   
 ```shell
-$ mvn package -Pbuild-docker -Ptarget-linux
+$ mvn package -Pbuild-docker
 ```
 
 
