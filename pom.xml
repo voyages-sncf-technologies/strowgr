@@ -44,52 +44,7 @@
         <project.build.finalNameWithExt>${project.build.finalName}</project.build.finalNameWithExt>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <dropwizard.version>0.9.1</dropwizard.version>
-        <docker.image>admin</docker.image>
     </properties>
-
-    <profiles>
-        <profile>
-            <id>build-docker</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>com.spotify</groupId>
-                            <artifactId>docker-maven-plugin</artifactId>
-                            <version>0.4.10</version>
-                            <configuration>
-                                <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
-                                <imageName>${docker.namespace}/${docker.image}:${project.version}
-                                </imageName>
-                                <resources>
-                                    <resource>
-                                        <directory>${project.build.directory}</directory>
-                                        <include>${project.build.finalNameWithExt}</include>
-                                    </resource>
-                                </resources>
-                                <imageTags>
-                                    <imageTag>${project.version}</imageTag>
-                                    <imageTag>latest</imageTag>
-                                </imageTags>
-                            </configuration>
-                            <executions>
-                                <execution>
-                                    <id>default-build</id>
-                                    <goals>
-                                        <goal>build</goal>
-                                    </goals>
-                                    <phase>package</phase>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-    </profiles>
 
     <build>
         <plugins>
@@ -188,6 +143,11 @@
                     <configuration>
                         <tagNameFormat>v@{project.version}</tagNameFormat>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>com.spotify</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>0.4.10</version>
                 </plugin>
             </plugins>
         </pluginManagement>

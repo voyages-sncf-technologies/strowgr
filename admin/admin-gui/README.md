@@ -1,9 +1,9 @@
 # Docker
 
-For building a docker image through maven, based on [Dockerfile template](src/docker/Dockerfile):
+For building a docker image through maven, based on [Dockerfile template](src/main/docker/Dockerfile):
 
 ```shell
-$  mvn  process-resources docker:build
+$  mvn clean package -P build-docker
 ```
 
-An image `strowgr/admin-gui` is built locally.
+An image `strowgr/admin` is built locally.
