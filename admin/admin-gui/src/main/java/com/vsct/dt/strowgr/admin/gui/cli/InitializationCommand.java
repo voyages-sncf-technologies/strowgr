@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Optional;
 
 public class InitializationCommand extends ConfiguredCommand<StrowgrConfiguration> {
     private static final Logger LOGGER = LoggerFactory.getLogger(InitializationCommand.class);
@@ -63,14 +62,6 @@ public class InitializationCommand extends ConfiguredCommand<StrowgrConfiguratio
 
         NSQHttpClient nsqHttpClient = new NSQHttpClient("http://" + strowgrConfiguration.getNsqProducerFactory().getHost() + ":" + strowgrConfiguration.getNsqProducerFactory().getHttpPort(), httpClient);
         ConsulRepository consulRepository = strowgrConfiguration.getConsulRepositoryFactory().build();
-
-        // ports
-        Optional<Boolean> portsInitialized = consulRepository.initPorts();
-        if (portsInitialized.orElse(Boolean.FALSE)) {
-            LOGGER.info("key/value for ports is initialized in repository");
-        } else {
-            LOGGER.warn("key/value for ports can't be initialized (already done?).");
-        }
 
         // initialize haproxy producer queue
         for (String prefix : Arrays.asList("commit_requested_", "delete_requested_")) {
