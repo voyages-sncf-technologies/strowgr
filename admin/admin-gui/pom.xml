@@ -141,6 +141,7 @@
                         <groupId>com.spotify</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
                         <configuration>
+                            <serverId>docker-hub</serverId>
                             <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
                             <resources>
                                 <resource>
