@@ -12,8 +12,8 @@ before_install:
 script:
   - mvn package
   - docker info
-  - docker build -t strowgr/sidekick:0.2.4 sidekick
   - docker build -t strowgr/admin:$VERSION -t strowgr/admin:latest admin
+  - docker pull strowgr/sidekick:0.2.6
   - docker pull java:8
   - docker pull nsqio/nsq:v0.3.7
   - docker pull verb/socat

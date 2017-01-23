@@ -45,7 +45,7 @@ services:
 
   sidekick-master:
     build: ./sidekick
-    image: strowgr/sidekick:0.2.4
+    image: strowgr/sidekick:0.2.6
     container_name: sidekick-master
     ports:
       - 53000:53000
@@ -70,7 +70,7 @@ services:
 
   sidekick-slave:
     build: ./sidekick
-    image: strowgr/sidekick:0.2.4
+    image: strowgr/sidekick:0.2.6
     container_name: sidekick-slave
     ports:
       - 54000:54000
