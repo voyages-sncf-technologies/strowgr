@@ -17,7 +17,7 @@ $ mvn package
 Build additionally docker images of `admin`:
                   
 ```shell
-$ mvn package -Pbuild-docker
+$ docker build -t strowgr/admin:latest admin
 ```
 
 
