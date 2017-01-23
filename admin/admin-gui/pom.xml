@@ -28,10 +28,6 @@
 
     <artifactId>admin-gui</artifactId>
 
-    <properties>
-        <docker.image>admin</docker.image>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
@@ -118,58 +114,6 @@
             <artifactId>fest-assert</artifactId>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>build-docker</id>
-            <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/docker</directory>
-                        <targetPath>${project.build.directory}/docker-filtered</targetPath>
-                        <includes>
-                            <include>Dockerfile</include>
-                        </includes>
-                        <filtering>true</filtering>
-                    </resource>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                    </resource>
-                </resources>
-                <plugins>
-                    <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <configuration>
-                            <serverId>docker-hub</serverId>
-                            <dockerDirectory>${project.build.directory}/docker-filtered</dockerDirectory>
-                            <resources>
-                                <resource>
-                                    <targetPath>/</targetPath>
-                                    <directory>${project.build.directory}</directory>
-                                    <includes>
-                                        <include>${project.build.finalName}.jar</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <targetPath>/</targetPath>
-                                    <directory>${project.basedir}/src/main/docker</directory>
-                                    <includes>
-                                        <include>server.yaml</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                            <imageName>${docker.namespace}/${docker.image}:${project.version}</imageName>
-                            <imageTags>
-                                <imageTag>${project.version}</imageTag>
-                                <imageTag>latest</imageTag>
-                            </imageTags>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
     <build>
         <resources>

@@ -39,9 +39,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <docker.namespace>strowgr</docker.namespace>
-        <docker.image>${project.artifactId}</docker.image>
-        <project.build.finalNameWithExt>${project.build.finalName}</project.build.finalNameWithExt>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <dropwizard.version>0.9.1</dropwizard.version>
     </properties>
@@ -143,11 +140,6 @@
                     <configuration>
                         <tagNameFormat>v@{project.version}</tagNameFormat>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>com.spotify</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.4.10</version>
                 </plugin>
             </plugins>
         </pluginManagement>

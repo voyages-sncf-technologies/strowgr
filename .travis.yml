@@ -13,12 +13,12 @@ script:
   - mvn package
   - docker info
   - docker build -t strowgr/sidekick:0.2.4 sidekick
+  - docker build -t strowgr/admin:$VERSION -t strowgr/admin:latest admin
   - docker pull java:8
   - docker pull nsqio/nsq:v0.3.7
   - docker pull verb/socat
   - docker pull gliderlabs/consul-server
   - docker pull nginx
-  - mvn process-resources docker:build -P build-docker -pl :admin-gui
   - mvn scalatest:test -pl maze
 cache:
   directories:
@@ -39,6 +39,6 @@ deploy:
       branch: master
   - provider: script
     skip_cleanup: true
-    script: mvn docker:push -Pbuild-docker -pl :admin-gui -s .mvnsettings.xml
+    script: docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" && docker push strowgr/admin:$VERSION && docker push strowgr/admin:latest
     on:
       tags: true

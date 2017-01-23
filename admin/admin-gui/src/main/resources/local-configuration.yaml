@@ -16,7 +16,7 @@ repository:
   maxGeneratedPort: 54003
 nsqLookup:
   host: localhost
-  port: 4160
+  port: 4161
 nsqProducer:
   host: localhost
   tcpPort: 4150
