@@ -22,10 +22,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
+import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
-import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.repository.consul.mapping.json.CommittingConfigurationJson;
 import com.vsct.dt.strowgr.admin.repository.consul.mapping.json.EntryPointMappingJson;
 import org.apache.http.client.methods.HttpDelete;
@@ -357,6 +357,14 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     }
 
     @Override
+    public void init() throws IOException {
+        putIfAbsent("ports", "{}");
+        putIfAbsent("haproxyversions", "[]");
+        putIfAbsent("haproxy/", "");
+        putIfAbsent("admin/", "");
+    }
+
+    @Override
     public Optional<Map<String, Integer>> getPorts() {
         try {
             HttpGet getPortsById = new HttpGet("http://" + host + ":" + port + "/v1/kv/ports");
@@ -369,23 +377,6 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public Optional<Boolean> initPorts() {
-        Optional<Boolean> initialized = Optional.of(Boolean.FALSE);
-        try {
-            if (getPorts().isPresent()) {
-                LOGGER.warn("can't init ports in repository because it's not empty");
-            } else {
-                HttpPut putPortsById = new HttpPut("http://" + host + ":" + port + "/v1/kv/ports");
-                putPortsById.setEntity(new StringEntity("{}"));
-                initialized = client.execute(putPortsById, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return initialized;
     }
 
     @Override
@@ -543,11 +534,10 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
                     consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
                             .orElseGet(ArrayList::new));
-            Set<String> haproxyId = consulItems.stream()
+            result = consulItems.stream()
                     .filter(consulItem -> consulItem.getKey().split("/").length > 1) //We evaluate twice consulItem.getKey().split("/"), no a big deal since haproxy dont have many properties yet.
                     .map(consulItem -> consulItem.getKey().split("/")[1])
                     .collect(Collectors.toSet());
-            result = haproxyId;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -621,8 +611,29 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             this.ID = ID;
         }
 
-        public String getID() {
+        String getID() {
             return ID;
+        }
+    }
+
+    /**
+     * Put the value if key is absent.
+     *
+     * @param key   to check
+     * @param value to set if key is absent
+     */
+    private void putIfAbsent(String key, String value) {
+        try {
+            HttpGet getKey = new HttpGet("http://" + host + ":" + port + "/v1/kv/" + key);
+            if (client.execute(getKey, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::readRawContentFromHttpEntity))
+                    .map(s -> Boolean.FALSE)
+                    .orElse(Boolean.TRUE)) {
+                HttpPut putPortsById = new HttpPut("http://" + host + ":" + port + "/v1/kv/" + key);
+                putPortsById.setEntity(new StringEntity(value));
+                client.execute(putPortsById, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

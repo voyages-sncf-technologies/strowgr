@@ -22,8 +22,11 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -34,6 +37,7 @@ import static java.lang.Boolean.TRUE;
 import static java.util.Optional.of;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
 
 public class ConsulRepositoryTest {
@@ -144,5 +148,48 @@ public class ConsulRepositoryTest {
 
         // check
         assertThat(result).isTrue();
+    }
+
+    @Test
+    public void should_init_ports_if_absent() throws IOException {
+        // given
+        ConsulReader consulReader = mock(ConsulReader.class);
+        CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
+        ConsulRepository consulRepository = new ConsulRepository("localhost", 50080, 32_000, 64_000, null, consulReader, closeableHttpClient);
+        HttpMatcher httpPutPorts = new HttpMatcher("http://localhost:50080/v1/kv/ports", "PUT");
+        HttpMatcher httpPutHaproxyversions = new HttpMatcher("http://localhost:50080/v1/kv/haproxyversions", "PUT");
+        HttpMatcher httpPutHaproxy = new HttpMatcher("http://localhost:50080/v1/kv/haproxy/", "PUT");
+        HttpMatcher httpPutAdmin = new HttpMatcher("http://localhost:50080/v1/kv/admin/", "PUT");
+
+        when(closeableHttpClient.execute(any(HttpRequestBase.class), any(ResponseHandler.class))).thenReturn(Optional.empty(), Optional.empty(), Optional.empty());
+
+        // test
+        consulRepository.init();
+
+        // check
+        verify(closeableHttpClient, times(1)).execute(argThat(httpPutPorts), any(ResponseHandler.class));
+        verify(closeableHttpClient, times(1)).execute(argThat(httpPutHaproxyversions), any(ResponseHandler.class));
+        verify(closeableHttpClient, times(1)).execute(argThat(httpPutHaproxy), any(ResponseHandler.class));
+        verify(closeableHttpClient, times(1)).execute(argThat(httpPutAdmin), any(ResponseHandler.class));
+    }
+
+    private class HttpMatcher extends ArgumentMatcher<HttpRequestBase> {
+
+        private final String uri;
+        private String method;
+
+        public HttpMatcher(String uri) {
+            this.uri = uri;
+        }
+
+        private HttpMatcher(String uri, String method) {
+            this.uri = uri;
+            this.method = method;
+        }
+
+        @Override
+        public boolean matches(Object argument) {
+            return uri.equals(((HttpRequestBase) argument).getRequestLine().getUri()) && (method == null || method.equals(((HttpRequestBase) argument).getMethod()));
+        }
     }
 }

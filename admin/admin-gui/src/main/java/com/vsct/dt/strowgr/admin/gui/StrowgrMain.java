@@ -41,8 +41,6 @@ import com.vsct.dt.strowgr.admin.gui.observable.IncomingEvents;
 import com.vsct.dt.strowgr.admin.gui.observable.ManagedHaproxy;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
 import com.vsct.dt.strowgr.admin.gui.subscribers.EventBusSubscriber;
-import com.vsct.dt.strowgr.admin.gui.tasks.HaproxyVipTask;
-import com.vsct.dt.strowgr.admin.gui.tasks.InitPortsTask;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
@@ -122,7 +120,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* Repository */
         ConsulRepository repository = configuration.getConsulRepositoryFactory().buildAndManageBy(environment);
-        repository.initPorts();
+        repository.init();
 
         /* EntryPoint State Machine */
         EntryPointEventHandler eventHandler = EntryPointEventHandler
@@ -232,10 +230,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         environment.healthChecks().register("nsqlookup", new NsqHealthcheck(nsqLookupdHttpClient));
         environment.healthChecks().register("nsqproducer", new NsqHealthcheck(nsqdHttpClient));
         environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
-
-        /* admin */
-        environment.admin().addTask(new InitPortsTask(repository));
-        environment.admin().addTask(new HaproxyVipTask(repository));
 
         /* Exception mappers */
         environment.jersey().register(new ExceptionMapper<IncompleteConfigurationException>() {
