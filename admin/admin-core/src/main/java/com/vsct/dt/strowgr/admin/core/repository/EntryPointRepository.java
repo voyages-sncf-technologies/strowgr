@@ -67,11 +67,9 @@ public interface EntryPointRepository {
     void setCurrentConfiguration(EntryPointKey key, EntryPoint configuration);
 
     /**
-     * Initialize the repository
-     *
-     * @throws IOException for any problem with repository access
+     * Initialize the repository.
      */
-    public void init() throws IOException;
+    public void init();
 
     /**
      * Retrieve entrypoint ids.

@@ -357,11 +357,15 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     }
 
     @Override
-    public void init() throws IOException {
-        putIfAbsent("ports", "{}");
-        putIfAbsent("haproxyversions", "[]");
-        putIfAbsent("haproxy/", "");
-        putIfAbsent("admin/", "");
+    public void init() {
+        try {
+            putIfAbsent("ports", "{}");
+            putIfAbsent("haproxyversions", "[]");
+            putIfAbsent("haproxy/", "");
+            putIfAbsent("admin/", "");
+        } catch (Exception e){
+            LOGGER.warn("Can't request consul server. Initialization of data has failed.",e);
+        }
     }
 
     @Override
