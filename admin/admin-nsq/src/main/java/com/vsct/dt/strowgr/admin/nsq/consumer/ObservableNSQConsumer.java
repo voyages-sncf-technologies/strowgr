@@ -39,8 +39,8 @@ public abstract class ObservableNSQConsumer<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ObservableNSQConsumer.class);
 
-    private final String        topic;
-    private final String        channel;
+    private final String topic;
+    private final String channel;
 
     /* The observable created by this consumer */
     private final Observable<T> observable;
@@ -49,18 +49,18 @@ public abstract class ObservableNSQConsumer<T> {
      * We keep reference to consumer and to emitter to allow shutdown
      * and emission of onComplete. Make these reference volatile since they can be set in a different thread
      */
-    private volatile NSQConsumer              consumer;
+    private volatile NSQConsumer consumer;
     private volatile AsyncEmitter<NSQMessage> emitter;
 
-    public ObservableNSQConsumer(NSQLookup lookup, String topic, String channel, NSQConfig config) {
+    ObservableNSQConsumer(NSQLookup lookup, String topic, String channel, NSQConfig config) {
         this.topic = topic;
         this.channel = channel;
 
         Observable<NSQMessage> o = Observable
                 .fromEmitter(emitter -> {
                     this.emitter = emitter;
-
                     consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
+                    consumer.setLookupPeriod(10 * 1000);
                     consumer.setMessagesPerBatch(10);
 
                     //We tell the NSQConsumer to use its own eventloop as the executor for message handling
