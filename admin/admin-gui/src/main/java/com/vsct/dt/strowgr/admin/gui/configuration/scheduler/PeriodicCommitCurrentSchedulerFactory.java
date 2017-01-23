@@ -30,13 +30,13 @@ import java.util.function.Consumer;
 
 /**
  * Retrieve configuration for CommitCurrent scheduler.
- *
+ * <p>
  * Created by william_montaz on 16/02/2016.
  */
 public class PeriodicCommitCurrentSchedulerFactory {
 
     @Min(1)
-    private long periodMilli;
+    private long periodMilli=11000;
 
     @JsonProperty("periodMilli")
     public long getPeriodMilli() {

@@ -37,7 +37,7 @@ public class NSQLookupFactory {
 
     @Min(1)
     @Max(65535)
-    private int port;
+    private int port = 4160;
 
     @JsonProperty
     public String getHost() {

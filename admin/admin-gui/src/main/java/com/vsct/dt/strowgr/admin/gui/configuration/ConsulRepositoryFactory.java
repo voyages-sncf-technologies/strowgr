@@ -42,7 +42,7 @@ public class ConsulRepositoryFactory {
 
     @Min(1)
     @Max(65535)
-    private int port;
+    private int port = 8500;
 
     @JsonProperty(value = "minGeneratedPort")
     private int minGeneratedPort = 32000;
