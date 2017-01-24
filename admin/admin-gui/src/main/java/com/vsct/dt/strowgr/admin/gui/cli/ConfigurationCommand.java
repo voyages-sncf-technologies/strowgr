@@ -52,6 +52,7 @@ public class ConfigurationCommand extends Command {
     }
 
     String generateConfiguration() throws JsonProcessingException {
+        // initialize configuration
         StrowgrConfiguration configuration = new StrowgrConfiguration();
         configuration.setConsulRepositoryFactory(new ConsulRepositoryFactory());
         configuration.setNsqLookupfactory(new NSQLookupFactory());
@@ -64,21 +65,23 @@ public class ConfigurationCommand extends Command {
         configuration.setNsqConsumerConfigFactory(new NSQConfigFactory());
         configuration.setNsqProducerConfigFactory(new NSQConfigFactory());
 
+        // initialize jackson for yaml
         YAMLFactory yamlFactory = new YAMLFactory();
         yamlFactory.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, false);
         ObjectMapper objectMapper = new ObjectMapper(yamlFactory);
 
-        // convert to map for
+        // convert to map for filtering some internal configuration
         Map<String, Object> map = objectMapper.convertValue(configuration, Map.class);
         map.remove("metricsFactory");
         map.remove("metrics");
         map.remove("httpClient");
-        HashMap<String, Object> loggingValue = buildLoggingConfiguration();
+        HashMap<String, Object> loggingValue = buildLoggingSnippet();
 
+        // add custom dropwizard logging snippet
         map.put("logging", loggingValue);
-        HashMap<String, Object> server = buildServerConfiguration();
+        HashMap<String, Object> server = buildServerSnippet();
 
-
+        // add custom dropwizard server snippet
         map.put("server", server);
         map.remove("nsqProducerConfigFactory");
         map.remove("nsqConsumerConfigFactory");
@@ -86,7 +89,7 @@ public class ConfigurationCommand extends Command {
         return objectMapper.writeValueAsString(map);
     }
 
-    private HashMap<String, Object> buildServerConfiguration() {
+    private HashMap<String, Object> buildServerSnippet() {
         // server
         HashMap<String, Object> server = new HashMap<>();
         server.put("type", "simple");
@@ -109,7 +112,7 @@ public class ConfigurationCommand extends Command {
         return server;
     }
 
-    private HashMap<String, Object> buildLoggingConfiguration() {
+    private HashMap<String, Object> buildLoggingSnippet() {
         // logging
         HashMap<String, Object> loggingValue = new HashMap<>();
         //appenders
