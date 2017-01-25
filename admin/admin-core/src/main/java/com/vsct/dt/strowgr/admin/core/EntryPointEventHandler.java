@@ -14,7 +14,6 @@
  *  limitations under the License.
  *
  */
-
 package com.vsct.dt.strowgr.admin.core;
 
 import com.google.common.eventbus.EventBus;
@@ -24,7 +23,6 @@ import com.vsct.dt.strowgr.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.*;
-import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import org.slf4j.Logger;
@@ -38,8 +36,12 @@ public class EntryPointEventHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntryPointEventHandler.class);
 
+    public static EntryPointEventHandlerBuilder builder() {
+        return new EntryPointEventHandlerBuilder();
+    }
+
     private final EntryPointStateManager stateManager;
-    private HaproxyRepository haproxyRepository;
+    private final HaproxyRepository haproxyRepository;
     private final EventBus outputBus;
     private final TemplateGenerator templateGenerator;
     private final TemplateLocator templateLocator;
@@ -52,10 +54,6 @@ public class EntryPointEventHandler {
         this.haproxyRepository = haproxyRepository;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;
-    }
-
-    public static EntryPointEventHandlerBuilder backedBy(EntryPointRepository entryPointRepository, HaproxyRepository haproxyRepository) {
-        return new EntryPointEventHandlerBuilder(entryPointRepository, haproxyRepository);
     }
 
     @Subscribe
@@ -111,23 +109,6 @@ public class EntryPointEventHandler {
             }
         } finally {
             this.stateManager.release(key);
-        }
-    }
-
-    @Subscribe
-    public void handle(SwapAutoreloadRequestedEvent swapAutoreloadRequestedEvent) {
-        EntryPointKey key = swapAutoreloadRequestedEvent.getKey();
-        try {
-            if (this.stateManager.lock(key)) {
-                boolean isAutoreloaded = this.stateManager.isAutoreloaded(swapAutoreloadRequestedEvent.getKey());
-                this.stateManager.setAutoreload(key, !isAutoreloaded);
-                outputBus.post(new AutoreloadSwappedEvent(swapAutoreloadRequestedEvent.getCorrelationId(), key, true));
-            }
-        } catch (Throwable throwable) {
-            LOGGER.error("can't change autoreload of entrypoint " + key, throwable);
-        } finally {
-            this.stateManager.release(key);
-            outputBus.post(new AutoreloadSwappedEvent(swapAutoreloadRequestedEvent.getCorrelationId(), key, false));
         }
     }
 
@@ -284,20 +265,26 @@ public class EntryPointEventHandler {
     }
 
     public static class EntryPointEventHandlerBuilder {
-        private EntryPointRepository entryPointRepository;
         private HaproxyRepository haproxyRepository;
         private TemplateGenerator templateGenerator;
         private TemplateLocator templateLocator;
         private PortRepository portRepository;
-        private int commitTimeout;
+        private EntryPointStateManager stateManager;
 
-        private EntryPointEventHandlerBuilder(EntryPointRepository entryPointRepository, HaproxyRepository haproxyRepository) {
-            this.entryPointRepository = entryPointRepository;
+        private EntryPointEventHandlerBuilder() {
+        }
+
+        public EntryPointEventHandlerBuilder backedBy(HaproxyRepository haproxyRepository) {
             this.haproxyRepository = haproxyRepository;
+            return this;
+        }
+
+        public EntryPointEventHandlerBuilder managedBy(EntryPointStateManager entryPointStateManager) {
+            this.stateManager = entryPointStateManager;
+            return this;
         }
 
         public EntryPointEventHandler outputMessagesTo(EventBus eventBus) {
-            EntryPointStateManager stateManager = new EntryPointStateManager(commitTimeout, entryPointRepository);
             return new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, eventBus);
         }
 
@@ -316,10 +303,6 @@ public class EntryPointEventHandler {
             return this;
         }
 
-        public EntryPointEventHandlerBuilder commitTimeoutIn(int commitTimeout) {
-            this.commitTimeout = commitTimeout;
-            return this;
-        }
     }
 
 }

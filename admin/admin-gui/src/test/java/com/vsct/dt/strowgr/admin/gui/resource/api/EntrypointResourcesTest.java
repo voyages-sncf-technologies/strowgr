@@ -1,13 +1,17 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
-
 import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
-import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
+import com.vsct.dt.strowgr.admin.core.AutoReloadConfigEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.AutoReloadConfigResponse;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.reactivestreams.Subscriber;
 
+import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,14 +24,60 @@ import static org.mockito.Mockito.*;
 
 public class EntrypointResourcesTest {
 
+    private final EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
+
+    private final EventBus eventBus = mock(EventBus.class);
+
+    @SuppressWarnings("unchecked")
+    private final Subscriber<AutoReloadConfigEvent> autoReloadConfigObserver = mock(Subscriber.class);
+
+    @SuppressWarnings("unchecked")
+    private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
+
+    private final EntrypointResources entrypointResources = new EntrypointResources(eventBus, entryPointRepository, autoReloadConfigObserver);
+
+    @Test
+    public void swap_auto_reload_should_return_partial_response_when_handler_success() throws Exception {
+
+        // given
+        AsyncResponse asyncResponse = mock(AsyncResponse.class);
+        String key = "entryPointKey";
+        ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
+
+        // when
+        entrypointResources.swapAutoReload(asyncResponse, key);
+        verify(autoReloadConfigObserver).onNext(autoReloadEventCaptor.capture());
+        autoReloadEventCaptor.getValue().onSuccess(mock(AutoReloadConfigResponse.class));
+
+        // verify
+        verify(asyncResponse).resume(responseCaptor.capture());
+        assertThat(responseCaptor.getValue()).isNotNull();
+        assertThat(responseCaptor.getValue().getStatus()).isEqualTo(Response.Status.PARTIAL_CONTENT.getStatusCode());
+    }
+
+    @Test
+    public void swap_auto_reload_should_call_resume_with_error_when_event_is_on_error() throws Exception {
+
+        // given
+        AsyncResponse asyncResponse = mock(AsyncResponse.class);
+        String entryPointKey = "entryPointKey";
+        RuntimeException exception = new RuntimeException();
+
+        // when
+        entrypointResources.swapAutoReload(asyncResponse, entryPointKey);
+        verify(autoReloadConfigObserver).onNext(autoReloadEventCaptor.capture());
+        autoReloadEventCaptor.getValue().onError(exception);
+
+        // then
+        assertThat(autoReloadEventCaptor.getValue().getKey().getID()).isEqualTo(entryPointKey);
+        verify(asyncResponse).resume(exception);
+    }
+
     @Test
     public void should_send_delete_entrypoint_event_and_return_204_when_delete_an_entrypoint() {
         // given
-        EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
-        EventBus eventBus = mock(EventBus.class);
-        EntrypointResources entrypointResources = new EntrypointResources(eventBus, entryPointRepository);
         when(entryPointRepository.removeEntrypoint(any(EntryPointKey.class))).thenReturn(Optional.of(Boolean.TRUE));
-        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm",  "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
+        when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
 
         // test
         Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");
@@ -35,15 +85,12 @@ public class EntrypointResourcesTest {
         // check
         assertThat(response.getStatus()).isEqualTo(OK.getStatusCode());
         verify(eventBus).post(any(DeleteEntryPointEvent.class));
-        verify(entryPointRepository,times(1)).getEntryPointsId();
+        verify(entryPointRepository, times(1)).getEntryPointsId();
     }
 
     @Test
     public void should_not_post_delete_event_and_return_404_when_delete_an_non_existing_entrypoint() {
         // given
-        EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
-        EventBus eventBus = mock(EventBus.class);
-        EntrypointResources entrypointResources = new EntrypointResources(eventBus, entryPointRepository);
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.empty());
 
@@ -53,14 +100,12 @@ public class EntrypointResourcesTest {
         // check
         assertThat(response.getStatus()).isEqualTo(NOT_FOUND.getStatusCode());
         verify(eventBus, times(0)).post(any(DeleteEntryPointEvent.class));
-        verify(entryPointRepository,times(1)).getEntryPointsId();
+        verify(entryPointRepository, times(1)).getEntryPointsId();
     }
 
     @Test
     public void should_return_500_when_repository_cannot_remove_entrypoint_delete_entrypoint() {
         // given
-        EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
-        EntrypointResources entrypointResources = new EntrypointResources(null, entryPointRepository);
         when(entryPointRepository.removeEntrypoint(any(EntryPointKey.class))).thenReturn(Optional.empty());
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
 
@@ -69,6 +114,6 @@ public class EntrypointResourcesTest {
 
         // check
         assertThat(response.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR.getStatusCode());
-        verify(entryPointRepository,times(1)).getEntryPointsId();
+        verify(entryPointRepository, times(1)).getEntryPointsId();
     }
 }

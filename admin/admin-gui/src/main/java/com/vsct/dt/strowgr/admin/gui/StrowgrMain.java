@@ -14,19 +14,14 @@
  *  limitations under the License.
  *
  */
-
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.*;
-import fr.vsct.dt.nsq.NSQConfig;
-import fr.vsct.dt.nsq.NSQProducer;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
-import com.vsct.dt.strowgr.admin.core.EntryPointEventHandler;
-import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
-import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
+import com.vsct.dt.strowgr.admin.core.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.AutoReloadConfigEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
@@ -45,15 +40,19 @@ import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
-import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.NSQProducer;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.reactivex.processors.FlowableProcessor;
+import io.reactivex.processors.UnicastProcessor;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,13 +121,15 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ConsulRepository repository = configuration.getConsulRepositoryFactory().buildAndManageBy(environment);
         repository.init();
 
+        EntryPointStateManager entryPointStateManager = new EntryPointStateManager(configuration.getCommitTimeout(), repository);
+
         /* EntryPoint State Machine */
-        EntryPointEventHandler eventHandler = EntryPointEventHandler
-                .backedBy(repository, repository)
+        EntryPointEventHandler eventHandler = EntryPointEventHandler.builder()
+                .backedBy(repository)
+                .managedBy(entryPointStateManager)
                 .getPortsWith(repository)
                 .findTemplatesWith(templateLocator)
                 .generatesTemplatesWith(templateGenerator)
-                .commitTimeoutIn(configuration.getCommitTimeout())
                 .outputMessagesTo(eventBus);
 
         eventBus.register(eventHandler);
@@ -201,8 +202,17 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 eventBus::post, periodMilliCommitCurrentScheduler);
         environment.lifecycle().manage(commitCurrentScheduler);
 
+        /* AutoReloadConfig */
+        FlowableProcessor<AutoReloadConfigEvent> autoReloadConfigProcessor = UnicastProcessor
+                .<AutoReloadConfigEvent>create()
+                .toSerialized(); // support Thread-safe onNext calls
+
+        autoReloadConfigProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(new AutoReloadConfigSubscriber(entryPointStateManager));
+
         /* REST Resources */
-        EntrypointResources restApiResource = new EntrypointResources(eventBus, repository);
+        EntrypointResources restApiResource = new EntrypointResources(eventBus, repository, autoReloadConfigProcessor);
         environment.jersey().register(restApiResource);
 
         HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);

@@ -15,25 +15,31 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.core.event.in;
+package com.vsct.dt.strowgr.admin.core;
 
-import com.vsct.dt.strowgr.admin.core.EntryPointKey;
+import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 
 /**
- * Event of a request to swap autoreload.
+ * Availability of the entrypoint has been swapped.
  */
-public class SwapAutoreloadRequestedEvent extends EntryPointEvent {
+public class AutoReloadConfigResponse extends EntryPointEvent {
 
-    public SwapAutoreloadRequestedEvent(String correlationId, EntryPointKey key) {
+    private final boolean swapped;
+
+    public AutoReloadConfigResponse(String correlationId, EntryPointKey key, boolean swapped) {
         super(correlationId, key);
+        this.swapped = swapped;
     }
 
     @Override
     public String toString() {
-        return "SwapAutoreloadRequestedEvent{" +
-                "correlationId=" + getCorrelationId() +
-                "key=" + getKey() +
+        return "SwapAutoReloadResponse{" +
+                "correlationId='" + getCorrelationId() + '\'' +
+                ", key=" + getKey() +
                 '}';
     }
 
+    public boolean swapped() {
+        return swapped;
+    }
 }

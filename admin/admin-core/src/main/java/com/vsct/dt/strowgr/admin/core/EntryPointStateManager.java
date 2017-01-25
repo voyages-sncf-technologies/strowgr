@@ -35,7 +35,7 @@ public class EntryPointStateManager {
     private final int commitTimeout;
     private final EntryPointRepository repository;
 
-    EntryPointStateManager(int commitTimeout, EntryPointRepository repository) {
+    public EntryPointStateManager(int commitTimeout, EntryPointRepository repository) {
         this.repository = checkNotNull(repository);
         this.commitTimeout = commitTimeout;
     }

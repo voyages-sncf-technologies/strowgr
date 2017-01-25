@@ -14,12 +14,10 @@
  *  limitations under the License.
  *
  */
-
 package com.vsct.dt.strowgr.admin.core;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.configuration.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
@@ -27,7 +25,6 @@ import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
@@ -38,24 +35,19 @@ import static org.mockito.Mockito.*;
 
 public class EntryPointEventHandlerTest {
 
-    EntryPointStateManager stateManager;
-    EntryPointEventHandler handler;
-    TemplateLocator        templateLocator;
-    PortRepository         portRepository;
-    HaproxyRepository      haproxyRepository;
-    TemplateGenerator templateGenerator;
-    EventBus               outputBus;
+    private final EntryPointStateManager stateManager = mock(EntryPointStateManager.class);
 
-    @Before
-    public void setUp() {
-        stateManager = mock(EntryPointStateManager.class);
-        templateLocator = mock(TemplateLocator.class);
-        templateGenerator = mock(TemplateGenerator.class);
-        portRepository = mock(PortRepository.class);
-        haproxyRepository = mock(HaproxyRepository.class);
-        outputBus = mock(EventBus.class);
-        handler = new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, outputBus);
-    }
+    private final TemplateLocator templateLocator = mock(TemplateLocator.class);
+
+    private final PortRepository portRepository = mock(PortRepository.class);
+
+    private final HaproxyRepository haproxyRepository = mock(HaproxyRepository.class);
+
+    private final TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
+
+    private final EventBus outputBus = mock(EventBus.class);
+
+    private final EntryPointEventHandler handler = new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, outputBus);
 
     @Test
     public void add_entry_point_should_prepare_configuration_if_no_current_or_committing_exists() {

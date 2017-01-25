@@ -14,7 +14,6 @@
  *  limitations under the License.
  *
  */
-
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.codahale.metrics.annotation.Timed;
@@ -22,17 +21,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.vsct.dt.strowgr.admin.core.AutoReloadConfigEvent;
+import com.vsct.dt.strowgr.admin.core.AutoReloadConfigResponse;
+import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
-import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.*;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
 import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
 import io.dropwizard.jersey.PATCH;
+import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,9 +55,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static javax.ws.rs.core.Response.Status.*;
-import static javax.ws.rs.core.Response.ok;
-import static javax.ws.rs.core.Response.serverError;
-import static javax.ws.rs.core.Response.status;
+import static javax.ws.rs.core.Response.*;
 
 @Path("/entrypoints")
 @Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
@@ -68,9 +69,13 @@ public class EntrypointResources {
     private Map<String, AsyncResponseCallback> callbacks = new ConcurrentHashMap<>();
     private ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
-    public EntrypointResources(EventBus eventBus, EntryPointRepository repository) {
+    private final Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber;
+
+    public EntrypointResources(EventBus eventBus, EntryPointRepository repository,
+                               Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber) {
         this.eventBus = eventBus;
         this.repository = repository;
+        this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
     }
 
     @GET
@@ -87,21 +92,22 @@ public class EntrypointResources {
 
     @PATCH
     @Path("/{id : .+}/autoreload/swap")
-    public void setAutoreload(@Suspended AsyncResponse asyncResponse, @PathParam("id") String entryPointKey) {
-        SwapAutoreloadRequestedEvent swapAutoreloadRequestedEvent = new SwapAutoreloadRequestedEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPointKey));
-        new CallbackBuilder(swapAutoreloadRequestedEvent.getCorrelationId())
-                .whenReceive(new AsyncResponseCallback<AutoreloadSwappedEvent>(asyncResponse) {
-                    @Override
-                    void handle(AutoreloadSwappedEvent autoreloadSwappedEvent) throws Exception {
-                        if (autoreloadSwappedEvent.swapped()) {
-                            asyncResponse.resume(status(PARTIAL_CONTENT).build());
-                        } else {
-                            asyncResponse.resume(status(NOT_FOUND).build());
-                        }
-                    }
-                })
-                .timeoutAfter(20, TimeUnit.SECONDS);
-        eventBus.post(swapAutoreloadRequestedEvent);
+    public void swapAutoReload(@Suspended AsyncResponse asyncResponse, @PathParam("id") String key) {
+
+        EntryPointKey entryPointKey = new EntryPointKeyDefaultImpl(key);
+
+        autoReloadConfigSubscriber.onNext(new AutoReloadConfigEvent(CorrelationId.newCorrelationId(), entryPointKey) {
+            @Override
+            public void onSuccess(AutoReloadConfigResponse autoReloadResponse) {
+                asyncResponse.resume(status(PARTIAL_CONTENT).build());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                asyncResponse.resume(throwable);
+            }
+        });
+
     }
 
     @PUT
@@ -315,15 +321,9 @@ public class EntrypointResources {
     }
 
     @Subscribe
-    public void handle(AutoreloadSwappedEvent autoreloadSwappedEvent) {
-        handleWithCorrelationId(autoreloadSwappedEvent);
-    }
-
-    @Subscribe
     public void handle(ServerRegisteredEvent serverRegisteredEvent) {
         handleWithCorrelationId(serverRegisteredEvent);
     }
-
 
     private abstract class AsyncResponseCallback<T> {
         private final AsyncResponse asyncResponse;
