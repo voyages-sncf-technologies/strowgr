@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.vsct.dt.strowgr</groupId>
-    <artifactId>strowgr-parent</artifactId>
+    <artifactId>strowgr</artifactId>
     <packaging>pom</packaging>
     <version>0.2.5-SNAPSHOT</version>
 
