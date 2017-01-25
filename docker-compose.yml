@@ -44,7 +44,6 @@ services:
       - nsqd
 
   sidekick-master:
-    build: ./sidekick
     image: strowgr/sidekick:0.2.6
     container_name: sidekick-master
     ports:
@@ -69,7 +68,6 @@ services:
       - nsqd
 
   sidekick-slave:
-    build: ./sidekick
     image: strowgr/sidekick:0.2.6
     container_name: sidekick-slave
     ports:
