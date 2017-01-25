@@ -12,8 +12,6 @@ threads: 20
 repository:
   host: localhost
   port: 8500
-  minGeneratedPort: 54001
-  maxGeneratedPort: 54003
 nsqLookup:
   host: localhost
   port: 4161
@@ -32,5 +30,5 @@ logging:
       com.vsct.dt: INFO
     appenders:
       - type: console
-commitTimeout: 13
-handledHaproxyRefreshPeriodSecond: 20
+commitTimeout: 10
+handledHaproxyRefreshPeriodSecond: 1

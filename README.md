@@ -40,5 +40,5 @@ docker-compose up
 
 # start admin app
 mvn clean package -f admin
-java -jar admin/admin-gui/target/admin-gui-*.jar server admin/admin-gui/src/main/resources/local-configuration.yaml
+java -jar admin/admin-gui/target/admin-gui-*.jar server admin/admin-gui/src/main/resources/configuration.yaml
 ```
