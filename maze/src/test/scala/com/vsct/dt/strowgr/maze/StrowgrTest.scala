@@ -151,13 +151,14 @@ class StrowgrTest extends TechnicalTest with StrictLogging {
       context = Map("application" -> "TEST", "platform" -> "TEST2", "templateUri" -> s"http://${backend.hostname}/haproxy/default.conf")
     )))
 
-    waitUntil(consulNode.portOfFrontend("TEST", "TEST2", "FRONTEND").isSuccess) butNoLongerThan (30 seconds)
+    val createEntryPoint2Duration = waitUntil(consulNode.portOfFrontend("TEST", "TEST2", "FRONTEND").isSuccess) butNoLongerThan (60 seconds)
+    logger.info(s"create entry point test2: ${createEntryPoint2Duration.toMillis}")
     val port2: Int = exec(consulNode.portOfFrontend("TEST", "TEST2", "FRONTEND"))
 
     ambassador = 1.node named "ambassador" constructedLike new AmbassadorNode(sidekick.internalIp, port2) buildSingle()
     extraContainers = ambassador :: extraContainers
     ambassador.start()
-    val createEndpointDelay2 = waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (30 seconds)
+    val createEndpointDelay2 = waitUntil(ambassador.httpGet("/stats").status is 200) butNoLongerThan (60 seconds)
     logger.info(s"Create endpoint TEST2 took ${createEndpointDelay2.toMillis}ms")
 
     logger.info("rock and roll")

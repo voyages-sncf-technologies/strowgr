@@ -29,12 +29,12 @@ import javax.validation.constraints.NotNull;
 
 public class StrowgrConfiguration extends Configuration {
 
-    public StrowgrConfiguration(){
+    public StrowgrConfiguration() {
         super();
     }
 
     @Min(1)
-    private long handledHaproxyRefreshPeriodSecond;
+    private long handledHaproxyRefreshPeriodSecond = 20;
 
     @Valid
     @NotNull
@@ -53,10 +53,10 @@ public class StrowgrConfiguration extends Configuration {
     private PeriodicSchedulerFactory periodicSchedulerFactory;
 
     @Min(1)
-    private int threads;
+    private int threads = 200;
 
     @Min(10)
-    private int commitTimeout;
+    private int commitTimeout = 13;
 
     @Valid
     @NotNull
@@ -71,7 +71,7 @@ public class StrowgrConfiguration extends Configuration {
     private NSQConfigFactory nsqProducerConfigFactory;
 
     @Nullable
-    private String nsqChannel;
+    private String nsqChannel = "admin";
 
     @JsonProperty("nsqChannel")
     public String getNsqChannel() {
@@ -85,7 +85,7 @@ public class StrowgrConfiguration extends Configuration {
 
     @JsonProperty("nsqConsumerConfigFactory")
     public NSQConfigFactory getNsqConsumerConfigFactory() {
-        if(nsqProducerConfigFactory == null){
+        if (nsqProducerConfigFactory == null) {
             return new NSQConfigFactory();
         }
         return nsqConsumerConfigFactory;
@@ -98,7 +98,7 @@ public class StrowgrConfiguration extends Configuration {
 
     @JsonProperty("nsqProducerConfigFactory")
     public NSQConfigFactory getNsqProducerConfigFactory() {
-        if(nsqProducerConfigFactory == null){
+        if (nsqProducerConfigFactory == null) {
             return new NSQConfigFactory();
         }
         return nsqProducerConfigFactory;

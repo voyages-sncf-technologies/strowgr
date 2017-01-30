@@ -20,6 +20,7 @@ package com.vsct.dt.strowgr.admin.core.repository;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -46,7 +47,8 @@ public interface EntryPointRepository {
 
     /**
      * Sets the committing configuration with a TTL
-     *  @param key           of the entrypoint
+     *
+     * @param key           of the entrypoint
      * @param configuration content of the entrypoint
      * @param ttl           the ttl in seconds
      */
@@ -63,6 +65,11 @@ public interface EntryPointRepository {
     Optional<Boolean> removeEntrypoint(EntryPointKey entryPointKey);
 
     void setCurrentConfiguration(EntryPointKey key, EntryPoint configuration);
+
+    /**
+     * Initialize the repository.
+     */
+    public void init();
 
     /**
      * Retrieve entrypoint ids.

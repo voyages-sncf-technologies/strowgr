@@ -38,11 +38,11 @@ public class ConsulRepositoryFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsulRepositoryFactory.class);
 
     @NotEmpty
-    private String host;
+    private String host = "localhost";
 
     @Min(1)
     @Max(65535)
-    private int port;
+    private int port = 8500;
 
     @JsonProperty(value = "minGeneratedPort")
     private int minGeneratedPort = 32000;
@@ -50,7 +50,7 @@ public class ConsulRepositoryFactory {
     @JsonProperty("maxGeneratedPort")
     private int maxGeneratedPort = 64000;
 
-    @JsonProperty
+    @JsonProperty(defaultValue = "localhost")
     public String getHost() {
         return host;
     }

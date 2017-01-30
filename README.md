@@ -42,3 +42,73 @@ docker-compose up
 mvn clean package -f admin
 java -jar admin/admin-gui/target/admin-gui-*.jar server admin/admin-gui/src/main/resources/configuration.yaml
 ```
+
+## Commands
+
+Strowgr uses _dropwizard_ with some additional commands.
+
+    $ java -jar target/admin-gui-0.2.5-SNAPSHOT.jar
+    usage: java -jar admin-gui-0.2.5-SNAPSHOT.jar
+           [-h] [-v] {server,check,init,config} ...
+    
+    positional arguments:
+      {server,check,init,config}
+                             available commands
+    
+    optional arguments:
+      -h, --help             show this help message and exit
+      -v, --version          show the application version and exit
+      
+      
+### server
+
+Dropwizard start basic command.
+
+    $ java -jar target/admin-gui-0.2.5-SNAPSHOT.jar server -h
+    usage: java -jar admin-gui-0.2.5-SNAPSHOT.jar
+           server [-h] [file]
+    
+    Runs the Dropwizard application as an HTTP server
+    
+    positional arguments:
+      file                   application configuration file
+    
+    optional arguments:
+      -h, --help             show this help message and exit
+      
+   
+### check
+
+Dopwizard config check command.
+
+    $ java -jar target/admin-gui-0.2.5-SNAPSHOT.jar check -h
+    usage: java -jar admin-gui-0.2.5-SNAPSHOT.jar
+           check [-h] [file]
+    
+    Parses and validates the configuration file
+    
+    positional arguments:
+      file                   application configuration file
+    
+    optional arguments:
+      -h, --help             show this help message and exit
+      
+     
+### config
+
+Strowgr command for generating default config yaml:
+
+
+    $ java -jar target/admin-gui-0.2.5-SNAPSHOT.jar config
+    argument -o/--output-file is required
+    usage: java -jar admin-gui-0.2.5-SNAPSHOT.jar
+           config -o OUTPUT-FILE [-h]
+    
+    generate configuration file
+    
+    optional arguments:
+      -o OUTPUT-FILE, --output-file OUTPUT-FILE
+                             output file of generated configuration
+      -h, --help             show this help message and exit
+      
+      

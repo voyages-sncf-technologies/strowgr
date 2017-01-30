@@ -75,13 +75,6 @@ public interface PortRepository {
     }
 
     /**
-     * Initialize Ports repository structure if not exists.
-     *
-     * @return Optional of TRUE if ports are initialized, FALSE otherwise
-     */
-    Optional<Boolean> initPorts();
-
-    /**
      * Construct a port key from an entrypoint key and port id.
      * For instance, with key 'TST/PROD1' and port id 'ADMIN', the portKey is 'TST/PROD1-ADMIN'.
      * This computed key is used as key in the repository.

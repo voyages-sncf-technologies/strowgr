@@ -18,19 +18,13 @@
 package com.vsct.dt.strowgr.admin.gui.cli;
 
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
-import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
 import io.dropwizard.cli.ConfiguredCommand;
 import io.dropwizard.setup.Bootstrap;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Optional;
 
 public class InitializationCommand extends ConfiguredCommand<StrowgrConfiguration> {
     private static final Logger LOGGER = LoggerFactory.getLogger(InitializationCommand.class);
@@ -43,48 +37,23 @@ public class InitializationCommand extends ConfiguredCommand<StrowgrConfiguratio
     @Override
     public void configure(Subparser subparser) {
         super.configure(subparser);
-        subparser.addArgument("-hn", "--haproxy-name")
-                .dest("haproxy-name")
-                .type(String.class)
+        subparser.addArgument("-r", "--repository")
+                .dest("repository")
+                .type(Boolean.class)
                 .required(false)
-                .setDefault("default-name")
-                .help("haproxy name for initialization of topic");
+                .setDefault("false")
+                .help("initialize repository (consul)");
 
-        subparser.addArgument("-v", "--vip")
-                .dest("vip")
-                .type(String.class)
-                .required(false)
-                .help("initialize vip for given haproxy by --haproxy-name option");
     }
 
     @Override
     protected void run(Bootstrap bootstrap, Namespace namespace, StrowgrConfiguration strowgrConfiguration) throws Exception {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-
-        NSQHttpClient nsqHttpClient = new NSQHttpClient("http://" + strowgrConfiguration.getNsqProducerFactory().getHost() + ":" + strowgrConfiguration.getNsqProducerFactory().getHttpPort(), httpClient);
         ConsulRepository consulRepository = strowgrConfiguration.getConsulRepositoryFactory().build();
 
-        // ports
-        Optional<Boolean> portsInitialized = consulRepository.initPorts();
-        if (portsInitialized.orElse(Boolean.FALSE)) {
-            LOGGER.info("key/value for ports is initialized in repository");
-        } else {
-            LOGGER.warn("key/value for ports can't be initialized (already done?).");
-        }
-
-        // initialize haproxy producer queue
-        for (String prefix : Arrays.asList("commit_requested_", "delete_requested_")) {
-            String topicName = prefix + namespace.getString("haproxy-name");
-            if (nsqHttpClient.createTopic(topicName)) {
-                LOGGER.info("topic {} has been initialized on nsqd", topicName);
-            } else {
-                LOGGER.info("topic {} can't be initialized on nsqd", topicName);
-            }
-        }
-
         // initialize vip of an haproxy cluster
-        if (namespace.get("vip") != null) {
-            consulRepository.setHaproxyProperty(namespace.get("haproxy-name"), "vip", namespace.get("vip"));
+        if (namespace.get("repository") != null && namespace.get("repository") == Boolean.TRUE) {
+            LOGGER.info("initialize repository {}", strowgrConfiguration.getConsulRepositoryFactory());
+            consulRepository.init();
         }
     }
 }

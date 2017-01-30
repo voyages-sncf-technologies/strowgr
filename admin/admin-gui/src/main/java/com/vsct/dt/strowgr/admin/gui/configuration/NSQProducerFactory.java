@@ -21,17 +21,17 @@ public class NSQProducerFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(NSQProducerFactory.class);
 
     @NotEmpty
-    private String host;
+    private String host = "localhost";
 
     @JsonProperty
     @Min(1)
     @Max(65535)
-    private int tcpPort;
+    private int tcpPort = 4150;
 
     @JsonProperty
     @Min(1)
     @Max(65535)
-    private int httpPort;
+    private int httpPort = 4151;
 
     @JsonProperty
     public String getHost() {
@@ -43,29 +43,6 @@ public class NSQProducerFactory {
         this.host = host;
     }
 
-    /**
-     * Get TCP port.
-     *
-     * @deprecated use {@link NSQProducerFactory#getTcpPort}
-     */
-    @JsonProperty
-    public int getPort() {
-        LOGGER.warn("Seems 'port' parameter is used for NSQ Producer. It's deprecated, use 'tcp_port' instead of.");
-        return tcpPort;
-    }
-
-    /**
-     * Set TCP port.
-     *
-     * @param port tcp port
-     * @deprecated use {@link NSQProducerFactory#setTcpPort}
-     */
-    @Deprecated
-    @JsonProperty
-    public void setPort(int port) {
-        LOGGER.warn("Seems 'port' parameter is used for NSQ Producer. It's deprecated, use 'tcp_port' instead of.");
-        this.tcpPort = port;
-    }
 
     public int getTcpPort() {
         return tcpPort;

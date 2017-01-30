@@ -17,23 +17,25 @@
 
 package com.vsct.dt.strowgr.admin.gui.cli;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.vsct.dt.strowgr.admin.gui.configuration.*;
+import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicCommitCurrentSchedulerFactory;
+import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicCommitPendingSchedulerFactory;
+import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicSchedulerFactory;
 import io.dropwizard.cli.Command;
 import io.dropwizard.setup.Bootstrap;
 import net.sourceforge.argparse4j.inf.Namespace;
 import net.sourceforge.argparse4j.inf.Subparser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ConfigurationCommand extends Command {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationCommand.class);
-
     public ConfigurationCommand() {
         super("config", "generate configuration file");
     }
@@ -49,30 +51,92 @@ public class ConfigurationCommand extends Command {
 
     }
 
-    public Map<String, String> defaultValues() {
-        HashMap<String, String> defaultValues = new HashMap<>();
-        defaultValues.put("server.connector.port", "50090");
-        defaultValues.put("repository.host", "localhost");
-        defaultValues.put("repository.port", "8500");
-        defaultValues.put("nsqLookup.host", "localhost");
-        defaultValues.put("nsqLookup.port", "4161");
-        defaultValues.put("nsqProducer.host", "localhost");
-        defaultValues.put("nsqProducer.tcpPort", "4150");
-        defaultValues.put("nsqProducer.httpPort", "4151");
+    String generateConfiguration() throws JsonProcessingException {
+        // initialize configuration
+        StrowgrConfiguration configuration = new StrowgrConfiguration();
+        configuration.setConsulRepositoryFactory(new ConsulRepositoryFactory());
+        configuration.setNsqLookupfactory(new NSQLookupFactory());
+        configuration.setNsqProducerFactory(new NSQProducerFactory());
+        configuration.setNsqProducerConfigFactory(new NSQConfigFactory());
+        PeriodicSchedulerFactory periodicScheduler = new PeriodicSchedulerFactory();
+        periodicScheduler.setPeriodicCommitCurrentSchedulerFactory(new PeriodicCommitCurrentSchedulerFactory());
+        periodicScheduler.setPeriodicCommitPendingSchedulerFactory(new PeriodicCommitPendingSchedulerFactory());
+        configuration.setPeriodicSchedulerFactory(periodicScheduler);
+        configuration.setNsqConsumerConfigFactory(new NSQConfigFactory());
+        configuration.setNsqProducerConfigFactory(new NSQConfigFactory());
 
-        return defaultValues;
+        // initialize jackson for yaml
+        YAMLFactory yamlFactory = new YAMLFactory();
+        yamlFactory.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, false);
+        ObjectMapper objectMapper = new ObjectMapper(yamlFactory);
+
+        // convert to map for filtering some internal configuration
+        Map<String, Object> map = objectMapper.convertValue(configuration, Map.class);
+        map.remove("metricsFactory");
+        map.remove("metrics");
+        map.remove("httpClient");
+        HashMap<String, Object> loggingValue = buildLoggingSnippet();
+
+        // add custom dropwizard logging snippet
+        map.put("logging", loggingValue);
+        HashMap<String, Object> server = buildServerSnippet();
+
+        // add custom dropwizard server snippet
+        map.put("server", server);
+        map.remove("nsqProducerConfigFactory");
+        map.remove("nsqConsumerConfigFactory");
+
+        return objectMapper.writeValueAsString(map);
+    }
+
+    private HashMap<String, Object> buildServerSnippet() {
+        // server
+        HashMap<String, Object> server = new HashMap<>();
+        server.put("type", "simple");
+        server.put("rootPath", "/api/");
+        server.put("applicationContextPath", "/");
+        //// connector
+        HashMap<String, String> connector = new HashMap<>();
+        connector.put("type", "http");
+        connector.put("port", "8080");
+        server.put("connector", connector);
+        //// request log
+        HashMap<String, Object> requestLog = new HashMap<>();
+        requestLog.put("timeZone", "UTC");
+        ArrayList<HashMap<String, String>> serverAppenders = new ArrayList<>();
+        HashMap<String, String> typeLogServer = new HashMap<>();
+        typeLogServer.put("type", "file");
+        serverAppenders.add(typeLogServer);
+        requestLog.put("appenders", serverAppenders);
+        server.put("requestLog", requestLog);
+        return server;
+    }
+
+    private HashMap<String, Object> buildLoggingSnippet() {
+        // logging
+        HashMap<String, Object> loggingValue = new HashMap<>();
+        //appenders
+        ArrayList<HashMap<String, String>> appenders = new ArrayList<>();
+        HashMap<String, String> appenderParameters = new HashMap<>();
+        appenderParameters.put("type", "console");
+        appenders.add(appenderParameters);
+        // loggers
+        HashMap<String, String> loggers = new HashMap<>();
+        loggers.put("com.vsct.dt", "INFO");
+
+        // altogether
+        loggingValue.put("loggers", loggers);
+        loggingValue.put("appenders", appenders);
+        loggingValue.put("level", "INFO");
+        return loggingValue;
     }
 
     @Override
     public void run(Bootstrap bootstrap, Namespace namespace) throws Exception {
         String outputFile = namespace.getString("output-file");
-        MustacheFactory mf = new DefaultMustacheFactory();
-        Mustache mustache = mf.compile("admin.yaml.mustach");
-        Map<String, String> properties = defaultValues();
-        for (Map.Entry<Object, Object> value : System.getProperties().entrySet()) {
-            properties.put((String) value.getKey(), (String) value.getValue());
-            LOGGER.debug("add property {} with value {}", value.getKey(), value.getValue());
-        }
-        mustache.execute(new FileWriter(outputFile), properties).flush();
+        FileWriter outFile = new FileWriter(outputFile);
+        outFile.write(generateConfiguration());
+        outFile.flush();
+        outFile.close();
     }
 }
