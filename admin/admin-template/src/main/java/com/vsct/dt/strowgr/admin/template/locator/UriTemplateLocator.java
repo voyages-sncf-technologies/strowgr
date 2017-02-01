@@ -50,7 +50,7 @@ public class UriTemplateLocator implements TemplateLocator {
         try {
             HttpGet getTemplate = new HttpGet(uri);
             getTemplate.addHeader("Content-Type", "text/plain; charset=utf-8");
-            LOGGER.debug("get template {}", uri);
+            LOGGER.trace("get template {}", uri);
             return client.execute(getTemplate, (response) -> {
                 Optional<String> result = Optional.empty();
                 int status = response.getStatusLine().getStatusCode();
@@ -60,7 +60,11 @@ public class UriTemplateLocator implements TemplateLocator {
                     if (entitySer == null) {
                         throw new IllegalStateException("template from " + uri + " has null content.");
                     } else {
-                        LOGGER.debug("template from " + uri + " starts with " + entitySer.substring(0, Math.max(20, entitySer.length())));
+                        if (LOGGER.isTraceEnabled()) {
+                            LOGGER.trace("template from " + uri + " starts with " + entitySer.substring(0, Math.min(20, entitySer.length())));
+                        } else {
+                            LOGGER.debug("success on " + uri);
+                        }
                     }
                     result = Optional.of(entitySer);
                 } else if (status != 404) {

@@ -50,8 +50,8 @@ public class IncomingEvents {
     }
 
     private IncomingEvents(Observable<ManagedHaproxy.HaproxyAction> actionsObservable, NSQConsumersFactory consumersFactory) {
-        this.commitCompletedConsumerHandler = new EventConsumersHandler<>(commitSuccessEventSubject, id -> consumersFactory.buildCommitCompletedConsumer(id));
-        this.commitFailedConsumerHandler = new EventConsumersHandler<>(commitFailureEventSubject, id -> consumersFactory.buildCommitFailedConsumer(id));
+        this.commitCompletedConsumerHandler = new EventConsumersHandler<>(commitSuccessEventSubject, consumersFactory::buildCommitCompletedConsumer);
+        this.commitFailedConsumerHandler = new EventConsumersHandler<>(commitFailureEventSubject, consumersFactory::buildCommitFailedConsumer);
         this.registerServerConsumer = consumersFactory.buildRegisterServerConsumer();
 
         actionsObservable.subscribe(this.commitCompletedConsumerHandler);
