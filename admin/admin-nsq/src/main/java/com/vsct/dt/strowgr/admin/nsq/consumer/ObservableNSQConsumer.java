@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.AsyncEmitter;
 import rx.Observable;
-import rx.functions.Action1;
 
 import java.util.Optional;
 
