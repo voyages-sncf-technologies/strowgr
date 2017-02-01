@@ -17,6 +17,8 @@
 
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
+import fr.vsct.dt.nsq.ServerAddress;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -24,8 +26,10 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashSet;
 
-import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AdminResourcesTest {
 
@@ -36,9 +40,26 @@ public class AdminResourcesTest {
         String versionExpected = new String(Files.readAllBytes(Paths.get(ClassLoader.getSystemResource("version-expected").toURI())));
 
         // test
-        String version = new AdminResources().getVersion();
+        String version = new AdminResources(null).version();
 
         // check
         Assert.assertEquals(versionExpected, version);
     }
+
+    @Test
+    public void should_return_list_of_nsqlookup() throws IOException, URISyntaxException {
+        // given
+        NSQLookup nsqLookup = mock(NSQLookup.class);
+        HashSet<ServerAddress> serverAddresses = new HashSet<>();
+        serverAddresses.add(new ServerAddress("localhost", 1234));
+        serverAddresses.add(new ServerAddress("1.2.3.4", 1111));
+        when(nsqLookup.lookup("mytopic")).thenReturn(serverAddresses);
+
+        // test
+        String resultAddresses = new AdminResources(nsqLookup).lookupTopic("mytopic");
+
+        // check
+        Assert.assertEquals("localhost:1234<br>1.2.3.4:1111", resultAddresses);
+    }
+
 }

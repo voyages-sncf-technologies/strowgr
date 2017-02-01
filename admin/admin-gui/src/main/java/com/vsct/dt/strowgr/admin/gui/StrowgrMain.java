@@ -214,7 +214,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         UriTemplateResources uriTemplateResources = new UriTemplateResources(templateLocator, templateGenerator);
         environment.jersey().register(uriTemplateResources);
 
-        AdminResources adminResources = new AdminResources();
+        AdminResources adminResources = new AdminResources(nsqLookup);
         environment.jersey().register(adminResources);
 
         eventBus.register(restApiResource);
@@ -227,7 +227,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         NSQHttpClient nsqLookupdHttpClient = new NSQHttpClient("http://" + configuration.getNsqLookupfactory().getHost() + ":" + configuration.getNsqLookupfactory().getPort(), httpClient);
 
         /* Healthchecks */
-        environment.healthChecks().register("nsqlookup", new NsqHealthcheck(nsqLookupdHttpClient));
+        environment.healthChecks().register("version", new NsqHealthcheck(nsqLookupdHttpClient));
         environment.healthChecks().register("nsqproducer", new NsqHealthcheck(nsqdHttpClient));
         environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
 

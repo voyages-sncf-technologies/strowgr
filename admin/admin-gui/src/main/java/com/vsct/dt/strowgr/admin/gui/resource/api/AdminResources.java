@@ -17,16 +17,14 @@
 
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import fr.vsct.dt.nsq.ServerAddress;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import java.io.*;
+import javax.ws.rs.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 /**
  * All resources about admin of Strowgr.
@@ -34,9 +32,27 @@ import java.nio.file.Paths;
 @Path("/admin")
 public class AdminResources {
 
+    private final NSQLookup nsqLookup;
+
+    public AdminResources(NSQLookup nsqLookup) {
+        this.nsqLookup = nsqLookup;
+    }
+
     @GET
     @Path("/version")
-    public String getVersion() throws IOException, URISyntaxException {
+    public String version() throws IOException, URISyntaxException {
         return new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("/version"))).readLine();
+    }
+
+    @GET
+    @Path("/nsqlookup/{topic : .+}")
+    public String lookupTopic(@PathParam("topic") String topic) throws IOException, URISyntaxException {
+        return nsqLookup.lookup(topic).stream().map(ServerAddress::toString).reduce((s, s2) -> s + "<br>" + s2).orElse("can't find topic on nsq lookups");
+    }
+
+    @POST
+    @Path("/version")
+    public void lookupTopic(@QueryParam("host") String host, @QueryParam("port") int port) throws IOException, URISyntaxException {
+        nsqLookup.addLookupAddress(host, port);
     }
 }
