@@ -80,6 +80,7 @@ public abstract class ObservableNSQConsumer<T> {
         this.observable = o
                 .map(this::transformSafe)
                 .filter(Optional::isPresent)
+                .doOnError(throwable -> LOGGER.error("consumer error on topic " + topic, throwable))
                 .map(Optional::get) //We don't want to stop the observable on error
                 .publish().autoConnect(); //Use publish/refCount for two reasons : NSQConsumer will be created only once. Obseravble will auto start
     }

@@ -82,7 +82,6 @@ public class ManagedHaproxy {
                 .filter(k -> !ids.contains(k))
                 .peek(id -> actions.add(HaproxyAction.unregister(id)))
                 .collect(Collectors.toSet());
-
         registered.removeAll(removedHaproxies);
 
         // Find all new haproxies
@@ -96,8 +95,7 @@ public class ManagedHaproxy {
         if (LOGGER.isInfoEnabled()) {
             if (actions.size() > 0) {
                 actions.forEach(a -> LOGGER.info("registration action on haproxy id={} -> register={}", a.id, a.isRegistration));
-            }
-            else {
+            } else {
                 LOGGER.debug("no registration action to perform");
             }
         }
@@ -114,7 +112,7 @@ public class ManagedHaproxy {
     }
 
     public static class HaproxyAction {
-        private final String  id;
+        private final String id;
         private final boolean isRegistration;
 
         private HaproxyAction(String id, boolean register) {
@@ -131,10 +129,12 @@ public class ManagedHaproxy {
         }
 
         public static HaproxyAction register(String id) {
+            LOGGER.info("register haproxy {}", id);
             return new HaproxyAction(id, true);
         }
 
         public static HaproxyAction unregister(String id) {
+            LOGGER.info("unregister haproxy {}", id);
             return new HaproxyAction(id, false);
         }
     }

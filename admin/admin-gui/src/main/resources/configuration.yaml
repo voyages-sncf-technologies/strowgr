@@ -31,4 +31,4 @@ logging:
     appenders:
       - type: console
 commitTimeout: 10
-handledHaproxyRefreshPeriodSecond: 1
+handledHaproxyRefreshPeriodSecond: 20
