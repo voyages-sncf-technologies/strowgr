@@ -170,7 +170,7 @@ class ConsulReader {
                 throw new IllegalStateException("get too many ports mapping");
             } else {
                 ConsulItem<Map<String, Integer>> consulItem = consulItems.get(0);
-                LOGGER.debug("consul items {}", consulItem);
+                LOGGER.trace("consul items {}", consulItem);
                 if (consulItem.getValue() == null) {
                     throw new IllegalStateException("value of " + consulItem.getKey() + " in consul repository is null");
                 }
