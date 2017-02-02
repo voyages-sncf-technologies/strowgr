@@ -121,7 +121,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                         LOGGER.error("error in consul repository for session " + sessionId + " and key " + entryPointKey, e);
                     }
                 } else {
-                    LOGGER.trace("lock acquired for key {} on session {}", entryPointKey, sessionId);
+                    LOGGER.debug("lock acquired for key {} on session {}", entryPointKey, sessionId);
                 }
             }
 
@@ -148,7 +148,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             createSessionURI.setEntity(new StringEntity(payload));
         }
         Optional<Session> session = client.execute(createSessionURI, response -> consulReader.parseHttpResponse(response, consulReader::parseSessionFromHttpEntity));
-        session.ifPresent(s -> LOGGER.debug("get session {} for key {}", s.ID, entryPointKey));
+        session.ifPresent(s -> LOGGER.trace("get session {} for key {}", s.ID, entryPointKey));
         return session;
     }
 
@@ -175,7 +175,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             LOGGER.trace("attempt to release lock for key " + key + " on session " + sessionLocal.get());
             HttpPut releaseEntryPointKeyURI = new HttpPut("http://" + host + ":" + port + "/v1/kv/admin/" + key.getID() + "/lock?release=" + sessionLocal.get());
             client.execute(releaseEntryPointKeyURI, httpResponse -> consulReader.parseHttpResponse(httpResponse, consulReader::parseBooleanFromHttpEntity));
-            LOGGER.trace("lock released for key " + key + " on session " + sessionLocal.get());
+            LOGGER.debug("lock released for key " + key + " on session " + sessionLocal.get());
 
             HttpPut destroySessionURI = new HttpPut("http://" + host + ":" + port + "/v1/session/destroy/" + sessionLocal.get());
             client.execute(destroySessionURI).close();
@@ -363,8 +363,8 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
             putIfAbsent("haproxyversions", "[]");
             putIfAbsent("haproxy/", "");
             putIfAbsent("admin/", "");
-        } catch (Exception e){
-            LOGGER.warn("Can't request consul server. Initialization of data has failed.",e);
+        } catch (Exception e) {
+            LOGGER.warn("Can't request consul server. Initialization of data has failed.", e);
         }
     }
 

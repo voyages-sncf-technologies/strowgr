@@ -232,7 +232,7 @@ public class EntryPointEventHandler {
 
     @Subscribe
     public void handle(CommitSuccessEvent event) {
-        LOGGER.debug("handles CommitSuccessEvent");
+        LOGGER.debug("handles {}", event);
         EntryPointKey key = event.getKey();
         try {
             if (this.stateManager.lock(key)) {
