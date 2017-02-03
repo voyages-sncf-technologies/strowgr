@@ -1,5 +1,7 @@
-package com.vsct.dt.strowgr.admin.core;
+package com.vsct.dt.strowgr.admin.core.entrypoint;
 
+import com.vsct.dt.strowgr.admin.core.EntryPointKey;
+import com.vsct.dt.strowgr.admin.core.EntryPointStateManager;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import io.reactivex.functions.Consumer;

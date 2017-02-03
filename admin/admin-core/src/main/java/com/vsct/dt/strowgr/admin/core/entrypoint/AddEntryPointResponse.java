@@ -14,33 +14,25 @@
  *  limitations under the License.
  *
  */
-package com.vsct.dt.strowgr.admin.core;
+package com.vsct.dt.strowgr.admin.core.entrypoint;
 
+import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
-import com.vsct.dt.strowgr.admin.core.rx.EventObserver;
 
 import java.util.Objects;
 
-/**
- * Event of a new added entry point.
- */
-public abstract class AddEntryPointEvent extends EntryPointEvent implements EventObserver<AddEntryPointResponse> {
+public class AddEntryPointResponse extends EntryPointEvent {
 
     private final EntryPoint configuration;
 
-    public AddEntryPointEvent(String correlationId, EntryPointKey key, EntryPoint configuration) {
+    public AddEntryPointResponse(String correlationId, EntryPointKey key, EntryPoint configuration) {
         super(correlationId, key);
         this.configuration = Objects.requireNonNull(configuration);
     }
 
     public EntryPoint getConfiguration() {
         return configuration;
-    }
-
-    @Override
-    public String toString() {
-        return "AddEntryPointEvent{correlationId=" + getCorrelationId() + "key=" + getKey() + "configuration=" + configuration + "}";
     }
 
 }

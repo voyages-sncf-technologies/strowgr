@@ -45,7 +45,7 @@ public class EntryPointStateManager {
      *
      * @param key of the entrypoint
      */
-    boolean lock(EntryPointKey key) {
+    public boolean lock(EntryPointKey key) {
         return this.repository.lock(key);
     }
 
@@ -54,11 +54,11 @@ public class EntryPointStateManager {
      *
      * @param key of the entrypoint
      */
-    void release(EntryPointKey key) {
+    public void release(EntryPointKey key) {
         this.repository.release(key);
     }
 
-    Optional<EntryPoint> getCurrentConfiguration(EntryPointKey key) {
+    public Optional<EntryPoint> getCurrentConfiguration(EntryPointKey key) {
         return repository.getCurrentConfiguration(key);
     }
 
@@ -66,7 +66,7 @@ public class EntryPointStateManager {
         return repository.getPendingConfiguration(key);
     }
 
-    Optional<EntryPoint> getCommittingConfiguration(EntryPointKey key) {
+    public Optional<EntryPoint> getCommittingConfiguration(EntryPointKey key) {
         return repository.getCommittingConfiguration(key);
     }
 
@@ -76,7 +76,7 @@ public class EntryPointStateManager {
      * @param entryPointKey to check
      * @return true if entryPointKey field 'autoreload' is present and valued at 'true'. False otherwise.
      */
-    boolean isAutoreloaded(EntryPointKey entryPointKey) {
+    public boolean isAutoreloaded(EntryPointKey entryPointKey) {
         return repository.isAutoreloaded(entryPointKey);
     }
 
@@ -89,7 +89,7 @@ public class EntryPointStateManager {
      * @param configuration of the entrypoint
      * @return the new pending configuration (optional)
      */
-    Optional<EntryPoint> prepare(EntryPointKey key, EntryPoint configuration) {
+    public Optional<EntryPoint> prepare(EntryPointKey key, EntryPoint configuration) {
         Optional<EntryPoint> committingConfiguration = repository.getCommittingConfiguration(key);
 
         if (committingConfiguration.isPresent()) {

@@ -1,6 +1,9 @@
 package com.vsct.dt.strowgr.admin.core;
 
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
+import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointResponse;
+import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointSubscriber;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;

@@ -14,24 +14,24 @@
  *  limitations under the License.
  *
  */
-package com.vsct.dt.strowgr.admin.core;
+package com.vsct.dt.strowgr.admin.core.entrypoint;
 
-import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
+import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.rx.EventObserver;
 
-import java.util.Objects;
+/**
+ * Event of a request to swap autoreload.
+ */
+public abstract class AutoReloadConfigEvent extends EntryPointEvent implements EventObserver<AutoReloadConfigResponse> {
 
-public class AddEntryPointResponse extends EntryPointEvent {
-
-    private final EntryPoint configuration;
-
-    public AddEntryPointResponse(String correlationId, EntryPointKey key, EntryPoint configuration) {
+    public AutoReloadConfigEvent(String correlationId, EntryPointKey key) {
         super(correlationId, key);
-        this.configuration = Objects.requireNonNull(configuration);
     }
 
-    public EntryPoint getConfiguration() {
-        return configuration;
+    @Override
+    public String toString() {
+        return "SwapAutoreloadRequestedEvent{correlationId=" + getCorrelationId() + "key=" + getKey() + "}";
     }
 
 }
