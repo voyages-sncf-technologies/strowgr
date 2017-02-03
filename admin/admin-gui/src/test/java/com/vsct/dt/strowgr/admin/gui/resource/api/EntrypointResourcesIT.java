@@ -1,20 +1,28 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.gui.ConsulMockRule;
 import com.vsct.dt.strowgr.admin.gui.StrowgrMain;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import java.util.Collections;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class EntrypointResourcesIT {
 
@@ -27,32 +35,69 @@ public class EntrypointResourcesIT {
     @ClassRule
     public static RuleChain ruleChain = RuleChain.outerRule(CONSUL_MOCK_RULE).around(ADMIN_RULE);
 
+    private static final WireMockServer CONSUL_MOCK = CONSUL_MOCK_RULE.getConsulMock();
+
     private final WebTarget adminAppTarget = ClientBuilder.newClient()
             .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
             .property(ClientProperties.CONNECT_TIMEOUT, 1_000)
             .property(ClientProperties.READ_TIMEOUT, 5_000)
             .target("http://localhost:8080/");
 
+    @Before
+    public void setUp() throws Exception {
+
+        CONSUL_MOCK_RULE.resetMocks();
+
+        // session mocks for test/test entry point
+        CONSUL_MOCK.stubFor(put(urlEqualTo("/v1/session/create"))
+                .withRequestBody(equalTo("{\"Behavior\":\"release\",\"TTL\":\"10s\", \"Name\":\"test/test\", \"LockDelay\": \"0\" }"))
+                .willReturn(aResponse().withBody("{\"ID\":\"session-id\"}")));
+        CONSUL_MOCK.stubFor(put(urlEqualTo("/v1/session/destroy/session-id")).willReturn(aResponse()));
+        CONSUL_MOCK.stubFor(put(urlEqualTo("/v1/kv/admin/test/test/lock?acquire=session-id")).willReturn(aResponse().withBody("true")));
+        CONSUL_MOCK.stubFor(put(urlEqualTo("/v1/kv/admin/test/test/lock?release=session-id")).willReturn(aResponse()));
+    }
+
     @Test
     public void swap_auto_reload_should_swap_key_in_consul() throws Exception {
         // given
-        WireMockServer consulMock = CONSUL_MOCK_RULE.getConsulMock();
-
-        consulMock.stubFor(put(urlEqualTo("/v1/session/create"))
-                .withRequestBody(equalTo("{\"Behavior\":\"release\",\"TTL\":\"10s\", \"Name\":\"test/test\", \"LockDelay\": \"0\" }"))
-                .willReturn(aResponse().withBody("{\"ID\":\"session-id\"}")));
-
-        consulMock.stubFor(put(urlEqualTo("/v1/session/destroy/session-id")).willReturn(aResponse()));
-
-        consulMock.stubFor(put(urlEqualTo("/v1/kv/admin/test/test/lock?acquire=session-id")).willReturn(aResponse().withBody("true")));
-        consulMock.stubFor(put(urlEqualTo("/v1/kv/admin/test/test/lock?release=session-id")).willReturn(aResponse()));
-        consulMock.stubFor(get(urlEqualTo("/v1/kv/admin/test/test/autoreload?raw")).willReturn(aResponse().withBody("false")));
-        consulMock.stubFor(put(urlEqualTo("/v1/kv/admin/test/test/autoreload")).willReturn(aResponse()));
+        CONSUL_MOCK.stubFor(get(urlEqualTo("/v1/kv/admin/test/test/autoreload?raw")).willReturn(aResponse().withBody("false")));
+        CONSUL_MOCK.stubFor(put(urlEqualTo("/v1/kv/admin/test/test/autoreload")).willReturn(aResponse()));
 
         // when
-        adminAppTarget.path("/api/entrypoints/test/test/autoreload/swap").request().method("PATCH");
+        Response response = adminAppTarget.path("/api/entrypoints/test/test/autoreload/swap").request().method("PATCH");
 
         // then
-        consulMock.verify(putRequestedFor(urlEqualTo("/v1/kv/admin/test/test/autoreload")).withRequestBody(equalTo("true")));
+        assertThat(response.getStatus()).isEqualTo(Status.PARTIAL_CONTENT.getStatusCode());
+        CONSUL_MOCK.verify(putRequestedFor(urlEqualTo("/v1/kv/admin/test/test/autoreload"))
+                .withRequestBody(equalTo("true")));
+    }
+
+    @Test
+    public void add_entry_point_should_create_entry_point_in_consul() throws Exception {
+        // given
+        EntryPoint entryPoint = EntryPoint
+                .onHaproxy("haproxy", 1)
+                .withUser("someUser")
+                .withVersion("someVersion")
+                .definesFrontends(Collections.emptySet())
+                .definesBackends(Collections.emptySet())
+                .withGlobalContext(Collections.emptyMap())
+                .build();
+
+        CONSUL_MOCK.stubFor(get(urlEqualTo("/v1/kv/haproxy/haproxy/platform?raw")).willReturn(aResponse().withBody("test")));
+        CONSUL_MOCK.stubFor(put(urlEqualTo("/v1/kv/admin/test/test/autoreload")).willReturn(aResponse()));
+        CONSUL_MOCK.stubFor(get(urlEqualTo("/v1/kv/admin/test/test/current?raw")).willReturn(aResponse().withStatus(Status.NOT_FOUND.getStatusCode())));
+        CONSUL_MOCK.stubFor(get(urlEqualTo("/v1/kv/admin/test/test/committing?raw")).willReturn(aResponse().withStatus(Status.NOT_FOUND.getStatusCode())));
+        CONSUL_MOCK.stubFor(put(urlEqualTo("/v1/kv/admin/test/test/current")).willReturn(aResponse()));
+
+        // when
+        Response response = adminAppTarget.path("/api/entrypoints/test/test").request().put(Entity.entity(entryPoint, MediaType.APPLICATION_JSON_TYPE));
+
+        // then
+        assertThat(response.getStatus()).isEqualTo(Status.CREATED.getStatusCode());
+        CONSUL_MOCK.verify(putRequestedFor(urlEqualTo("/v1/kv/admin/test/test/autoreload"))
+                .withRequestBody(equalTo("true")));
+        CONSUL_MOCK.verify(putRequestedFor(urlEqualTo("/v1/kv/admin/test/test/current"))
+                .withRequestBody(equalToJson("{\"haproxy\":\"haproxy\",\"hapUser\":\"someUser\",\"hapVersion\":\"someVersion\",\"bindingId\":1,\"frontends\":[],\"backends\":[],\"context\":{}}")));
     }
 }

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.*;
 import com.vsct.dt.strowgr.admin.core.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
+import com.vsct.dt.strowgr.admin.core.AddEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.AutoReloadConfigEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
@@ -211,8 +212,17 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .observeOn(io.reactivex.schedulers.Schedulers.io())
                 .subscribe(new AutoReloadConfigSubscriber(entryPointStateManager));
 
+        /* AddEntryPoint */
+        FlowableProcessor<AddEntryPointEvent> addEntryPointProcessor = UnicastProcessor
+                .<AddEntryPointEvent>create()
+                .toSerialized(); // support Thread-safe onNext calls
+
+        addEntryPointProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(new AddEntryPointSubscriber(entryPointStateManager, repository));
+
         /* REST Resources */
-        EntryPointResources restApiResource = new EntryPointResources(eventBus, repository, autoReloadConfigProcessor);
+        EntryPointResources restApiResource = new EntryPointResources(eventBus, repository, autoReloadConfigProcessor, addEntryPointProcessor);
         environment.jersey().register(restApiResource);
 
         HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);

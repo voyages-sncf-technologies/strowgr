@@ -57,36 +57,6 @@ public class EntryPointEventHandler {
     }
 
     @Subscribe
-    public void handle(AddEntryPointEvent event) {
-        LOGGER.debug("handles AddEntryPointEvent");
-        EntryPointKey entryPointKey = event.getKey();
-        try {
-            EntryPoint entryPoint = event.getConfiguration().orElseThrow(() -> new IllegalStateException("can't retrieve configuration of event " + event));
-
-            // force autoreload of entrypoint even if lock will fail
-            if (this.haproxyRepository.getHaproxyProperty(entryPoint.getHaproxy(), "platform").orElse("").equals("production")) {
-                this.stateManager.setAutoreload(entryPointKey, false);
-            } else {
-                this.stateManager.setAutoreload(entryPointKey, true);
-            }
-
-            if (this.stateManager.lock(entryPointKey)) {
-                if (!stateManager.getCommittingConfiguration(entryPointKey).isPresent() && !stateManager.getCurrentConfiguration(entryPointKey).isPresent()) {
-                    Optional<EntryPoint> preparedConfiguration = stateManager.prepare(entryPointKey, entryPoint);
-
-                    if (preparedConfiguration.isPresent()) {
-                        EntryPointAddedEvent entryPointAddedEvent = new EntryPointAddedEvent(event.getCorrelationId(), entryPointKey, preparedConfiguration.get());
-                        LOGGER.trace("from handle AddEntryPointEvent new EntryPoint {} added -> {}", entryPointKey.getID(), entryPointAddedEvent);
-                        outputBus.post(entryPointAddedEvent);
-                    }
-                }
-            }
-        } finally {
-            this.stateManager.release(entryPointKey);
-        }
-    }
-
-    @Subscribe
     public void handle(UpdateEntryPointEvent event) {
         EntryPointKey key = event.getKey();
         try {

@@ -13,8 +13,29 @@ public class ConsulMockRule implements TestRule {
 
     private final WireMockServer consulMock = new WireMockServer(options().port(8500));
 
-    public String consulKey(String key, String value) {
+    private String consulKey(String key, String value) {
         return "[{\"LockIndex\":0,\"Key\":\"" + key + "\",\"Flags\":0,\"Value\":\"" + Encoding.encodeBase64(value.getBytes()) + "\",\"CreateIndex\":0,\"ModifyIndex\":0}]";
+    }
+
+    public void resetMocks() {
+
+        // reset all mocks
+        consulMock.resetAll();
+
+        // init and scheduled resources
+        consulMock.stubFor(get(urlEqualTo("/v1/kv/ports"))
+                .willReturn(aResponse().withBody(consulKey("ports", "{}"))));
+        consulMock.stubFor(get(urlEqualTo("/v1/kv/admin?keys"))
+                .willReturn(aResponse().withBody("[]")));
+        consulMock.stubFor(get(urlEqualTo("/v1/kv/haproxy/?raw&recurse=true"))
+                .willReturn(aResponse().withBody("[]")));
+        consulMock.stubFor(get(urlEqualTo("/v1/kv/haproxy/"))
+                .willReturn(aResponse().withBody(consulKey("haproxy", ""))));
+        consulMock.stubFor(get(urlEqualTo("/v1/kv/admin/"))
+                .willReturn(aResponse().withBody(consulKey("admin", ""))));
+        consulMock.stubFor(get(urlEqualTo("/v1/kv/haproxyversions"))
+                .willReturn(aResponse().withBody(consulKey("haproxyversions", "[]"))));
+
     }
 
     @Override
@@ -25,24 +46,7 @@ public class ConsulMockRule implements TestRule {
                 try {
 
                     consulMock.start();
-
-                    consulMock.stubFor(get(urlEqualTo("/v1/kv/ports"))
-                            .willReturn(aResponse().withBody(consulKey("ports", "{}"))));
-
-                    consulMock.stubFor(get(urlEqualTo("/v1/kv/admin?keys"))
-                            .willReturn(aResponse().withBody("[]")));
-
-                    consulMock.stubFor(get(urlEqualTo("/v1/kv/haproxy/?raw&recurse=true"))
-                            .willReturn(aResponse().withBody("[]")));
-
-                    consulMock.stubFor(get(urlEqualTo("/v1/kv/haproxy/"))
-                            .willReturn(aResponse().withBody(consulKey("haproxy", ""))));
-
-                    consulMock.stubFor(get(urlEqualTo("/v1/kv/admin/"))
-                            .willReturn(aResponse().withBody(consulKey("admin", ""))));
-
-                    consulMock.stubFor(get(urlEqualTo("/v1/kv/haproxyversions"))
-                            .willReturn(aResponse().withBody(consulKey("haproxyversions", "[]"))));
+                    resetMocks();
 
                     statement.evaluate();
 
