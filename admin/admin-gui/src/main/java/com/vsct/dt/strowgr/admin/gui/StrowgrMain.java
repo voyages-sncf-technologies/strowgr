@@ -212,7 +212,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .subscribe(new AutoReloadConfigSubscriber(entryPointStateManager));
 
         /* REST Resources */
-        EntrypointResources restApiResource = new EntrypointResources(eventBus, repository, autoReloadConfigProcessor);
+        EntryPointResources restApiResource = new EntryPointResources(eventBus, repository, autoReloadConfigProcessor);
         environment.jersey().register(restApiResource);
 
         HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);

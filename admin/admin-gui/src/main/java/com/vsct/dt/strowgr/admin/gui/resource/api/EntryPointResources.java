@@ -60,9 +60,9 @@ import static javax.ws.rs.core.Response.*;
 @Path("/entrypoints")
 @Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
 @Consumes(MediaType.APPLICATION_JSON + ";charset=utf-8")
-public class EntrypointResources {
+public class EntryPointResources {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EntrypointResources.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EntryPointResources.class);
 
     private final EventBus eventBus;
     private final EntryPointRepository repository;
@@ -71,7 +71,7 @@ public class EntrypointResources {
 
     private final Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber;
 
-    public EntrypointResources(EventBus eventBus, EntryPointRepository repository,
+    public EntryPointResources(EventBus eventBus, EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber) {
         this.eventBus = eventBus;
         this.repository = repository;

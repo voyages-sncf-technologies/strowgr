@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
-public class EntrypointResourcesTest {
+public class EntryPointResourcesTest {
 
     private final EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
 
@@ -34,7 +34,7 @@ public class EntrypointResourcesTest {
     @SuppressWarnings("unchecked")
     private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
-    private final EntrypointResources entrypointResources = new EntrypointResources(eventBus, entryPointRepository, autoReloadConfigObserver);
+    private final EntryPointResources entryPointResources = new EntryPointResources(eventBus, entryPointRepository, autoReloadConfigObserver);
 
     @Test
     public void swap_auto_reload_should_return_partial_response_when_handler_success() throws Exception {
@@ -45,7 +45,7 @@ public class EntrypointResourcesTest {
         ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
 
         // when
-        entrypointResources.swapAutoReload(asyncResponse, key);
+        entryPointResources.swapAutoReload(asyncResponse, key);
         verify(autoReloadConfigObserver).onNext(autoReloadEventCaptor.capture());
         autoReloadEventCaptor.getValue().onSuccess(mock(AutoReloadConfigResponse.class));
 
@@ -64,7 +64,7 @@ public class EntrypointResourcesTest {
         RuntimeException exception = new RuntimeException();
 
         // when
-        entrypointResources.swapAutoReload(asyncResponse, entryPointKey);
+        entryPointResources.swapAutoReload(asyncResponse, entryPointKey);
         verify(autoReloadConfigObserver).onNext(autoReloadEventCaptor.capture());
         autoReloadEventCaptor.getValue().onError(exception);
 
@@ -80,7 +80,7 @@ public class EntrypointResourcesTest {
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
 
         // test
-        Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");
+        Response response = entryPointResources.deleteEntrypoint("MY_APP/MY_PLTF");
 
         // check
         assertThat(response.getStatus()).isEqualTo(OK.getStatusCode());
@@ -95,7 +95,7 @@ public class EntrypointResourcesTest {
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.empty());
 
         // test
-        Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");
+        Response response = entryPointResources.deleteEntrypoint("MY_APP/MY_PLTF");
 
         // check
         assertThat(response.getStatus()).isEqualTo(NOT_FOUND.getStatusCode());
@@ -110,7 +110,7 @@ public class EntrypointResourcesTest {
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
 
         // test
-        Response response = entrypointResources.deleteEntrypoint("MY_APP/MY_PLTF");
+        Response response = entryPointResources.deleteEntrypoint("MY_APP/MY_PLTF");
 
         // check
         assertThat(response.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR.getStatusCode());
