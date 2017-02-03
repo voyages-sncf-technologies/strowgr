@@ -31,6 +31,7 @@ public class AddEntryPointSubscriberTest {
     @Test
     public void should_prepare_configuration_if_no_current_or_committing_exists() {
         // given
+        EntryPoint expected = mock(EntryPoint.class);
         when(entryPoint.getHaproxy()).thenReturn("haproxy");
         when(event.getKey()).thenReturn(entryPointKey);
         when(event.getConfiguration()).thenReturn(entryPoint);
@@ -38,7 +39,7 @@ public class AddEntryPointSubscriberTest {
         when(stateManager.lock(entryPointKey)).thenReturn(true);
         when(stateManager.getCommittingConfiguration(entryPointKey)).thenReturn(Optional.empty());
         when(stateManager.getCurrentConfiguration(entryPointKey)).thenReturn(Optional.empty());
-        when(stateManager.prepare(entryPointKey, entryPoint)).thenReturn(Optional.of(entryPoint));
+        when(stateManager.prepare(entryPointKey, entryPoint)).thenReturn(Optional.of(expected));
 
         // when
         addEntryPointSubscriber.accept(event);
@@ -52,7 +53,7 @@ public class AddEntryPointSubscriberTest {
         assertThat(addEntryPointResponse).isNotNull();
         assertThat(addEntryPointResponse.getKey()).isEqualTo(entryPointKey);
         assertThat(addEntryPointResponse.getCorrelationId()).isEqualTo(entryPointKey.getID());
-        assertThat(addEntryPointResponse.getConfiguration()).isEqualTo(entryPoint);
+        assertThat(addEntryPointResponse.getConfiguration()).isEqualTo(expected);
     }
 
     @Test
