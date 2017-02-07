@@ -1,6 +1,5 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
-import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
@@ -29,8 +28,6 @@ import static org.mockito.Mockito.*;
 public class EntryPointResourcesTest {
 
     private final EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
-
-    private final EventBus eventBus = mock(EventBus.class);
 
     @SuppressWarnings("unchecked")
     private final Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber = mock(Subscriber.class);
@@ -68,7 +65,7 @@ public class EntryPointResourcesTest {
     @SuppressWarnings("unchecked")
     private ArgumentCaptor<UpdateEntryPointEvent> updateEntryPointEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
-    private final EntryPointResources entryPointResources = new EntryPointResources(eventBus, entryPointRepository,
+    private final EntryPointResources entryPointResources = new EntryPointResources(entryPointRepository,
             autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber, deleteEntryPointSubscriber,
             tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber, registerServerSubscriber,
             commitSuccessSubscriber, commitFailureSubscriber);
@@ -221,7 +218,7 @@ public class EntryPointResourcesTest {
 
         // check
         assertThat(response.getStatus()).isEqualTo(NOT_FOUND.getStatusCode());
-        verify(eventBus, times(0)).post(any(DeleteEntryPointEvent.class));
+        verify(deleteEntryPointSubscriber, never()).onNext(any(DeleteEntryPointEvent.class));
         verify(entryPointRepository, times(1)).getEntryPointsId();
     }
 

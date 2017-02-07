@@ -289,7 +289,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* REST Resources */
         EntryPointResources restApiResource = new EntryPointResources(
-                eventBus, repository,
+                repository,
                 autoReloadConfigProcessor, addEntryPointProcessor,
                 updateEntryPointProcessor, deleteEntryPointProcessor,
                 tryCommitPendingConfigurationProcessor,
@@ -311,8 +311,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         AdminResources adminResources = new AdminResources(nsqLookup);
         environment.jersey().register(adminResources);
-
-        eventBus.register(restApiResource);
 
         /* Http Client */
         CloseableHttpClient httpClient = new HttpClientBuilder(environment)

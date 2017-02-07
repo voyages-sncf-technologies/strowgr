@@ -19,7 +19,6 @@ package com.vsct.dt.strowgr.admin.gui.resource.api;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
-import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
@@ -77,7 +76,7 @@ public class EntryPointResources {
 
     private final Subscriber<CommitFailureEvent> commitFailureSubscriber;
 
-    public EntryPointResources(EventBus eventBus, EntryPointRepository repository,
+    public EntryPointResources(EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
                                Subscriber<AddEntryPointEvent> addEntryPointSubscriber,
                                Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber,
