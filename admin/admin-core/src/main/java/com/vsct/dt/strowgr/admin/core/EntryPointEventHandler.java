@@ -121,7 +121,7 @@ public class EntryPointEventHandler {
                         String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/" + configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
                         CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
                         LOGGER.trace("from handle -> post to event bus event {}", commitRequestedEvent);
-                        outputBus.post(commitRequestedEvent);
+                        commitRequestedSubscriber.onNext(commitRequestedEvent);
                     }
                 }
             }

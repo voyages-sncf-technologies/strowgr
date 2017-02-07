@@ -181,9 +181,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         // manage NSQProducer lifecycle by Dropwizard
         environment.lifecycle().manage(new NSQProducerManaged(nsqProducer));
-        // Pipeline from eventbus to NSQ producer
+
         ToNSQSubscriber toNSQSubscriber = new ToNSQSubscriber(new NSQDispatcher(nsqProducer));
-        eventBus.register(toNSQSubscriber);
 
         commitRequestedEventProcessor
                 .observeOn(io.reactivex.schedulers.Schedulers.io())
@@ -195,6 +194,15 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         tryCommitPendingConfigurationProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(eventHandler::handle);
+
+        /* TryCommitCurrentConfiguration */
+        FlowableProcessor<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationProcessor = UnicastProcessor
+                .<TryCommitCurrentConfigurationEvent>create()
+                .toSerialized();
+
+        tryCommitCurrentConfigurationProcessor
                 .observeOn(io.reactivex.schedulers.Schedulers.io())
                 .subscribe(eventHandler::handle);
 
@@ -215,7 +223,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         CommitSchedulerManaged<TryCommitCurrentConfigurationEvent> commitCurrentScheduler = new CommitSchedulerManaged<>("Commit Current", repository, ep ->
                 new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)),
-                eventBus::post, periodMilliCommitCurrentScheduler);
+                tryCommitCurrentConfigurationProcessor::onNext, periodMilliCommitCurrentScheduler);
         environment.lifecycle().manage(commitCurrentScheduler);
 
         /* AutoReloadConfig */
@@ -259,7 +267,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 eventBus, repository,
                 autoReloadConfigProcessor, addEntryPointProcessor,
                 updateEntryPointProcessor, deleteEntryPointProcessor,
-                tryCommitPendingConfigurationProcessor
+                tryCommitPendingConfigurationProcessor,
+                tryCommitCurrentConfigurationProcessor
         );
         environment.jersey().register(restApiResource);
 

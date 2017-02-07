@@ -4,6 +4,7 @@ import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
+import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
@@ -47,6 +48,9 @@ public class EntryPointResourcesTest {
     private Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber = mock(Subscriber.class);
 
     @SuppressWarnings("unchecked")
+    private Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber = mock(Subscriber.class);
+
+    @SuppressWarnings("unchecked")
     private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
     @SuppressWarnings("unchecked")
@@ -55,12 +59,9 @@ public class EntryPointResourcesTest {
     @SuppressWarnings("unchecked")
     private ArgumentCaptor<UpdateEntryPointEvent> updateEntryPointEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
-    @SuppressWarnings("unchecked")
-    private ArgumentCaptor<TryCommitPendingConfigurationEvent> tryCommitPendingEntryPointCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
-
     private final EntryPointResources entryPointResources = new EntryPointResources(eventBus, entryPointRepository,
             autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber, deleteEntryPointSubscriber,
-            tryCommitPendingConfigurationSubscriber);
+            tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber);
 
     @Test
     public void swap_auto_reload_should_return_partial_response_on_handler_success() throws Exception {
@@ -229,9 +230,12 @@ public class EntryPointResourcesTest {
     }
 
     @Test
-    public void try_commit_entry_point_should_return_ok_response_on_handler_success() throws Exception {
+    public void try_commit_pending_entry_point_should_send_event_to_subscriber() throws Exception {
         // given
         String entryPointKey = "entryPointKey";
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<TryCommitPendingConfigurationEvent> tryCommitPendingEntryPointCaptor = ArgumentCaptor.forClass(TryCommitPendingConfigurationEvent.class);
+
 
         // when
         String result = entryPointResources.tryCommitPending(entryPointKey);
@@ -240,6 +244,22 @@ public class EntryPointResourcesTest {
         assertThat(result).isNotNull();
         verify(tryCommitPendingConfigurationSubscriber).onNext(tryCommitPendingEntryPointCaptor.capture());
         assertThat(tryCommitPendingEntryPointCaptor.getValue().getKey().getID()).isEqualTo(entryPointKey);
+    }
+
+    @Test
+    public void try_commit_current_entry_point_should_send_event_to_subscriber() throws Exception {
+        // given
+        String entryPointKey = "entryPointKey";
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<TryCommitCurrentConfigurationEvent> tryCommitCurrentEntryPointCaptor = ArgumentCaptor.forClass(TryCommitCurrentConfigurationEvent.class);
+
+        // when
+        String result = entryPointResources.tryCommitCurrent(entryPointKey);
+
+        // then
+        assertThat(result).isNotNull();
+        verify(tryCommitCurrentConfigurationSubscriber).onNext(tryCommitCurrentEntryPointCaptor.capture());
+        assertThat(tryCommitCurrentEntryPointCaptor.getValue().getKey().getID()).isEqualTo(entryPointKey);
     }
 
 }

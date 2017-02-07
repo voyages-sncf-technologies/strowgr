@@ -77,12 +77,15 @@ public class EntryPointResources {
 
     private final Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber;
 
+    private final Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber;
+
     public EntryPointResources(EventBus eventBus, EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
                                Subscriber<AddEntryPointEvent> addEntryPointSubscriber,
                                Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber,
                                Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber,
-                               Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber) {
+                               Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber,
+                               Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
@@ -90,6 +93,7 @@ public class EntryPointResources {
         this.updateEntryPointSubscriber = updateEntryPointSubscriber;
         this.deleteEntryPointSubscriber = deleteEntryPointSubscriber;
         this.tryCommitPendingConfigurationSubscriber = tryCommitPendingConfigurationSubscriber;
+        this.tryCommitCurrentConfigurationSubscriber = tryCommitCurrentConfigurationSubscriber;
     }
 
     @GET
@@ -248,7 +252,9 @@ public class EntryPointResources {
     @Produces(MediaType.TEXT_PLAIN)
     public String tryCommitCurrent(@PathParam("id") String id) {
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
-        eventBus.post(event);
+
+        tryCommitCurrentConfigurationSubscriber.onNext(event);
+
         return "Request posted, look info to follow actions";
     }
 
@@ -259,6 +265,7 @@ public class EntryPointResources {
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
 
         tryCommitPendingConfigurationSubscriber.onNext(event);
+
         return "Request posted, look info to follow actions";
     }
 

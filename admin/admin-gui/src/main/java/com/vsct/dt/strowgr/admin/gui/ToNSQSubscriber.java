@@ -14,16 +14,14 @@
  *  limitations under the License.
  *
  */
-
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import fr.vsct.dt.nsq.exceptions.NSQException;
-import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
+import fr.vsct.dt.nsq.exceptions.NSQException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,10 +31,9 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * Subscribes for events from eventbus and dispatch them to NSQDispatcher.
- *
- * Created by william_montaz on 15/02/2016.
  */
-class ToNSQSubscriber {
+public class ToNSQSubscriber {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ToNSQSubscriber.class);
 
     private final NSQDispatcher nsqDispatcher;
@@ -45,7 +42,6 @@ class ToNSQSubscriber {
         this.nsqDispatcher = nsqDispatcher;
     }
 
-    @Subscribe
     public void handle(CommitRequestedEvent commitRequestedEvent) throws NSQException, TimeoutException, JsonProcessingException, UnsupportedEncodingException {
         EntryPoint configuration = commitRequestedEvent.getConfiguration();
         Map<String, String> context = configuration.getContext();
