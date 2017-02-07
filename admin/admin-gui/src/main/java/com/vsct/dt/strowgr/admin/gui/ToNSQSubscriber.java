@@ -55,7 +55,6 @@ class ToNSQSubscriber {
         this.nsqDispatcher.sendCommitRequested(commitRequestedEvent, configuration.getHaproxy(), application, platform, commitRequestedEvent.getBind());
     }
 
-    @Subscribe
     public void handle(DeleteEntryPointEvent deleteEntryPointEvent) throws NSQException, TimeoutException, JsonProcessingException {
         this.nsqDispatcher.sendDeleteRequested(deleteEntryPointEvent.getCorrelationId(), deleteEntryPointEvent.getHaproxyName(), deleteEntryPointEvent.getApplication(), deleteEntryPointEvent.getPlatform());
     }

@@ -25,6 +25,7 @@ import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.entrypoint.UpdateEntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
@@ -180,7 +181,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         // manage NSQProducer lifecycle by Dropwizard
         environment.lifecycle().manage(new NSQProducerManaged(nsqProducer));
         // Pipeline from eventbus to NSQ producer
-        eventBus.register(new ToNSQSubscriber(new NSQDispatcher(nsqProducer)));
+        ToNSQSubscriber toNSQSubscriber = new ToNSQSubscriber(new NSQDispatcher(nsqProducer));
+        eventBus.register(toNSQSubscriber);
 
         /* Commit schedulers */
         long periodMilliPendingCurrentScheduler = configuration
@@ -230,9 +232,21 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .observeOn(io.reactivex.schedulers.Schedulers.io())
                 .subscribe(new UpdateEntryPointSubscriber(entryPointStateManager));
 
+        /* DeleteEntryPoint */
+        FlowableProcessor<DeleteEntryPointEvent> deleteEntryPointProcessor = UnicastProcessor
+                .<DeleteEntryPointEvent>create()
+                .toSerialized();
+
+        deleteEntryPointProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(toNSQSubscriber::handle);
+
         /* REST Resources */
-        EntryPointResources restApiResource = new EntryPointResources(eventBus, repository,
-                autoReloadConfigProcessor, addEntryPointProcessor, updateEntryPointProcessor);
+        EntryPointResources restApiResource = new EntryPointResources(
+                eventBus, repository,
+                autoReloadConfigProcessor, addEntryPointProcessor,
+                updateEntryPointProcessor, deleteEntryPointProcessor
+        );
         environment.jersey().register(restApiResource);
 
         HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);

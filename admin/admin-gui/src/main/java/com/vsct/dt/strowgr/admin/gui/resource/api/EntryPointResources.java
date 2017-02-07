@@ -27,7 +27,10 @@ import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
-import com.vsct.dt.strowgr.admin.core.event.out.*;
+import com.vsct.dt.strowgr.admin.core.event.out.CommitCompletedEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.ServerRegisteredEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
@@ -74,15 +77,19 @@ public class EntryPointResources {
 
     private final Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber;
 
+    private final Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber;
+
     public EntryPointResources(EventBus eventBus, EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
                                Subscriber<AddEntryPointEvent> addEntryPointSubscriber,
-                               Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber) {
+                               Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber,
+                               Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
         this.addEntryPointSubscriber = addEntryPointSubscriber;
         this.updateEntryPointSubscriber = updateEntryPointSubscriber;
+        this.deleteEntryPointSubscriber = deleteEntryPointSubscriber;
     }
 
     @GET
@@ -184,7 +191,7 @@ public class EntryPointResources {
     @Path("/{id : .+}")
     @Timed
     public Response deleteEntrypoint(@PathParam("id") String id) {
-        Response response = serverError().build();
+        final Response response;
 
         // first get the current entrypoint configuration, if exists
         EntryPointKeyVsctImpl entryPointKey = EntryPointKeyVsctImpl.fromID(id);
@@ -199,7 +206,7 @@ public class EntryPointResources {
                     // entrypoint removed without problem
                     response = ok().entity(entryPointsId).build();
                     // thirdly, propagate the deleted event to other strowgr components
-                    eventBus.post(new DeleteEntryPointEvent(UUID.randomUUID().toString(), entryPointKey, configuration.get().getHaproxy(), entryPointKey.getApplication(), entryPointKey.getPlatform()));
+                    deleteEntryPointSubscriber.onNext(new DeleteEntryPointEvent(UUID.randomUUID().toString(), entryPointKey, configuration.get().getHaproxy(), entryPointKey.getApplication(), entryPointKey.getPlatform()));
                 } else {
                     Set<String> entryPointsId = repository.getEntryPointsId();
                     LOGGER.warn("can't removed an entrypoint though its configuration has just been found. May be there are concurrency problem, admin or/and repository are overloaded.");

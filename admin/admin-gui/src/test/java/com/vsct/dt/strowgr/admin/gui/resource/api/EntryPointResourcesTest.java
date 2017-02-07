@@ -3,13 +3,8 @@ package com.vsct.dt.strowgr.admin.gui.resource.api;
 import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointEvent;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointResponse;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AutoReloadConfigEvent;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AutoReloadConfigResponse;
-import com.vsct.dt.strowgr.admin.core.entrypoint.UpdateEntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
-import com.vsct.dt.strowgr.admin.core.entrypoint.UpdateEntryPointResponse;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
@@ -53,8 +48,11 @@ public class EntryPointResourcesTest {
     @SuppressWarnings("unchecked")
     private ArgumentCaptor<UpdateEntryPointEvent> updateEntryPointEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
+    @SuppressWarnings("unchecked")
+    private Subscriber<DeleteEntryPointEvent> deleteEntryPointEventCaptor = mock(Subscriber.class);
+
     private final EntryPointResources entryPointResources = new EntryPointResources(eventBus, entryPointRepository,
-            autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber);
+            autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber, deleteEntryPointEventCaptor);
 
     @Test
     public void swap_auto_reload_should_return_partial_response_on_handler_success() throws Exception {
@@ -179,7 +177,7 @@ public class EntryPointResourcesTest {
     }
 
     @Test
-    public void should_send_delete_entrypoint_event_and_return_204_when_delete_an_entrypoint() {
+    public void should_send_delete_entry_point_event_and_return_204_when_delete_an_entrypoint() {
         // given
         when(entryPointRepository.removeEntrypoint(any(EntryPointKey.class))).thenReturn(Optional.of(Boolean.TRUE));
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
@@ -189,7 +187,7 @@ public class EntryPointResourcesTest {
 
         // check
         assertThat(response.getStatus()).isEqualTo(OK.getStatusCode());
-        verify(eventBus).post(any(DeleteEntryPointEvent.class));
+        verify(deleteEntryPointEventCaptor).onNext(any(DeleteEntryPointEvent.class));
         verify(entryPointRepository, times(1)).getEntryPointsId();
     }
 
@@ -209,7 +207,7 @@ public class EntryPointResourcesTest {
     }
 
     @Test
-    public void should_return_500_when_repository_cannot_remove_entrypoint_delete_entrypoint() {
+    public void should_return_500_when_repository_cannot_remove_entry_point_delete_entry_point() {
         // given
         when(entryPointRepository.removeEntrypoint(any(EntryPointKey.class))).thenReturn(Optional.empty());
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
