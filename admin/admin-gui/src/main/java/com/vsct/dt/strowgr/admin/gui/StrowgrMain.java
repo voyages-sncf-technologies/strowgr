@@ -21,10 +21,7 @@ import com.google.common.eventbus.*;
 import com.vsct.dt.strowgr.admin.core.*;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
-import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
-import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
-import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
-import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
@@ -272,6 +269,15 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .observeOn(io.reactivex.schedulers.Schedulers.io())
                 .subscribe(eventHandler::handle);
 
+        /* CommitSuccessEvent */
+        FlowableProcessor<CommitSuccessEvent> commitSuccessProcessor = UnicastProcessor
+                .<CommitSuccessEvent>create()
+                .toSerialized();
+
+        commitSuccessProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(eventHandler::handle);
+
         /* REST Resources */
         EntryPointResources restApiResource = new EntryPointResources(
                 eventBus, repository,
@@ -279,7 +285,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 updateEntryPointProcessor, deleteEntryPointProcessor,
                 tryCommitPendingConfigurationProcessor,
                 tryCommitCurrentConfigurationProcessor,
-                registerServerProcessor
+                registerServerProcessor,
+                commitSuccessProcessor
         );
         environment.jersey().register(restApiResource);
 

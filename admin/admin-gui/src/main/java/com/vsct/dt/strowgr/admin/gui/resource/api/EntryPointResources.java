@@ -78,7 +78,10 @@ public class EntryPointResources {
     private final Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber;
 
     private final Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber;
+
     private final Subscriber<RegisterServerEvent> registerServerSubscriber;
+
+    private final Subscriber<CommitSuccessEvent> commitSuccessSubscriber;
 
     public EntryPointResources(EventBus eventBus, EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
@@ -87,7 +90,8 @@ public class EntryPointResources {
                                Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber,
                                Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber,
                                Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber,
-                               Subscriber<RegisterServerEvent> registerServerSubscriber) {
+                               Subscriber<RegisterServerEvent> registerServerSubscriber,
+                               Subscriber<CommitSuccessEvent> commitSuccessSubscriber) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
@@ -97,6 +101,7 @@ public class EntryPointResources {
         this.tryCommitPendingConfigurationSubscriber = tryCommitPendingConfigurationSubscriber;
         this.tryCommitCurrentConfigurationSubscriber = tryCommitCurrentConfigurationSubscriber;
         this.registerServerSubscriber = registerServerSubscriber;
+        this.commitSuccessSubscriber = commitSuccessSubscriber;
     }
 
     @GET
@@ -289,7 +294,7 @@ public class EntryPointResources {
     @Produces(MediaType.TEXT_PLAIN)
     public String sendCommitSuccess(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
         CommitSuccessEvent event = new CommitSuccessEvent(correlationId, new EntryPointKeyDefaultImpl(id));
-        eventBus.post(event);
+        commitSuccessSubscriber.onNext(event);
         return "Request posted, look info to follow actions";
     }
 

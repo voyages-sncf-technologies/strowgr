@@ -4,6 +4,7 @@ import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
+import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
@@ -56,6 +57,9 @@ public class EntryPointResourcesTest {
     private Subscriber<RegisterServerEvent> registerServerSubscriber = mock(Subscriber.class);
 
     @SuppressWarnings("unchecked")
+    private Subscriber<CommitSuccessEvent> commitSuccessSubscriber = mock(Subscriber.class);
+
+    @SuppressWarnings("unchecked")
     private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
     @SuppressWarnings("unchecked")
@@ -66,7 +70,8 @@ public class EntryPointResourcesTest {
 
     private final EntryPointResources entryPointResources = new EntryPointResources(eventBus, entryPointRepository,
             autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber, deleteEntryPointSubscriber,
-            tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber, registerServerSubscriber);
+            tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber, registerServerSubscriber,
+            commitSuccessSubscriber);
 
     @Test
     public void swap_auto_reload_should_return_partial_response_on_handler_success() throws Exception {
@@ -282,5 +287,21 @@ public class EntryPointResourcesTest {
         assertThat(registerServerCaptor.getValue().getKey().getID()).isEqualTo("id");
         assertThat(registerServerCaptor.getValue().getBackend()).isEqualTo("backend");
         assertThat(registerServerCaptor.getValue().getServers()).containsExactly(incomingEntryPoint);
+    }
+
+    @Test
+    public void send_commit_success_should_send_event_to_subscriber() throws Exception {
+        // given
+        IncomingEntryPointBackendServerJsonRepresentation incomingEntryPoint = mock(IncomingEntryPointBackendServerJsonRepresentation.class);
+        ArgumentCaptor<CommitSuccessEvent> commitSuccessCaptor = ArgumentCaptor.forClass(CommitSuccessEvent.class);
+
+        // when
+        entryPointResources.sendCommitSuccess("id", "correlation-id");
+
+        // then
+        verify(commitSuccessSubscriber).onNext(commitSuccessCaptor.capture());
+        assertThat(commitSuccessCaptor.getValue()).isNotNull();
+        assertThat(commitSuccessCaptor.getValue().getKey().getID()).isEqualTo("id");
+        assertThat(commitSuccessCaptor.getValue().getCorrelationId()).isEqualTo("correlation-id");
     }
 }
