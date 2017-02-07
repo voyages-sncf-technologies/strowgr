@@ -21,12 +21,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.vsct.dt.strowgr.admin.core.*;
+import com.vsct.dt.strowgr.admin.core.EntryPointKey;
+import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointEvent;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointResponse;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AutoReloadConfigEvent;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AutoReloadConfigResponse;
+import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.*;
@@ -74,13 +72,17 @@ public class EntryPointResources {
 
     private final Subscriber<AddEntryPointEvent> addEntryPointSubscriber;
 
+    private final Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber;
+
     public EntryPointResources(EventBus eventBus, EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
-                               Subscriber<AddEntryPointEvent> addEntryPointSubscriber) {
+                               Subscriber<AddEntryPointEvent> addEntryPointSubscriber,
+                               Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
         this.addEntryPointSubscriber = addEntryPointSubscriber;
+        this.updateEntryPointSubscriber = updateEntryPointSubscriber;
     }
 
     @GET
@@ -147,23 +149,19 @@ public class EntryPointResources {
     @Path("/{id : .+}")
     @Timed
     public void updateEntryPoint(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id, @Valid UpdatedEntryPointMappingJson updatedConfiguration) {
-        UpdateEntryPointEvent event = new UpdateEntryPointEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), updatedConfiguration);
 
-        new CallbackBuilder(event.getCorrelationId())
-                .whenReceive(new AsyncResponseCallback<EntryPointUpdatedEvent>(asyncResponse) {
-                    @Override
-                    void handle(EntryPointUpdatedEvent event) throws Exception {
-                        Optional<EntryPoint> eventConfiguration = event.getConfiguration();
-                        if (eventConfiguration.isPresent()) {
-                            asyncResponse.resume(eventConfiguration.get());
-                        } else {
-                            asyncResponse.resume(status(NOT_FOUND).build());
-                        }
-                    }
-                })
-                .timeoutAfter(10, TimeUnit.SECONDS);
+        updateEntryPointSubscriber.onNext(new UpdateEntryPointEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), updatedConfiguration) {
+            @Override
+            public void onSuccess(UpdateEntryPointResponse updateEntryPointResponse) {
+                asyncResponse.resume(updateEntryPointResponse.getConfiguration());
+            }
 
-        eventBus.post(event);
+            @Override
+            public void onError(Throwable throwable) {
+                asyncResponse.resume(throwable);
+            }
+        });
+
     }
 
     @GET
@@ -319,8 +317,8 @@ public class EntryPointResources {
     }
 
     @Subscribe
-    public void handle(EntryPointUpdatedEvent entryPointUpdatedEvent) {
-        handleWithCorrelationId(entryPointUpdatedEvent);
+    public void handle(UpdateEntryPointResponse updateEntryPointResponse) {
+        handleWithCorrelationId(updateEntryPointResponse);
     }
 
     @Subscribe

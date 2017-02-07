@@ -22,7 +22,9 @@ import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
-import com.vsct.dt.strowgr.admin.core.event.out.*;
+import com.vsct.dt.strowgr.admin.core.event.out.CommitCompletedEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.ServerRegisteredEvent;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import org.slf4j.Logger;
@@ -54,32 +56,6 @@ public class EntryPointEventHandler {
         this.haproxyRepository = haproxyRepository;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;
-    }
-
-    @Subscribe
-    public void handle(UpdateEntryPointEvent event) {
-        EntryPointKey key = event.getKey();
-        try {
-            if (this.stateManager.lock(key)) {
-
-                Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
-                        stateManager.getPendingConfiguration(key)
-                                .orElseGet(() -> stateManager.getCommittingConfiguration(key)
-                                        .orElseGet(() -> stateManager.getCurrentConfiguration(key)
-                                                .orElse(null)))
-                );
-
-                existingConfiguration.map(c -> c.mergeWithUpdate(event.getUpdatedEntryPoint()))
-                        .ifPresent(c -> {
-                            Optional<EntryPoint> preparedConfiguration = stateManager.prepare(key, c);
-                            if (preparedConfiguration.isPresent()) {
-                                outputBus.post(new EntryPointUpdatedEvent(event.getCorrelationId(), key, preparedConfiguration.get()));
-                            }
-                        });
-            }
-        } finally {
-            this.stateManager.release(key);
-        }
     }
 
     @Subscribe

@@ -19,14 +19,12 @@ package com.vsct.dt.strowgr.admin.gui;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.eventbus.*;
 import com.vsct.dt.strowgr.admin.core.*;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointSubscriber;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AutoReloadConfigSubscriber;
+import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
-import com.vsct.dt.strowgr.admin.core.entrypoint.AutoReloadConfigEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
+import com.vsct.dt.strowgr.admin.core.entrypoint.UpdateEntryPointEvent;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
@@ -223,8 +221,18 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .observeOn(io.reactivex.schedulers.Schedulers.io())
                 .subscribe(new AddEntryPointSubscriber(entryPointStateManager, repository));
 
+        /* UpdateEntryPoint */
+        FlowableProcessor<UpdateEntryPointEvent> updateEntryPointProcessor = UnicastProcessor
+                .<UpdateEntryPointEvent>create()
+                .toSerialized(); // support Thread-safe onNext calls
+
+        updateEntryPointProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(new UpdateEntryPointSubscriber(entryPointStateManager));
+
         /* REST Resources */
-        EntryPointResources restApiResource = new EntryPointResources(eventBus, repository, autoReloadConfigProcessor, addEntryPointProcessor);
+        EntryPointResources restApiResource = new EntryPointResources(eventBus, repository,
+                autoReloadConfigProcessor, addEntryPointProcessor, updateEntryPointProcessor);
         environment.jersey().register(restApiResource);
 
         HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);

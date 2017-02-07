@@ -1,21 +1,25 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.google.common.eventbus.EventBus;
-import com.vsct.dt.strowgr.admin.core.*;
+import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.entrypoint.AddEntryPointResponse;
 import com.vsct.dt.strowgr.admin.core.entrypoint.AutoReloadConfigEvent;
 import com.vsct.dt.strowgr.admin.core.entrypoint.AutoReloadConfigResponse;
+import com.vsct.dt.strowgr.admin.core.entrypoint.UpdateEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.entrypoint.UpdateEntryPointResponse;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
+import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.reactivestreams.Subscriber;
 
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Optional;
@@ -38,12 +42,19 @@ public class EntryPointResourcesTest {
     private final Subscriber<AddEntryPointEvent> addEntryPointSubscriber = mock(Subscriber.class);
 
     @SuppressWarnings("unchecked")
+    private final Subscriber<UpdateEntryPointEvent> updatedEntryPointSubscriber = mock(Subscriber.class);
+
+    @SuppressWarnings("unchecked")
     private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
     @SuppressWarnings("unchecked")
     private ArgumentCaptor<AddEntryPointEvent> addEntryPointEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
-    private final EntryPointResources entryPointResources = new EntryPointResources(eventBus, entryPointRepository, autoReloadConfigSubscriber, addEntryPointSubscriber);
+    @SuppressWarnings("unchecked")
+    private ArgumentCaptor<UpdateEntryPointEvent> updateEntryPointEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
+
+    private final EntryPointResources entryPointResources = new EntryPointResources(eventBus, entryPointRepository,
+            autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber);
 
     @Test
     public void swap_auto_reload_should_return_partial_response_on_handler_success() throws Exception {
@@ -61,7 +72,7 @@ public class EntryPointResourcesTest {
         assertThat(autoReloadEventCaptor.getValue().getKey().getID()).isEqualTo(entryPointKey);
         verify(asyncResponse).resume(responseCaptor.capture());
         assertThat(responseCaptor.getValue()).isNotNull();
-        assertThat(responseCaptor.getValue().getStatus()).isEqualTo(Response.Status.PARTIAL_CONTENT.getStatusCode());
+        assertThat(responseCaptor.getValue().getStatus()).isEqualTo(Status.PARTIAL_CONTENT.getStatusCode());
     }
 
     @Test
@@ -101,7 +112,7 @@ public class EntryPointResourcesTest {
         assertThat(addEntryPointEventCaptor.getValue().getConfiguration()).isEqualTo(entryPoint);
         verify(asyncResponse).resume(responseCaptor.capture());
         assertThat(responseCaptor.getValue()).isNotNull();
-        assertThat(responseCaptor.getValue().getStatus()).isEqualTo(Response.Status.CREATED.getStatusCode());
+        assertThat(responseCaptor.getValue().getStatus()).isEqualTo(Status.CREATED.getStatusCode());
         assertThat(responseCaptor.getValue().getEntity()).isEqualTo(entryPoint);
     }
 
@@ -121,6 +132,49 @@ public class EntryPointResourcesTest {
         // then
         assertThat(addEntryPointEventCaptor.getValue().getKey().getID()).isEqualTo(entryPointKey);
         assertThat(addEntryPointEventCaptor.getValue().getConfiguration()).isEqualTo(entryPoint);
+        verify(asyncResponse).resume(exception);
+    }
+
+    @Test
+    public void update_entry_point_should_return_ok_response_on_handler_success() throws Exception {
+        // given
+        UpdatedEntryPointMappingJson updatedEntryPointMappingJson = mock(UpdatedEntryPointMappingJson.class);
+        EntryPoint expected = mock(EntryPoint.class);
+        AsyncResponse asyncResponse = mock(AsyncResponse.class);
+        String entryPointKey = "entryPointKey";
+        ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
+        UpdateEntryPointResponse responseBody = mock(UpdateEntryPointResponse.class);
+        when(responseBody.getConfiguration()).thenReturn(expected);
+
+        // when
+        entryPointResources.updateEntryPoint(asyncResponse, entryPointKey, updatedEntryPointMappingJson);
+        verify(updatedEntryPointSubscriber).onNext(updateEntryPointEventCaptor.capture());
+        updateEntryPointEventCaptor.getValue().onSuccess(responseBody);
+
+        // verify
+        assertThat(updateEntryPointEventCaptor.getValue().getKey().getID()).isEqualTo(entryPointKey);
+        assertThat(updateEntryPointEventCaptor.getValue().getUpdatedEntryPoint()).isEqualTo(updatedEntryPointMappingJson);
+        verify(asyncResponse).resume(responseCaptor.capture());
+        assertThat(responseCaptor.getValue()).isNotNull();
+        assertThat(responseCaptor.getValue()).isEqualTo(expected);
+    }
+
+    @Test
+    public void update_entry_point_should_call_resume_with_error_on_handler_error() throws Exception {
+        // given
+        UpdatedEntryPointMappingJson updatedEntryPointMappingJson = mock(UpdatedEntryPointMappingJson.class);
+        AsyncResponse asyncResponse = mock(AsyncResponse.class);
+        String entryPointKey = "entryPointKey";
+        RuntimeException exception = new RuntimeException();
+
+        // when
+        entryPointResources.updateEntryPoint(asyncResponse, entryPointKey, updatedEntryPointMappingJson);
+        verify(updatedEntryPointSubscriber).onNext(updateEntryPointEventCaptor.capture());
+        updateEntryPointEventCaptor.getValue().onError(exception);
+
+        // then
+        assertThat(updateEntryPointEventCaptor.getValue().getKey().getID()).isEqualTo(entryPointKey);
+        assertThat(updateEntryPointEventCaptor.getValue().getUpdatedEntryPoint()).isEqualTo(updatedEntryPointMappingJson);
         verify(asyncResponse).resume(exception);
     }
 

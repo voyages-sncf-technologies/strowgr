@@ -62,7 +62,7 @@ public class EntryPointStateManager {
         return repository.getCurrentConfiguration(key);
     }
 
-    Optional<EntryPoint> getPendingConfiguration(EntryPointKey key) {
+    public Optional<EntryPoint> getPendingConfiguration(EntryPointKey key) {
         return repository.getPendingConfiguration(key);
     }
 
