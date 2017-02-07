@@ -24,7 +24,7 @@ import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
-import com.vsct.dt.strowgr.admin.core.entrypoint.UpdateEntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
@@ -123,16 +123,17 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ConsulRepository repository = configuration.getConsulRepositoryFactory().buildAndManageBy(environment);
         repository.init();
 
+        FlowableProcessor<CommitRequestedEvent> commitRequestedEventProcessor = UnicastProcessor
+                .<CommitRequestedEvent>create()
+                .toSerialized();
+
         EntryPointStateManager entryPointStateManager = new EntryPointStateManager(configuration.getCommitTimeout(), repository);
 
         /* EntryPoint State Machine */
-        EntryPointEventHandler eventHandler = EntryPointEventHandler.builder()
-                .backedBy(repository)
-                .managedBy(entryPointStateManager)
-                .getPortsWith(repository)
-                .findTemplatesWith(templateLocator)
-                .generatesTemplatesWith(templateGenerator)
-                .outputMessagesTo(eventBus);
+        EntryPointEventHandler eventHandler = new EntryPointEventHandler(
+                entryPointStateManager, repository, repository,
+                templateLocator, templateGenerator, eventBus,
+                commitRequestedEventProcessor);
 
         eventBus.register(eventHandler);
 
@@ -184,6 +185,19 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ToNSQSubscriber toNSQSubscriber = new ToNSQSubscriber(new NSQDispatcher(nsqProducer));
         eventBus.register(toNSQSubscriber);
 
+        commitRequestedEventProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(toNSQSubscriber::handle);
+
+        /* TryCommitPendingConfiguration */
+        FlowableProcessor<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationProcessor = UnicastProcessor
+                .<TryCommitPendingConfigurationEvent>create()
+                .toSerialized();
+
+        tryCommitPendingConfigurationProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(eventHandler::handle);
+
         /* Commit schedulers */
         long periodMilliPendingCurrentScheduler = configuration
                 .getPeriodicSchedulerFactory()
@@ -194,10 +208,9 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .getPeriodicCommitCurrentSchedulerFactory()
                 .getPeriodMilli();
 
-
-        CommitSchedulerManaged<TryCommitPendingConfigurationEvent> commitPendingScheduler = new CommitSchedulerManaged<>("Commit Pending", repository, ep ->
-                new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)),
-                eventBus::post, periodMilliPendingCurrentScheduler);
+        CommitSchedulerManaged<TryCommitPendingConfigurationEvent> commitPendingScheduler = new CommitSchedulerManaged<>("Commit Pending", repository, entryPoint ->
+                new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint)),
+                tryCommitPendingConfigurationProcessor::onNext, periodMilliPendingCurrentScheduler);
         environment.lifecycle().manage(commitPendingScheduler);
 
         CommitSchedulerManaged<TryCommitCurrentConfigurationEvent> commitCurrentScheduler = new CommitSchedulerManaged<>("Commit Current", repository, ep ->
@@ -245,7 +258,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         EntryPointResources restApiResource = new EntryPointResources(
                 eventBus, repository,
                 autoReloadConfigProcessor, addEntryPointProcessor,
-                updateEntryPointProcessor, deleteEntryPointProcessor
+                updateEntryPointProcessor, deleteEntryPointProcessor,
+                tryCommitPendingConfigurationProcessor
         );
         environment.jersey().register(restApiResource);
 

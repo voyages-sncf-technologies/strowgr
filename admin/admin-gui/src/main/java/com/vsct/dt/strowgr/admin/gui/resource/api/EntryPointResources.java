@@ -26,7 +26,6 @@ import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
-import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
@@ -76,17 +75,21 @@ public class EntryPointResources {
 
     private final Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber;
 
+    private final Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber;
+
     public EntryPointResources(EventBus eventBus, EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
                                Subscriber<AddEntryPointEvent> addEntryPointSubscriber,
                                Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber,
-                               Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber) {
+                               Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber,
+                               Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
         this.addEntryPointSubscriber = addEntryPointSubscriber;
         this.updateEntryPointSubscriber = updateEntryPointSubscriber;
         this.deleteEntryPointSubscriber = deleteEntryPointSubscriber;
+        this.tryCommitPendingConfigurationSubscriber = tryCommitPendingConfigurationSubscriber;
     }
 
     @GET
@@ -252,18 +255,11 @@ public class EntryPointResources {
     @POST
     @Path("/{id : .+}/try-commit-pending")
     @Produces(MediaType.TEXT_PLAIN)
-    public void tryCommitPending(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id) {
+    public String tryCommitPending(@PathParam("id") String id) {
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
 
-        new CallbackBuilder(event.getCorrelationId()).whenReceive(
-                new AsyncResponseCallback<CommitRequestedEvent>(asyncResponse) {
-                    @Override
-                    void handle(CommitRequestedEvent event) throws Exception {
-                        asyncResponse.resume(event.getConfiguration());
-                    }
-                }).timeoutAfter(10, TimeUnit.SECONDS);
-
-        eventBus.post(event);
+        tryCommitPendingConfigurationSubscriber.onNext(event);
+        return "Request posted, look info to follow actions";
     }
 
     @POST

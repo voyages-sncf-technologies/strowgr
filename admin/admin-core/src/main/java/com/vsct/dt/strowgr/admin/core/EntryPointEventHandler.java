@@ -27,6 +27,7 @@ import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.ServerRegisteredEvent;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
+import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,10 +39,6 @@ public class EntryPointEventHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntryPointEventHandler.class);
 
-    public static EntryPointEventHandlerBuilder builder() {
-        return new EntryPointEventHandlerBuilder();
-    }
-
     private final EntryPointStateManager stateManager;
     private final HaproxyRepository haproxyRepository;
     private final EventBus outputBus;
@@ -49,13 +46,19 @@ public class EntryPointEventHandler {
     private final TemplateLocator templateLocator;
     private final PortRepository portRepository;
 
-    EntryPointEventHandler(EntryPointStateManager stateManager, PortRepository portRepository, HaproxyRepository haproxyRepository, TemplateLocator templateLocator, TemplateGenerator templateGenerator, EventBus outputBus) {
+    private final Subscriber<CommitRequestedEvent> commitRequestedSubscriber;
+
+    public EntryPointEventHandler(EntryPointStateManager stateManager, PortRepository portRepository,
+                                  HaproxyRepository haproxyRepository, TemplateLocator templateLocator,
+                                  TemplateGenerator templateGenerator, EventBus outputBus,
+                                  Subscriber<CommitRequestedEvent> commitRequestedSubscriber) {
         this.stateManager = stateManager;
         this.outputBus = outputBus;
         this.portRepository = portRepository;
         this.haproxyRepository = haproxyRepository;
         this.templateLocator = templateLocator;
         this.templateGenerator = templateGenerator;
+        this.commitRequestedSubscriber = commitRequestedSubscriber;
     }
 
     @Subscribe
@@ -148,7 +151,7 @@ public class EntryPointEventHandler {
                         String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/" + configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
                         CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
                         LOGGER.trace("from handle -> post to event bus event {}", commitRequestedEvent);
-                        outputBus.post(commitRequestedEvent);
+                        commitRequestedSubscriber.onNext(commitRequestedEvent);
                     }
                 }
             }
@@ -208,47 +211,6 @@ public class EntryPointEventHandler {
         } finally {
             this.stateManager.release(key);
         }
-    }
-
-    public static class EntryPointEventHandlerBuilder {
-        private HaproxyRepository haproxyRepository;
-        private TemplateGenerator templateGenerator;
-        private TemplateLocator templateLocator;
-        private PortRepository portRepository;
-        private EntryPointStateManager stateManager;
-
-        private EntryPointEventHandlerBuilder() {
-        }
-
-        public EntryPointEventHandlerBuilder backedBy(HaproxyRepository haproxyRepository) {
-            this.haproxyRepository = haproxyRepository;
-            return this;
-        }
-
-        public EntryPointEventHandlerBuilder managedBy(EntryPointStateManager entryPointStateManager) {
-            this.stateManager = entryPointStateManager;
-            return this;
-        }
-
-        public EntryPointEventHandler outputMessagesTo(EventBus eventBus) {
-            return new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, eventBus);
-        }
-
-        public EntryPointEventHandlerBuilder findTemplatesWith(TemplateLocator templateLocator) {
-            this.templateLocator = templateLocator;
-            return this;
-        }
-
-        public EntryPointEventHandlerBuilder generatesTemplatesWith(TemplateGenerator templateGenerator) {
-            this.templateGenerator = templateGenerator;
-            return this;
-        }
-
-        public EntryPointEventHandlerBuilder getPortsWith(PortRepository portRepository) {
-            this.portRepository = portRepository;
-            return this;
-        }
-
     }
 
 }

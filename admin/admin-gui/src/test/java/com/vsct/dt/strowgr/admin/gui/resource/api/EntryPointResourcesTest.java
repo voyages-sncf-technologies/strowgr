@@ -4,6 +4,7 @@ import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
+import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
@@ -40,6 +41,12 @@ public class EntryPointResourcesTest {
     private final Subscriber<UpdateEntryPointEvent> updatedEntryPointSubscriber = mock(Subscriber.class);
 
     @SuppressWarnings("unchecked")
+    private Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber = mock(Subscriber.class);
+
+    @SuppressWarnings("unchecked")
+    private Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber = mock(Subscriber.class);
+
+    @SuppressWarnings("unchecked")
     private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
     @SuppressWarnings("unchecked")
@@ -49,10 +56,11 @@ public class EntryPointResourcesTest {
     private ArgumentCaptor<UpdateEntryPointEvent> updateEntryPointEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
     @SuppressWarnings("unchecked")
-    private Subscriber<DeleteEntryPointEvent> deleteEntryPointEventCaptor = mock(Subscriber.class);
+    private ArgumentCaptor<TryCommitPendingConfigurationEvent> tryCommitPendingEntryPointCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
     private final EntryPointResources entryPointResources = new EntryPointResources(eventBus, entryPointRepository,
-            autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber, deleteEntryPointEventCaptor);
+            autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber, deleteEntryPointSubscriber,
+            tryCommitPendingConfigurationSubscriber);
 
     @Test
     public void swap_auto_reload_should_return_partial_response_on_handler_success() throws Exception {
@@ -187,7 +195,7 @@ public class EntryPointResourcesTest {
 
         // check
         assertThat(response.getStatus()).isEqualTo(OK.getStatusCode());
-        verify(deleteEntryPointEventCaptor).onNext(any(DeleteEntryPointEvent.class));
+        verify(deleteEntryPointSubscriber).onNext(any(DeleteEntryPointEvent.class));
         verify(entryPointRepository, times(1)).getEntryPointsId();
     }
 
@@ -219,4 +227,19 @@ public class EntryPointResourcesTest {
         assertThat(response.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR.getStatusCode());
         verify(entryPointRepository, times(1)).getEntryPointsId();
     }
+
+    @Test
+    public void try_commit_entry_point_should_return_ok_response_on_handler_success() throws Exception {
+        // given
+        String entryPointKey = "entryPointKey";
+
+        // when
+        String result = entryPointResources.tryCommitPending(entryPointKey);
+
+        // then
+        assertThat(result).isNotNull();
+        verify(tryCommitPendingConfigurationSubscriber).onNext(tryCommitPendingEntryPointCaptor.capture());
+        assertThat(tryCommitPendingEntryPointCaptor.getValue().getKey().getID()).isEqualTo(entryPointKey);
+    }
+
 }

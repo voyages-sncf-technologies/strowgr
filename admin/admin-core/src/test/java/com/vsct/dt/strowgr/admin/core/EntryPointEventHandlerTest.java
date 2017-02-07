@@ -26,6 +26,7 @@ import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import org.junit.Test;
+import org.reactivestreams.Subscriber;
 
 import java.util.*;
 
@@ -45,9 +46,11 @@ public class EntryPointEventHandlerTest {
 
     private final TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
 
+    private final Subscriber<CommitRequestedEvent> commitRequestedSubscriber = mock(Subscriber.class);
+
     private final EventBus outputBus = mock(EventBus.class);
 
-    private final EntryPointEventHandler handler = new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, outputBus);
+    private final EntryPointEventHandler handler = new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, outputBus, commitRequestedSubscriber);
 
     @Test
     public void try_commit_current_applies_with_right_key() throws IncompleteConfigurationException {
@@ -149,7 +152,7 @@ public class EntryPointEventHandlerTest {
         // Check
         verify(stateManager).tryCommitPending(correlationId, key);
         CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(correlationId, new EntryPointKeyDefaultImpl("some_key"), entryPoint, "some template", "some syslog conf", "127.0.0.1");
-        verify(outputBus).post(commitRequestedEvent);
+        verify(commitRequestedSubscriber).onNext(commitRequestedEvent);
     }
 
     @Test
@@ -182,7 +185,7 @@ public class EntryPointEventHandlerTest {
         // Check
         verify(stateManager).tryCommitPending(correlationId, key);
         verify(stateManager).cancelCommit(key);
-        verify(outputBus, never()).post(any(CommitRequestedEvent.class));
+        verify(commitRequestedSubscriber, never()).onNext(any(CommitRequestedEvent.class));
     }
 
     @Test
