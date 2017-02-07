@@ -20,17 +20,14 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
-import com.vsct.dt.strowgr.admin.core.event.out.CommitCompletedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
-import com.vsct.dt.strowgr.admin.core.event.out.ServerRegisteredEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
@@ -297,40 +294,6 @@ public class EntryPointResources {
         CommitFailureEvent event = new CommitFailureEvent(correlationId, new EntryPointKeyDefaultImpl(id));
         eventBus.post(event);
         return "Request posted, look info to follow actions";
-    }
-
-    private void handleWithCorrelationId(EntryPointEvent event) {
-        try {
-            LOGGER.trace("remove entrypoint {} from http callbacks", event);
-            AsyncResponseCallback asyncResponseCallback = callbacks.remove(event.getCorrelationId());
-            if (asyncResponseCallback != null) {
-                asyncResponseCallback.handle(event);
-            } else {
-                LOGGER.debug("can't find callback for async response of the event {}", event);
-            }
-        } catch (Exception e) {
-            LOGGER.error("can't handle EntryPointEvent " + event, e);
-        }
-    }
-
-    @Subscribe
-    public void handle(CommitCompletedEvent commitCompletedEvent) {
-        handleWithCorrelationId(commitCompletedEvent);
-    }
-
-    @Subscribe
-    public void handle(AddEntryPointResponse addEntryPointResponse) {
-        handleWithCorrelationId(addEntryPointResponse);
-    }
-
-    @Subscribe
-    public void handle(UpdateEntryPointResponse updateEntryPointResponse) {
-        handleWithCorrelationId(updateEntryPointResponse);
-    }
-
-    @Subscribe
-    public void handle(ServerRegisteredEvent serverRegisteredEvent) {
-        handleWithCorrelationId(serverRegisteredEvent);
     }
 
     private abstract class AsyncResponseCallback<T> {
