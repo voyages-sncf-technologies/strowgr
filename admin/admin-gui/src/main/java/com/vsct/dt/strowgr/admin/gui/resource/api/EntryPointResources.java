@@ -43,14 +43,9 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static javax.ws.rs.core.Response.Status.*;
 import static javax.ws.rs.core.Response.*;
@@ -62,10 +57,7 @@ public class EntryPointResources {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EntryPointResources.class);
 
-    private final EventBus eventBus;
     private final EntryPointRepository repository;
-    private Map<String, AsyncResponseCallback> callbacks = new ConcurrentHashMap<>();
-    private ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
     private final Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber;
 
@@ -95,7 +87,6 @@ public class EntryPointResources {
                                Subscriber<RegisterServerEvent> registerServerSubscriber,
                                Subscriber<CommitSuccessEvent> commitSuccessSubscriber,
                                Subscriber<CommitFailureEvent> commitFailureSubscriber) {
-        this.eventBus = eventBus;
         this.repository = repository;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
         this.addEntryPointSubscriber = addEntryPointSubscriber;
@@ -309,45 +300,6 @@ public class EntryPointResources {
         CommitFailureEvent event = new CommitFailureEvent(correlationId, new EntryPointKeyDefaultImpl(id));
         commitFailureSubscriber.onNext(event);
         return "Request posted, look info to follow actions";
-    }
-
-    private abstract class AsyncResponseCallback<T> {
-        private final AsyncResponse asyncResponse;
-
-        protected AsyncResponseCallback(AsyncResponse asyncResponse) {
-            this.asyncResponse = asyncResponse;
-        }
-
-        abstract void handle(T event) throws Exception;
-
-        public void whenTimedOut() {
-            asyncResponse.resume(status(Response.Status.GATEWAY_TIMEOUT).build());
-        }
-    }
-
-    private class CallbackBuilder {
-
-        String eventId;
-        AsyncResponseCallback callback;
-
-        CallbackBuilder(String eventId) {
-            this.eventId = eventId;
-        }
-
-        CallbackBuilder whenReceive(AsyncResponseCallback callback) {
-            this.callback = callback;
-            return this;
-        }
-
-        public void timeoutAfter(long delay, TimeUnit unit) {
-            timeoutExecutor.schedule(() -> {
-                callback.whenTimedOut();
-                callbacks.remove(eventId);
-                LOGGER.trace("timeout reached, remove event {} from callbacks", eventId);
-            }, delay, unit);
-
-            callbacks.put(eventId, callback);
-        }
     }
 
 }
