@@ -4,12 +4,14 @@ import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
+import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
+import com.vsct.dt.strowgr.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.reactivestreams.Subscriber;
@@ -51,6 +53,9 @@ public class EntryPointResourcesTest {
     private Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber = mock(Subscriber.class);
 
     @SuppressWarnings("unchecked")
+    private Subscriber<RegisterServerEvent> registerServerSubscriber = mock(Subscriber.class);
+
+    @SuppressWarnings("unchecked")
     private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
     @SuppressWarnings("unchecked")
@@ -61,7 +66,7 @@ public class EntryPointResourcesTest {
 
     private final EntryPointResources entryPointResources = new EntryPointResources(eventBus, entryPointRepository,
             autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber, deleteEntryPointSubscriber,
-            tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber);
+            tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber, registerServerSubscriber);
 
     @Test
     public void swap_auto_reload_should_return_partial_response_on_handler_success() throws Exception {
@@ -186,7 +191,7 @@ public class EntryPointResourcesTest {
     }
 
     @Test
-    public void should_send_delete_entry_point_event_and_return_204_when_delete_an_entrypoint() {
+    public void should_send_delete_entry_point_event_and_return_204_when_delete_an_entry_point() {
         // given
         when(entryPointRepository.removeEntrypoint(any(EntryPointKey.class))).thenReturn(Optional.of(Boolean.TRUE));
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
@@ -201,7 +206,7 @@ public class EntryPointResourcesTest {
     }
 
     @Test
-    public void should_not_post_delete_event_and_return_404_when_delete_an_non_existing_entrypoint() {
+    public void should_not_post_delete_event_and_return_404_when_delete_an_non_existing_entry_point() {
         // given
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.empty());
@@ -262,4 +267,20 @@ public class EntryPointResourcesTest {
         assertThat(tryCommitCurrentEntryPointCaptor.getValue().getKey().getID()).isEqualTo(entryPointKey);
     }
 
+    @Test
+    public void register_server_should_send_event_to_subscriber() throws Exception {
+        // given
+        IncomingEntryPointBackendServerJsonRepresentation incomingEntryPoint = mock(IncomingEntryPointBackendServerJsonRepresentation.class);
+        ArgumentCaptor<RegisterServerEvent> registerServerCaptor = ArgumentCaptor.forClass(RegisterServerEvent.class);
+
+        // when
+        entryPointResources.registerServer("id", "backend", incomingEntryPoint);
+
+        // then
+        verify(registerServerSubscriber).onNext(registerServerCaptor.capture());
+        assertThat(registerServerCaptor.getValue()).isNotNull();
+        assertThat(registerServerCaptor.getValue().getKey().getID()).isEqualTo("id");
+        assertThat(registerServerCaptor.getValue().getBackend()).isEqualTo("backend");
+        assertThat(registerServerCaptor.getValue().getServers()).containsExactly(incomingEntryPoint);
+    }
 }

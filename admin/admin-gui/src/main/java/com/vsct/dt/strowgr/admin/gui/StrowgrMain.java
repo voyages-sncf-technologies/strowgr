@@ -22,6 +22,7 @@ import com.vsct.dt.strowgr.admin.core.*;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.TryCommitPendingConfigurationEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
@@ -262,13 +263,23 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .observeOn(io.reactivex.schedulers.Schedulers.io())
                 .subscribe(toNSQSubscriber::handle);
 
+        /* RegisterServer */
+        FlowableProcessor<RegisterServerEvent> registerServerProcessor = UnicastProcessor
+                .<RegisterServerEvent>create()
+                .toSerialized();
+
+        registerServerProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(eventHandler::handle);
+
         /* REST Resources */
         EntryPointResources restApiResource = new EntryPointResources(
                 eventBus, repository,
                 autoReloadConfigProcessor, addEntryPointProcessor,
                 updateEntryPointProcessor, deleteEntryPointProcessor,
                 tryCommitPendingConfigurationProcessor,
-                tryCommitCurrentConfigurationProcessor
+                tryCommitCurrentConfigurationProcessor,
+                registerServerProcessor
         );
         environment.jersey().register(restApiResource);
 

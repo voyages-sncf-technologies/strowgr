@@ -78,6 +78,7 @@ public class EntryPointResources {
     private final Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber;
 
     private final Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber;
+    private final Subscriber<RegisterServerEvent> registerServerSubscriber;
 
     public EntryPointResources(EventBus eventBus, EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
@@ -85,7 +86,8 @@ public class EntryPointResources {
                                Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber,
                                Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber,
                                Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber,
-                               Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber) {
+                               Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber,
+                               Subscriber<RegisterServerEvent> registerServerSubscriber) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
@@ -94,6 +96,7 @@ public class EntryPointResources {
         this.deleteEntryPointSubscriber = deleteEntryPointSubscriber;
         this.tryCommitPendingConfigurationSubscriber = tryCommitPendingConfigurationSubscriber;
         this.tryCommitCurrentConfigurationSubscriber = tryCommitCurrentConfigurationSubscriber;
+        this.registerServerSubscriber = registerServerSubscriber;
     }
 
     @GET
@@ -277,7 +280,7 @@ public class EntryPointResources {
                                  IncomingEntryPointBackendServerJsonRepresentation serverJson) {
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), backend, Sets.newHashSet(serverJson));
         LOGGER.debug("receive RegisterServerEvent {} for key {} and backend {}", event, id, backend);
-        eventBus.post(event);
+        registerServerSubscriber.onNext(event);
         return "Request posted, look info to follow actions";
     }
 
