@@ -278,6 +278,15 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .observeOn(io.reactivex.schedulers.Schedulers.io())
                 .subscribe(eventHandler::handle);
 
+        /* CommitFailureEvent */
+        FlowableProcessor<CommitFailureEvent> commitFailureProcessor = UnicastProcessor
+                .<CommitFailureEvent>create()
+                .toSerialized();
+
+        commitFailureProcessor
+                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .subscribe(eventHandler::handle);
+
         /* REST Resources */
         EntryPointResources restApiResource = new EntryPointResources(
                 eventBus, repository,
@@ -286,7 +295,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 tryCommitPendingConfigurationProcessor,
                 tryCommitCurrentConfigurationProcessor,
                 registerServerProcessor,
-                commitSuccessProcessor
+                commitSuccessProcessor,
+                commitFailureProcessor
         );
         environment.jersey().register(restApiResource);
 

@@ -83,6 +83,8 @@ public class EntryPointResources {
 
     private final Subscriber<CommitSuccessEvent> commitSuccessSubscriber;
 
+    private final Subscriber<CommitFailureEvent> commitFailureSubscriber;
+
     public EntryPointResources(EventBus eventBus, EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
                                Subscriber<AddEntryPointEvent> addEntryPointSubscriber,
@@ -91,7 +93,8 @@ public class EntryPointResources {
                                Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber,
                                Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber,
                                Subscriber<RegisterServerEvent> registerServerSubscriber,
-                               Subscriber<CommitSuccessEvent> commitSuccessSubscriber) {
+                               Subscriber<CommitSuccessEvent> commitSuccessSubscriber,
+                               Subscriber<CommitFailureEvent> commitFailureSubscriber) {
         this.eventBus = eventBus;
         this.repository = repository;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
@@ -102,6 +105,7 @@ public class EntryPointResources {
         this.tryCommitCurrentConfigurationSubscriber = tryCommitCurrentConfigurationSubscriber;
         this.registerServerSubscriber = registerServerSubscriber;
         this.commitSuccessSubscriber = commitSuccessSubscriber;
+        this.commitFailureSubscriber = commitFailureSubscriber;
     }
 
     @GET
@@ -303,7 +307,7 @@ public class EntryPointResources {
     @Produces(MediaType.TEXT_PLAIN)
     public String sendCommitFailure(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
         CommitFailureEvent event = new CommitFailureEvent(correlationId, new EntryPointKeyDefaultImpl(id));
-        eventBus.post(event);
+        commitFailureSubscriber.onNext(event);
         return "Request posted, look info to follow actions";
     }
 
