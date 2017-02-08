@@ -22,9 +22,7 @@ import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
-import com.vsct.dt.strowgr.admin.core.event.out.CommitCompletedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
-import com.vsct.dt.strowgr.admin.core.event.out.ServerRegisteredEvent;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import org.reactivestreams.Subscriber;
@@ -41,7 +39,6 @@ public class EntryPointEventHandler {
 
     private final EntryPointStateManager stateManager;
     private final HaproxyRepository haproxyRepository;
-    private final EventBus outputBus;
     private final TemplateGenerator templateGenerator;
     private final TemplateLocator templateLocator;
     private final PortRepository portRepository;
@@ -50,10 +47,9 @@ public class EntryPointEventHandler {
 
     public EntryPointEventHandler(EntryPointStateManager stateManager, PortRepository portRepository,
                                   HaproxyRepository haproxyRepository, TemplateLocator templateLocator,
-                                  TemplateGenerator templateGenerator, EventBus outputBus,
+                                  TemplateGenerator templateGenerator,
                                   Subscriber<CommitRequestedEvent> commitRequestedSubscriber) {
         this.stateManager = stateManager;
-        this.outputBus = outputBus;
         this.portRepository = portRepository;
         this.haproxyRepository = haproxyRepository;
         this.templateLocator = templateLocator;
@@ -88,9 +84,6 @@ public class EntryPointEventHandler {
                                 LOGGER.debug("- registered server {}", server);
                             }
                         }
-                        ServerRegisteredEvent serverRegisteredEvent = new ServerRegisteredEvent(event.getCorrelationId(), event.getKey(), event.getBackend(), event.getServers());
-                        LOGGER.debug("post to event bus event {}", serverRegisteredEvent);
-                        outputBus.post(serverRegisteredEvent);
                     } else {
                         LOGGER.warn("can't prepare configuration on key {}", key);
                     }
@@ -178,7 +171,8 @@ public class EntryPointEventHandler {
                     Optional<EntryPoint> currentConfiguration = stateManager.commit(key);
                     if (currentConfiguration.isPresent()) {
                         LOGGER.debug("Configuration for EntryPoint {} has been committed", event.getKey().getID());
-                        outputBus.post(new CommitCompletedEvent(event.getCorrelationId(), key, currentConfiguration.get()));
+                    } else {
+                        LOGGER.error("Configuration for EntryPoint {} could not be committed", event.getKey().getID());
                     }
                 }
             }

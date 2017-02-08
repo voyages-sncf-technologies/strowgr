@@ -128,7 +128,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         /* EntryPoint State Machine */
         EntryPointEventHandler eventHandler = new EntryPointEventHandler(
                 entryPointStateManager, repository, repository,
-                templateLocator, templateGenerator, eventBus,
+                templateLocator, templateGenerator,
                 commitRequestedEventProcessor);
 
         eventBus.register(eventHandler);

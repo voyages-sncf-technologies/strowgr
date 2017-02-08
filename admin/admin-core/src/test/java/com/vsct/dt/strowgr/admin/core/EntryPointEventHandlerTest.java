@@ -51,7 +51,7 @@ public class EntryPointEventHandlerTest {
 
     private final EventBus outputBus = mock(EventBus.class);
 
-    private final EntryPointEventHandler handler = new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, outputBus, commitRequestedSubscriber);
+    private final EntryPointEventHandler handler = new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, commitRequestedSubscriber);
 
     @Test
     public void try_commit_current_applies_with_right_key() throws IncompleteConfigurationException {
