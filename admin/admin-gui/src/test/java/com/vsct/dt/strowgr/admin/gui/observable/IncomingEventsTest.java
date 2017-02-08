@@ -65,7 +65,7 @@ public class IncomingEventsTest {
     @Before
     public void setUp() {
         actionsObservable = PublishSubject.create();
-        incomingEvents = IncomingEvents.watch(actionsObservable, new NSQConsumersMockFactory());
+        incomingEvents = new IncomingEvents(actionsObservable, new NSQConsumersMockFactory());
     }
 
     @After

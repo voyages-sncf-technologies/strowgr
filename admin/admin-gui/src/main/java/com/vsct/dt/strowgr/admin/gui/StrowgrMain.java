@@ -148,7 +148,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, configuration.getHandledHaproxyRefreshPeriodSecond());
         Observable<ManagedHaproxy.HaproxyAction> hapRegistrationActionsObservable = managedHaproxy.registrationActionsObservable();
 
-        IncomingEvents incomingEvents = IncomingEvents.watch(hapRegistrationActionsObservable, nsqConsumersFactory);
+        IncomingEvents incomingEvents = new IncomingEvents(hapRegistrationActionsObservable, nsqConsumersFactory);
 
         Observable<EntryPointEvent> nsqEventsObservable = incomingEvents.registerServerEventObservable()
                 .map(e -> (EntryPointEvent) e)//Downcast
