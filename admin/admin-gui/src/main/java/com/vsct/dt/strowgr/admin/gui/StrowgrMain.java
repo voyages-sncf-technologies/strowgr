@@ -37,6 +37,7 @@ import com.vsct.dt.strowgr.admin.gui.observable.ManagedHaproxy;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
 import com.vsct.dt.strowgr.admin.gui.subscribers.EventBusSubscriber;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
+import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
@@ -150,9 +151,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         IncomingEvents incomingEvents = new IncomingEvents(hapRegistrationActionsObservable, nsqConsumersFactory);
 
-        Observable<EntryPointEvent> nsqEventsObservable = incomingEvents.registerServerEventObservable()
-                .map(e -> (EntryPointEvent) e)//Downcast
-                .mergeWith(incomingEvents.commitFailureEventObservale())
+        Observable<EntryPointEvent> nsqEventsObservable = incomingEvents.commitFailureEventObservale()
+                .map(EntryPointEvent.class::cast) // downcast
                 .mergeWith(incomingEvents.commitSuccessEventObservale());
 
         //Push all nsq events to eventBus
@@ -264,6 +264,23 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         FlowableProcessor<RegisterServerEvent> registerServerProcessor = UnicastProcessor
                 .<RegisterServerEvent>create()
                 .toSerialized();
+
+        RegisterServerConsumer registerServerConsumer = nsqConsumersFactory.buildRegisterServerConsumer();
+
+        registerServerConsumer.observable()
+                .observeOn(Schedulers.newThread())
+                .subscribe(registerServerProcessor::onNext);
+
+        environment.lifecycle().manage(new Managed() {
+            @Override
+            public void start() throws Exception {
+            }
+
+            @Override
+            public void stop() throws Exception {
+                registerServerConsumer.shutdown();
+            }
+        });
 
         registerServerProcessor
                 .observeOn(io.reactivex.schedulers.Schedulers.io())
