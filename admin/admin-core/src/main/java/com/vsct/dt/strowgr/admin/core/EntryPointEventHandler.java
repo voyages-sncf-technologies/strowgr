@@ -66,6 +66,7 @@ public class EntryPointEventHandler {
         LOGGER.info("handles {}", event);
         EntryPointKey key = event.getKey();
         try {
+
             if (this.stateManager.lock(key)) {
                 Optional<EntryPoint> existingConfiguration = Optional.ofNullable(
                         stateManager.getPendingConfiguration(key)
@@ -96,6 +97,8 @@ public class EntryPointEventHandler {
                 });
             }
 
+        } catch (Exception e) {
+            LOGGER.error("Following error occurred while registering server {} for entry point {}", event, key, e);
         } finally {
             this.stateManager.release(key);
         }
@@ -125,6 +128,8 @@ public class EntryPointEventHandler {
                     }
                 }
             }
+        } catch (Exception e) {
+            LOGGER.error("Following error occurred while committing current configuration {} for entry point {}", event, entryPointKey, e);
         } finally {
             this.stateManager.release(entryPointKey);
         }
@@ -155,6 +160,8 @@ public class EntryPointEventHandler {
                     }
                 }
             }
+        } catch (Exception e) {
+            LOGGER.error("Following error occurred while committing pending configuration {} for entry point {}", event, entryPointKey, e);
         } finally {
             this.stateManager.release(entryPointKey);
         }
@@ -175,6 +182,8 @@ public class EntryPointEventHandler {
                     }
                 }
             }
+        } catch (Exception e) {
+            LOGGER.error("Following error occurred while publishing commit success {} for entry point {}", event, key, e);
         } finally {
             this.stateManager.release(key);
         }
@@ -208,6 +217,8 @@ public class EntryPointEventHandler {
                     LOGGER.info("Received a failed event but either there is no committing configuration or the correlation id does not match.");
                 }
             }
+        } catch (Exception e) {
+            LOGGER.error("Following error occurred while publishing commit failure {} for entry point {}", event, key, e);
         } finally {
             this.stateManager.release(key);
         }
