@@ -1,6 +1,7 @@
 package com.vsct.dt.strowgr.admin.gui.observable;
 
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
+import io.dropwizard.lifecycle.Managed;
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
 import io.reactivex.flowables.ConnectableFlowable;
@@ -32,7 +33,7 @@ import java.util.stream.Collectors;
  *  limitations under the License.
  *
  */
-public class ManagedHaproxy {
+public class ManagedHaproxy implements Managed {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ManagedHaproxy.class);
 
@@ -103,11 +104,13 @@ public class ManagedHaproxy {
         return actions;
     }
 
-    public void startLookup() {
+    @Override
+    public void start() {
         this.registrationActionsFlowable.connect();
     }
 
-    public void stopLookup() {
+    @Override
+    public void stop() {
         stop.onNext("STOP");
     }
 

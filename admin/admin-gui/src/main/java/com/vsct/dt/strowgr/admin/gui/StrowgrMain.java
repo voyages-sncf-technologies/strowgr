@@ -47,7 +47,6 @@ import fr.vsct.dt.nsq.lookup.NSQLookup;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
-import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.reactivex.Flowable;
@@ -145,30 +144,18 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         NSQConsumersFactory nsqConsumersFactory = NSQConsumersFactory.make(nsqLookup, consumerNsqConfig, objectMapper);
 
         ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, configuration.getHandledHaproxyRefreshPeriodSecond());
+        environment.lifecycle().manage(managedHaproxy);
 
         Flowable<ManagedHaproxy.HaproxyAction> hapRegistrationActionsObservable = managedHaproxy.registrationActionsFlowable();
 
         IncomingEvents incomingEvents = new IncomingEvents(hapRegistrationActionsObservable, nsqConsumersFactory);
+        environment.lifecycle().manage(incomingEvents);
 
         Flowable<RegisterServerEvent> registerServerFlowable = incomingEvents.registerServerEventFlowable();
 
         Flowable<CommitFailureEvent> commitFailureFlowable = incomingEvents.commitFailureEventFlowable();
 
         Flowable<CommitSuccessEvent> commitSuccessFlowable = incomingEvents.commitSuccessEventFlowable();
-
-        /* Manage resources */
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-                managedHaproxy.startLookup();
-            }
-
-            @Override
-            public void stop() throws Exception {
-                managedHaproxy.stopLookup();
-                incomingEvents.shutdownConsumers();
-            }
-        });
 
         /* NSQ Producers */
         NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();

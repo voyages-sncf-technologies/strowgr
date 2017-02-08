@@ -8,6 +8,7 @@ import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
+import io.dropwizard.lifecycle.Managed;
 import io.reactivex.Flowable;
 import io.reactivex.exceptions.Exceptions;
 import io.reactivex.processors.FlowableProcessor;
@@ -36,7 +37,7 @@ import java.util.function.Function;
  * ~  limitations under the License.
  * ~
  */
-public class IncomingEvents {
+public class IncomingEvents implements Managed {
 
     private final FlowableProcessor<CommitSuccessEvent> commitSuccessEventProcessor = UnicastProcessor.<CommitSuccessEvent>create().toSerialized();
     private final FlowableProcessor<CommitFailureEvent> commitFailureEventProcessor = UnicastProcessor.<CommitFailureEvent>create().toSerialized();
@@ -67,7 +68,13 @@ public class IncomingEvents {
         return registerServerConsumer.flowable();
     }
 
-    public void shutdownConsumers() {
+    @Override
+    public void start() {
+
+    }
+
+    @Override
+    public void stop() {
         commitCompletedConsumerHandler.shutdownConsumers();
         commitFailedConsumerHandler.shutdownConsumers();
         registerServerConsumer.shutdown();

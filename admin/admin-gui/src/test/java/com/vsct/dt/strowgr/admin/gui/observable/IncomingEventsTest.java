@@ -140,7 +140,7 @@ public class IncomingEventsTest {
         actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
         actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
 
-        incomingEvents.shutdownConsumers();
+        incomingEvents.stop();
 
         verify(CommitCompletedConsumerMock.get("hap1")).shutdown();
         verify(CommitCompletedConsumerMock.get("hap2")).shutdown();

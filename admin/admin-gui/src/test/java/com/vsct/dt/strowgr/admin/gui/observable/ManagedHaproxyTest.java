@@ -61,7 +61,7 @@ public class ManagedHaproxyTest {
             }
         });
 
-        managedHaproxy.startLookup();
+        managedHaproxy.start();
 
         scheduler.advanceTimeBy(10, TimeUnit.SECONDS);
 
@@ -96,7 +96,7 @@ public class ManagedHaproxyTest {
             }
         });
 
-        managedHaproxy.startLookup();
+        managedHaproxy.start();
 
         scheduler.advanceTimeBy(10, TimeUnit.SECONDS);
 
@@ -125,8 +125,8 @@ public class ManagedHaproxyTest {
 
         Disposable s = registrationActionsObservable.subscribe();
 
-        managedHaproxy.startLookup();
-        managedHaproxy.stopLookup();
+        managedHaproxy.start();
+        managedHaproxy.stop();
 
         assertThat(s.isDisposed(), is(true));
     }
