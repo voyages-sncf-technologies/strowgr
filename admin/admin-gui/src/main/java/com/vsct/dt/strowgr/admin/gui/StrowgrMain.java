@@ -17,7 +17,6 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.eventbus.SubscriberExceptionContext;
 import com.vsct.dt.strowgr.admin.core.*;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
@@ -298,13 +297,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 return Response.status(500).entity(e.getMessage()).type(MediaType.TEXT_PLAIN_TYPE).build();
             }
         });
-    }
-
-    private String subscriberExceptionContextToString(SubscriberExceptionContext subscriberExceptionContext) {
-        return "event: " + subscriberExceptionContext.getEvent() +
-                ", eventbus identifier: " + subscriberExceptionContext.getEventBus().identifier() +
-                ", subscriber: " + subscriberExceptionContext.getSubscriber() +
-                ", subscriber method name: " + subscriberExceptionContext.getSubscriberMethod().getName();
     }
 
 }
