@@ -17,7 +17,7 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.eventbus.*;
+import com.google.common.eventbus.SubscriberExceptionContext;
 import com.vsct.dt.strowgr.admin.core.*;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
@@ -60,9 +60,6 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
 
 public class StrowgrMain extends Application<StrowgrConfiguration> {
 
@@ -88,11 +85,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         strowgrConfiguration.addCommand(new ConfigurationCommand());
     }
 
-    @Subscribe
-    public void handleDeadEvent(DeadEvent deadEvent) {
-        LOGGER.error("an event has no subscribers: {}", deadEvent);
-    }
-
     @Override
     public void run(StrowgrConfiguration configuration, Environment environment) throws Exception {
         LOGGER.info("start dropwizard configuration");
@@ -101,15 +93,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         if (configuration.getNsqChannel() != null) {
             NSQ.CHANNEL = configuration.getNsqChannel();
         }
-
-        /* Main EventBus */
-        BlockingQueue eventBusQueue = new ArrayBlockingQueue<>(100);
-        ExecutorService executor = environment.lifecycle().executorService("main-bus-handler-threads").workQueue(eventBusQueue).minThreads(configuration.getThreads()).maxThreads(configuration.getThreads()).build();
-
-        EventBus eventBus = new AsyncEventBus(executor, (exception, context) -> {
-            LOGGER.error("exception on main event bus. Context: " + subscriberExceptionContextToString(context), exception);
-        });
-        eventBus.register(this); // for dead events
 
         /* Templates */
         TemplateGenerator templateGenerator = new MustacheTemplateGenerator();
@@ -130,8 +113,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 entryPointStateManager, repository, repository,
                 templateLocator, templateGenerator,
                 commitRequestedEventProcessor);
-
-        eventBus.register(eventHandler);
 
         /* NSQ Consumers */
         //Object mapper used for NSQ messages

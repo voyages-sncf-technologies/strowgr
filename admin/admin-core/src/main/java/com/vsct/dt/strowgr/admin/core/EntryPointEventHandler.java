@@ -16,8 +16,6 @@
  */
 package com.vsct.dt.strowgr.admin.core;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointFrontend;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
@@ -57,7 +55,6 @@ public class EntryPointEventHandler {
         this.commitRequestedSubscriber = commitRequestedSubscriber;
     }
 
-    @Subscribe
     public void handle(RegisterServerEvent event) {
         LOGGER.info("handles {}", event);
         EntryPointKey key = event.getKey();
@@ -97,7 +94,6 @@ public class EntryPointEventHandler {
         }
     }
 
-    @Subscribe
     public void handle(TryCommitCurrentConfigurationEvent event) throws IncompleteConfigurationException {
         LOGGER.debug("handles {}", event);
         EntryPointKey entryPointKey = event.getKey();
@@ -128,7 +124,6 @@ public class EntryPointEventHandler {
         }
     }
 
-    @Subscribe
     public void handle(TryCommitPendingConfigurationEvent event) throws IncompleteConfigurationException {
         LOGGER.debug("handles {}", event);
         EntryPointKey entryPointKey = event.getKey();
@@ -160,7 +155,6 @@ public class EntryPointEventHandler {
         }
     }
 
-    @Subscribe
     public void handle(CommitSuccessEvent event) {
         LOGGER.debug("handles {}", event);
         EntryPointKey key = event.getKey();
@@ -197,7 +191,6 @@ public class EntryPointEventHandler {
         return portsMapping;
     }
 
-    @Subscribe
     public void handle(CommitFailureEvent event) {
         LOGGER.debug("handles CommitFailureEvent");
         EntryPointKey key = event.getKey();
