@@ -1,9 +1,9 @@
 package com.vsct.dt.strowgr.admin.gui.subscribers;
 
 import com.google.common.eventbus.EventBus;
+import io.reactivex.subscribers.DefaultSubscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Subscriber;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -26,11 +26,11 @@ import java.util.concurrent.RejectedExecutionException;
  * <p>
  * THIS CLASS IS TEMPORARY AND WILL BE REMOVED WHEN WE WILL GET RID OF THE EVENT BUS
  */
-public class EventBusSubscriber extends Subscriber {
+public class EventBusSubscriber extends DefaultSubscriber<Object> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EventBusSubscriber.class);
 
-    private final EventBus      eventBus;
+    private final EventBus eventBus;
     private final BlockingQueue eventBusQueue;
 
     private int remaining = 0;
@@ -48,7 +48,7 @@ public class EventBusSubscriber extends Subscriber {
     }
 
     @Override
-    public void onCompleted() {
+    public void onComplete() {
         //Nothing to do
         LOGGER.debug("EventSubscriber got onCompleted message");
     }

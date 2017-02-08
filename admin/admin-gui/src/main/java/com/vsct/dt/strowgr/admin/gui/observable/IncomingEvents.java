@@ -6,13 +6,14 @@ import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.gui.factory.NSQConsumersFactory;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedConsumer;
-import com.vsct.dt.strowgr.admin.nsq.consumer.ObservableNSQConsumer;
+import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
-import rx.Observable;
-import rx.Subscriber;
-import rx.exceptions.Exceptions;
-import rx.subjects.Subject;
-import rx.subjects.UnicastSubject;
+import io.reactivex.Flowable;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.processors.FlowableProcessor;
+import io.reactivex.processors.UnicastProcessor;
+import io.reactivex.subscribers.DefaultSubscriber;
+import org.reactivestreams.Subscriber;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,33 +38,33 @@ import java.util.function.Function;
  */
 public class IncomingEvents {
 
-    private final UnicastSubject<CommitSuccessEvent> commitSuccessEventSubject = UnicastSubject.create();
-    private final UnicastSubject<CommitFailureEvent> commitFailureEventSubject = UnicastSubject.create();
+    private final FlowableProcessor<CommitSuccessEvent> commitSuccessEventProcessor = UnicastProcessor.<CommitSuccessEvent>create().toSerialized();
+    private final FlowableProcessor<CommitFailureEvent> commitFailureEventProcessor = UnicastProcessor.<CommitFailureEvent>create().toSerialized();
 
     private final RegisterServerConsumer registerServerConsumer;
 
-    private final EventConsumersHandler<CommitCompletedConsumer> commitCompletedConsumerHandler;
-    private final EventConsumersHandler<CommitFailedConsumer>    commitFailedConsumerHandler;
+    private final EventConsumersHandler<CommitCompletedConsumer, CommitSuccessEvent> commitCompletedConsumerHandler;
+    private final EventConsumersHandler<CommitFailedConsumer, CommitFailureEvent> commitFailedConsumerHandler;
 
-    public IncomingEvents(Observable<ManagedHaproxy.HaproxyAction> actionsObservable, NSQConsumersFactory consumersFactory) {
-        this.commitCompletedConsumerHandler = new EventConsumersHandler<>(commitSuccessEventSubject, consumersFactory::buildCommitCompletedConsumer);
-        this.commitFailedConsumerHandler = new EventConsumersHandler<>(commitFailureEventSubject, consumersFactory::buildCommitFailedConsumer);
+    public IncomingEvents(Flowable<ManagedHaproxy.HaproxyAction> actionsObservable, NSQConsumersFactory consumersFactory) {
+        this.commitCompletedConsumerHandler = new EventConsumersHandler<>(commitSuccessEventProcessor, consumersFactory::buildCommitCompletedConsumer);
+        this.commitFailedConsumerHandler = new EventConsumersHandler<>(commitFailureEventProcessor, consumersFactory::buildCommitFailedConsumer);
         this.registerServerConsumer = consumersFactory.buildRegisterServerConsumer();
 
         actionsObservable.subscribe(this.commitCompletedConsumerHandler);
         actionsObservable.subscribe(this.commitFailedConsumerHandler);
     }
 
-    public Observable<CommitSuccessEvent> commitSuccessEventObservale() {
-        return commitSuccessEventSubject;
+    public Flowable<CommitSuccessEvent> commitSuccessEventFlowable() {
+        return commitSuccessEventProcessor;
     }
 
-    public Observable<CommitFailureEvent> commitFailureEventObservale() {
-        return commitFailureEventSubject;
+    public Flowable<CommitFailureEvent> commitFailureEventFlowable() {
+        return commitFailureEventProcessor;
     }
 
-    public Observable<RegisterServerEvent> registerServerEventObservable() {
-        return registerServerConsumer.observable();
+    Flowable<RegisterServerEvent> registerServerEventObservable() {
+        return registerServerConsumer.flowable();
     }
 
     public void shutdownConsumers() {
@@ -73,26 +74,26 @@ public class IncomingEvents {
     }
 
     //If the consumer is cancelled there would be a leak because it will still be kept in the map
-    //But an ObservableNSQConsumer is very unlikely to be cancelled. This would mean a bigger problem in the app...
-    static class EventConsumersHandler<T extends ObservableNSQConsumer> extends Subscriber<ManagedHaproxy.HaproxyAction> {
+    //But an FlowableNSQConsumer is very unlikely to be cancelled. This would mean a bigger problem in the app...
+    static class EventConsumersHandler<T extends FlowableNSQConsumer<U>, U> extends DefaultSubscriber<ManagedHaproxy.HaproxyAction> {
 
         private final Map<String, T> consumers = new HashMap<>();
-        private final Subject      subject;
+        private final Subscriber<U> subscriber;
         private final Function<String, T> builder;
 
-        EventConsumersHandler(Subject subject, Function<String, T> builder) {
-            this.subject = subject;
+        EventConsumersHandler(Subscriber<U> subscriber, Function<String, T> builder) {
+            this.subscriber = subscriber;
             this.builder = builder;
         }
 
         private void createNewCommitEventConsumer(String id) {
             T consumer = builder.apply(id);
             consumers.put(id, consumer);
-            consumer.observable().subscribe(subject);
+            consumer.flowable().subscribe(subscriber);
         }
 
         private void shutdownAndDropCommitEventConsumer(String id) {
-            if(consumers.containsKey(id)){
+            if (consumers.containsKey(id)) {
                 T consumer = consumers.get(id);
                 consumer.shutdown();
                 consumers.remove(id);
@@ -100,7 +101,7 @@ public class IncomingEvents {
         }
 
         @Override
-        public void onCompleted() {
+        public void onComplete() {
             //Do nothing, we still want to consume events
         }
 
@@ -113,13 +114,12 @@ public class IncomingEvents {
         public void onNext(ManagedHaproxy.HaproxyAction action) {
             if (action.isRegistration()) {
                 createNewCommitEventConsumer(action.getId());
-            }
-            else {
+            } else {
                 shutdownAndDropCommitEventConsumer(action.getId());
             }
         }
 
-        public void shutdownConsumers() {
+        void shutdownConsumers() {
             Iterator<Map.Entry<String, T>> it = consumers.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, T> e = it.next();

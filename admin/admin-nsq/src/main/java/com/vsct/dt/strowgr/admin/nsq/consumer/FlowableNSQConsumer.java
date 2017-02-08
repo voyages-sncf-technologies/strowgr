@@ -4,10 +4,13 @@ import fr.vsct.dt.nsq.NSQConfig;
 import fr.vsct.dt.nsq.NSQConsumer;
 import fr.vsct.dt.nsq.NSQMessage;
 import fr.vsct.dt.nsq.lookup.NSQLookup;
+import io.netty.channel.EventLoopGroup;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.disposables.Disposable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.AsyncEmitter;
-import rx.Observable;
 
 import java.util.Optional;
 
@@ -32,32 +35,32 @@ import java.util.Optional;
  * It handles the emission of new messages, complete on shutdown and shutdown on subscriber cancellation
  * The implementing classes just have to implement the transform method, to provided a domain oriented message instead of a raw NSQMessage
  * <p>
- * Note: observers to this observable should not be blocking, if they do, they can block the eventloop
- * if observers needs to block, when should use the observeOn method of the observable to choose a different scheduler
+ * Note: observers to this flowable should not be blocking, if they do, they can block the eventloop
+ * if observers needs to block, when should use the observeOn method of the flowable to choose a different scheduler
  */
-public abstract class ObservableNSQConsumer<T> {
+public abstract class FlowableNSQConsumer<T> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ObservableNSQConsumer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FlowableNSQConsumer.class);
 
     private final String topic;
     private final String channel;
 
-    /* The observable created by this consumer */
-    private final Observable<T> observable;
+    /* The flowable created by this consumer */
+    private final Flowable<T> flowable;
 
     /*
      * We keep reference to consumer and to emitter to allow shutdown
      * and emission of onComplete. Make these reference volatile since they can be set in a different thread
      */
     private volatile NSQConsumer consumer;
-    private volatile AsyncEmitter<NSQMessage> emitter;
+    private volatile FlowableEmitter<NSQMessage> emitter;
 
-    ObservableNSQConsumer(NSQLookup lookup, String topic, String channel, NSQConfig config) {
+    FlowableNSQConsumer(NSQLookup lookup, String topic, String channel, NSQConfig config) {
         this.topic = topic;
         this.channel = channel;
 
-        Observable<NSQMessage> o = Observable
-                .fromEmitter(emitter -> {
+        Flowable<NSQMessage> flowable = Flowable
+                .create(emitter -> {
                     this.emitter = emitter;
                     consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
                     consumer.setLookupPeriod(10 * 1000);
@@ -67,26 +70,37 @@ public abstract class ObservableNSQConsumer<T> {
                     //This prevent the use of the default cachedThreadPool, which spawns a huge amount of threads when a lot of messages arrives
                     //The only thing to take care of is that message transformation should never be blocking the event queue
                     //This has to be taken care of by child classes
-                    consumer.setExecutor(config.getEventLoopGroup());
+                    EventLoopGroup eventLoopGroup = config.getEventLoopGroup();
+                    consumer.setExecutor(eventLoopGroup);
 
                     consumer.start();
 
-                    LOGGER.info("new subscription for ObservableNSQConsumer on topic {}, channel {}", topic, channel);
+                    LOGGER.info("new subscription for FlowableNSQConsumer on topic {}, channel {}", topic, channel);
 
-                    emitter.setCancellation(() -> consumer.shutdown());
+                    emitter.setDisposable(new Disposable() {
+                        @Override
+                        public void dispose() {
+                            consumer.shutdown();
+                        }
 
-                }, AsyncEmitter.BackpressureMode.BUFFER);
+                        @Override
+                        public boolean isDisposed() {
+                            return eventLoopGroup.isShutdown();
+                        }
+                    });
 
-        this.observable = o
+                }, BackpressureStrategy.BUFFER);
+
+        this.flowable = flowable
                 .map(this::transformSafe)
                 .filter(Optional::isPresent)
                 .doOnError(throwable -> LOGGER.error("consumer error on topic " + topic, throwable))
-                .map(Optional::get) //We don't want to stop the observable on error
-                .publish().autoConnect(); //Use publish/refCount for two reasons : NSQConsumer will be created only once. Obseravble will auto start
+                .map(Optional::get) //We don't want to stop the flowable on error
+                .publish().autoConnect(); //Use publish/refCount for two reasons : NSQConsumer will be created only once. Observable will auto start
     }
 
-    public Observable<T> observable() {
-        return observable;
+    public Flowable<T> flowable() {
+        return flowable;
     }
 
     private Optional<T> transformSafe(NSQMessage nsqMessage) {
@@ -106,12 +120,12 @@ public abstract class ObservableNSQConsumer<T> {
      * Shutsdown this consumer and advice subscriber
      */
     public void shutdown() {
-        LOGGER.info("stopping ObservableNSQConsumer on topic {}, channel {}", topic, channel);
+        LOGGER.info("stopping FlowableNSQConsumer on topic {}, channel {}", topic, channel);
         if (consumer != null) {
             consumer.shutdown();
         }
         if (emitter != null) {
-            emitter.onCompleted();
+            emitter.onComplete();
         }
     }
 

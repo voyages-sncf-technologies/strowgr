@@ -28,13 +28,10 @@ import com.vsct.dt.strowgr.admin.nsq.payload.RegisterServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Optional;
-
 /**
  * This consumer listens to the register_server events
  */
-public class RegisterServerConsumer extends ObservableNSQConsumer<RegisterServerEvent> {
+public class RegisterServerConsumer extends FlowableNSQConsumer<RegisterServerEvent> {
 
     private static final Logger LOGGER  = LoggerFactory.getLogger(RegisterServerConsumer.class);
 

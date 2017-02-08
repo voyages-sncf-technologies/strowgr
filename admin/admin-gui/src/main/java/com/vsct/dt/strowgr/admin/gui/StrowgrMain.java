@@ -52,13 +52,13 @@ import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.reactivex.Flowable;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.UnicastProcessor;
+import io.reactivex.schedulers.Schedulers;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.schedulers.Schedulers;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -147,18 +147,18 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         NSQConsumersFactory nsqConsumersFactory = NSQConsumersFactory.make(nsqLookup, consumerNsqConfig, objectMapper);
 
         ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, configuration.getHandledHaproxyRefreshPeriodSecond());
-        Observable<ManagedHaproxy.HaproxyAction> hapRegistrationActionsObservable = managedHaproxy.registrationActionsObservable();
+        Flowable<ManagedHaproxy.HaproxyAction> hapRegistrationActionsObservable = managedHaproxy.registrationActionsFlowable();
 
         IncomingEvents incomingEvents = new IncomingEvents(hapRegistrationActionsObservable, nsqConsumersFactory);
 
-        Observable<EntryPointEvent> nsqEventsObservable = incomingEvents.commitFailureEventObservale()
+        Flowable<EntryPointEvent> nsqEventsFlowable = incomingEvents.commitFailureEventFlowable()
                 .map(EntryPointEvent.class::cast) // downcast
-                .mergeWith(incomingEvents.commitSuccessEventObservale());
+                .mergeWith(incomingEvents.commitSuccessEventFlowable());
 
         //Push all nsq events to eventBus
         //We observeOn a single thread to avoid blocking nio eventloops
         //NSQToEventBusSubscriber applies backpressure in regard to the eventBusQueue
-        nsqEventsObservable.observeOn(Schedulers.newThread()).subscribe(new EventBusSubscriber(eventBus, eventBusQueue));
+        nsqEventsFlowable.observeOn(Schedulers.newThread()).subscribe(new EventBusSubscriber(eventBus, eventBusQueue));
 
         /* Manage resources */
         environment.lifecycle().manage(new Managed() {
@@ -183,7 +183,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ToNSQSubscriber toNSQSubscriber = new ToNSQSubscriber(new NSQDispatcher(nsqProducer));
 
         commitRequestedEventProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(toNSQSubscriber::handle);
 
         /* TryCommitPendingConfiguration */
@@ -192,7 +192,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         tryCommitPendingConfigurationProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
         /* TryCommitCurrentConfiguration */
@@ -201,7 +201,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         tryCommitCurrentConfigurationProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
         /* Commit schedulers */
@@ -230,7 +230,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized(); // support Thread-safe onNext calls
 
         autoReloadConfigProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(new AutoReloadConfigSubscriber(entryPointStateManager));
 
         /* AddEntryPoint */
@@ -239,7 +239,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized(); // support Thread-safe onNext calls
 
         addEntryPointProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(new AddEntryPointSubscriber(entryPointStateManager, repository));
 
         /* UpdateEntryPoint */
@@ -248,7 +248,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized(); // support Thread-safe onNext calls
 
         updateEntryPointProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(new UpdateEntryPointSubscriber(entryPointStateManager));
 
         /* DeleteEntryPoint */
@@ -257,7 +257,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         deleteEntryPointProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(toNSQSubscriber::handle);
 
         /* RegisterServer */
@@ -267,7 +267,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         RegisterServerConsumer registerServerConsumer = nsqConsumersFactory.buildRegisterServerConsumer();
 
-        registerServerConsumer.observable()
+        registerServerConsumer.flowable()
                 .observeOn(Schedulers.newThread())
                 .subscribe(registerServerProcessor::onNext);
 
@@ -283,7 +283,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         });
 
         registerServerProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
         /* CommitSuccessEvent */
@@ -292,7 +292,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         commitSuccessProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
         /* CommitFailureEvent */
@@ -301,7 +301,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         commitFailureProcessor
-                .observeOn(io.reactivex.schedulers.Schedulers.io())
+                .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
         /* REST Resources */

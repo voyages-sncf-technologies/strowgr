@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This consumer listens to the commit_failed events for a specific haproxy
  */
-public class CommitFailedConsumer extends ObservableNSQConsumer<CommitFailureEvent> {
+public class CommitFailedConsumer extends FlowableNSQConsumer<CommitFailureEvent> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumer.class);
 

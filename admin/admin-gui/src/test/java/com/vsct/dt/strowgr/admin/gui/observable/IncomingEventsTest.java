@@ -7,11 +7,10 @@ import com.vsct.dt.strowgr.admin.gui.factory.NSQConsumersFactory;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
+import io.reactivex.processors.PublishProcessor;
+import io.reactivex.subscribers.TestSubscriber;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import rx.observers.TestSubscriber;
-import rx.subjects.PublishSubject;
 
 import java.util.*;
 
@@ -59,14 +58,9 @@ public class IncomingEventsTest {
         }
     }
 
-    IncomingEvents                               incomingEvents;
-    PublishSubject<ManagedHaproxy.HaproxyAction> actionsObservable;
+    private final PublishProcessor<ManagedHaproxy.HaproxyAction> actionsProcessor = PublishProcessor.create();
 
-    @Before
-    public void setUp() {
-        actionsObservable = PublishSubject.create();
-        incomingEvents = new IncomingEvents(actionsObservable, new NSQConsumersMockFactory());
-    }
+    private final IncomingEvents incomingEvents = new IncomingEvents(actionsProcessor, new NSQConsumersMockFactory());
 
     @After
     public void tearDown() {
@@ -78,16 +72,16 @@ public class IncomingEventsTest {
     public void should_broadcast_commit_success_events_of_new_haproxy() {
         List<String> observedEvents = new ArrayList<>();
 
-        incomingEvents.commitSuccessEventObservale().subscribe(event -> {
+        incomingEvents.commitSuccessEventFlowable().subscribe(event -> {
             observedEvents.add(event.getCorrelationId());
         });
 
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
 
         CommitCompletedConsumerMock.sendEvent("hap1", "1-1");
         CommitCompletedConsumerMock.sendEvent("hap1", "1-2");
 
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
 
         CommitCompletedConsumerMock.sendEvent("hap2", "2-1");
         CommitCompletedConsumerMock.sendEvent("hap1", "1-3");
@@ -102,16 +96,16 @@ public class IncomingEventsTest {
     public void should_broadcast_commit_failure_events_of_new_haproxy() {
         List<String> observedEvents = new ArrayList<>();
 
-        incomingEvents.commitFailureEventObservale().subscribe(event -> {
+        incomingEvents.commitFailureEventFlowable().subscribe(event -> {
             observedEvents.add(event.getCorrelationId());
         });
 
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
 
         CommitFailedConsumerMock.sendEvent("hap1", "1-1");
         CommitFailedConsumerMock.sendEvent("hap1", "1-2");
 
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
 
         CommitFailedConsumerMock.sendEvent("hap2", "2-1");
         CommitFailedConsumerMock.sendEvent("hap1", "1-3");
@@ -124,16 +118,16 @@ public class IncomingEventsTest {
 
     @Test
     public void should_not_fail_if_unregister_non_registered_haproxy() {
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.unregister("hap1"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.unregister("hap1"));
     }
 
     @Test
     public void should_shutdown_unregistered_haproxy() {
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
 
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.unregister("hap1"));
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.unregister("hap2"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.unregister("hap1"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.unregister("hap2"));
 
         verify(CommitCompletedConsumerMock.get("hap1")).shutdown();
         verify(CommitCompletedConsumerMock.get("hap2")).shutdown();
@@ -143,8 +137,8 @@ public class IncomingEventsTest {
 
     @Test
     public void should_shutdown_all_consumers_when_asked() {
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
 
         incomingEvents.shutdownConsumers();
 
@@ -174,9 +168,9 @@ public class IncomingEventsTest {
     @Test
     public void should_respect_commit_completed_consumers_backpressure() {
         TestSubscriber subscriber = new TestSubscriber(1);
-        incomingEvents.commitSuccessEventObservale().subscribe(subscriber);
+        incomingEvents.commitSuccessEventFlowable().subscribe(subscriber);
 
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
 
         CommitCompletedConsumerMock.sendEvent("hap1", "1-1");
         CommitCompletedConsumerMock.sendEvent("hap1", "1-2");
@@ -187,9 +181,9 @@ public class IncomingEventsTest {
     @Test
     public void should_respect_commit_failed_consumers_backpressure() {
         TestSubscriber subscriber = new TestSubscriber(1);
-        incomingEvents.commitFailureEventObservale().subscribe(subscriber);
+        incomingEvents.commitFailureEventFlowable().subscribe(subscriber);
 
-        actionsObservable.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
 
         CommitFailedConsumerMock.sendEvent("hap1", "1-1");
         CommitFailedConsumerMock.sendEvent("hap1", "1-2");
@@ -211,11 +205,11 @@ public class IncomingEventsTest {
     static class CommitCompletedConsumerMock {
         static Map<String, CommitCompletedConsumerMock> mocks = new HashMap<>();
 
-        CommitCompletedConsumer            mock = mock(CommitCompletedConsumer.class);
-        PublishSubject<CommitSuccessEvent> s    = PublishSubject.create();
+        CommitCompletedConsumer mock = mock(CommitCompletedConsumer.class);
+        PublishProcessor<CommitSuccessEvent> s = PublishProcessor.create();
 
         CommitCompletedConsumerMock(String id) {
-            when(mock.observable()).thenReturn(s.onBackpressureBuffer());
+            when(mock.flowable()).thenReturn(s.onBackpressureBuffer());
         }
 
         void sendEvent(String correlationId) {
@@ -244,11 +238,11 @@ public class IncomingEventsTest {
     static class CommitFailedConsumerMock {
         static Map<String, CommitFailedConsumerMock> mocks = new HashMap<>();
 
-        CommitFailedConsumer               mock = mock(CommitFailedConsumer.class);
-        PublishSubject<CommitFailureEvent> s    = PublishSubject.create();
+        CommitFailedConsumer mock = mock(CommitFailedConsumer.class);
+        PublishProcessor<CommitFailureEvent> s = PublishProcessor.create();
 
         CommitFailedConsumerMock(String id) {
-            when(mock.observable()).thenReturn(s.onBackpressureBuffer());
+            when(mock.flowable()).thenReturn(s.onBackpressureBuffer());
         }
 
         void sendEvent(String correlationId) {
@@ -278,11 +272,11 @@ public class IncomingEventsTest {
     static class RegisterServerConsumerMock {
         static Map<String, RegisterServerConsumerMock> mocks = new HashMap<>();
 
-        RegisterServerConsumer              mock = mock(RegisterServerConsumer.class);
-        PublishSubject<RegisterServerEvent> s    = PublishSubject.create();
+        RegisterServerConsumer mock = mock(RegisterServerConsumer.class);
+        PublishProcessor<RegisterServerEvent> s = PublishProcessor.create();
 
         RegisterServerConsumerMock(String id) {
-            when(mock.observable()).thenReturn(s.onBackpressureBuffer());
+            when(mock.flowable()).thenReturn(s.onBackpressureBuffer());
         }
 
         void sendEvent(String correlationId) {

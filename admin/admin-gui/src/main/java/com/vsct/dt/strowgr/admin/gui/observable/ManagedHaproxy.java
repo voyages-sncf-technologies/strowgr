@@ -1,13 +1,13 @@
 package com.vsct.dt.strowgr.admin.gui.observable;
 
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.flowables.ConnectableFlowable;
+import io.reactivex.processors.PublishProcessor;
+import io.reactivex.schedulers.Schedulers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.Scheduler;
-import rx.observables.ConnectableObservable;
-import rx.schedulers.Schedulers;
-import rx.subjects.PublishSubject;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,23 +40,23 @@ public class ManagedHaproxy {
     private final Set<String> registered = new HashSet<>();
 
     //The connectable observable offered to subscribers
-    private final ConnectableObservable<HaproxyAction> registrationActionsObservable;
+    private final ConnectableFlowable<HaproxyAction> registrationActionsFlowable;
     //Subject to stop the observable
-    private final PublishSubject stop = PublishSubject.create();
+    private final PublishProcessor<String> stop = PublishProcessor.create();
 
     private ManagedHaproxy(ConsulRepository repository, long intervalSecond, Scheduler scheduler) {
         this.repository = repository;
 
-        this.registrationActionsObservable = Observable.interval(intervalSecond, TimeUnit.SECONDS, scheduler)
+        this.registrationActionsFlowable = Flowable.interval(intervalSecond, TimeUnit.SECONDS, scheduler)
                 .map(n -> lookupHaproxy())
-                .flatMap(Observable::from)
+                .flatMap(Flowable::<HaproxyAction>fromIterable)
                 .takeUntil(stop)
                 .publish(); //We want to control the start of the observable
     }
 
     //Return observable so that observable cannot be started withotu calling start method of ManagedHaproxy
-    public Observable<HaproxyAction> registrationActionsObservable() {
-        return registrationActionsObservable;
+    public Flowable<HaproxyAction> registrationActionsFlowable() {
+        return registrationActionsFlowable;
     }
 
     public static ManagedHaproxy create(ConsulRepository repository, long intervalSecond) {
@@ -104,11 +104,11 @@ public class ManagedHaproxy {
     }
 
     public void startLookup() {
-        this.registrationActionsObservable.connect();
+        this.registrationActionsFlowable.connect();
     }
 
     public void stopLookup() {
-        stop.onNext(null);
+        stop.onNext("STOP");
     }
 
     public static class HaproxyAction {
