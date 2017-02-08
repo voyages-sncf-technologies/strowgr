@@ -35,9 +35,7 @@ import com.vsct.dt.strowgr.admin.gui.managed.NSQProducerManaged;
 import com.vsct.dt.strowgr.admin.gui.observable.IncomingEvents;
 import com.vsct.dt.strowgr.admin.gui.observable.ManagedHaproxy;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
-import com.vsct.dt.strowgr.admin.gui.subscribers.EventBusSubscriber;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
-import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
@@ -147,18 +145,16 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         NSQConsumersFactory nsqConsumersFactory = NSQConsumersFactory.make(nsqLookup, consumerNsqConfig, objectMapper);
 
         ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, configuration.getHandledHaproxyRefreshPeriodSecond());
+
         Flowable<ManagedHaproxy.HaproxyAction> hapRegistrationActionsObservable = managedHaproxy.registrationActionsFlowable();
 
         IncomingEvents incomingEvents = new IncomingEvents(hapRegistrationActionsObservable, nsqConsumersFactory);
 
-        Flowable<EntryPointEvent> nsqEventsFlowable = incomingEvents.commitFailureEventFlowable()
-                .map(EntryPointEvent.class::cast) // downcast
-                .mergeWith(incomingEvents.commitSuccessEventFlowable());
+        Flowable<RegisterServerEvent> registerServerFlowable = incomingEvents.registerServerEventFlowable();
 
-        //Push all nsq events to eventBus
-        //We observeOn a single thread to avoid blocking nio eventloops
-        //NSQToEventBusSubscriber applies backpressure in regard to the eventBusQueue
-        nsqEventsFlowable.observeOn(Schedulers.newThread()).subscribe(new EventBusSubscriber(eventBus, eventBusQueue));
+        Flowable<CommitFailureEvent> commitFailureFlowable = incomingEvents.commitFailureEventFlowable();
+
+        Flowable<CommitSuccessEvent> commitSuccessFlowable = incomingEvents.commitSuccessEventFlowable();
 
         /* Manage resources */
         environment.lifecycle().manage(new Managed() {
@@ -265,24 +261,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .<RegisterServerEvent>create()
                 .toSerialized();
 
-        RegisterServerConsumer registerServerConsumer = nsqConsumersFactory.buildRegisterServerConsumer();
-
-        registerServerConsumer.flowable()
-                .observeOn(Schedulers.newThread())
-                .subscribe(registerServerProcessor::onNext);
-
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() throws Exception {
-            }
-
-            @Override
-            public void stop() throws Exception {
-                registerServerConsumer.shutdown();
-            }
-        });
-
         registerServerProcessor
+                .mergeWith(registerServerFlowable)
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
@@ -292,6 +272,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         commitSuccessProcessor
+                .mergeWith(commitSuccessFlowable)
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
@@ -301,6 +282,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         commitFailureProcessor
+                .mergeWith(commitFailureFlowable)
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 

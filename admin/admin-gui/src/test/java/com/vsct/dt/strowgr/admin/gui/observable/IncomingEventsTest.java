@@ -153,7 +153,7 @@ public class IncomingEventsTest {
     public void should_broadcast_register_server_events() {
         List<String> observedEvents = new ArrayList<>();
 
-        incomingEvents.registerServerEventObservable().subscribe(event -> {
+        incomingEvents.registerServerEventFlowable().subscribe(event -> {
             observedEvents.add(event.getCorrelationId());
         });
 
@@ -194,7 +194,7 @@ public class IncomingEventsTest {
     @Test
     public void should_respect_register_server_consumers_backpressure() {
         TestSubscriber subscriber = new TestSubscriber(1);
-        incomingEvents.registerServerEventObservable().subscribe(subscriber);
+        incomingEvents.registerServerEventFlowable().subscribe(subscriber);
 
         RegisterServerConsumerMock.sendEvent("single", "1-1");
         RegisterServerConsumerMock.sendEvent("single", "1-2");

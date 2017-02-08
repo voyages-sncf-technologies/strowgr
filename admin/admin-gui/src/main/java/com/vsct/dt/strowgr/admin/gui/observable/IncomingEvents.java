@@ -63,7 +63,7 @@ public class IncomingEvents {
         return commitFailureEventProcessor;
     }
 
-    Flowable<RegisterServerEvent> registerServerEventObservable() {
+    public Flowable<RegisterServerEvent> registerServerEventFlowable() {
         return registerServerConsumer.flowable();
     }
 
