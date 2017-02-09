@@ -31,6 +31,8 @@ import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.managed.CommitSchedulerManaged;
 import com.vsct.dt.strowgr.admin.gui.managed.NSQProducerManaged;
+import com.vsct.dt.strowgr.admin.gui.observable.CommitRequestedSubscriber;
+import com.vsct.dt.strowgr.admin.gui.observable.DeleteEntryPointSubscriber;
 import com.vsct.dt.strowgr.admin.gui.observable.IncomingEvents;
 import com.vsct.dt.strowgr.admin.gui.observable.ManagedHaproxy;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
@@ -143,11 +145,11 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         // manage NSQProducer lifecycle by Dropwizard
         environment.lifecycle().manage(new NSQProducerManaged(nsqProducer));
 
-        ToNSQSubscriber toNSQSubscriber = new ToNSQSubscriber(new NSQDispatcher(nsqProducer));
+        NSQDispatcher nsqDispatcher = new NSQDispatcher(nsqProducer);
 
         commitRequestedEventProcessor
                 .observeOn(Schedulers.io())
-                .subscribe(toNSQSubscriber::handle);
+                .subscribe(new CommitRequestedSubscriber(nsqDispatcher));
 
         /* TryCommitPendingConfiguration */
         FlowableProcessor<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationProcessor = UnicastProcessor
@@ -221,7 +223,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         deleteEntryPointProcessor
                 .observeOn(Schedulers.io())
-                .subscribe(toNSQSubscriber::handle);
+                .subscribe(new DeleteEntryPointSubscriber(nsqDispatcher));
 
         /* RegisterServer */
         FlowableProcessor<RegisterServerEvent> registerServerProcessor = UnicastProcessor
