@@ -29,11 +29,7 @@ public class NSQConsumersFactory {
     private final NSQConfig    nsqConfig;
     private final ObjectMapper objectMapper;
 
-    public static NSQConsumersFactory make(NSQLookup lookup, NSQConfig nsqConfig, ObjectMapper objectMapper) {
-        return new NSQConsumersFactory(lookup, nsqConfig, objectMapper);
-    }
-
-    protected NSQConsumersFactory(NSQLookup lookup, NSQConfig nsqConfig, ObjectMapper objectMapper) {
+    public NSQConsumersFactory(NSQLookup lookup, NSQConfig nsqConfig, ObjectMapper objectMapper) {
         this.lookup = lookup;
         this.nsqConfig = nsqConfig;
         this.objectMapper = objectMapper;

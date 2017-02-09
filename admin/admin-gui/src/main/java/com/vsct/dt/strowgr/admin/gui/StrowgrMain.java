@@ -123,7 +123,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         //NSQConsumers configuration
         NSQConfig consumerNsqConfig = configuration.getNsqConsumerConfigFactory().build();
 
-        NSQConsumersFactory nsqConsumersFactory = NSQConsumersFactory.make(nsqLookup, consumerNsqConfig, objectMapper);
+        NSQConsumersFactory nsqConsumersFactory = new NSQConsumersFactory(nsqLookup, consumerNsqConfig, objectMapper);
 
         ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, configuration.getHandledHaproxyRefreshPeriodSecond());
         environment.lifecycle().manage(managedHaproxy);
@@ -258,8 +258,10 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         /* REST Resources */
         EntryPointResources restApiResource = new EntryPointResources(
                 repository,
-                autoReloadConfigProcessor, addEntryPointProcessor,
-                updateEntryPointProcessor, deleteEntryPointProcessor,
+                autoReloadConfigProcessor,
+                addEntryPointProcessor,
+                updateEntryPointProcessor,
+                deleteEntryPointProcessor,
                 tryCommitPendingConfigurationProcessor,
                 tryCommitCurrentConfigurationProcessor,
                 registerServerProcessor,
