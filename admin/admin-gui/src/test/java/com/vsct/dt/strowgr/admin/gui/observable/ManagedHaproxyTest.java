@@ -4,7 +4,6 @@ import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.TestScheduler;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -35,12 +34,11 @@ import static org.mockito.Mockito.when;
  */
 public class ManagedHaproxyTest {
 
-    private ConsulRepository repository;
+    private ConsulRepository repository = mock(ConsulRepository.class);
 
-    @Before
-    public void setUp() {
-        repository = mock(ConsulRepository.class);
-    }
+    private final TestScheduler scheduler = new TestScheduler();
+
+    private final ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, 1, scheduler);
 
     @Test
     public void should_observe_registration_actions() {
@@ -49,8 +47,6 @@ public class ManagedHaproxyTest {
         managedHap.add("hap2");
         when(repository.getHaproxyIds()).thenReturn(managedHap);
 
-        TestScheduler scheduler = new TestScheduler();
-        ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, 1, scheduler);
         Flowable<ManagedHaproxy.HaproxyAction> registrationActionsObservable = managedHaproxy.registrationActionsFlowable();
 
         /* Use list to also count elements */
@@ -84,8 +80,6 @@ public class ManagedHaproxyTest {
         managedHap.add("hap4");
         when(repository.getHaproxyIds()).thenReturn(managedHap);
 
-        TestScheduler scheduler = new TestScheduler();
-        ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, 1, scheduler);
         Flowable<ManagedHaproxy.HaproxyAction> registrationActionsObservable = managedHaproxy.registrationActionsFlowable();
 
         /* Use list to also count elements */
@@ -119,8 +113,6 @@ public class ManagedHaproxyTest {
 
     @Test
     public void should_stop_observable() {
-        TestScheduler scheduler = new TestScheduler();
-        ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, 1, scheduler);
         Flowable<ManagedHaproxy.HaproxyAction> registrationActionsObservable = managedHaproxy.registrationActionsFlowable();
 
         Disposable s = registrationActionsObservable.subscribe();
@@ -128,6 +120,7 @@ public class ManagedHaproxyTest {
         managedHaproxy.start();
         managedHaproxy.stop();
 
+        assertThat(s.isDisposed(), is(true));
         assertThat(s.isDisposed(), is(true));
     }
 
