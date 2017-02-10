@@ -50,7 +50,6 @@ import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import io.reactivex.Flowable;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.UnicastProcessor;
 import io.reactivex.schedulers.Schedulers;
@@ -103,24 +102,14 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ConsulRepository repository = configuration.getConsulRepositoryFactory().buildAndManageBy(environment);
         repository.init();
 
-        FlowableProcessor<CommitRequestedEvent> commitRequestedEventProcessor = UnicastProcessor
-                .<CommitRequestedEvent>create()
-                .toSerialized();
-
         EntryPointStateManager entryPointStateManager = new EntryPointStateManager(configuration.getCommitTimeout(), repository);
 
-        /* EntryPoint State Machine */
-        EntryPointEventHandler eventHandler = new EntryPointEventHandler(
-                entryPointStateManager, repository, repository,
-                templateLocator, templateGenerator,
-                commitRequestedEventProcessor);
-
         /* NSQ Consumers */
-        //Object mapper used for NSQ messages
+        // Object mapper used for NSQ messages
         ObjectMapper objectMapper = new ObjectMapper();
-        // retrieve NSQLookup configuration
+        // Retrieve NSQLookup configuration
         NSQLookup nsqLookup = configuration.getNsqLookupfactory().build();
-        //NSQConsumers configuration
+        // NSQConsumers configuration
         NSQConfig consumerNsqConfig = configuration.getNsqConsumerConfigFactory().build();
 
         NSQConsumersFactory nsqConsumersFactory = new NSQConsumersFactory(nsqLookup, consumerNsqConfig, objectMapper);
@@ -128,16 +117,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, configuration.getHandledHaproxyRefreshPeriodSecond());
         environment.lifecycle().manage(managedHaproxy);
 
-        Flowable<ManagedHaproxy.HaproxyAction> hapRegistrationActionsObservable = managedHaproxy.registrationActionsFlowable();
-
-        IncomingEvents incomingEvents = new IncomingEvents(hapRegistrationActionsObservable, nsqConsumersFactory);
+        IncomingEvents incomingEvents = new IncomingEvents(managedHaproxy.registrationActionsFlowable(), nsqConsumersFactory);
         environment.lifecycle().manage(incomingEvents);
-
-        Flowable<RegisterServerEvent> registerServerFlowable = incomingEvents.registerServerEventFlowable();
-
-        Flowable<CommitFailureEvent> commitFailureFlowable = incomingEvents.commitFailureEventFlowable();
-
-        Flowable<CommitSuccessEvent> commitSuccessFlowable = incomingEvents.commitSuccessEventFlowable();
 
         /* NSQ Producers */
         NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();
@@ -147,9 +128,20 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         NSQDispatcher nsqDispatcher = new NSQDispatcher(nsqProducer);
 
+        /* CommitRequestedEvent */
+        FlowableProcessor<CommitRequestedEvent> commitRequestedEventProcessor = UnicastProcessor
+                .<CommitRequestedEvent>create()
+                .toSerialized();
+
         commitRequestedEventProcessor
                 .observeOn(Schedulers.io())
                 .subscribe(new CommitRequestedSubscriber(nsqDispatcher));
+
+        /* EntryPoint State Machine */
+        EntryPointEventHandler eventHandler = new EntryPointEventHandler(
+                entryPointStateManager, repository, repository,
+                templateLocator, templateGenerator,
+                commitRequestedEventProcessor);
 
         /* TryCommitPendingConfiguration */
         FlowableProcessor<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationProcessor = UnicastProcessor
@@ -168,26 +160,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         tryCommitCurrentConfigurationProcessor
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
-
-        /* Commit schedulers */
-        long periodMilliPendingCurrentScheduler = configuration
-                .getPeriodicSchedulerFactory()
-                .getPeriodicCommitPendingSchedulerFactory()
-                .getPeriodMilli();
-        long periodMilliCommitCurrentScheduler = configuration
-                .getPeriodicSchedulerFactory()
-                .getPeriodicCommitCurrentSchedulerFactory()
-                .getPeriodMilli();
-
-        CommitSchedulerManaged<TryCommitPendingConfigurationEvent> commitPendingScheduler = new CommitSchedulerManaged<>("Commit Pending", repository, entryPoint ->
-                new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint)),
-                tryCommitPendingConfigurationProcessor::onNext, periodMilliPendingCurrentScheduler);
-        environment.lifecycle().manage(commitPendingScheduler);
-
-        CommitSchedulerManaged<TryCommitCurrentConfigurationEvent> commitCurrentScheduler = new CommitSchedulerManaged<>("Commit Current", repository, ep ->
-                new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)),
-                tryCommitCurrentConfigurationProcessor::onNext, periodMilliCommitCurrentScheduler);
-        environment.lifecycle().manage(commitCurrentScheduler);
 
         /* AutoReloadConfig */
         FlowableProcessor<AutoReloadConfigEvent> autoReloadConfigProcessor = UnicastProcessor
@@ -231,7 +203,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         registerServerProcessor
-                .mergeWith(registerServerFlowable)
+                .mergeWith(incomingEvents.registerServerEventFlowable())
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
@@ -241,7 +213,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         commitSuccessProcessor
-                .mergeWith(commitSuccessFlowable)
+                .mergeWith(incomingEvents.commitSuccessEventFlowable())
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
@@ -251,9 +223,29 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         commitFailureProcessor
-                .mergeWith(commitFailureFlowable)
+                .mergeWith(incomingEvents.commitFailureEventFlowable())
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
+
+        /* Commit schedulers */
+        long periodMilliPendingCurrentScheduler = configuration
+                .getPeriodicSchedulerFactory()
+                .getPeriodicCommitPendingSchedulerFactory()
+                .getPeriodMilli();
+        long periodMilliCommitCurrentScheduler = configuration
+                .getPeriodicSchedulerFactory()
+                .getPeriodicCommitCurrentSchedulerFactory()
+                .getPeriodMilli();
+
+        CommitSchedulerManaged<TryCommitPendingConfigurationEvent> commitPendingScheduler = new CommitSchedulerManaged<>("Commit Pending", repository, entryPoint ->
+                new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint)),
+                tryCommitPendingConfigurationProcessor::onNext, periodMilliPendingCurrentScheduler);
+        environment.lifecycle().manage(commitPendingScheduler);
+
+        CommitSchedulerManaged<TryCommitCurrentConfigurationEvent> commitCurrentScheduler = new CommitSchedulerManaged<>("Commit Current", repository, ep ->
+                new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)),
+                tryCommitCurrentConfigurationProcessor::onNext, periodMilliCommitCurrentScheduler);
+        environment.lifecycle().manage(commitCurrentScheduler);
 
         /* REST Resources */
         EntryPointResources restApiResource = new EntryPointResources(
