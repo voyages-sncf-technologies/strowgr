@@ -106,12 +106,7 @@ public class EntryPointEventHandler {
                         stateManager.cancelCommit(entryPointKey);
                         LOGGER.debug("skip tryCommitCurrent for event {} because haproxy {} or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
                     } else {
-                        String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
-                        Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
-                        String conf = templateGenerator.generate(template, configuration, portsMapping);
-                        String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                        String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/" + configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
-                        CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
+                        CommitRequestedEvent commitRequestedEvent = getCommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration);
                         LOGGER.trace("from handle -> post to event bus event {}", commitRequestedEvent);
                         commitRequestedSubscriber.onNext(commitRequestedEvent);
                     }
@@ -137,12 +132,7 @@ public class EntryPointEventHandler {
                         stateManager.prepare(entryPointKey, configuration);
                         LOGGER.debug("skip tryCommitPending for event {} because haproxy {}  or entrypoint {} is not in autoreload mode", event, configuration.getHaproxy(), entryPointKey);
                     } else {
-                        String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
-                        Map<String, Integer> portsMapping = getOrCreatePortsMapping(entryPointKey, configuration);
-                        String conf = templateGenerator.generate(template, configuration, portsMapping);
-                        String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
-                        String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/" + configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
-                        CommitRequestedEvent commitRequestedEvent = new CommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration, conf, syslogConf, bind);
+                        CommitRequestedEvent commitRequestedEvent = getCommitRequestedEvent(event.getCorrelationId(), entryPointKey, configuration);
                         LOGGER.trace("from handle -> post to event bus event {}", commitRequestedEvent);
                         commitRequestedSubscriber.onNext(commitRequestedEvent);
                     }
@@ -153,6 +143,26 @@ public class EntryPointEventHandler {
         } finally {
             this.stateManager.release(entryPointKey);
         }
+    }
+
+    private CommitRequestedEvent getCommitRequestedEvent(String correlationId, EntryPointKey entryPointKey, EntryPoint configuration) throws IncompleteConfigurationException {
+
+        String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new RuntimeException("Could not find any template for configuration " + entryPointKey));
+
+        Map<String, Integer> portsMapping = new HashMap<>();
+
+        int syslogPort = portRepository.getPort(entryPointKey, configuration.syslogPortId()).orElseGet(() -> portRepository.newPort(entryPointKey, configuration.syslogPortId()));
+        portsMapping.put(configuration.syslogPortId(), syslogPort);
+
+        for (EntryPointFrontend frontend : configuration.getFrontends()) {
+            int frontendPort = portRepository.getPort(entryPointKey, frontend.portId()).orElseGet(() -> portRepository.newPort(entryPointKey, frontend.portId()));
+            portsMapping.put(frontend.portId(), frontendPort);
+        }
+
+        String conf = templateGenerator.generate(template, configuration, portsMapping);
+        String syslogConf = templateGenerator.generateSyslogFragment(configuration, portsMapping);
+        String bind = haproxyRepository.getHaproxyProperty(configuration.getHaproxy(), "binding/" + configuration.getBindingId()).orElseThrow(() -> new IllegalStateException("Could not find binding " + configuration.getBindingId() + " for haproxy " + configuration.getHaproxy()));
+        return new CommitRequestedEvent(correlationId, entryPointKey, configuration, conf, syslogConf, bind);
     }
 
     public void handle(CommitSuccessEvent event) {
@@ -175,20 +185,6 @@ public class EntryPointEventHandler {
         } finally {
             this.stateManager.release(key);
         }
-    }
-
-    private Map<String, Integer> getOrCreatePortsMapping(EntryPointKey key, EntryPoint entryPoint) {
-        Map<String, Integer> portsMapping = new HashMap<>();
-
-        int syslogPort = portRepository.getPort(key, entryPoint.syslogPortId()).orElseGet(() -> portRepository.newPort(key, entryPoint.syslogPortId()));
-        portsMapping.put(entryPoint.syslogPortId(), syslogPort);
-
-        for (EntryPointFrontend frontend : entryPoint.getFrontends()) {
-            int frontendPort = portRepository.getPort(key, frontend.portId()).orElseGet(() -> portRepository.newPort(key, frontend.portId()));
-            portsMapping.put(frontend.portId(), frontendPort);
-        }
-
-        return portsMapping;
     }
 
     public void handle(CommitFailureEvent event) {
