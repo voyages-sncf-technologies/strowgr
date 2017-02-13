@@ -14,7 +14,7 @@ services:
   nsqlookupd:
     image: nsqio/nsq:v0.3.7
     container_name: nsqlookupd
-    command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160 -http-address=nsqlookupd:4161
+    command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160
     ports:
       - 4160:4160
       - 4161:4161
@@ -39,6 +39,8 @@ services:
     command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
     ports:
       - 4171:4171
+    networks:
+      - strowgr
     depends_on:
       - nsqlookupd
       - nsqd
