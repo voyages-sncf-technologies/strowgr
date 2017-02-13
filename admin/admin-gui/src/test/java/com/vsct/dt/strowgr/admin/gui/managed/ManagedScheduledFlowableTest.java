@@ -13,7 +13,7 @@ public class ManagedScheduledFlowableTest {
 
     private final TestScheduler testScheduler = new TestScheduler();
 
-    private final ManagedScheduledFlowable managedScheduledFlowable = new ManagedScheduledFlowable(1L, TimeUnit.SECONDS, testScheduler);
+    private final ManagedScheduledFlowable managedScheduledFlowable = new ManagedScheduledFlowable("test", 1L, TimeUnit.SECONDS, testScheduler);
 
     @Test
     public void should_start_item_emission_when_started() throws Exception {

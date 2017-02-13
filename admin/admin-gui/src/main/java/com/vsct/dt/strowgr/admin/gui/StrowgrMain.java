@@ -29,7 +29,8 @@ import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.factory.NSQConsumersFactory;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
-import com.vsct.dt.strowgr.admin.gui.managed.CommitSchedulerManaged;
+import com.vsct.dt.strowgr.admin.gui.managed.EntryPointPublisher;
+import com.vsct.dt.strowgr.admin.gui.managed.ManagedScheduledFlowable;
 import com.vsct.dt.strowgr.admin.gui.managed.NSQProducerManaged;
 import com.vsct.dt.strowgr.admin.gui.observable.CommitRequestedSubscriber;
 import com.vsct.dt.strowgr.admin.gui.observable.DeleteEntryPointSubscriber;
@@ -60,6 +61,7 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+import java.util.concurrent.TimeUnit;
 
 public class StrowgrMain extends Application<StrowgrConfiguration> {
 
@@ -237,15 +239,19 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .getPeriodicCommitCurrentSchedulerFactory()
                 .getPeriodMilli();
 
-        CommitSchedulerManaged<TryCommitPendingConfigurationEvent> commitPendingScheduler = new CommitSchedulerManaged<>("Commit Pending", repository, entryPoint ->
-                new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint)),
-                tryCommitPendingConfigurationProcessor::onNext, periodMilliPendingCurrentScheduler);
-        environment.lifecycle().manage(commitPendingScheduler);
+        ManagedScheduledFlowable commitPendingFlowable = new ManagedScheduledFlowable("Commit Pending", periodMilliPendingCurrentScheduler, TimeUnit.MILLISECONDS, Schedulers.newThread());
+        environment.lifecycle().manage(commitPendingFlowable);
 
-        CommitSchedulerManaged<TryCommitCurrentConfigurationEvent> commitCurrentScheduler = new CommitSchedulerManaged<>("Commit Current", repository, ep ->
-                new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(ep)),
-                tryCommitCurrentConfigurationProcessor::onNext, periodMilliCommitCurrentScheduler);
-        environment.lifecycle().manage(commitCurrentScheduler);
+        commitPendingFlowable.getFlowable()
+                .flatMap(new EntryPointPublisher<>(repository, entryPoint -> new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint))))
+                .subscribe(tryCommitPendingConfigurationProcessor);
+
+        ManagedScheduledFlowable commitCurrentFlowable = new ManagedScheduledFlowable("Commit Current", periodMilliCommitCurrentScheduler, TimeUnit.MILLISECONDS, Schedulers.newThread());
+        environment.lifecycle().manage(commitCurrentFlowable);
+
+        commitCurrentFlowable.getFlowable()
+                .flatMap(new EntryPointPublisher<>(repository, entryPoint -> new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint))))
+                .subscribe(tryCommitCurrentConfigurationProcessor);
 
         /* REST Resources */
         EntryPointResources restApiResource = new EntryPointResources(
