@@ -58,7 +58,7 @@ public class IncomingEventsTest {
         }
     }
 
-    private final PublishProcessor<ManagedHaproxy.HaproxyAction> actionsProcessor = PublishProcessor.create();
+    private final PublishProcessor<HAProxyPublisher.HAProxyAction> actionsProcessor = PublishProcessor.create();
 
     private final IncomingEvents incomingEvents = new IncomingEvents(actionsProcessor, new NSQConsumersMockFactory());
 
@@ -76,12 +76,12 @@ public class IncomingEventsTest {
             observedEvents.add(event.getCorrelationId());
         });
 
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
 
         CommitCompletedConsumerMock.sendEvent("hap1", "1-1");
         CommitCompletedConsumerMock.sendEvent("hap1", "1-2");
 
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap2"));
 
         CommitCompletedConsumerMock.sendEvent("hap2", "2-1");
         CommitCompletedConsumerMock.sendEvent("hap1", "1-3");
@@ -100,12 +100,12 @@ public class IncomingEventsTest {
             observedEvents.add(event.getCorrelationId());
         });
 
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
 
         CommitFailedConsumerMock.sendEvent("hap1", "1-1");
         CommitFailedConsumerMock.sendEvent("hap1", "1-2");
 
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap2"));
 
         CommitFailedConsumerMock.sendEvent("hap2", "2-1");
         CommitFailedConsumerMock.sendEvent("hap1", "1-3");
@@ -118,16 +118,16 @@ public class IncomingEventsTest {
 
     @Test
     public void should_not_fail_if_unregister_non_registered_haproxy() {
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.unregister("hap1"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.unregister("hap1"));
     }
 
     @Test
     public void should_shutdown_unregistered_haproxy() {
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap2"));
 
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.unregister("hap1"));
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.unregister("hap2"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.unregister("hap1"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.unregister("hap2"));
 
         verify(CommitCompletedConsumerMock.get("hap1")).shutdown();
         verify(CommitCompletedConsumerMock.get("hap2")).shutdown();
@@ -137,8 +137,8 @@ public class IncomingEventsTest {
 
     @Test
     public void should_shutdown_all_consumers_when_asked() {
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap2"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap2"));
 
         incomingEvents.stop();
 
@@ -170,7 +170,7 @@ public class IncomingEventsTest {
         TestSubscriber subscriber = new TestSubscriber(1);
         incomingEvents.commitSuccessEventFlowable().subscribe(subscriber);
 
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
 
         CommitCompletedConsumerMock.sendEvent("hap1", "1-1");
         CommitCompletedConsumerMock.sendEvent("hap1", "1-2");
@@ -183,7 +183,7 @@ public class IncomingEventsTest {
         TestSubscriber subscriber = new TestSubscriber(1);
         incomingEvents.commitFailureEventFlowable().subscribe(subscriber);
 
-        actionsProcessor.onNext(ManagedHaproxy.HaproxyAction.register("hap1"));
+        actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
 
         CommitFailedConsumerMock.sendEvent("hap1", "1-1");
         CommitFailedConsumerMock.sendEvent("hap1", "1-2");

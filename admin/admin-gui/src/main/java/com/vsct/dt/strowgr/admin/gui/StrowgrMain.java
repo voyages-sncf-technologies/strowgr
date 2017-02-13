@@ -34,8 +34,8 @@ import com.vsct.dt.strowgr.admin.gui.managed.ManagedScheduledFlowable;
 import com.vsct.dt.strowgr.admin.gui.managed.NSQProducerManaged;
 import com.vsct.dt.strowgr.admin.gui.observable.CommitRequestedSubscriber;
 import com.vsct.dt.strowgr.admin.gui.observable.DeleteEntryPointSubscriber;
+import com.vsct.dt.strowgr.admin.gui.observable.HAProxyPublisher;
 import com.vsct.dt.strowgr.admin.gui.observable.IncomingEvents;
-import com.vsct.dt.strowgr.admin.gui.observable.ManagedHaproxy;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
@@ -51,7 +51,9 @@ import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.reactivex.Flowable;
 import io.reactivex.processors.FlowableProcessor;
+import io.reactivex.processors.PublishProcessor;
 import io.reactivex.processors.UnicastProcessor;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -116,10 +118,17 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         NSQConsumersFactory nsqConsumersFactory = new NSQConsumersFactory(nsqLookup, consumerNsqConfig, objectMapper);
 
-        ManagedHaproxy managedHaproxy = ManagedHaproxy.create(repository, configuration.getHandledHaproxyRefreshPeriodSecond());
-        environment.lifecycle().manage(managedHaproxy);
+        ManagedScheduledFlowable haProxyFlowable = new ManagedScheduledFlowable("HA Proxy", configuration.getHandledHaproxyRefreshPeriodSecond(), TimeUnit.SECONDS, Schedulers.newThread());
+        environment.lifecycle().manage(haProxyFlowable);
 
-        IncomingEvents incomingEvents = new IncomingEvents(managedHaproxy.registrationActionsFlowable(), nsqConsumersFactory);
+        Flowable<HAProxyPublisher.HAProxyAction> haProxyActionFlowable = haProxyFlowable.getFlowable()
+                .flatMap(new HAProxyPublisher(repository));
+
+        /* using intermediate processor otherwise HAProxyPublisher will be called by every subscriber */
+        PublishProcessor<HAProxyPublisher.HAProxyAction> haProxyActionProcessor = PublishProcessor.create();
+        haProxyActionFlowable.subscribe(haProxyActionProcessor);
+
+        IncomingEvents incomingEvents = new IncomingEvents(haProxyActionProcessor, nsqConsumersFactory);
         environment.lifecycle().manage(incomingEvents);
 
         /* NSQ Producers */

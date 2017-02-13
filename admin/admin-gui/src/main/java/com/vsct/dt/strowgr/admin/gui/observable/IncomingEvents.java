@@ -47,13 +47,13 @@ public class IncomingEvents implements Managed {
     private final EventConsumersHandler<CommitCompletedConsumer, CommitSuccessEvent> commitCompletedConsumerHandler;
     private final EventConsumersHandler<CommitFailedConsumer, CommitFailureEvent> commitFailedConsumerHandler;
 
-    public IncomingEvents(Flowable<ManagedHaproxy.HaproxyAction> actionsObservable, NSQConsumersFactory consumersFactory) {
+    public IncomingEvents(Flowable<HAProxyPublisher.HAProxyAction> haProxyActionsFlowable, NSQConsumersFactory consumersFactory) {
         this.commitCompletedConsumerHandler = new EventConsumersHandler<>(commitSuccessEventProcessor, consumersFactory::buildCommitCompletedConsumer);
         this.commitFailedConsumerHandler = new EventConsumersHandler<>(commitFailureEventProcessor, consumersFactory::buildCommitFailedConsumer);
         this.registerServerConsumer = consumersFactory.buildRegisterServerConsumer();
 
-        actionsObservable.subscribe(this.commitCompletedConsumerHandler);
-        actionsObservable.subscribe(this.commitFailedConsumerHandler);
+        haProxyActionsFlowable.subscribe(this.commitCompletedConsumerHandler);
+        haProxyActionsFlowable.subscribe(this.commitFailedConsumerHandler);
     }
 
     public Flowable<CommitSuccessEvent> commitSuccessEventFlowable() {
@@ -82,7 +82,7 @@ public class IncomingEvents implements Managed {
 
     //If the consumer is cancelled there would be a leak because it will still be kept in the map
     //But an FlowableNSQConsumer is very unlikely to be cancelled. This would mean a bigger problem in the app...
-    static class EventConsumersHandler<T extends FlowableNSQConsumer<U>, U> extends DefaultSubscriber<ManagedHaproxy.HaproxyAction> {
+    static class EventConsumersHandler<T extends FlowableNSQConsumer<U>, U> extends DefaultSubscriber<HAProxyPublisher.HAProxyAction> {
 
         private final Map<String, T> consumers = new HashMap<>();
         private final Subscriber<U> subscriber;
@@ -118,7 +118,7 @@ public class IncomingEvents implements Managed {
         }
 
         @Override
-        public void onNext(ManagedHaproxy.HaproxyAction action) {
+        public void onNext(HAProxyPublisher.HAProxyAction action) {
             if (action.isRegistration()) {
                 createNewCommitEventConsumer(action.getId());
             } else {
