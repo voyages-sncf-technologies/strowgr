@@ -313,12 +313,4 @@
         </dependencies>
     </dependencyManagement>
 
-    <distributionManagement>
-        <repository>
-            <id>internal.repo</id>
-            <name>Temporary Staging Repository</name>
-            <url>file:///mvn-repo</url>
-        </repository>
-    </distributionManagement>
-
 </project>
