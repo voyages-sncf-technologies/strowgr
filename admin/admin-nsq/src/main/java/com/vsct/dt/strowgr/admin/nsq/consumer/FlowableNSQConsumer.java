@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2016 VSCT
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import fr.vsct.dt.nsq.NSQConfig;
@@ -14,30 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-/**
- * ~  Copyright (C) 2016 VSCT
- * ~
- * ~  Licensed under the Apache License, Version 2.0 (the "License");
- * ~  you may not use this file except in compliance with the License.
- * ~  You may obtain a copy of the License at
- * ~
- * ~   http://www.apache.org/licenses/LICENSE-2.0
- * ~
- * ~  Unless required by applicable law or agreed to in writing, software
- * ~  distributed under the License is distributed on an "AS IS" BASIS,
- * ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * ~  See the License for the specific language governing permissions and
- * ~  limitations under the License.
- * ~
- * <p>
- * <p>
- * This class is intended to expose an NSQCOnsumer as an RXJava Observable
- * It handles the emission of new messages, complete on shutdown and shutdown on subscriber cancellation
- * The implementing classes just have to implement the transform method, to provided a domain oriented message instead of a raw NSQMessage
- * <p>
- * Note: observers to this flowable should not be blocking, if they do, they can block the eventloop
- * if observers needs to block, when should use the observeOn method of the flowable to choose a different scheduler
- */
 public abstract class FlowableNSQConsumer<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FlowableNSQConsumer.class);
