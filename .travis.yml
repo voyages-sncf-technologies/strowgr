@@ -10,7 +10,7 @@ before_install:
   - ~/jpm/bin/jpm install com.codacy:codacy-coverage-reporter:assembly
   - export VERSION=`mvn help:evaluate -Dexpression=project.version | grep -v "\[" | grep -v "Download"`
 script:
-  - mvn package
+  - mvn verify
   - docker info
   - docker build -t strowgr/admin:$VERSION -t strowgr/admin:latest admin
   - docker pull strowgr/sidekick:0.2.6
