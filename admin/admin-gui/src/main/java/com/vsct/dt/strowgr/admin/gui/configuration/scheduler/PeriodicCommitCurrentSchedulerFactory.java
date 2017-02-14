@@ -16,15 +16,8 @@
 package com.vsct.dt.strowgr.admin.gui.configuration.scheduler;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
-import com.vsct.dt.strowgr.admin.core.event.in.TryCommitCurrentConfigurationEvent;
-import io.dropwizard.lifecycle.Managed;
-import io.dropwizard.setup.Environment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.validation.constraints.Min;
-import java.util.function.Consumer;
 
 /**
  * Retrieve configuration for CommitCurrent scheduler.

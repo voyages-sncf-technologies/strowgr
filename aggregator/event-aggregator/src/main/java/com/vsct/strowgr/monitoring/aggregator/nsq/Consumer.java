@@ -16,12 +16,12 @@
 package com.vsct.strowgr.monitoring.aggregator.nsq;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.vsct.dt.nsq.NSQConsumer;
-import fr.vsct.dt.nsq.callbacks.NSQMessageCallback;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.strowgr.monitoring.aggregator.MessageRecorder;
 import com.vsct.strowgr.monitoring.aggregator.cassandra.ErrorRecord;
 import com.vsct.strowgr.monitoring.aggregator.cassandra.ParsedPayload;
+import fr.vsct.dt.nsq.NSQConsumer;
+import fr.vsct.dt.nsq.callbacks.NSQMessageCallback;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

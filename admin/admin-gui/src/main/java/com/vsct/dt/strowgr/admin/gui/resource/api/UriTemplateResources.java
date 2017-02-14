@@ -16,7 +16,6 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
-import com.vsct.dt.strowgr.admin.core.TemplateLocator;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 import org.hibernate.validator.constraints.NotEmpty;
 

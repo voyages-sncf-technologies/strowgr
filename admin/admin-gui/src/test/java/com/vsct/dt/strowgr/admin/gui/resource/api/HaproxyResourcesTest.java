@@ -17,15 +17,11 @@ package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
-import com.vsct.dt.strowgr.admin.core.TemplateLocator;
-import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 import io.dropwizard.testing.junit.ResourceTestRule;
-import org.apache.http.Header;
-import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -33,10 +29,9 @@ import org.junit.Test;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
-
 import java.util.*;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 

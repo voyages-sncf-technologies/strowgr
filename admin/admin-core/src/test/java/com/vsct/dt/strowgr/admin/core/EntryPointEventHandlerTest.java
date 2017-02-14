@@ -18,7 +18,10 @@ package com.vsct.dt.strowgr.admin.core;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.eventbus.EventBus;
-import com.vsct.dt.strowgr.admin.core.configuration.*;
+import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
+import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackend;
+import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackendServer;
+import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
@@ -27,7 +30,10 @@ import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
 import org.junit.Test;
 import org.reactivestreams.Subscriber;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static org.mockito.Matchers.any;

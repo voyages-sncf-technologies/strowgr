@@ -20,7 +20,6 @@ import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.EntryPointEvent;
 
 import java.util.Objects;
-import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

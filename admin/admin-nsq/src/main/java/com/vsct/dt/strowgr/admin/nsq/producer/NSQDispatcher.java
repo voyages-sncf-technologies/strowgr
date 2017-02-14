@@ -17,11 +17,11 @@ package com.vsct.dt.strowgr.admin.nsq.producer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.vsct.dt.nsq.NSQProducer;
-import fr.vsct.dt.nsq.exceptions.NSQException;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitRequested;
 import com.vsct.dt.strowgr.admin.nsq.payload.DeleteRequested;
+import fr.vsct.dt.nsq.NSQProducer;
+import fr.vsct.dt.nsq.exceptions.NSQException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

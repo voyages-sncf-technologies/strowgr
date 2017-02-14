@@ -18,7 +18,7 @@ package com.vsct.dt.strowgr.admin.gui.cli;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
 public class ConfigurationCommandTest {
     

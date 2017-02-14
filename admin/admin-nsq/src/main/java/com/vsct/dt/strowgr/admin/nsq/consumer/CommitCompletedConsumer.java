@@ -16,12 +16,12 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.vsct.dt.nsq.NSQConfig;
-import fr.vsct.dt.nsq.NSQMessage;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitCompleted;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.NSQMessage;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -21,9 +21,9 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.github.dockerjava.api.command.CreateContainerCmd
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitFailed
 import fr.vsct.dt.maze.core.Execution
+import fr.vsct.dt.maze.core.Predef._
 import fr.vsct.dt.maze.helpers.Http.{HttpEnabled, HttpResponse}
 import fr.vsct.dt.maze.topology.SingleContainerClusterNode
-import fr.vsct.dt.maze.core.Predef._
 
 import scala.util.Try
 

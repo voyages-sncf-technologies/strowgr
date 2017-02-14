@@ -24,9 +24,9 @@ import com.vsct.dt.strowgr.maze.Nsq.{NsqAdmin, NsqLookup, NsqTail, Nsqd}
 import com.vsct.dt.strowgr.maze.Sidekick.SidekickNode
 import com.vsct.dt.strowgr.maze.Strowgr.{AdminNode, CreateEntryPoint}
 import fr.vsct.dt.maze.TechnicalTest
-import fr.vsct.dt.maze.core.{Commands, Result}
 import fr.vsct.dt.maze.core.Commands.{exec, print, waitFor, waitUntil}
 import fr.vsct.dt.maze.core.Predef._
+import fr.vsct.dt.maze.core.{Commands, Result}
 import fr.vsct.dt.maze.topology.DockerClusterNode
 
 import scala.concurrent.duration._

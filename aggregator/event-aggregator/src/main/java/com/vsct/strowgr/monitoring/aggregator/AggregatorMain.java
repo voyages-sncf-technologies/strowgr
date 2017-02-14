@@ -15,13 +15,15 @@
  */
 package com.vsct.strowgr.monitoring.aggregator;
 
-import com.datastax.driver.core.*;
-import fr.vsct.dt.nsq.lookup.DefaultNSQLookup;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
-import com.vsct.strowgr.monitoring.aggregator.cassandra.ParsedPayloadWriter;
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Metadata;
+import com.datastax.driver.core.Session;
 import com.vsct.strowgr.monitoring.aggregator.cassandra.ErrorRecordWriter;
+import com.vsct.strowgr.monitoring.aggregator.cassandra.ParsedPayloadWriter;
 import com.vsct.strowgr.monitoring.aggregator.nsq.Consumer;
 import com.vsct.strowgr.monitoring.aggregator.nsq.UnavailableNsqException;
+import fr.vsct.dt.nsq.lookup.DefaultNSQLookup;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

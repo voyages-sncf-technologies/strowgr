@@ -16,7 +16,6 @@
 package com.vsct.dt.strowgr.admin.repository.consul.mapping.json;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 

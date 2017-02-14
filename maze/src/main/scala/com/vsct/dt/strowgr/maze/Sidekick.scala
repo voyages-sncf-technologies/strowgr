@@ -16,10 +16,10 @@
 package com.vsct.dt.strowgr.maze
 
 import com.github.dockerjava.api.command.CreateContainerCmd
+import fr.vsct.dt.maze.core.Predef._
 import fr.vsct.dt.maze.core.Predicate
 import fr.vsct.dt.maze.helpers.Http.HttpEnabled
 import fr.vsct.dt.maze.topology.SingleContainerClusterNode
-import fr.vsct.dt.maze.core.Predef._
 
 object  Sidekick {
 

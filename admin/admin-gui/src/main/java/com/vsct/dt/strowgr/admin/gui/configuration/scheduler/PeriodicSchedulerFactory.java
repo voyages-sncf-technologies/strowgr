@@ -16,8 +16,6 @@
 package com.vsct.dt.strowgr.admin.gui.configuration.scheduler;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicCommitCurrentSchedulerFactory;
-import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicCommitPendingSchedulerFactory;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;

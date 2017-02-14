@@ -15,8 +15,8 @@
  */
 package com.vsct.strowgr.monitoring.aggregator.cassandra;
 
-import fr.vsct.dt.nsq.NSQMessage;
 import com.vsct.strowgr.monitoring.aggregator.StringDates;
+import fr.vsct.dt.nsq.NSQMessage;
 
 import java.util.Date;
 

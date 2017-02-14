@@ -16,11 +16,11 @@
 package com.vsct.dt.strowgr.admin.gui.factory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.vsct.dt.nsq.NSQConfig;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
+import fr.vsct.dt.nsq.NSQConfig;
+import fr.vsct.dt.nsq.lookup.NSQLookup;
 
 public class NSQConsumersFactory {
 
