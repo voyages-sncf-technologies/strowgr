@@ -35,8 +35,6 @@ deploy:
     skip_cleanup: true
     on:
       tags: true
-      repo: voyages-sncf-technologies/strowgr
-      branch: master
   - provider: script
     skip_cleanup: true
     script: docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" && docker push strowgr/admin:$VERSION && docker push strowgr/admin:latest
