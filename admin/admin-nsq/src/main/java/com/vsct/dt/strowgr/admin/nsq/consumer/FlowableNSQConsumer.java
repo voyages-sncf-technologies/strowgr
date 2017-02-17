@@ -18,6 +18,7 @@ package com.vsct.dt.strowgr.admin.nsq.consumer;
 import fr.vsct.dt.nsq.NSQConfig;
 import fr.vsct.dt.nsq.NSQConsumer;
 import fr.vsct.dt.nsq.NSQMessage;
+import fr.vsct.dt.nsq.exceptions.NSQException;
 import fr.vsct.dt.nsq.lookup.NSQLookup;
 import io.netty.channel.EventLoopGroup;
 import io.reactivex.BackpressureStrategy;
@@ -55,7 +56,7 @@ public abstract class FlowableNSQConsumer<T> {
         this.flowable = Flowable
                 .<NSQMessage>create(emitter -> {
 
-                    NSQConsumer consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
+                    NSQConsumer consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, this::onError);
                     consumer.setLookupPeriod(10 * 1000);
                     consumer.setMessagesPerBatch(10);
 
@@ -84,9 +85,8 @@ public abstract class FlowableNSQConsumer<T> {
 
                 }, BackpressureStrategy.BUFFER)
                 .map(this::transformSafe)
-                .filter(Optional::isPresent)
-                .doOnError(throwable -> LOGGER.error("consumer error on topic " + topic, throwable))
-                .map(Optional::get) //We don't want to stop the flowable on error
+                .filter(Optional::isPresent) // Keep elements which passed transformation
+                .map(Optional::get)
                 .publish() // do not start flowable immediately
                 .autoConnect(1, disposables::add); // start flowable on first subscription and keep subscription's disposable references
     }
@@ -108,11 +108,15 @@ public abstract class FlowableNSQConsumer<T> {
 
     protected abstract T transform(NSQMessage nsqMessage) throws Exception;
 
+    private void onError(NSQException e) {
+        LOGGER.error("Following error occurred while consuming messages on topic {}, channel {}", topic, channel, e);
+    }
+
     /**
      * Shutdown this consumer and all subscriptions.
      */
     public void shutdown() {
-        LOGGER.info("stopping FlowableNSQConsumer on topic {}, channel {}", topic, channel);
+        LOGGER.info("Stopping FlowableNSQConsumer on topic {}, channel {}", topic, channel);
         disposables.forEach(Disposable::dispose);
     }
 
