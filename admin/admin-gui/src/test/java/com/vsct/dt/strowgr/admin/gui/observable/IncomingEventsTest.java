@@ -71,9 +71,7 @@ public class IncomingEventsTest {
     public void should_broadcast_commit_success_events_of_new_haproxy() {
         List<String> observedEvents = new ArrayList<>();
 
-        incomingEvents.commitSuccessEventFlowable().subscribe(event -> {
-            observedEvents.add(event.getCorrelationId());
-        });
+        incomingEvents.commitSuccessEventFlowable().subscribe(event -> observedEvents.add(event.getCorrelationId()));
 
         actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
 
@@ -95,9 +93,7 @@ public class IncomingEventsTest {
     public void should_broadcast_commit_failure_events_of_new_haproxy() {
         List<String> observedEvents = new ArrayList<>();
 
-        incomingEvents.commitFailureEventFlowable().subscribe(event -> {
-            observedEvents.add(event.getCorrelationId());
-        });
+        incomingEvents.commitFailureEventFlowable().subscribe(event -> observedEvents.add(event.getCorrelationId()));
 
         actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
 
@@ -152,9 +148,7 @@ public class IncomingEventsTest {
     public void should_broadcast_register_server_events() {
         List<String> observedEvents = new ArrayList<>();
 
-        incomingEvents.registerServerEventFlowable().subscribe(event -> {
-            observedEvents.add(event.getCorrelationId());
-        });
+        incomingEvents.registerServerEventFlowable().subscribe(event -> observedEvents.add(event.getCorrelationId()));
 
         RegisterServerConsumerMock.sendEvent("single", "1-1");
         RegisterServerConsumerMock.sendEvent("single", "1-2");
@@ -166,7 +160,7 @@ public class IncomingEventsTest {
 
     @Test
     public void should_respect_commit_completed_consumers_backpressure() {
-        TestSubscriber subscriber = new TestSubscriber(1);
+        TestSubscriber<CommitSuccessEvent> subscriber = new TestSubscriber<>(1);
         incomingEvents.commitSuccessEventFlowable().subscribe(subscriber);
 
         actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
@@ -179,7 +173,7 @@ public class IncomingEventsTest {
 
     @Test
     public void should_respect_commit_failed_consumers_backpressure() {
-        TestSubscriber subscriber = new TestSubscriber(1);
+        TestSubscriber<CommitFailureEvent> subscriber = new TestSubscriber<>(1);
         incomingEvents.commitFailureEventFlowable().subscribe(subscriber);
 
         actionsProcessor.onNext(HAProxyPublisher.HAProxyAction.register("hap1"));
@@ -192,7 +186,7 @@ public class IncomingEventsTest {
 
     @Test
     public void should_respect_register_server_consumers_backpressure() {
-        TestSubscriber subscriber = new TestSubscriber(1);
+        TestSubscriber<RegisterServerEvent> subscriber = new TestSubscriber<>(1);
         incomingEvents.registerServerEventFlowable().subscribe(subscriber);
 
         RegisterServerConsumerMock.sendEvent("single", "1-1");
@@ -207,7 +201,7 @@ public class IncomingEventsTest {
         CommitCompletedConsumer mock = mock(CommitCompletedConsumer.class);
         PublishProcessor<CommitSuccessEvent> s = PublishProcessor.create();
 
-        CommitCompletedConsumerMock(String id) {
+        CommitCompletedConsumerMock() {
             when(mock.flowable()).thenReturn(s.onBackpressureBuffer());
         }
 
@@ -216,7 +210,7 @@ public class IncomingEventsTest {
         }
 
         static CommitCompletedConsumer create(String id) {
-            CommitCompletedConsumerMock mockWrapper = new CommitCompletedConsumerMock(id);
+            CommitCompletedConsumerMock mockWrapper = new CommitCompletedConsumerMock();
             mocks.put(id, mockWrapper);
             return mockWrapper.mock;
         }
@@ -225,7 +219,7 @@ public class IncomingEventsTest {
             mocks.get(id).sendEvent(correlationId);
         }
 
-        public static CommitCompletedConsumer get(String id) {
+        static CommitCompletedConsumer get(String id) {
             return mocks.get(id).mock;
         }
 
@@ -240,7 +234,7 @@ public class IncomingEventsTest {
         CommitFailedConsumer mock = mock(CommitFailedConsumer.class);
         PublishProcessor<CommitFailureEvent> s = PublishProcessor.create();
 
-        CommitFailedConsumerMock(String id) {
+        CommitFailedConsumerMock() {
             when(mock.flowable()).thenReturn(s.onBackpressureBuffer());
         }
 
@@ -249,7 +243,7 @@ public class IncomingEventsTest {
         }
 
         static CommitFailedConsumer create(String id) {
-            CommitFailedConsumerMock mockWrapper = new CommitFailedConsumerMock(id);
+            CommitFailedConsumerMock mockWrapper = new CommitFailedConsumerMock();
             mocks.put(id, mockWrapper);
             return mockWrapper.mock;
         }
@@ -258,7 +252,7 @@ public class IncomingEventsTest {
             mocks.get(id).sendEvent(correlationId);
         }
 
-        public static CommitFailedConsumer get(String id) {
+        static CommitFailedConsumer get(String id) {
             return mocks.get(id).mock;
         }
 
@@ -292,13 +286,10 @@ public class IncomingEventsTest {
             mocks.get(id).sendEvent(correlationId);
         }
 
-        public static RegisterServerConsumer get(String id) {
+        static RegisterServerConsumer get(String id) {
             return mocks.get(id).mock;
         }
 
-        static void clear() {
-            mocks.clear();
-        }
     }
 
 }
