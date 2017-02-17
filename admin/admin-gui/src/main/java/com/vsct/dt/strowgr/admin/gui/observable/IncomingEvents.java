@@ -19,8 +19,6 @@ import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.gui.factory.NSQConsumersFactory;
-import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedConsumer;
-import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
 import io.dropwizard.lifecycle.Managed;
@@ -34,25 +32,28 @@ import org.reactivestreams.Subscriber;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class IncomingEvents implements Managed {
 
     private final FlowableProcessor<CommitSuccessEvent> commitSuccessEventProcessor = UnicastProcessor.<CommitSuccessEvent>create().toSerialized();
+
     private final FlowableProcessor<CommitFailureEvent> commitFailureEventProcessor = UnicastProcessor.<CommitFailureEvent>create().toSerialized();
 
     private final RegisterServerConsumer registerServerConsumer;
 
-    private final EventConsumersHandler<CommitCompletedConsumer, CommitSuccessEvent> commitCompletedConsumerHandler;
-    private final EventConsumersHandler<CommitFailedConsumer, CommitFailureEvent> commitFailedConsumerHandler;
+    private final HAProxyActionToCommitEventConsumer<CommitSuccessEvent> haProxyActionToCommitSuccessConsumer;
+
+    private final HAProxyActionToCommitEventConsumer<CommitFailureEvent> haProxyActionToCommitFailureConsumer;
 
     public IncomingEvents(Flowable<HAProxyPublisher.HAProxyAction> haProxyActionsFlowable, NSQConsumersFactory consumersFactory) {
-        this.commitCompletedConsumerHandler = new EventConsumersHandler<>(commitSuccessEventProcessor, consumersFactory::buildCommitCompletedConsumer);
-        this.commitFailedConsumerHandler = new EventConsumersHandler<>(commitFailureEventProcessor, consumersFactory::buildCommitFailedConsumer);
+        this.haProxyActionToCommitSuccessConsumer = new HAProxyActionToCommitEventConsumer<>(consumersFactory::buildCommitCompletedConsumer, commitSuccessEventProcessor);
+        this.haProxyActionToCommitFailureConsumer = new HAProxyActionToCommitEventConsumer<>(consumersFactory::buildCommitFailedConsumer, commitFailureEventProcessor);
         this.registerServerConsumer = consumersFactory.buildRegisterServerConsumer();
 
-        haProxyActionsFlowable.subscribe(this.commitCompletedConsumerHandler);
-        haProxyActionsFlowable.subscribe(this.commitFailedConsumerHandler);
+        haProxyActionsFlowable.subscribe(this.haProxyActionToCommitSuccessConsumer);
+        haProxyActionsFlowable.subscribe(this.haProxyActionToCommitFailureConsumer);
     }
 
     public Flowable<CommitSuccessEvent> commitSuccessEventFlowable() {
@@ -74,36 +75,39 @@ public class IncomingEvents implements Managed {
 
     @Override
     public void stop() {
-        commitCompletedConsumerHandler.shutdownConsumers();
-        commitFailedConsumerHandler.shutdownConsumers();
+        haProxyActionToCommitSuccessConsumer.shutdownConsumers();
+        haProxyActionToCommitFailureConsumer.shutdownConsumers();
         registerServerConsumer.shutdown();
     }
 
-    //If the consumer is cancelled there would be a leak because it will still be kept in the map
-    //But an FlowableNSQConsumer is very unlikely to be cancelled. This would mean a bigger problem in the app...
-    static class EventConsumersHandler<T extends FlowableNSQConsumer<U>, U> extends DefaultSubscriber<HAProxyPublisher.HAProxyAction> {
+    /**
+     * This class subscribes to HAProxyActions: creation or deletion and respectively creates or removes a dedicated NSQConsumer.
+     * Events from each NSQConsumers are then forwarded to a given commit event subscriber.
+     *
+     * @param <U> The type of the commit event to create subscription for
+     */
+    static class HAProxyActionToCommitEventConsumer<U> extends DefaultSubscriber<HAProxyPublisher.HAProxyAction> {
 
-        private final Map<String, T> consumers = new HashMap<>();
-        private final Subscriber<U> subscriber;
-        private final Function<String, T> builder;
+        private final Map<String, FlowableNSQConsumer<U>> commitEventNSQConsumers = new HashMap<>();
 
-        EventConsumersHandler(Subscriber<U> subscriber, Function<String, T> builder) {
-            this.subscriber = subscriber;
-            this.builder = builder;
+        private final Function<String, FlowableNSQConsumer<U>> commitEventNSQConsumerBuilder;
+
+        private final Subscriber<U> commitEventSubscriber;
+
+        HAProxyActionToCommitEventConsumer(Function<String, FlowableNSQConsumer<U>> commitEventNSQConsumerBuilder, Subscriber<U> commitEventSubscriber) {
+            this.commitEventNSQConsumerBuilder = commitEventNSQConsumerBuilder;
+            this.commitEventSubscriber = commitEventSubscriber;
         }
 
-        private void createNewCommitEventConsumer(String id) {
-            T consumer = builder.apply(id);
-            consumers.put(id, consumer);
-            consumer.flowable().subscribe(subscriber);
+        private void createCommitEventConsumer(String id) {
+            FlowableNSQConsumer<U> flowableNSQConsumer = commitEventNSQConsumerBuilder.apply(id);
+            commitEventNSQConsumers.put(id, flowableNSQConsumer);
+            flowableNSQConsumer.flowable().subscribe(commitEventSubscriber);
         }
 
-        private void shutdownAndDropCommitEventConsumer(String id) {
-            if (consumers.containsKey(id)) {
-                T consumer = consumers.get(id);
-                consumer.shutdown();
-                consumers.remove(id);
-            }
+        private void deleteCommitEventConsumer(String id) {
+            FlowableNSQConsumer flowableNSQConsumer = commitEventNSQConsumers.remove(id);
+            Optional.ofNullable(flowableNSQConsumer).ifPresent(FlowableNSQConsumer::shutdown);
         }
 
         @Override
@@ -119,19 +123,18 @@ public class IncomingEvents implements Managed {
         @Override
         public void onNext(HAProxyPublisher.HAProxyAction action) {
             if (action.isRegistration()) {
-                createNewCommitEventConsumer(action.getId());
+                createCommitEventConsumer(action.getId());
             } else {
-                shutdownAndDropCommitEventConsumer(action.getId());
+                deleteCommitEventConsumer(action.getId());
             }
         }
 
         void shutdownConsumers() {
-            Iterator<Map.Entry<String, T>> it = consumers.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<String, T> e = it.next();
-                e.getValue().shutdown();
-                it.remove();
-            }
+            Iterator<Map.Entry<String, FlowableNSQConsumer<U>>> iterator = commitEventNSQConsumers.entrySet().iterator();
+            iterator.forEachRemaining(entry -> {
+                entry.getValue().shutdown();
+                iterator.remove();
+            });
         }
     }
 
