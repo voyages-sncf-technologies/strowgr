@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vsct.dt.strowgr.admin.gui.observable;
+package com.vsct.dt.strowgr.admin.nsq.producer;
 
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
-import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import org.junit.Before;
 import org.junit.Test;
 

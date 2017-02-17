@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vsct.dt.strowgr.admin.gui.observable;
+package com.vsct.dt.strowgr.admin.nsq.producer;
 
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
-import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import io.reactivex.functions.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +43,7 @@ public class CommitRequestedSubscriber implements Consumer<CommitRequestedEvent>
         Optional.ofNullable(context.get("application")).ifPresent(application -> Optional.ofNullable(context.get("platform")).ifPresent(platform -> {
 
             try {
-                this.nsqDispatcher.sendCommitRequested(commitRequestedEvent, configuration.getHaproxy(), application, platform, commitRequestedEvent.getBind());
+                nsqDispatcher.sendCommitRequested(commitRequestedEvent, configuration.getHaproxy(), application, platform, commitRequestedEvent.getBind());
             } catch (Exception e) {
                 LOGGER.error("Unable to send commit requested event {} to NSQ because of the following errors", commitRequestedEvent, e);
             }
