@@ -22,11 +22,12 @@ import fr.vsct.dt.nsq.lookup.NSQLookup;
 import io.netty.channel.EventLoopGroup;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
-import io.reactivex.FlowableEmitter;
 import io.reactivex.disposables.Disposable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public abstract class FlowableNSQConsumer<T> {
@@ -34,26 +35,27 @@ public abstract class FlowableNSQConsumer<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FlowableNSQConsumer.class);
 
     private final String topic;
+
     private final String channel;
 
-    /* The flowable created by this consumer */
+    /**
+     * The flowable created by this consumer
+     */
     private final Flowable<T> flowable;
 
-    /*
-     * We keep reference to consumer and to emitter to allow shutdown
-     * and emission of onComplete. Make these reference volatile since they can be set in a different thread
+    /**
+     * Subscription's disposables references for shutdown
      */
-    private volatile NSQConsumer consumer;
-    private volatile FlowableEmitter<NSQMessage> emitter;
+    private final List<Disposable> disposables = new ArrayList<>();
 
     FlowableNSQConsumer(NSQLookup lookup, String topic, String channel, NSQConfig config) {
         this.topic = topic;
         this.channel = channel;
 
-        Flowable<NSQMessage> flowable = Flowable
-                .create(emitter -> {
-                    this.emitter = emitter;
-                    consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
+        this.flowable = Flowable
+                .<NSQMessage>create(emitter -> {
+
+                    NSQConsumer consumer = new NSQConsumer(lookup, topic, channel, emitter::onNext, config, emitter::onError);
                     consumer.setLookupPeriod(10 * 1000);
                     consumer.setMessagesPerBatch(10);
 
@@ -80,14 +82,13 @@ public abstract class FlowableNSQConsumer<T> {
                         }
                     });
 
-                }, BackpressureStrategy.BUFFER);
-
-        this.flowable = flowable
+                }, BackpressureStrategy.BUFFER)
                 .map(this::transformSafe)
                 .filter(Optional::isPresent)
                 .doOnError(throwable -> LOGGER.error("consumer error on topic " + topic, throwable))
                 .map(Optional::get) //We don't want to stop the flowable on error
-                .publish().autoConnect(); //Use publish/refCount for two reasons : NSQConsumer will be created only once. Observable will auto start
+                .publish() // do not start flowable immediately
+                .autoConnect(1, disposables::add); // start flowable on first subscription and keep subscription's disposable references
     }
 
     public Flowable<T> flowable() {
@@ -108,16 +109,11 @@ public abstract class FlowableNSQConsumer<T> {
     protected abstract T transform(NSQMessage nsqMessage) throws Exception;
 
     /**
-     * Shutsdown this consumer and advice subscriber
+     * Shutdown this consumer and all subscriptions.
      */
     public void shutdown() {
         LOGGER.info("stopping FlowableNSQConsumer on topic {}, channel {}", topic, channel);
-        if (consumer != null) {
-            consumer.shutdown();
-        }
-        if (emitter != null) {
-            emitter.onComplete();
-        }
+        disposables.forEach(Disposable::dispose);
     }
 
 }
