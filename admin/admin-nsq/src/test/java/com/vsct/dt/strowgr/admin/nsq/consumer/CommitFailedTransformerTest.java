@@ -16,7 +16,7 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.CommitFailedEvent;
 import fr.vsct.dt.nsq.NSQMessage;
 import org.junit.Test;
 
@@ -44,7 +44,7 @@ public class CommitFailedTransformerTest {
                 "}").replaceAll("'", "\"").getBytes());
 
         // when
-        CommitFailureEvent result = commitFailedTransformer.apply(nsqMessage);
+        CommitFailedEvent result = commitFailedTransformer.apply(nsqMessage);
 
         // then
         assertThat(result).isNotNull();

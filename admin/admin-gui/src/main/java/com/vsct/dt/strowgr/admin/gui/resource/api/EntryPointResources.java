@@ -71,9 +71,9 @@ public class EntryPointResources {
 
     private final Subscriber<RegisterServerEvent> registerServerSubscriber;
 
-    private final Subscriber<CommitSuccessEvent> commitSuccessSubscriber;
+    private final Subscriber<CommitCompletedEvent> commitSuccessSubscriber;
 
-    private final Subscriber<CommitFailureEvent> commitFailureSubscriber;
+    private final Subscriber<CommitFailedEvent> commitFailureSubscriber;
 
     public EntryPointResources(EntryPointRepository repository,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
@@ -83,8 +83,8 @@ public class EntryPointResources {
                                Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber,
                                Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber,
                                Subscriber<RegisterServerEvent> registerServerSubscriber,
-                               Subscriber<CommitSuccessEvent> commitSuccessSubscriber,
-                               Subscriber<CommitFailureEvent> commitFailureSubscriber) {
+                               Subscriber<CommitCompletedEvent> commitSuccessSubscriber,
+                               Subscriber<CommitFailedEvent> commitFailureSubscriber) {
         this.repository = repository;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
         this.addEntryPointSubscriber = addEntryPointSubscriber;
@@ -286,7 +286,7 @@ public class EntryPointResources {
     @Path("/{id : .+}/send-commit-success/{correlationId}")
     @Produces(MediaType.TEXT_PLAIN)
     public String sendCommitSuccess(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
-        CommitSuccessEvent event = new CommitSuccessEvent(correlationId, new EntryPointKeyDefaultImpl(id));
+        CommitCompletedEvent event = new CommitCompletedEvent(correlationId, new EntryPointKeyDefaultImpl(id));
         commitSuccessSubscriber.onNext(event);
         return "Request posted, look info to follow actions";
     }
@@ -295,7 +295,7 @@ public class EntryPointResources {
     @Path("/{id : .+}/send-commit-failure/{correlationId}")
     @Produces(MediaType.TEXT_PLAIN)
     public String sendCommitFailure(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
-        CommitFailureEvent event = new CommitFailureEvent(correlationId, new EntryPointKeyDefaultImpl(id));
+        CommitFailedEvent event = new CommitFailedEvent(correlationId, new EntryPointKeyDefaultImpl(id));
         commitFailureSubscriber.onNext(event);
         return "Request posted, look info to follow actions";
     }

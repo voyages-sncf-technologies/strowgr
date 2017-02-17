@@ -132,14 +132,14 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
 
         /* HAProxySubscriber: Creates a dedicated NSQConsumer for each HAProxy CommitCompleted topic */
-        FlowableProcessor<CommitSuccessEvent> commitCompletedEventProcessor = UnicastProcessor.<CommitSuccessEvent>create().toSerialized();
-        HAProxySubscriber<CommitSuccessEvent> commitCompletedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitCompletedConsumer, commitCompletedEventProcessor);
+        FlowableProcessor<CommitCompletedEvent> commitCompletedEventProcessor = UnicastProcessor.<CommitCompletedEvent>create().toSerialized();
+        HAProxySubscriber<CommitCompletedEvent> commitCompletedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitCompletedConsumer, commitCompletedEventProcessor);
         haProxyActionProcessor.subscribe(commitCompletedHAProxySubscriber);
         environment.lifecycle().manage(commitCompletedHAProxySubscriber);
 
         /* HAProxySubscriber: Creates a dedicated NSQConsumer for each HAProxy CommitFailed topic */
-        FlowableProcessor<CommitFailureEvent> commitFailedEventProcessor = UnicastProcessor.<CommitFailureEvent>create().toSerialized();
-        HAProxySubscriber<CommitFailureEvent> commitFailedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitFailedConsumer, commitFailedEventProcessor);
+        FlowableProcessor<CommitFailedEvent> commitFailedEventProcessor = UnicastProcessor.<CommitFailedEvent>create().toSerialized();
+        HAProxySubscriber<CommitFailedEvent> commitFailedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitFailedConsumer, commitFailedEventProcessor);
         haProxyActionProcessor.subscribe(commitFailedHAProxySubscriber);
         environment.lifecycle().manage(commitFailedHAProxySubscriber);
 
@@ -233,21 +233,21 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .subscribe(eventHandler::handle);
 
         /* CommitSuccessEvent */
-        FlowableProcessor<CommitSuccessEvent> commitSuccessProcessor = UnicastProcessor
-                .<CommitSuccessEvent>create()
+        FlowableProcessor<CommitCompletedEvent> commitCompletedProcessor = UnicastProcessor
+                .<CommitCompletedEvent>create()
                 .toSerialized();
 
-        commitSuccessProcessor
+        commitCompletedProcessor
                 .mergeWith(commitCompletedEventProcessor)
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
         /* CommitFailureEvent */
-        FlowableProcessor<CommitFailureEvent> commitFailureProcessor = UnicastProcessor
-                .<CommitFailureEvent>create()
+        FlowableProcessor<CommitFailedEvent> commitFailedProcessor = UnicastProcessor
+                .<CommitFailedEvent>create()
                 .toSerialized();
 
-        commitFailureProcessor
+        commitFailedProcessor
                 .mergeWith(commitFailedEventProcessor)
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
@@ -286,8 +286,8 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 tryCommitPendingConfigurationProcessor,
                 tryCommitCurrentConfigurationProcessor,
                 registerServerProcessor,
-                commitSuccessProcessor,
-                commitFailureProcessor
+                commitCompletedProcessor,
+                commitFailedProcessor
         );
         environment.jersey().register(restApiResource);
 

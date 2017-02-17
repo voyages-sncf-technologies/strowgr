@@ -16,8 +16,8 @@
 package com.vsct.dt.strowgr.admin.gui.factory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
-import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.CommitCompletedEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.CommitFailedEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedTransformer;
@@ -47,12 +47,12 @@ public class NSQConsumersFactory {
         this.objectMapper = objectMapper;
     }
 
-    public FlowableNSQConsumer<CommitSuccessEvent> buildCommitCompletedConsumer(String id) {
+    public FlowableNSQConsumer<CommitCompletedEvent> buildCommitCompletedConsumer(String id) {
         CommitCompletedTransformer commitCompletedTransformer = new CommitCompletedTransformer(objectMapper);
         return new FlowableNSQConsumer<>(lookup, COMMIT_COMPLETED_TOPIC_PREFIX + id, NSQ.CHANNEL, nsqConfig, commitCompletedTransformer);
     }
 
-    public FlowableNSQConsumer<CommitFailureEvent> buildCommitFailedConsumer(String id) {
+    public FlowableNSQConsumer<CommitFailedEvent> buildCommitFailedConsumer(String id) {
         CommitFailedTransformer commitFailedTransformer = new CommitFailedTransformer(objectMapper);
         return new FlowableNSQConsumer<>(lookup, COMMIT_FAILED_TOPIC_PREFIX + id, NSQ.CHANNEL, nsqConfig, commitFailedTransformer);
     }

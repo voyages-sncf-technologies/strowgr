@@ -16,14 +16,14 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.CommitFailedEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitFailed;
 import fr.vsct.dt.nsq.NSQMessage;
 import io.reactivex.functions.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CommitFailedTransformer implements Function<NSQMessage, CommitFailureEvent> {
+public class CommitFailedTransformer implements Function<NSQMessage, CommitFailedEvent> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedTransformer.class);
 
@@ -34,12 +34,12 @@ public class CommitFailedTransformer implements Function<NSQMessage, CommitFailu
     }
 
     @Override
-    public CommitFailureEvent apply(NSQMessage nsqMessage) throws Exception {
+    public CommitFailedEvent apply(NSQMessage nsqMessage) throws Exception {
         CommitFailed payload = objectMapper.readValue(nsqMessage.getMessage(), CommitFailed.class);
 
-        LOGGER.debug("received an new CommitFailureEvent with cid {}", payload.getHeader().getCorrelationId());
+        LOGGER.debug("received an new CommitFailedEvent with cid {}", payload.getHeader().getCorrelationId());
 
-        return new CommitFailureEvent(
+        return new CommitFailedEvent(
                 payload.getHeader().getCorrelationId(),
                 new EntryPointKeyVsctImpl(
                         payload.getHeader().getApplication(),

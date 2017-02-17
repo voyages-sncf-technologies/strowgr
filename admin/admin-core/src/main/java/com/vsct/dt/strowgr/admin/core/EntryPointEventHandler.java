@@ -164,7 +164,7 @@ public class EntryPointEventHandler {
         return new CommitRequestedEvent(correlationId, entryPointKey, configuration, conf, syslogConf, bind);
     }
 
-    public void handle(CommitSuccessEvent event) {
+    public void handle(CommitCompletedEvent event) {
         LOGGER.debug("handles {}", event);
         EntryPointKey key = event.getKey();
         try {
@@ -186,8 +186,8 @@ public class EntryPointEventHandler {
         }
     }
 
-    public void handle(CommitFailureEvent event) {
-        LOGGER.debug("handles CommitFailureEvent");
+    public void handle(CommitFailedEvent event) {
+        LOGGER.debug("handles CommitFailedEvent");
         EntryPointKey key = event.getKey();
         try {
             if (this.stateManager.lock(key)) {

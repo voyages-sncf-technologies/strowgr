@@ -66,10 +66,10 @@ public class EntryPointResourcesTest {
     private Subscriber<RegisterServerEvent> registerServerSubscriber = mock(Subscriber.class);
 
     @SuppressWarnings("unchecked")
-    private Subscriber<CommitSuccessEvent> commitSuccessSubscriber = mock(Subscriber.class);
+    private Subscriber<CommitCompletedEvent> commitSuccessSubscriber = mock(Subscriber.class);
 
     @SuppressWarnings("unchecked")
-    private Subscriber<CommitFailureEvent> commitFailureSubscriber = mock(Subscriber.class);
+    private Subscriber<CommitFailedEvent> commitFailureSubscriber = mock(Subscriber.class);
 
     @SuppressWarnings("unchecked")
     private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
@@ -304,7 +304,7 @@ public class EntryPointResourcesTest {
     @Test
     public void send_commit_success_should_send_event_to_subscriber() throws Exception {
         // given
-        ArgumentCaptor<CommitSuccessEvent> commitSuccessCaptor = ArgumentCaptor.forClass(CommitSuccessEvent.class);
+        ArgumentCaptor<CommitCompletedEvent> commitSuccessCaptor = ArgumentCaptor.forClass(CommitCompletedEvent.class);
 
         // when
         entryPointResources.sendCommitSuccess("id", "correlation-id");
@@ -319,7 +319,7 @@ public class EntryPointResourcesTest {
     @Test
     public void send_commit_failure_should_send_event_to_subscriber() throws Exception {
         // given
-        ArgumentCaptor<CommitFailureEvent> commitFailureCaptor = ArgumentCaptor.forClass(CommitFailureEvent.class);
+        ArgumentCaptor<CommitFailedEvent> commitFailureCaptor = ArgumentCaptor.forClass(CommitFailedEvent.class);
 
         // when
         entryPointResources.sendCommitFailure("id", "correlation-id");

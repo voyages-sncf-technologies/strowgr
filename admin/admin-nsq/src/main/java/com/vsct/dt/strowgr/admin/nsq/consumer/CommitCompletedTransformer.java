@@ -16,14 +16,14 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.CommitCompletedEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitCompleted;
 import fr.vsct.dt.nsq.NSQMessage;
 import io.reactivex.functions.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CommitCompletedTransformer implements Function<NSQMessage, CommitSuccessEvent> {
+public class CommitCompletedTransformer implements Function<NSQMessage, CommitCompletedEvent> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedTransformer.class);
 
@@ -34,12 +34,12 @@ public class CommitCompletedTransformer implements Function<NSQMessage, CommitSu
     }
 
     @Override
-    public CommitSuccessEvent apply(NSQMessage nsqMessage) throws Exception {
+    public CommitCompletedEvent apply(NSQMessage nsqMessage) throws Exception {
         CommitCompleted payload = objectMapper.readValue(nsqMessage.getMessage(), CommitCompleted.class);
 
         LOGGER.debug("received an new CommitSuccesEvent with cid {}", payload.getHeader().getCorrelationId());
 
-        return new CommitSuccessEvent(
+        return new CommitCompletedEvent(
                 payload.getHeader().getCorrelationId(),
                 new EntryPointKeyVsctImpl(
                         payload.getHeader().getApplication(),

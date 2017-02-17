@@ -197,7 +197,7 @@ public class EntryPointEventHandlerTest {
     @Test
     public void commit_success_event_does_nothing_if_commit_correlationid_does_not_exists() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
-        CommitSuccessEvent event = new CommitSuccessEvent(CorrelationId.newCorrelationId(), key);
+        CommitCompletedEvent event = new CommitCompletedEvent(CorrelationId.newCorrelationId(), key);
 
         when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.empty());
@@ -210,7 +210,7 @@ public class EntryPointEventHandlerTest {
     @Test
     public void commit_success_event_does_nothing_if_commit_correlationid_does_not_match() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
-        CommitSuccessEvent event = new CommitSuccessEvent(CorrelationId.newCorrelationId(), key);
+        CommitCompletedEvent event = new CommitCompletedEvent(CorrelationId.newCorrelationId(), key);
 
         when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(CorrelationId.newCorrelationId()));
@@ -224,7 +224,7 @@ public class EntryPointEventHandlerTest {
     public void commit_success_event_applies_commit_if_correlation_id_matches() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
-        CommitSuccessEvent event = new CommitSuccessEvent(correlationId, key);
+        CommitCompletedEvent event = new CommitCompletedEvent(correlationId, key);
 
         when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(correlationId));
@@ -237,12 +237,12 @@ public class EntryPointEventHandlerTest {
     @Test
     public void commit_failure_event_does_nothing_if_there_is_no_committing_configuration() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
-        CommitFailureEvent commitFailureEvent = new CommitFailureEvent(CorrelationId.newCorrelationId(), key);
+        CommitFailedEvent commitFailedEvent = new CommitFailedEvent(CorrelationId.newCorrelationId(), key);
 
         when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.empty());
 
-        handler.handle(commitFailureEvent);
+        handler.handle(commitFailedEvent);
 
         verify(stateManager, never()).cancelCommit(any());
     }
@@ -250,12 +250,12 @@ public class EntryPointEventHandlerTest {
     @Test
     public void commit_failure_event_does_nothing_if_the_correlation_id_does_not_match_the_event_that_trigerred_it() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
-        CommitFailureEvent commitFailureEvent = new CommitFailureEvent(CorrelationId.newCorrelationId(), key);
+        CommitFailedEvent commitFailedEvent = new CommitFailedEvent(CorrelationId.newCorrelationId(), key);
 
         when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(CorrelationId.newCorrelationId()));
 
-        handler.handle(commitFailureEvent);
+        handler.handle(commitFailedEvent);
 
         verify(stateManager, never()).cancelCommit(any());
     }
@@ -264,12 +264,12 @@ public class EntryPointEventHandlerTest {
     public void commit_failure_event_removes_committing_configuration_if_correlation_id_matches() {
         EntryPointKey key = new EntryPointKeyDefaultImpl("some_key");
         String correlationId = CorrelationId.newCorrelationId();
-        CommitFailureEvent commitFailureEvent = new CommitFailureEvent(correlationId, key);
+        CommitFailedEvent commitFailedEvent = new CommitFailedEvent(correlationId, key);
 
         when(stateManager.lock(key)).thenReturn(true);
         when(stateManager.getCommitCorrelationId(key)).thenReturn(Optional.of(correlationId));
 
-        handler.handle(commitFailureEvent);
+        handler.handle(commitFailedEvent);
 
         verify(stateManager).cancelCommit(key);
     }
