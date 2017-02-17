@@ -19,32 +19,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.configuration.IncomingEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
-import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.RegisterServer;
-import fr.vsct.dt.nsq.NSQConfig;
 import fr.vsct.dt.nsq.NSQMessage;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
+import io.reactivex.functions.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * This consumer listens to the register_server events
- */
-public class RegisterServerConsumer extends FlowableNSQConsumer<RegisterServerEvent> {
+public class RegisterServerTransformer implements Function<NSQMessage, RegisterServerEvent> {
 
-    private static final Logger LOGGER  = LoggerFactory.getLogger(RegisterServerConsumer.class);
-
-    private static final String TOPIC   = "register_server";
+    private static final Logger LOGGER = LoggerFactory.getLogger(RegisterServerTransformer.class);
 
     private final ObjectMapper objectMapper;
 
-    public RegisterServerConsumer(NSQLookup lookup, ObjectMapper objectMapper, NSQConfig config) {
-        super(lookup, TOPIC, NSQ.CHANNEL, config);
+    public RegisterServerTransformer(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
     @Override
-    protected RegisterServerEvent transform(NSQMessage nsqMessage) throws Exception {
+    public RegisterServerEvent apply(NSQMessage nsqMessage) throws Exception {
         RegisterServer payload = objectMapper.readValue(nsqMessage.getMessage(), RegisterServer.class);
 
         LOGGER.debug("received an new RegisterServerEvent with cid {}", payload.getHeader().getCorrelationId());

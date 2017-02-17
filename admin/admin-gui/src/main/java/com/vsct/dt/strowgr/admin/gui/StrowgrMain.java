@@ -29,14 +29,16 @@ import com.vsct.dt.strowgr.admin.gui.factory.NSQConsumersFactory;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.managed.EntryPointPublisher;
+import com.vsct.dt.strowgr.admin.gui.managed.ManagedNSQConsumer;
 import com.vsct.dt.strowgr.admin.gui.managed.ManagedScheduledFlowable;
 import com.vsct.dt.strowgr.admin.gui.managed.NSQProducerManaged;
 import com.vsct.dt.strowgr.admin.gui.observable.CommitRequestedSubscriber;
 import com.vsct.dt.strowgr.admin.gui.observable.DeleteEntryPointSubscriber;
 import com.vsct.dt.strowgr.admin.gui.observable.HAProxyPublisher;
-import com.vsct.dt.strowgr.admin.gui.observable.IncomingEvents;
+import com.vsct.dt.strowgr.admin.gui.observable.HAProxySubscriber;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
+import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQDispatcher;
 import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
@@ -113,10 +115,11 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         // Retrieve NSQLookup configuration
         NSQLookup nsqLookup = configuration.getNsqLookupfactory().build();
         // NSQConsumers configuration
-        NSQConfig consumerNsqConfig = configuration.getNsqConsumerConfigFactory().build();
+        NSQConfig nsqConfig = configuration.getNsqConsumerConfigFactory().build();
 
-        NSQConsumersFactory nsqConsumersFactory = new NSQConsumersFactory(nsqLookup, consumerNsqConfig, objectMapper);
+        NSQConsumersFactory nsqConsumersFactory = new NSQConsumersFactory(nsqLookup, nsqConfig, objectMapper);
 
+        /* HAPRoxyPublisher: scheduled lookup */
         ManagedScheduledFlowable haProxyFlowable = new ManagedScheduledFlowable("HA Proxy", configuration.getHandledHaproxyRefreshPeriodSecond(), TimeUnit.SECONDS, Schedulers.newThread());
         environment.lifecycle().manage(haProxyFlowable);
 
@@ -127,13 +130,25 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         PublishProcessor<HAProxyPublisher.HAProxyAction> haProxyActionProcessor = PublishProcessor.create();
         haProxyActionFlowable.subscribe(haProxyActionProcessor);
 
-        IncomingEvents incomingEvents = new IncomingEvents(haProxyActionProcessor, nsqConsumersFactory);
-        environment.lifecycle().manage(incomingEvents);
+
+        /* HAProxySubscriber: Creates a dedicated NSQConsumer for each HAProxy CommitCompleted topic */
+        FlowableProcessor<CommitSuccessEvent> commitCompletedEventProcessor = UnicastProcessor.<CommitSuccessEvent>create().toSerialized();
+        HAProxySubscriber<CommitSuccessEvent> commitCompletedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitCompletedConsumer, commitCompletedEventProcessor);
+        haProxyActionProcessor.subscribe(commitCompletedHAProxySubscriber);
+        environment.lifecycle().manage(commitCompletedHAProxySubscriber);
+
+        /* HAProxySubscriber: Creates a dedicated NSQConsumer for each HAProxy CommitFailed topic */
+        FlowableProcessor<CommitFailureEvent> commitFailedEventProcessor = UnicastProcessor.<CommitFailureEvent>create().toSerialized();
+        HAProxySubscriber<CommitFailureEvent> commitFailedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitFailedConsumer, commitFailedEventProcessor);
+        haProxyActionProcessor.subscribe(commitFailedHAProxySubscriber);
+        environment.lifecycle().manage(commitFailedHAProxySubscriber);
+
+        /* NSQConsumer for RegisterServer topic */
+        FlowableNSQConsumer<RegisterServerEvent> registerServerConsumer = nsqConsumersFactory.buildRegisterServerConsumer();
+        environment.lifecycle().manage(new ManagedNSQConsumer(registerServerConsumer));
 
         /* NSQ Producers */
         NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();
-
-        // manage NSQProducer lifecycle by Dropwizard
         environment.lifecycle().manage(new NSQProducerManaged(nsqProducer));
 
         NSQDispatcher nsqDispatcher = new NSQDispatcher(nsqProducer);
@@ -207,13 +222,13 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .observeOn(Schedulers.io())
                 .subscribe(new DeleteEntryPointSubscriber(nsqDispatcher));
 
-        /* RegisterServer */
+        /* RegisterServerEvent */
         FlowableProcessor<RegisterServerEvent> registerServerProcessor = UnicastProcessor
                 .<RegisterServerEvent>create()
                 .toSerialized();
 
         registerServerProcessor
-                .mergeWith(incomingEvents.registerServerEventFlowable())
+                .mergeWith(registerServerConsumer.flowable())
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
@@ -223,7 +238,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         commitSuccessProcessor
-                .mergeWith(incomingEvents.commitSuccessEventFlowable())
+                .mergeWith(commitCompletedEventProcessor)
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 
@@ -233,7 +248,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 .toSerialized();
 
         commitFailureProcessor
-                .mergeWith(incomingEvents.commitFailureEventFlowable())
+                .mergeWith(commitFailedEventProcessor)
                 .observeOn(Schedulers.io())
                 .subscribe(eventHandler::handle);
 

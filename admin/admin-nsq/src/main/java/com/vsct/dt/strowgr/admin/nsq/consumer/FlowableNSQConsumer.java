@@ -24,6 +24,7 @@ import io.netty.channel.EventLoopGroup;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,13 +32,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class FlowableNSQConsumer<T> {
+public class FlowableNSQConsumer<T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FlowableNSQConsumer.class);
 
     private final String topic;
 
     private final String channel;
+
+    private final Function<NSQMessage, T> transformer;
 
     /**
      * The flowable created by this consumer
@@ -49,9 +52,10 @@ public abstract class FlowableNSQConsumer<T> {
      */
     private final List<Disposable> disposables = new ArrayList<>();
 
-    FlowableNSQConsumer(NSQLookup lookup, String topic, String channel, NSQConfig config) {
+    public FlowableNSQConsumer(NSQLookup lookup, String topic, String channel, NSQConfig config, Function<NSQMessage, T> transformer) {
         this.topic = topic;
         this.channel = channel;
+        this.transformer = transformer;
 
         this.flowable = Flowable
                 .<NSQMessage>create(emitter -> {
@@ -97,7 +101,7 @@ public abstract class FlowableNSQConsumer<T> {
 
     private Optional<T> transformSafe(NSQMessage nsqMessage) {
         try {
-            return Optional.ofNullable(transform(nsqMessage));
+            return Optional.ofNullable(transformer.apply(nsqMessage));
         } catch (Exception e) {
             LOGGER.error("can't deserialize the payload of message at {}, id={}, payload={}", nsqMessage.getTimestamp(), new String(nsqMessage.getId()), new String(nsqMessage.getMessage()), e);
             return Optional.empty();
@@ -105,8 +109,6 @@ public abstract class FlowableNSQConsumer<T> {
             nsqMessage.finished();
         }
     }
-
-    protected abstract T transform(NSQMessage nsqMessage) throws Exception;
 
     private void onError(NSQException e) {
         LOGGER.error("Following error occurred while consuming messages on topic {}, channel {}", topic, channel, e);

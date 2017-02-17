@@ -17,32 +17,24 @@ package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
-import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitFailed;
-import fr.vsct.dt.nsq.NSQConfig;
 import fr.vsct.dt.nsq.NSQMessage;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
+import io.reactivex.functions.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * This consumer listens to the commit_failed events for a specific haproxy
- */
-public class CommitFailedConsumer extends FlowableNSQConsumer<CommitFailureEvent> {
+public class CommitFailedTransformer implements Function<NSQMessage, CommitFailureEvent> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedConsumer.class);
-
-    private static final String TOPIC_PREFIX = "commit_failed_";
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommitCompletedTransformer.class);
 
     private final ObjectMapper objectMapper;
 
-    public CommitFailedConsumer(NSQLookup lookup, String haproxy, ObjectMapper objectMapper, NSQConfig config) {
-        super(lookup, TOPIC_PREFIX + haproxy, NSQ.CHANNEL, config);
+    public CommitFailedTransformer(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
     @Override
-    protected CommitFailureEvent transform(NSQMessage nsqMessage) throws Exception {
+    public CommitFailureEvent apply(NSQMessage nsqMessage) throws Exception {
         CommitFailed payload = objectMapper.readValue(nsqMessage.getMessage(), CommitFailed.class);
 
         LOGGER.debug("received an new CommitFailureEvent with cid {}", payload.getHeader().getCorrelationId());

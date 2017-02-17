@@ -16,16 +16,29 @@
 package com.vsct.dt.strowgr.admin.gui.factory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedConsumer;
-import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedConsumer;
-import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerConsumer;
+import com.vsct.dt.strowgr.admin.core.event.in.CommitFailureEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.CommitSuccessEvent;
+import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
+import com.vsct.dt.strowgr.admin.nsq.NSQ;
+import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedTransformer;
+import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedTransformer;
+import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
+import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerTransformer;
 import fr.vsct.dt.nsq.NSQConfig;
 import fr.vsct.dt.nsq.lookup.NSQLookup;
 
 public class NSQConsumersFactory {
 
-    private final NSQLookup    lookup;
-    private final NSQConfig    nsqConfig;
+    private static final String COMMIT_COMPLETED_TOPIC_PREFIX = "commit_completed_";
+
+    private static final String COMMIT_FAILED_TOPIC_PREFIX = "commit_failed_";
+
+    private static final String REGISTER_SERVER_TOPIC = "register_server";
+
+    private final NSQLookup lookup;
+
+    private final NSQConfig nsqConfig;
+
     private final ObjectMapper objectMapper;
 
     public NSQConsumersFactory(NSQLookup lookup, NSQConfig nsqConfig, ObjectMapper objectMapper) {
@@ -34,15 +47,18 @@ public class NSQConsumersFactory {
         this.objectMapper = objectMapper;
     }
 
-    public CommitCompletedConsumer buildCommitCompletedConsumer(String id) {
-        return new CommitCompletedConsumer(lookup, id, objectMapper, nsqConfig);
+    public FlowableNSQConsumer<CommitSuccessEvent> buildCommitCompletedConsumer(String id) {
+        CommitCompletedTransformer commitCompletedTransformer = new CommitCompletedTransformer(objectMapper);
+        return new FlowableNSQConsumer<>(lookup, COMMIT_COMPLETED_TOPIC_PREFIX + id, NSQ.CHANNEL, nsqConfig, commitCompletedTransformer);
     }
 
-    public CommitFailedConsumer buildCommitFailedConsumer(String id) {
-        return new CommitFailedConsumer(lookup, id, objectMapper, nsqConfig);
+    public FlowableNSQConsumer<CommitFailureEvent> buildCommitFailedConsumer(String id) {
+        CommitFailedTransformer commitFailedTransformer = new CommitFailedTransformer(objectMapper);
+        return new FlowableNSQConsumer<>(lookup, COMMIT_FAILED_TOPIC_PREFIX + id, NSQ.CHANNEL, nsqConfig, commitFailedTransformer);
     }
 
-    public RegisterServerConsumer buildRegisterServerConsumer() {
-        return new RegisterServerConsumer(lookup, objectMapper, nsqConfig);
+    public FlowableNSQConsumer<RegisterServerEvent> buildRegisterServerConsumer() {
+        RegisterServerTransformer registerServerTransformer = new RegisterServerTransformer(objectMapper);
+        return new FlowableNSQConsumer<>(lookup, REGISTER_SERVER_TOPIC, NSQ.CHANNEL, nsqConfig, registerServerTransformer);
     }
 }
