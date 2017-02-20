@@ -32,7 +32,7 @@ import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.managed.EntryPointPublisher;
 import com.vsct.dt.strowgr.admin.gui.managed.ManagedNSQConsumer;
 import com.vsct.dt.strowgr.admin.gui.managed.ManagedScheduledFlowable;
-import com.vsct.dt.strowgr.admin.gui.managed.NSQProducerManaged;
+import com.vsct.dt.strowgr.admin.gui.managed.ManagedNSQProducer;
 import com.vsct.dt.strowgr.admin.gui.observable.HAProxyPublisher;
 import com.vsct.dt.strowgr.admin.gui.observable.HAProxySubscriber;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
@@ -120,7 +120,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* NSQ Producers */
         NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();
-        environment.lifecycle().manage(new NSQProducerManaged(nsqProducer));
+        environment.lifecycle().manage(new ManagedNSQProducer(nsqProducer));
         NSQDispatcher nsqDispatcher = new NSQDispatcher(nsqProducer);
 
         Subscriber<CommitRequestedEvent> commitRequestedEventProcessor = commitRequestedSubscriber(nsqDispatcher);

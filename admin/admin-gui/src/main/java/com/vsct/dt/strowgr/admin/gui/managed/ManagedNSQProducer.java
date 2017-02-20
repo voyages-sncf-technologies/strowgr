@@ -21,14 +21,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * NSQ client manager by Dropwizard.
+ * NSQ producer managed by DropWizard.
  */
-public class NSQProducerManaged implements Managed {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NSQProducerManaged.class);
+public class ManagedNSQProducer implements Managed {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManagedNSQProducer.class);
 
     private final NSQProducer nsqProducer;
 
-    public NSQProducerManaged(NSQProducer nsqProducer) {
+    public ManagedNSQProducer(NSQProducer nsqProducer) {
         this.nsqProducer = nsqProducer;
     }
 
