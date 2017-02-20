@@ -29,7 +29,7 @@ import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.factory.NSQConsumersFactory;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.ConsulHealthcheck;
 import com.vsct.dt.strowgr.admin.gui.healthcheck.NsqHealthcheck;
-import com.vsct.dt.strowgr.admin.gui.managed.EntryPointPublisher;
+import com.vsct.dt.strowgr.admin.gui.observable.EntryPointPublisher;
 import com.vsct.dt.strowgr.admin.gui.managed.ManagedNSQConsumer;
 import com.vsct.dt.strowgr.admin.gui.managed.ManagedScheduledFlowable;
 import com.vsct.dt.strowgr.admin.gui.managed.ManagedNSQProducer;
