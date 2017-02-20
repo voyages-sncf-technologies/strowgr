@@ -22,6 +22,7 @@ import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
+import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
@@ -58,6 +59,8 @@ import io.reactivex.processors.PublishProcessor;
 import io.reactivex.processors.UnicastProcessor;
 import io.reactivex.schedulers.Schedulers;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,174 +110,50 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         ConsulRepository repository = configuration.getConsulRepositoryFactory().buildAndManageBy(environment);
         repository.init();
 
-        EntryPointStateManager entryPointStateManager = new EntryPointStateManager(configuration.getCommitTimeout(), repository);
-
-        /* NSQ Consumers */
         // Object mapper used for NSQ messages
         ObjectMapper objectMapper = new ObjectMapper();
-        // Retrieve NSQLookup configuration
+
+        /* NSQ Consumers */
         NSQLookup nsqLookup = configuration.getNsqLookupfactory().build();
-        // NSQConsumers configuration
         NSQConfig nsqConfig = configuration.getNsqConsumerConfigFactory().build();
-
         NSQConsumersFactory nsqConsumersFactory = new NSQConsumersFactory(nsqLookup, nsqConfig, objectMapper);
-
-        /* HAPRoxyPublisher: scheduled lookup */
-        ManagedScheduledFlowable haProxyFlowable = new ManagedScheduledFlowable("HA Proxy", configuration.getHandledHaproxyRefreshPeriodSecond(), TimeUnit.SECONDS, Schedulers.newThread());
-        environment.lifecycle().manage(haProxyFlowable);
-
-        Flowable<HAProxyPublisher.HAProxyAction> haProxyActionFlowable = haProxyFlowable.getFlowable()
-                .flatMap(new HAProxyPublisher(repository));
-
-        /* using intermediate processor otherwise HAProxyPublisher will be called by every subscriber */
-        PublishProcessor<HAProxyPublisher.HAProxyAction> haProxyActionProcessor = PublishProcessor.create();
-        haProxyActionFlowable.subscribe(haProxyActionProcessor);
-
-
-        /* HAProxySubscriber: Creates a dedicated NSQConsumer for each HAProxy CommitCompleted topic */
-        FlowableProcessor<CommitCompletedEvent> commitCompletedEventProcessor = UnicastProcessor.<CommitCompletedEvent>create().toSerialized();
-        HAProxySubscriber<CommitCompletedEvent> commitCompletedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitCompletedConsumer, commitCompletedEventProcessor);
-        haProxyActionProcessor.subscribe(commitCompletedHAProxySubscriber);
-        environment.lifecycle().manage(commitCompletedHAProxySubscriber);
-
-        /* HAProxySubscriber: Creates a dedicated NSQConsumer for each HAProxy CommitFailed topic */
-        FlowableProcessor<CommitFailedEvent> commitFailedEventProcessor = UnicastProcessor.<CommitFailedEvent>create().toSerialized();
-        HAProxySubscriber<CommitFailedEvent> commitFailedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitFailedConsumer, commitFailedEventProcessor);
-        haProxyActionProcessor.subscribe(commitFailedHAProxySubscriber);
-        environment.lifecycle().manage(commitFailedHAProxySubscriber);
-
-        /* NSQConsumer for RegisterServer topic */
-        FlowableNSQConsumer<RegisterServerEvent> registerServerConsumer = nsqConsumersFactory.buildRegisterServerConsumer();
-        environment.lifecycle().manage(new ManagedNSQConsumer(registerServerConsumer));
 
         /* NSQ Producers */
         NSQProducer nsqProducer = configuration.getNsqProducerFactory().build();
         environment.lifecycle().manage(new NSQProducerManaged(nsqProducer));
-
         NSQDispatcher nsqDispatcher = new NSQDispatcher(nsqProducer);
 
-        /* CommitRequestedEvent */
-        FlowableProcessor<CommitRequestedEvent> commitRequestedEventProcessor = UnicastProcessor
-                .<CommitRequestedEvent>create()
-                .toSerialized();
-
-        commitRequestedEventProcessor
-                .observeOn(Schedulers.io())
-                .subscribe(new CommitRequestedSubscriber(nsqDispatcher));
+        Subscriber<CommitRequestedEvent> commitRequestedEventProcessor = commitRequestedSubscriber(nsqDispatcher);
 
         /* EntryPoint State Machine */
+        EntryPointStateManager entryPointStateManager = new EntryPointStateManager(configuration.getCommitTimeout(), repository);
+
         EntryPointEventHandler eventHandler = new EntryPointEventHandler(
                 entryPointStateManager, repository, repository,
                 templateLocator, templateGenerator,
                 commitRequestedEventProcessor);
 
-        /* TryCommitPendingConfiguration */
-        FlowableProcessor<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationProcessor = UnicastProcessor
-                .<TryCommitPendingConfigurationEvent>create()
-                .toSerialized();
+        /* Publishers */
+        Publisher<HAProxyPublisher.HAProxyAction> haProxyActionProcessor = haProxyActionPublisher(configuration, environment, repository);
 
-        tryCommitPendingConfigurationProcessor
-                .observeOn(Schedulers.io())
-                .subscribe(eventHandler::handle);
+        /* Subscribers */
+        Subscriber<AutoReloadConfigEvent> autoReloadConfigProcessor = autoReloadConfigSubscriber(entryPointStateManager);
 
-        /* TryCommitCurrentConfiguration */
-        FlowableProcessor<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationProcessor = UnicastProcessor
-                .<TryCommitCurrentConfigurationEvent>create()
-                .toSerialized();
+        Subscriber<AddEntryPointEvent> addEntryPointProcessor = addEntryPointSubscriber(repository, entryPointStateManager);
 
-        tryCommitCurrentConfigurationProcessor
-                .observeOn(Schedulers.io())
-                .subscribe(eventHandler::handle);
+        Subscriber<UpdateEntryPointEvent> updateEntryPointProcessor = updateEntryPointEventSubscriber(entryPointStateManager);
 
-        /* AutoReloadConfig */
-        FlowableProcessor<AutoReloadConfigEvent> autoReloadConfigProcessor = UnicastProcessor
-                .<AutoReloadConfigEvent>create()
-                .toSerialized(); // support Thread-safe onNext calls
+        Subscriber<DeleteEntryPointEvent> deleteEntryPointProcessor = deleteEntryPointSubscriber(nsqDispatcher);
 
-        autoReloadConfigProcessor
-                .observeOn(Schedulers.io())
-                .subscribe(new AutoReloadConfigSubscriber(entryPointStateManager));
+        Subscriber<RegisterServerEvent> registerServerSubscriber = registerServerSubscriber(environment, nsqConsumersFactory, eventHandler);
 
-        /* AddEntryPoint */
-        FlowableProcessor<AddEntryPointEvent> addEntryPointProcessor = UnicastProcessor
-                .<AddEntryPointEvent>create()
-                .toSerialized(); // support Thread-safe onNext calls
+        Subscriber<CommitCompletedEvent> commitCompletedSubscriber = commitCompletedSubscriber(environment, nsqConsumersFactory, haProxyActionProcessor, eventHandler);
 
-        addEntryPointProcessor
-                .observeOn(Schedulers.io())
-                .subscribe(new AddEntryPointSubscriber(entryPointStateManager, repository));
+        Subscriber<CommitFailedEvent> commitFailedSubscriber = commitFailedSubscriber(environment, nsqConsumersFactory, haProxyActionProcessor, eventHandler);
 
-        /* UpdateEntryPoint */
-        FlowableProcessor<UpdateEntryPointEvent> updateEntryPointProcessor = UnicastProcessor
-                .<UpdateEntryPointEvent>create()
-                .toSerialized(); // support Thread-safe onNext calls
+        Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingSubscriber = tryCommitPendingConfigurationSubscriber(configuration, environment, repository, eventHandler);
 
-        updateEntryPointProcessor
-                .observeOn(Schedulers.io())
-                .subscribe(new UpdateEntryPointSubscriber(entryPointStateManager));
-
-        /* DeleteEntryPoint */
-        FlowableProcessor<DeleteEntryPointEvent> deleteEntryPointProcessor = UnicastProcessor
-                .<DeleteEntryPointEvent>create()
-                .toSerialized();
-
-        deleteEntryPointProcessor
-                .observeOn(Schedulers.io())
-                .subscribe(new DeleteEntryPointSubscriber(nsqDispatcher));
-
-        /* RegisterServerEvent */
-        FlowableProcessor<RegisterServerEvent> registerServerProcessor = UnicastProcessor
-                .<RegisterServerEvent>create()
-                .toSerialized();
-
-        registerServerProcessor
-                .mergeWith(registerServerConsumer.flowable())
-                .observeOn(Schedulers.io())
-                .subscribe(eventHandler::handle);
-
-        /* CommitSuccessEvent */
-        FlowableProcessor<CommitCompletedEvent> commitCompletedProcessor = UnicastProcessor
-                .<CommitCompletedEvent>create()
-                .toSerialized();
-
-        commitCompletedProcessor
-                .mergeWith(commitCompletedEventProcessor)
-                .observeOn(Schedulers.io())
-                .subscribe(eventHandler::handle);
-
-        /* CommitFailureEvent */
-        FlowableProcessor<CommitFailedEvent> commitFailedProcessor = UnicastProcessor
-                .<CommitFailedEvent>create()
-                .toSerialized();
-
-        commitFailedProcessor
-                .mergeWith(commitFailedEventProcessor)
-                .observeOn(Schedulers.io())
-                .subscribe(eventHandler::handle);
-
-        /* Commit schedulers */
-        long periodMilliPendingCurrentScheduler = configuration
-                .getPeriodicSchedulerFactory()
-                .getPeriodicCommitPendingSchedulerFactory()
-                .getPeriodMilli();
-        long periodMilliCommitCurrentScheduler = configuration
-                .getPeriodicSchedulerFactory()
-                .getPeriodicCommitCurrentSchedulerFactory()
-                .getPeriodMilli();
-
-        ManagedScheduledFlowable commitPendingFlowable = new ManagedScheduledFlowable("Commit Pending", periodMilliPendingCurrentScheduler, TimeUnit.MILLISECONDS, Schedulers.newThread());
-        environment.lifecycle().manage(commitPendingFlowable);
-
-        commitPendingFlowable.getFlowable()
-                .flatMap(new EntryPointPublisher<>(repository, entryPoint -> new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint))))
-                .subscribe(tryCommitPendingConfigurationProcessor);
-
-        ManagedScheduledFlowable commitCurrentFlowable = new ManagedScheduledFlowable("Commit Current", periodMilliCommitCurrentScheduler, TimeUnit.MILLISECONDS, Schedulers.newThread());
-        environment.lifecycle().manage(commitCurrentFlowable);
-
-        commitCurrentFlowable.getFlowable()
-                .flatMap(new EntryPointPublisher<>(repository, entryPoint -> new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint))))
-                .subscribe(tryCommitCurrentConfigurationProcessor);
+        Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentSubscriber = tryCommitCurrentConfigurationSubscriber(configuration, environment, repository, eventHandler);
 
         /* REST Resources */
         EntryPointResources restApiResource = new EntryPointResources(
@@ -283,11 +162,11 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 addEntryPointProcessor,
                 updateEntryPointProcessor,
                 deleteEntryPointProcessor,
-                tryCommitPendingConfigurationProcessor,
-                tryCommitCurrentConfigurationProcessor,
-                registerServerProcessor,
-                commitCompletedProcessor,
-                commitFailedProcessor
+                tryCommitPendingSubscriber,
+                tryCommitCurrentSubscriber,
+                registerServerSubscriber,
+                commitCompletedSubscriber,
+                commitFailedSubscriber
         );
         environment.jersey().register(restApiResource);
 
@@ -317,6 +196,200 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* Exception mappers */
         environment.jersey().register(new IncompleteConfigurationExceptionMapper());
+    }
+
+    private Publisher<HAProxyPublisher.HAProxyAction> haProxyActionPublisher(StrowgrConfiguration configuration, Environment environment, ConsulRepository repository) {
+
+        /* HAPRoxyPublisher: scheduled lookup */
+        ManagedScheduledFlowable haProxyFlowable = new ManagedScheduledFlowable("HA Proxy", configuration.getHandledHaproxyRefreshPeriodSecond(), TimeUnit.SECONDS, Schedulers.newThread());
+        environment.lifecycle().manage(haProxyFlowable);
+
+        Flowable<HAProxyPublisher.HAProxyAction> haProxyActionFlowable = haProxyFlowable.getFlowable()
+                .flatMap(new HAProxyPublisher(repository));
+
+        /* using intermediate processor otherwise HAProxyPublisher will be called by every subscriber */
+        PublishProcessor<HAProxyPublisher.HAProxyAction> haProxyActionProcessor = PublishProcessor.create();
+        haProxyActionFlowable.subscribe(haProxyActionProcessor);
+
+        return haProxyActionProcessor;
+    }
+
+    private Subscriber<DeleteEntryPointEvent> deleteEntryPointSubscriber(NSQDispatcher nsqDispatcher) {
+
+        FlowableProcessor<DeleteEntryPointEvent> deleteEntryPointProcessor = UnicastProcessor
+                .<DeleteEntryPointEvent>create()
+                .toSerialized();
+
+        deleteEntryPointProcessor
+                .observeOn(Schedulers.io())
+                .subscribe(new DeleteEntryPointSubscriber(nsqDispatcher));
+
+        return deleteEntryPointProcessor;
+    }
+
+    private Subscriber<UpdateEntryPointEvent> updateEntryPointEventSubscriber(EntryPointStateManager entryPointStateManager) {
+
+        FlowableProcessor<UpdateEntryPointEvent> updateEntryPointProcessor = UnicastProcessor
+                .<UpdateEntryPointEvent>create()
+                .toSerialized();
+
+        updateEntryPointProcessor
+                .observeOn(Schedulers.io())
+                .subscribe(new UpdateEntryPointSubscriber(entryPointStateManager));
+
+        return updateEntryPointProcessor;
+    }
+
+    private Subscriber<AddEntryPointEvent> addEntryPointSubscriber(ConsulRepository repository, EntryPointStateManager entryPointStateManager) {
+
+        FlowableProcessor<AddEntryPointEvent> addEntryPointProcessor = UnicastProcessor
+                .<AddEntryPointEvent>create()
+                .toSerialized();
+
+        addEntryPointProcessor
+                .observeOn(Schedulers.io())
+                .subscribe(new AddEntryPointSubscriber(entryPointStateManager, repository));
+
+        return addEntryPointProcessor;
+    }
+
+    private Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber(EntryPointStateManager entryPointStateManager) {
+
+        FlowableProcessor<AutoReloadConfigEvent> autoReloadConfigProcessor = UnicastProcessor
+                .<AutoReloadConfigEvent>create()
+                .toSerialized();
+
+        autoReloadConfigProcessor
+                .observeOn(Schedulers.io())
+                .subscribe(new AutoReloadConfigSubscriber(entryPointStateManager));
+
+        return autoReloadConfigProcessor;
+    }
+
+    private Subscriber<CommitRequestedEvent> commitRequestedSubscriber(NSQDispatcher nsqDispatcher) {
+
+        FlowableProcessor<CommitRequestedEvent> commitRequestedEventProcessor = UnicastProcessor
+                .<CommitRequestedEvent>create()
+                .toSerialized();
+
+        commitRequestedEventProcessor
+                .observeOn(Schedulers.io())
+                .subscribe(new CommitRequestedSubscriber(nsqDispatcher));
+
+        return commitRequestedEventProcessor;
+    }
+
+    private Subscriber<RegisterServerEvent> registerServerSubscriber(Environment environment, NSQConsumersFactory nsqConsumersFactory, EntryPointEventHandler eventHandler) {
+
+        FlowableNSQConsumer<RegisterServerEvent> registerServerConsumer = nsqConsumersFactory.buildRegisterServerConsumer();
+        environment.lifecycle().manage(new ManagedNSQConsumer(registerServerConsumer));
+
+        FlowableProcessor<RegisterServerEvent> registerServerProcessor = UnicastProcessor
+                .<RegisterServerEvent>create()
+                .toSerialized();
+
+        registerServerProcessor
+                .mergeWith(registerServerConsumer.flowable())
+                .observeOn(Schedulers.io())
+                .subscribe(eventHandler::handle);
+
+        return registerServerProcessor;
+    }
+
+    private Subscriber<CommitFailedEvent> commitFailedSubscriber(Environment environment, NSQConsumersFactory nsqConsumersFactory, Publisher<HAProxyPublisher.HAProxyAction> haProxyActionProcessor, EntryPointEventHandler eventHandler) {
+
+        FlowableProcessor<CommitFailedEvent> commitFailedEventProcessor = UnicastProcessor.<CommitFailedEvent>create().toSerialized();
+
+        /* HAProxySubscriber: Creates a dedicated NSQConsumer for each HAProxy CommitFailed topic */
+        HAProxySubscriber<CommitFailedEvent> commitFailedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitFailedConsumer, commitFailedEventProcessor);
+        haProxyActionProcessor.subscribe(commitFailedHAProxySubscriber);
+        environment.lifecycle().manage(commitFailedHAProxySubscriber);
+
+        FlowableProcessor<CommitFailedEvent> commitFailedProcessor = UnicastProcessor
+                .<CommitFailedEvent>create()
+                .toSerialized();
+
+        commitFailedProcessor
+                .mergeWith(commitFailedEventProcessor)
+                .observeOn(Schedulers.io())
+                .subscribe(eventHandler::handle);
+
+        return commitFailedProcessor;
+    }
+
+    private Subscriber<CommitCompletedEvent> commitCompletedSubscriber(Environment environment, NSQConsumersFactory nsqConsumersFactory, Publisher<HAProxyPublisher.HAProxyAction> haProxyActionProcessor, EntryPointEventHandler eventHandler) {
+
+        FlowableProcessor<CommitCompletedEvent> commitCompletedEventProcessor = UnicastProcessor.<CommitCompletedEvent>create().toSerialized();
+
+        /* HAProxySubscriber: Creates a dedicated NSQConsumer for each HAProxy CommitCompleted topic */
+        HAProxySubscriber<CommitCompletedEvent> commitCompletedHAProxySubscriber = new HAProxySubscriber<>(nsqConsumersFactory::buildCommitCompletedConsumer, commitCompletedEventProcessor);
+        haProxyActionProcessor.subscribe(commitCompletedHAProxySubscriber);
+        environment.lifecycle().manage(commitCompletedHAProxySubscriber);
+
+        FlowableProcessor<CommitCompletedEvent> commitCompletedProcessor = UnicastProcessor
+                .<CommitCompletedEvent>create()
+                .toSerialized();
+
+        commitCompletedProcessor
+                .mergeWith(commitCompletedEventProcessor)
+                .observeOn(Schedulers.io())
+                .subscribe(eventHandler::handle);
+
+        return commitCompletedProcessor;
+    }
+
+    private Subscriber<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationSubscriber(
+            StrowgrConfiguration configuration, Environment environment,
+            EntryPointRepository repository, EntryPointEventHandler eventHandler) {
+
+        long periodMilliPendingCurrentScheduler = configuration
+                .getPeriodicSchedulerFactory()
+                .getPeriodicCommitPendingSchedulerFactory()
+                .getPeriodMilli();
+
+        FlowableProcessor<TryCommitPendingConfigurationEvent> tryCommitPendingConfigurationProcessor = UnicastProcessor
+                .<TryCommitPendingConfigurationEvent>create()
+                .toSerialized();
+
+        tryCommitPendingConfigurationProcessor
+                .observeOn(Schedulers.io())
+                .subscribe(eventHandler::handle);
+
+        ManagedScheduledFlowable commitPendingFlowable = new ManagedScheduledFlowable("Commit Pending", periodMilliPendingCurrentScheduler, TimeUnit.MILLISECONDS, Schedulers.newThread());
+        environment.lifecycle().manage(commitPendingFlowable);
+
+        commitPendingFlowable.getFlowable()
+                .flatMap(new EntryPointPublisher<>(repository, entryPoint -> new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint))))
+                .subscribe(tryCommitPendingConfigurationProcessor);
+
+        return tryCommitPendingConfigurationProcessor;
+    }
+
+    private Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationSubscriber(
+            StrowgrConfiguration configuration, Environment environment,
+            EntryPointRepository repository, EntryPointEventHandler eventHandler) {
+
+        long periodMilliCommitCurrentScheduler = configuration
+                .getPeriodicSchedulerFactory()
+                .getPeriodicCommitCurrentSchedulerFactory()
+                .getPeriodMilli();
+
+        FlowableProcessor<TryCommitCurrentConfigurationEvent> tryCommitCurrentConfigurationProcessor = UnicastProcessor
+                .<TryCommitCurrentConfigurationEvent>create()
+                .toSerialized();
+
+        tryCommitCurrentConfigurationProcessor
+                .observeOn(Schedulers.io())
+                .subscribe(eventHandler::handle);
+
+        ManagedScheduledFlowable commitCurrentFlowable = new ManagedScheduledFlowable("Commit Current", periodMilliCommitCurrentScheduler, TimeUnit.MILLISECONDS, Schedulers.newThread());
+        environment.lifecycle().manage(commitCurrentFlowable);
+
+        commitCurrentFlowable.getFlowable()
+                .flatMap(new EntryPointPublisher<>(repository, entryPoint -> new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(entryPoint))))
+                .subscribe(tryCommitCurrentConfigurationProcessor);
+
+        return tryCommitCurrentConfigurationProcessor;
     }
 
     private static class IncompleteConfigurationExceptionMapper implements ExceptionMapper<IncompleteConfigurationException> {
