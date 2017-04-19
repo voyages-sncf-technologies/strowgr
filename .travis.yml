@@ -5,9 +5,6 @@ sudo: required
 services:
   - docker
 before_install:
-  - curl -sL https://github.com/jpm4j/jpm4j.installers/raw/master/dist/biz.aQute.jpm.run.jar >jpm4j.jar
-  - java -jar jpm4j.jar -u init
-  - ~/jpm/bin/jpm install com.codacy:codacy-coverage-reporter:assembly
   - export VERSION=`mvn help:evaluate -Dexpression=project.version | grep -v "\[" | grep -v "Download"`
 script:
   - mvn verify
@@ -25,7 +22,6 @@ cache:
     - $HOME/.m2
 after_success:
   - bash <(curl -s https://codecov.io/bash)
-  - ~/jpm/bin/codacy-coverage-reporter -l Java -r admin/admin-gui/target/site/jacoco/jacoco.xml
   - ls -l ${TRAVIS_BUILD_DIR}/admin/admin-gui/target/  
 deploy:
   - provider: releases
