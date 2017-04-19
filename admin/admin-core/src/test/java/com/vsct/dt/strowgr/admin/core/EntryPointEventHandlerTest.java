@@ -17,7 +17,6 @@ package com.vsct.dt.strowgr.admin.core;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.eventbus.EventBus;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPointBackendServer;
@@ -53,8 +52,6 @@ public class EntryPointEventHandlerTest {
 
     @SuppressWarnings("unchecked")
     private final Subscriber<CommitRequestedEvent> commitRequestedSubscriber = mock(Subscriber.class);
-
-    private final EventBus outputBus = mock(EventBus.class);
 
     private final EntryPointEventHandler handler = new EntryPointEventHandler(stateManager, portRepository, haproxyRepository, templateLocator, templateGenerator, commitRequestedSubscriber);
 
