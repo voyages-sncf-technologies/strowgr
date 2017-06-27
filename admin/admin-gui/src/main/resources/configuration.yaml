@@ -10,15 +10,15 @@ server:
       - type: console
 threads: 20
 repository:
-  host: localhost
-  port: 8500
+  host: parisiancocktail.socrate.vsct.fr
+  port: 53000
 nsqLookup:
-  host: localhost
-  port: 4161
+  host: parisiancocktail.socrate.vsct.fr
+  port: 54171
 nsqProducer:
-  host: localhost
-  tcpPort: 4150
-  httpPort: 4151
+  host: parisiancocktail.socrate.vsct.fr
+  tcpPort: 55556
+  httpPort: 55555
 periodicScheduler:
   current:
     periodMilli: 11000

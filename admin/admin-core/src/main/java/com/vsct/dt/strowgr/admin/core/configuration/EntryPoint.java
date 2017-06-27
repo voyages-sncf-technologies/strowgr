@@ -33,12 +33,12 @@ public class EntryPoint {
     private final String haproxy;
     private final String hapUser;
     private final String hapVersion;
-    private final int    bindingId;
+    private final int bindingId;
 
     private final HashMap<String, String> context;
 
     private final HashMap<String, EntryPointFrontend> frontends;
-    private final HashMap<String, EntryPointBackend>  backends;
+    private final HashMap<String, EntryPointBackend> backends;
 
     public EntryPoint(String haproxy, String hapUser, String hapVersion, int bindingId,
                       Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
@@ -183,13 +183,17 @@ public class EntryPoint {
             EntryPointBackend thisBackend = this.backends.get(updatedBackend.getId());
             if (thisBackend != null) {
                 Set<EntryPointBackendServer> newServers = new HashSet<>();
+
                 for (EntryPointBackendServer s : thisBackend.getServers()) {
+                    if (!updatedBackend.getServer(s.getId()).isPresent()) {
+                        // updatedBackend doesn't contain this server, so should be removed from this backend
+                        continue;
+                    }
                     Map<String, String> contextOverride = updatedBackend.getServer(s.getId()).map(UpdatedEntryPointBackendServer::getContextOverride).orElse(new HashMap<>());
                     newServers.add(new EntryPointBackendServer(s.getId(), s.getIp(), s.getPort(), s.getContext(), contextOverride));
                 }
                 newBackends.add(new EntryPointBackend(updatedBackend.getId(), newServers, updatedBackend.getContext()));
-            }
-            else {
+            } else {
                 newBackends.add(new EntryPointBackend(updatedBackend.getId(), new HashSet<>(), updatedBackend.getContext()));
             }
         }

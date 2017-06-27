@@ -74,50 +74,44 @@
         }
 
 
-
-
-
-
     </style>
 
     <script type="text/javascript">
-        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages', 'ngSanitize','ui-notification']);
-        adminApp.constant("libelle",{"entrypoint":"platforme",
-                                     "un_entrypoint":"une plateforme",
-                                     "l_entrypoint":"la plateforme"});
-        adminApp.run(['$rootScope','libelle', function ($rootScope,libelle) {
+        var adminApp = angular.module('adminApp', ['ngMaterial', 'ngRoute', 'ngMessages', 'ngSanitize', 'ui-notification']);
+        adminApp.constant("libelle", {
+            "entrypoint": "platforme",
+            "un_entrypoint": "une plateforme",
+            "l_entrypoint": "la plateforme"
+        });
+        adminApp.run(['$rootScope', 'libelle', function ($rootScope, libelle) {
             $rootScope.libelle = libelle;
         }]);
 
         adminApp.config(['$routeProvider', '$mdThemingProvider', 'NotificationProvider', function ($routeProvider, $mdThemingProvider, $notificationProvider) {
-            $routeProvider.
-                    when('/entrypoints', {
-                        templateUrl: 'partials/entrypoints.html',
-                        controller: 'EntrypointsCtrl'
-                    }).
-                    when('/add-entrypoint', {
-                        templateUrl: 'partials/add-entrypoint.html',
-                        controller: 'AddEntrypointCtrl'
-                    }).
-                    when('/add-haproxy', {
-                        templateUrl: 'partials/add-haproxy.html',
-                        controller: 'AddHaproxyCtrl'
-                    }).
-                    otherwise({
-                        redirectTo: '/entrypoints'
-                    });
+            $routeProvider.when('/entrypoints', {
+                templateUrl: 'partials/entrypoints.html',
+                controller: 'EntrypointsCtrl'
+            }).when('/add-entrypoint', {
+                templateUrl: 'partials/add-entrypoint.html',
+                controller: 'AddEntrypointCtrl'
+            }).when('/add-haproxy', {
+                templateUrl: 'partials/add-haproxy.html',
+                controller: 'AddHaproxyCtrl'
+            }).otherwise({
+                redirectTo: '/entrypoints'
+            });
 
             $mdThemingProvider.theme('default')
-                    .primaryPalette('blue-grey', {
-                        'default': '300',
-                        'hue-1': '100',
-                        'hue-2': '500',
-                        'hue-3': '800'
-                    })
-                    .accentPalette('grey', {
-                        'default': '300'
-                    })
-                    .warnPalette('amber');
+                .primaryPalette('blue-grey', {
+                    'default': '300',
+                    'hue-1': '100',
+                    'hue-2': '500',
+                    'hue-3': '800'
+                })
+                .accentPalette('grey', {
+                    'default': '300'
+                })
+                .warnPalette('amber');
 
             $notificationProvider.setOptions({
                 delay: 5000,
@@ -138,7 +132,7 @@
                     }, function (error) {
                         if (error.status = 404) {
                             return "Port not assigned yet";
-                        } else if(error.status >= 500) {
+                        } else if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
@@ -147,97 +141,97 @@
             }
         }]);
 
-        adminApp.factory('Entrypoint', ['$http', 'Notification', function($http, Notification) {
+        adminApp.factory('Entrypoint', ['$http', 'Notification', function ($http, Notification) {
             return {
-                all: function(){
-                    return $http.get('/api/entrypoints').then(function(response) {
+                all: function () {
+                    return $http.get('/api/entrypoints').then(function (response) {
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                delete: function(id){
-                    return $http.delete('/api/entrypoints/'+escape(id)).then(function(response) {
-                        Notification.success('Entrypoint '+id+' supprimé');
+                delete: function (id) {
+                    return $http.delete('/api/entrypoints/' + escape(id)).then(function (response) {
+                        Notification.success('Entrypoint ' + id + ' supprimé');
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                swapAutoreload: function(id){
-                    return $http.patch('/api/entrypoints/'+escape(id)+'/autoreload/swap').then(function(response) {
-                        Notification.success('Auto reload pour '+id);
+                swapAutoreload: function (id) {
+                    return $http.patch('/api/entrypoints/' + escape(id) + '/autoreload/swap').then(function (response) {
+                        Notification.success('Auto reload pour ' + id);
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                isAutoreloaded: function(id) {
-                    return $http.get('/api/entrypoints/'+escape(id)+'/autoreload').then(function(response) {
+                isAutoreloaded: function (id) {
+                    return $http.get('/api/entrypoints/' + escape(id) + '/autoreload').then(function (response) {
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                add: function(id, conf){
-                    return $http.put('/api/entrypoints/' + id, conf).then(function(response) {
-                        Notification.success('Entrypoint '+ id + ' créé');
+                add: function (id, conf) {
+                    return $http.put('/api/entrypoints/' + id, conf).then(function (response) {
+                        Notification.success('Entrypoint ' + id + ' créé');
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                update: function(id, updatableConf){
-                    return $http.patch('/api/entrypoints/' + id, updatableConf).then(function(response) {
-                        Notification.success('Entrypoint '+ id + ' mis à jour');
+                update: function (id, updatableConf) {
+                    return $http.patch('/api/entrypoints/' + id, updatableConf).then(function (response) {
+                        Notification.success('Entrypoint ' + id + ' mis à jour');
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                getCurrent: function(id){
-                    return $http.get('/api/entrypoints/' + id + '/current').then(function(response) {
+                getCurrent: function (id) {
+                    return $http.get('/api/entrypoints/' + id + '/current').then(function (response) {
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                getPending: function(id){
-                    return $http.get('/api/entrypoints/' + id + '/pending').then(function(response) {
+                getPending: function (id) {
+                    return $http.get('/api/entrypoints/' + id + '/pending').then(function (response) {
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                getCommitting: function(id){
-                    return $http.get('/api/entrypoints/' + id + '/committing').then(function(response) {
+                getCommitting: function (id) {
+                    return $http.get('/api/entrypoints/' + id + '/committing').then(function (response) {
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
@@ -248,7 +242,7 @@
 
         adminApp.factory('Haproxy', ['$http', 'Notification', function ($http, Notification) {
 
-            var haproxyBackendModelToFrontendModel = function(id, backendModel){
+            var haproxyBackendModelToFrontendModel = function (id, backendModel) {
                 var hap = {
                     'id': id,
                     'name': backendModel.name,
@@ -257,64 +251,64 @@
                     'bindings': {}
                 };
                 //bindings are not stored as map but as a bunch of keys starting with 'binding/'
-                for(var prop in backendModel){
+                for (var prop in backendModel) {
                     if (backendModel.hasOwnProperty(prop) && prop.startsWith('binding/')) {
                         var id = prop.replace('binding/', '');
-                        hap['bindings'][id] =  backendModel[prop];
+                        hap['bindings'][id] = backendModel[prop];
                     }
                 }
                 return hap;
             };
 
             return {
-                all: function(){
-                    return $http.get('/api/haproxy/').then(function(response) {
-                        return response.data.map(function(backendModelWithId){
+                all: function () {
+                    return $http.get('/api/haproxy/').then(function (response) {
+                        return response.data.map(function (backendModelWithId) {
                             return haproxyBackendModelToFrontendModel(backendModelWithId.id, backendModelWithId);
                         });
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                get: function(id){
-                    return $http.get('/api/haproxy/' + id).then(function(response) {
+                get: function (id) {
+                    return $http.get('/api/haproxy/' + id).then(function (response) {
                         return haproxyBackendModelToFrontendModel(id, response.data);
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                allVersions: function(){
-                    return $http.get('/api/haproxy/versions').then(function(response) {
+                allVersions: function () {
+                    return $http.get('/api/haproxy/versions').then(function (response) {
                         return response.data.sort();
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
-                add: function(id, conf){
-                    return $http.put('/api/haproxy/'+id, conf).then(function(response) {
+                add: function (id, conf) {
+                    return $http.put('/api/haproxy/' + id, conf).then(function (response) {
                         Notification.success('Load Balancer ' + id + ' créé');
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
                     });
                 },
                 getBinding: function (hapid, bindingId) {
-                    return $http.get('/api/haproxy/' + hapid + '/binding/' + bindingId).then(function(response) {
+                    return $http.get('/api/haproxy/' + hapid + '/binding/' + bindingId).then(function (response) {
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
@@ -326,10 +320,10 @@
                         url: '/api/haproxy/template/valorise',
                         responseType: 'text',
                         data: conf
-                    }).then(function(response) {
+                    }).then(function (response) {
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
@@ -340,10 +334,10 @@
                         method: 'GET',
                         url: '/api/templates?uri=' + escape(uri),
                         responseType: 'text'
-                    }).then(function(response) {
+                    }).then(function (response) {
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
@@ -354,10 +348,10 @@
                         method: 'GET',
                         url: '/api/templates/frontbackends?uri=' + escape(uri),
                         responseType: 'text'
-                    }).then(function(response) {
+                    }).then(function (response) {
                         return response.data;
-                    }, function(error) {
-                        if(error.status >= 500) {
+                    }, function (error) {
+                        if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
                         }
                         throw error;
@@ -372,10 +366,10 @@
 
             Entrypoint.all().then(function (entrypoints) {
                 $scope.entrypoints = entrypoints;
-                console.log('load entrypoints: '+entrypoints);
-                var size=entrypoints.length;
-                for(var id=0; id<size; id++){
-                   $scope.isAutoreloaded(entrypoints[id]);
+                console.log('load entrypoints: ' + entrypoints);
+                var size = entrypoints.length;
+                for (var id = 0; id < size; id++) {
+                    $scope.isAutoreloaded(entrypoints[id]);
                 }
             });
 
@@ -392,10 +386,10 @@
             };
 
             $scope.isAutoreloaded = function (id) {
-                console.log('isAutoreloaded ? '+id);
+                console.log('isAutoreloaded ? ' + id);
                 Entrypoint.isAutoreloaded(id).then(function (isAutoreloaded) {
-                    console.log('autoreloadEntrypoints: '+ isAutoreloaded+' for '+id);
-                    if(isAutoreloaded){
+                    console.log('autoreloadEntrypoints: ' + isAutoreloaded + ' for ' + id);
+                    if (isAutoreloaded) {
                         $scope.autoreloadEntrypoints[id] = 'lock_open';
                     } else {
                         $scope.autoreloadEntrypoints[id] = 'lock_outline';
@@ -403,22 +397,22 @@
                 });
             };
 
-            $scope.deleteEntrypoint = function(id,ev) {
-              var confirm = $mdDialog.confirm()
-                  .title('Voulez-vous supprimer cet entrypoint ?')
-                  .textContent("l'entrypoint sera supprimé sur le repository et au niveau des haproxy")
-                  .targetEvent(ev)
-                  .ok('supprimer')
-                  .cancel('annuler');
-              $mdDialog.show(confirm).then(function() {
-                  $scope.selectedEntrypoint = id;
-                  Entrypoint.delete(id).then(function (entrypoints) {
-                      $scope.entrypoints = entrypoints;
-                      $rootScope.$broadcast("entrypoint-updated");
-                  });
-              }, function() {
-                  console.log('cancel delete of ' + id);
-              });
+            $scope.deleteEntrypoint = function (id, ev) {
+                var confirm = $mdDialog.confirm()
+                    .title('Voulez-vous supprimer cet entrypoint ?')
+                    .textContent("l'entrypoint sera supprimé sur le repository et au niveau des haproxy")
+                    .targetEvent(ev)
+                    .ok('supprimer')
+                    .cancel('annuler');
+                $mdDialog.show(confirm).then(function () {
+                    $scope.selectedEntrypoint = id;
+                    Entrypoint.delete(id).then(function (entrypoints) {
+                        $scope.entrypoints = entrypoints;
+                        $rootScope.$broadcast("entrypoint-updated");
+                    });
+                }, function () {
+                    console.log('cancel delete of ' + id);
+                });
             };
 
         }]);
@@ -497,14 +491,14 @@
 
         adminApp.controller('AddEntrypointCtrl', ['$scope', 'Entrypoint', '$location', 'Haproxy', '$mdDialog', function ($scope, Entrypoint, $location, Haproxy, $mdDialog) {
 
-            Haproxy.all().then(function(data){
+            Haproxy.all().then(function (data) {
                 $scope.availableHaproxies = data;
                 $scope.currentHaproxy = data[0];
             });
 
-            Haproxy.allVersions().then(function(data){
+            Haproxy.allVersions().then(function (data) {
                 $scope.haproxyVersions = data;
-                console.log("haproxy versions: "+data);
+                console.log("haproxy versions: " + data);
             });
 
             /* Init conf object, avoid undefined inner objects and show expected fields */
@@ -530,7 +524,9 @@
                         repository: "haproxy-templates-horsprod",
                         tag: "1.0-DEFAULT",
                         filename: "haproxy_default_template.conf",
-                        gitlabFolder: function(){ return "/DEFAULT";}
+                        gitlabFolder: function () {
+                            return "/DEFAULT";
+                        }
                     }
                 },
                 {
@@ -542,7 +538,9 @@
                         repository: "haproxy-templates-horsprod",
                         tag: "",
                         filename: "haproxy_template.conf",
-                        gitlabFolder: function(){ return "/"+$scope.conf.context.application;}
+                        gitlabFolder: function () {
+                            return "/" + $scope.conf.context.application;
+                        }
                     }
                 }
             ];
@@ -554,10 +552,10 @@
             $scope.forbiddenFrontendKeys = ['id', 'port'];
             $scope.forbiddenBackendKeys = ['id'];
 
-            $scope.currentHaproxyUpdated = function(){
+            $scope.currentHaproxyUpdated = function () {
                 for (var i = 0; i < $scope.availableHaproxies.length; i++) {
                     var hapConf = $scope.availableHaproxies[i];
-                    if(hapConf['id'] == $scope.conf.haproxy) {
+                    if (hapConf['id'] == $scope.conf.haproxy) {
                         console.log("change current haproxy to " + hapConf['id']);
                         $scope.currentHaproxy = hapConf;
                     }
@@ -595,49 +593,49 @@
 
             $scope.reloadFrontBackends = function () {
                 var uri = "http://" + $scope.templateType.conf.host +
-                                "/" + $scope.templateType.conf.group +
-                                "/" + $scope.templateType.conf.repository +
-                                "/raw/" + $scope.templateType.conf.tag +
-                                $scope.templateType.conf.gitlabFolder() +
-                                "/" + $scope.templateType.conf.filename;
+                    "/" + $scope.templateType.conf.group +
+                    "/" + $scope.templateType.conf.repository +
+                    "/raw/" + $scope.templateType.conf.tag +
+                    $scope.templateType.conf.gitlabFolder() +
+                    "/" + $scope.templateType.conf.filename;
 
-                console.log("uri : "+uri);
+                console.log("uri : " + uri);
                 Haproxy.getFrontBackends(uri)
-                    .then(function (response){
+                    .then(function (response) {
                         // update frontends
-                        for(var newfrontendId=0;newfrontendId<response["frontends"].length;newfrontendId++){
-                            var alreadyLoaded=false;
+                        for (var newfrontendId = 0; newfrontendId < response["frontends"].length; newfrontendId++) {
+                            var alreadyLoaded = false;
                             var newfrontend = response["frontends"][newfrontendId];
-                            for(var f=0; f<$scope.conf.frontends.length;f++){
-                                if(newfrontend == $scope.conf.frontends[f]['id']){
-                                    alreadyLoaded=true;
+                            for (var f = 0; f < $scope.conf.frontends.length; f++) {
+                                if (newfrontend == $scope.conf.frontends[f]['id']) {
+                                    alreadyLoaded = true;
                                     break;
                                 }
                             }
-                            if(!alreadyLoaded){
+                            if (!alreadyLoaded) {
                                 $scope.conf.frontends.push({
                                     id: newfrontend,
-                                    context:{}
-                                 });
+                                    context: {}
+                                });
                             }
                         }
-                        console.log("frontends "+JSON.stringify($scope.conf.frontends));
+                        console.log("frontends " + JSON.stringify($scope.conf.frontends));
                         // update backends
-                        for(var backendId=0;backendId<response["backends"].length;backendId++){
-                            var alreadyLoaded=false;
+                        for (var backendId = 0; backendId < response["backends"].length; backendId++) {
+                            var alreadyLoaded = false;
                             var newbackend = response["backends"][backendId];
-                            for(var f=0; f<$scope.conf.backends.length;f++){
-                                if(newbackend == $scope.conf.backends[f]['id']){
-                                    alreadyLoaded=true;
+                            for (var f = 0; f < $scope.conf.backends.length; f++) {
+                                if (newbackend == $scope.conf.backends[f]['id']) {
+                                    alreadyLoaded = true;
                                     break;
                                 }
                             }
-                            if(!alreadyLoaded){
+                            if (!alreadyLoaded) {
                                 $scope.conf.backends.push({
                                     id: newbackend,
                                     servers: [],
-                                    context:{}
-                                 });
+                                    context: {}
+                                });
                             }
                         }
                     });
@@ -650,11 +648,11 @@
 
                 /* Construction of gitlab url */
                 $scope.conf.context.templateUri = "http://" + $scope.templateType.conf.host +
-                                "/" + $scope.templateType.conf.group +
-                                "/" + $scope.templateType.conf.repository +
-                                "/raw/" + $scope.templateType.conf.tag +
-                                $scope.templateType.conf.gitlabFolder() +
-                                "/" + $scope.templateType.conf.filename;
+                    "/" + $scope.templateType.conf.group +
+                    "/" + $scope.templateType.conf.repository +
+                    "/raw/" + $scope.templateType.conf.tag +
+                    $scope.templateType.conf.gitlabFolder() +
+                    "/" + $scope.templateType.conf.filename;
 
                 console.log($scope.conf.context.templateUri);
 
@@ -692,39 +690,39 @@
                 autoreload: true
             };
 
-            $scope.haproxyId= "";
+            $scope.haproxyId = "";
 
-            $scope.addBinding = function() {
+            $scope.addBinding = function () {
                 $scope.haproxy.bindings[Object.keys($scope.haproxy.bindings).length] = "";
             };
 
             $scope.createHaproxy = function () {
-                console.log("create haproxy "+$scope.haproxyId+": "+ JSON.stringify($scope.haproxy));
+                console.log("create haproxy " + $scope.haproxyId + ": " + JSON.stringify($scope.haproxy));
                 Haproxy.add($scope.haproxyId, $scope.haproxy).then(function () {
                     $location.path('/');
                 });
             };
 
-            Haproxy.all().then(function(data){
+            Haproxy.all().then(function (data) {
                 $scope.availableHaproxies = data;
                 console.log(data);
             });
 
-            $scope.loadHaproxy = function() {
-                if($scope.haproxyId != "") {
-                    console.log("load existing haproxy " + $scope.haproxyId + ": " +JSON.stringify($scope.availableHaproxies));
+            $scope.loadHaproxy = function () {
+                if ($scope.haproxyId != "") {
+                    console.log("load existing haproxy " + $scope.haproxyId + ": " + JSON.stringify($scope.availableHaproxies));
 
-                    for(var currentHaproxy=0; currentHaproxy < $scope.availableHaproxies.length; currentHaproxy++) {
-                        if($scope.availableHaproxies[currentHaproxy]["id"] == $scope.haproxyId) {
+                    for (var currentHaproxy = 0; currentHaproxy < $scope.availableHaproxies.length; currentHaproxy++) {
+                        if ($scope.availableHaproxies[currentHaproxy]["id"] == $scope.haproxyId) {
                             $scope.haproxy.name = $scope.availableHaproxies[currentHaproxy]["name"];
                             $scope.haproxy.bindings = $scope.availableHaproxies[currentHaproxy]["bindings"];
                             //This line helps migration of existing haproxy conf without bindings by creating a default one if empty
-                            if(Object.keys($scope.haproxy.bindings).length == 0){
-                                $scope.haproxy.bindings = { 0: '' };
+                            if (Object.keys($scope.haproxy.bindings).length == 0) {
+                                $scope.haproxy.bindings = {0: ''};
                             }
                             $scope.haproxy.platform = $scope.availableHaproxies[currentHaproxy]["platform"];
                             $scope.haproxy.autoreload = ("true" == $scope.availableHaproxies[currentHaproxy]["autoreload"]);
-                            console.log("load haproxy "+JSON.stringify($scope.availableHaproxies[currentHaproxy]));
+                            console.log("load haproxy " + JSON.stringify($scope.availableHaproxies[currentHaproxy]));
                         }
                     }
                 }
@@ -746,18 +744,18 @@
                     scope.forbiddenServerKeys = ['id', 'hostname', 'ip', 'port'];
 
                     //Load haproxy properties when conf is reloaded
-                    scope.$watch('conf', function(newValue, oldValue) {
-                        if(newValue != undefined){
-                            Haproxy.get(scope.conf.haproxy).then(function(data){
+                    scope.$watch('conf', function (newValue, oldValue) {
+                        if (newValue != undefined) {
+                            Haproxy.get(scope.conf.haproxy).then(function (data) {
                                 scope.currentHaproxy = data;
                             });
                         }
                     }, false);
 
 
-                    Haproxy.allVersions().then(function(data){
+                    Haproxy.allVersions().then(function (data) {
                         scope.haproxyVersions = data;
-                        console.log("haproxy versions: "+data);
+                        console.log("haproxy versions: " + data);
                     });
 
                     scope.addFrontend = function () {
@@ -789,46 +787,54 @@
                         }
                     };
 
+                    scope.removeServer = function (backend, server) {
+                        var index = backend.servers.indexOf(server);
+                        if (index > -1) {
+                            var removedServer = backend.servers.splice(index, 1);
+                            console.log("remove server " + index + " from " + JSON.stringify(removedServer));
+                        }
+                    };
+
                     scope.reloadFrontBackends = function () {
                         console.log('reload');
 
-                        var uri=scope.conf.context.templateUri;
-                        console.log("uri : "+uri);
+                        var uri = scope.conf.context.templateUri;
+                        console.log("uri : " + uri);
                         Haproxy.getFrontBackends(uri)
-                            .then(function (response){
+                            .then(function (response) {
                                 // update frontends
-                                for(var newfrontendId=0;newfrontendId<response["frontends"].length;newfrontendId++){
-                                    var alreadyLoaded=false;
+                                for (var newfrontendId = 0; newfrontendId < response["frontends"].length; newfrontendId++) {
+                                    var alreadyLoaded = false;
                                     var newfrontend = response["frontends"][newfrontendId];
-                                    for(var f=0; f<scope.conf.frontends.length;f++){
-                                        if(newfrontend == scope.conf.frontends[f]['id']){
-                                            alreadyLoaded=true;
+                                    for (var f = 0; f < scope.conf.frontends.length; f++) {
+                                        if (newfrontend == scope.conf.frontends[f]['id']) {
+                                            alreadyLoaded = true;
                                             break;
                                         }
                                     }
-                                    if(!alreadyLoaded){
+                                    if (!alreadyLoaded) {
                                         scope.conf.frontends.push({
                                             id: newfrontend,
-                                            context:{}
-                                         });
+                                            context: {}
+                                        });
                                     }
                                 }
-                                console.log("frontends "+JSON.stringify(scope.conf.frontends));
+                                console.log("frontends " + JSON.stringify(scope.conf.frontends));
                                 // update backends
-                                for(var backendId=0;backendId<response["backends"].length;backendId++){
-                                    var alreadyLoaded=false;
+                                for (var backendId = 0; backendId < response["backends"].length; backendId++) {
+                                    var alreadyLoaded = false;
                                     var newbackend = response["backends"][backendId];
-                                    for(var f=0; f<scope.conf.backends.length;f++){
-                                        if(newbackend == scope.conf.backends[f]['id']){
-                                            alreadyLoaded=true;
+                                    for (var f = 0; f < scope.conf.backends.length; f++) {
+                                        if (newbackend == scope.conf.backends[f]['id']) {
+                                            alreadyLoaded = true;
                                             break;
                                         }
                                     }
-                                    if(!alreadyLoaded){
+                                    if (!alreadyLoaded) {
                                         scope.conf.backends.push({
                                             id: newbackend,
-                                            context:{}
-                                         });
+                                            context: {}
+                                        });
                                     }
                                 }
                             });
@@ -837,6 +843,7 @@
 
 
                     scope.updateEntrypoint = function () {
+                        console.log("update entrypoint")
                         //Create the update model
                         var frontends = [];
                         for (var i = 0; i < scope.conf.frontends.length; i++) {
@@ -857,6 +864,7 @@
                                     contextOverride: b.servers[j].contextOverride
                                 });
                             }
+                            console.log("push new servers:"+JSON.stringify(servers));
                             backends.push({
                                 id: b.id,
                                 context: b.context,
@@ -877,10 +885,11 @@
                         /* Since ports are provided by the backend, we simulate their presence for new frontends for template valorisation validation */
                         var confWithFakePorts = angular.copy(scope.conf);
                         for (var i = 0; i < confWithFakePorts.frontends.length; i++) {
-                            if(confWithFakePorts.frontends[i].port == undefined) {
+                            if (confWithFakePorts.frontends[i].port == undefined) {
                                 confWithFakePorts.frontends[i].port = "00000";
                             }
-                        };
+                        }
+                        ;
 
                         Haproxy.getGeneratedTemplate(confWithFakePorts).then(function (response) {
                             return Entrypoint.update(scope.conf.context.application + '/' + scope.conf.context.platform, updateModel);
@@ -917,8 +926,8 @@
                             }
                         });
 
-                        scope.openStatsPage = function(frontend){
-                            $window.open("http://"+scope.haproxyBind+":"+frontend.port+"/stats");
+                        scope.openStatsPage = function (frontend) {
+                            $window.open("http://" + scope.haproxyBind + ":" + frontend.port + "/stats");
                         };
                     }
                 }
@@ -949,7 +958,7 @@
                             });
                         };
 
-                        scope.contextIsNotEmpty = function (){
+                        scope.contextIsNotEmpty = function () {
                             return scope.context != undefined && Object.keys(scope.context).length > 0;
                         }
                     }
@@ -1035,23 +1044,23 @@
                         refreshAllStates = function () {
                             return $q.all({
                                 current: Entrypoint.getCurrent(scope.id).then(function (conf) {
-                                            return portPromises(scope.id, conf);
-                                        }, function (error) {
-                                            //TODO Check for 404
-                                            scope.current = undefined
-                                        }),
+                                    return portPromises(scope.id, conf);
+                                }, function (error) {
+                                    //TODO Check for 404
+                                    scope.current = undefined
+                                }),
                                 pending: Entrypoint.getPending(scope.id).then(function (conf) {
-                                            return portPromises(scope.id, conf);
-                                        }, function (error) {
-                                            //TODO Check for 404
-                                            scope.pending = undefined
-                                        }),
+                                    return portPromises(scope.id, conf);
+                                }, function (error) {
+                                    //TODO Check for 404
+                                    scope.pending = undefined
+                                }),
                                 committing: Entrypoint.getCommitting(scope.id).then(function (conf) {
-                                            return portPromises(scope.id, conf);
-                                        }, function (error) {
-                                            //TODO Check for 404
-                                            scope.committing = undefined
-                                        })
+                                    return portPromises(scope.id, conf);
+                                }, function (error) {
+                                    //TODO Check for 404
+                                    scope.committing = undefined
+                                })
                             }).then(function (values) {
                                 scope.current = values.current;
                                 scope.pending = values.pending;
@@ -1131,8 +1140,6 @@
                     }
                 }
             }]);
-
-
 
 
     </script>
