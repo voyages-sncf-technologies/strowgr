@@ -33,16 +33,8 @@
         padding-left: 120px;
     }
 
-    div.md-chip-content {
-        font-size: 12px;
-    }
-
     #update-entrypoint-form input {
         font-size: 12px;
-    }
-
-    #update-entrypoint-form md-input-container.hide-errors-spacer div.md-errors-spacer {
-        display: none;
     }
 
 </style>
@@ -100,7 +92,8 @@
             </div>
         </md-input-container>
         <md-button class="md-fab md-primary md-mini">
-            <md-icon class="material-icons" style="font-size: 22px"  ng-click="reloadFrontBackends()">find_replace</md-icon>
+            <md-icon class="material-icons" style="font-size: 22px" ng-click="reloadFrontBackends()">find_replace
+            </md-icon>
             <md-tooltip md-direction="bottom">Recharger les backends/frontends du template</md-tooltip>
         </md-button>
     </div>
@@ -167,7 +160,7 @@
                 <context-map-input context="backend.context" forbidden="forbiddenBackendKeys" flex></context-map-input>
             </div>
             <div class="server" ng-repeat="server in backend.servers" layout="row" layout-align="start center"
-                 flex="100" style="width: 100%">
+                 flex="100" style="width: 90%">
                 <md-input-container flex="10" class="hide-errors-spacer">
                     <label>Serveur</label>
                     <input name="id" ng-model="server.id" disabled style="font-weight: bold; color: black;"/>
@@ -190,6 +183,9 @@
                 <p class="md-body-2" style="padding-right: 20px;padding-left: 10px">Surcharge Contexte => </p>
                 <context-map-input context="server.contextOverride" forbidden="forbiddenServerKeys"
                                    flex></context-map-input>
+                <md-icon class="material-icons" style="cursor:pointer;" ng-click="removeServer(backend,server)">clear
+                    <md-tooltip>Supprimer le server</md-tooltip>
+                </md-icon>
             </div>
         </div>
     </div>
