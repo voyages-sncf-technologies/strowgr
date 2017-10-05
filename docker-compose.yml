@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
 
@@ -13,7 +13,6 @@ services:
 
   nsqlookupd:
     image: nsqio/nsq:v0.3.7
-    container_name: nsqlookupd
     command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160
     ports:
       - 4160:4160
@@ -23,7 +22,6 @@ services:
 
   nsqd:
     image: nsqio/nsq:v0.3.7
-    container_name: nsqd
     command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd -http-address=nsqd:4151 -tcp-address=nsqd:4150
     ports:
       - 4150:4150
@@ -35,7 +33,6 @@ services:
 
   nsqadmin:
     image: nsqio/nsq:v0.3.7
-    container_name: nsqd-admin
     command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
     ports:
       - 4171:4171
@@ -47,7 +44,6 @@ services:
 
   sidekick-master:
     image: strowgr/sidekick:0.2.6
-    container_name: sidekick-master
     ports:
       - 53000:53000
       # haproxy ports
@@ -71,7 +67,6 @@ services:
 
   sidekick-slave:
     image: strowgr/sidekick:0.2.6
-    container_name: sidekick-slave
     ports:
       - 54000:54000
       # haproxy ports
@@ -95,7 +90,6 @@ services:
 
   webpage:
     image: nginx:1.11.8-alpine
-    container_name: webpage
     ports:
       - 80:80
     networks:
@@ -106,7 +100,7 @@ services:
 
 networks:
   strowgr:
-    driver: bridge
+    driver: overlay
 
 volumes:
   static:
