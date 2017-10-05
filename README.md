@@ -20,7 +20,6 @@ Build additionally docker images of `admin`:
 $ docker build -t strowgr/admin:latest admin
 ```
 
-
 ## Release
 
 For instance, the release of 0.2.5:
@@ -34,9 +33,18 @@ All these steps could be done by _mvn release:prepare_ and _mvn release:perform_
 
 ## Start Admin locally
 
+CAUTION : build strowgr stack with Docker actually fails 
+
 ```bash
+
+# init a swarm
+docker swarm init
+
 # start side services
-docker-compose up
+docker stack deploy -c docker-compose.yml strowgr
+
+# check replicas with
+docker service ls
 
 # start admin app
 mvn clean package -f admin
