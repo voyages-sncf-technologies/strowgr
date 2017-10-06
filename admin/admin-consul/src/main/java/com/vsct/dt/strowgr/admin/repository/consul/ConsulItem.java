@@ -29,16 +29,16 @@ public class ConsulItem<T> {
     private final String key;
     private final long flags;
     private final String value;
-    private final int createIndex;
-    private final int modifyIndex;
+    private final long createIndex;
+    private final long modifyIndex;
 
     @JsonCreator
     public ConsulItem(@JsonProperty("LockIndex") int lockIndex,
                       @JsonProperty("Key") String key,
                       @JsonProperty("Flags") Long flags,
                       @JsonProperty(value = "Value", defaultValue = "{}") String value,
-                      @JsonProperty("CreateIndex") Integer createIndex,
-                      @JsonProperty("ModifyIndex") Integer modifyIndex) {
+                      @JsonProperty("CreateIndex") Long createIndex,
+                      @JsonProperty("ModifyIndex") Long modifyIndex) {
         this.lockIndex = lockIndex;
         this.key = key;
         this.flags = flags;
@@ -76,11 +76,11 @@ public class ConsulItem<T> {
         return value;
     }
 
-    public int getCreateIndex() {
+    public long getCreateIndex() {
         return createIndex;
     }
 
-    public int getModifyIndex() {
+    public long getModifyIndex() {
         return modifyIndex;
     }
 
