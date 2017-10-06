@@ -33,6 +33,8 @@ All these steps could be done by _mvn release:prepare_ and _mvn release:perform_
 
 ## Start Admin locally
 
+
+### start env with Docker
 CAUTION : build strowgr stack with Docker actually fails 
 
 ```bash
@@ -46,11 +48,36 @@ docker stack deploy -c docker-compose.yml strowgr
 # check replicas with
 docker service ls
 
-# start admin app
+```
+
+### start env process by process
+```bash
+# start nsqlookup
+curl -d 'hello world 1' 'http://127.0.0.1:4151/pub?topic=test'
+
+# start nsq
+nsqd --lookupd-tcp-address=127.0.0.1:4160
+
+# start nsq admin
+nsqadmin --lookupd-http-address=127.0.0.1:4161
+
+# start consul
+consul agent -dev
+```
+
+### start Strowgr admin
+```bash
+# build
 mvn clean package -f admin
+# run
 java -jar admin/admin-gui/target/admin-gui-*.jar server admin/admin-gui/src/main/resources/configuration.yaml
 ```
 
+when topic are not yet created, you add to create it (see <http://nsq.io/overview/quick_start.html>)
+
+```bash
+curl -d 'hello world 1' 'http://127.0.0.1:4151/pub?topic=test'
+```
 ## Commands
 
 Strowgr uses _dropwizard_ with some additional commands.
