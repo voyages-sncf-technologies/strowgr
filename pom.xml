@@ -22,7 +22,7 @@
 	<groupId>com.vsct.dt.strowgr</groupId>
 	<artifactId>strowgr</artifactId>
 	<packaging>pom</packaging>
-	<version>0.3.1-SNAPSHOT</version>
+	<version>0.3.1</version>
 
 	<modules>
 		<!--Java modules-->
