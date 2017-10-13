@@ -16,7 +16,6 @@ script:
   - docker pull verb/socat
   - docker pull gliderlabs/consul-server
   - docker pull nginx
-  - mvn scalatest:test -pl maze
 cache:
   directories:
     - $HOME/.m2
