@@ -493,7 +493,11 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
     private Map<String, String> consulItemsToMap(List<ConsulItem<String>> consulItems) {
         Map<String, String> haproxyItems = new HashMap<>(consulItems.size());
         for (ConsulItem<String> consulItem : consulItems) {
-            haproxyItems.put(consulItem.getKey().split("/", 3)[2], consulItem.valueFromBase64());
+            if (consulItem.getValue() != null && consulItem.getKey().split("/", 3).length > 2) {
+                haproxyItems.put(consulItem.getKey().split("/", 3)[2], consulItem.valueFromBase64());
+            } else {
+                LOGGER.warn("can't parse ConsulItem for haproxy: {}", consulItem);
+            }
         }
         return haproxyItems;
     }
@@ -507,7 +511,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
                             .orElseGet(ArrayList::new));
             Map<String, List<ConsulItem<String>>> consulItemsById = consulItems.stream()
-                    .filter(consulItem -> consulItem.getKey().split("/").length > 1) //We evaluate twice consulItem.getKey().split("/"), no a big deal since haproxy dont have many properties yet.
+                    .filter(consulItem -> consulItem.getValue() != null && consulItem.getKey().split("/").length > 1) //We evaluate twice consulItem.getKey().split("/"), no a big deal since haproxy dont have many properties yet.
                     .collect(Collectors.groupingBy(consulItem -> consulItem.getKey().split("/")[1]));
             List<Map<String, String>> propertiesById = new ArrayList<>(consulItemsById.size());
             for (Map.Entry<String, List<ConsulItem<String>>> entry : consulItemsById.entrySet()) {
@@ -537,7 +541,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     consulReader.parseHttpResponse(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
                             .orElseGet(ArrayList::new));
             result = consulItems.stream()
-                    .filter(consulItem -> consulItem.getKey().split("/").length > 1) //We evaluate twice consulItem.getKey().split("/"), no a big deal since haproxy dont have many properties yet.
+                    .filter(consulItem -> consulItem.getValue() != null && consulItem.getKey().split("/").length > 1) //We evaluate twice consulItem.getKey().split("/"), no a big deal since haproxy dont have many properties yet.
                     .map(consulItem -> consulItem.getKey().split("/")[1])
                     .collect(Collectors.toSet());
         } catch (IOException e) {
