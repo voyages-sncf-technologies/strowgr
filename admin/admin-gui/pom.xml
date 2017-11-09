@@ -29,6 +29,20 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.7.8</version>
+        </dependency>
+    
+        <dependency>
             <groupId>com.vsct.dt.strowgr</groupId>
             <artifactId>admin-core</artifactId>
             <version>${project.parent.version}</version>

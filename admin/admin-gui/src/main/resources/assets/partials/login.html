@@ -1,0 +1,54 @@
+<!--
+  ~ Copyright (C) 2016 VSCT
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~  http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<style type="text/css">
+    #login-form {
+        padding: 15px;
+    }
+
+    #login-form #frontends, #backends {
+        padding-left: 40px;
+    }
+
+    #login-form md-input-container {
+        margin-bottom: 0;
+    }
+</style>
+
+<form id="login-form" name="loginForm" ng-submit="loginForm.$valid && authenticate()" flex
+      ng-keydown="$event.keyCode == 13 && $event.preventDefault();">
+    <div layout="row">
+        <md-input-container flex="10">
+            <label>Login</label>
+            <input name="login" ng-model="auth.login" required/>
+            <div ng-messages="loginForm.login.$error">
+                <div ng-message="required">Il faut choisir un login</div>
+            </div>
+        </md-input-container>
+        <md-input-container flex="10">
+            <label>Mot de passe</label>
+            <input name="password" ng-model="auth.password" required/>
+            <div ng-messages="loginForm.password.$error">
+                <div ng-message="required">Il faut choisir un mot de passe</div>
+            </div>
+        </md-input-container>
+    
+    </div>
+    <div layout="row">
+        <md-input-container>
+            <input type="submit" value="Lancer" />
+        </md-input-container>
+    </div>
+</form>

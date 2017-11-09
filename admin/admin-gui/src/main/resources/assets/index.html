@@ -97,6 +97,9 @@
             }).when('/add-haproxy', {
                 templateUrl: 'partials/add-haproxy.html',
                 controller: 'AddHaproxyCtrl'
+            }).when('/login', {
+                templateUrl: 'partials/login.html',
+                controller: 'LoginCtrl'
             }).otherwise({
                 redirectTo: '/entrypoints'
             });
@@ -729,6 +732,24 @@
             }
 
         }]);
+        
+        adminApp.controller('LoginCtrl', ['$scope', '$location', 'Auth', '$mdDialog', function ($scope, $location, Auth, $mdDialog) {
+            /* Init conf object, avoid undefined inner objects and show expected fields */
+            $scope.auth = {
+                login: "",
+                password: "",
+            };
+
+            $scope.addBinding = function () {
+                $scope.auth.bindings[Object.keys($scope.auth.bindings).length] = "";
+            };
+            
+            $scope.authenticate = function () {
+                console.log("login with " + $scope.login + ": " + JSON.stringify($scope.auth));
+            };
+
+        }]);
+        
 
         adminApp.directive('entrypointUpdate', ['Haproxy', '$mdDialog', '$rootScope', 'Entrypoint', function (Haproxy, $mdDialog, $rootScope, Entrypoint) {
             return {
