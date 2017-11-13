@@ -1,11 +1,11 @@
-version: '3'
+version: '3.3'
 
 services:
 
   consul:
-    image: consul:v0.6.4
-    container_name: consul
-    command: consul agent -dev -ui -client 0.0.0.0 -data-dir /consul/data
+    image: consul:v0.6.4    
+    command:  /bin/sh -c "consul agent -dev -client 0.0.0.0 -bind=$$(hostname -i) -data-dir /consul/data"
+
     ports:
       - 8500:8500
     networks:
@@ -13,7 +13,7 @@ services:
 
   nsqlookupd:
     image: nsqio/nsq:v0.3.7
-    command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160
+    command: /bin/sh -c "/nsqlookupd -http-address=0.0.0.0:4161 -tcp-address=0.0.0.0:4160 -broadcast-address=$local_ip"
     ports:
       - 4160:4160
       - 4161:4161
@@ -22,7 +22,7 @@ services:
 
   nsqd:
     image: nsqio/nsq:v0.3.7
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd -http-address=nsqd:4151 -tcp-address=nsqd:4150
+    command: /bin/sh -c "/nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=$local_ip -http-address=0.0.0.0:4151 -tcp-address=0.0.0.0:4150"
     ports:
       - 4150:4150
       - 4151:4151
@@ -98,9 +98,11 @@ services:
       - ./static/:/usr/share/nginx/html
       - ./static/nginx.conf:/etc/nginx/nginx.conf
 
-networks:
+networks:            
   strowgr:
     driver: overlay
+    attachable: true
+    
 
 volumes:
   static:
