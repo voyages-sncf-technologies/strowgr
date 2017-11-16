@@ -32,3 +32,23 @@ logging:
       - type: console
 commitTimeout: 10
 handledHaproxyRefreshPeriodSecond: 20
+authenticatorType: none # allowed values : none, simple, LDAP
+##########################
+# for ldap configuration #
+##########################
+ldapConfiguration:
+   uri: URI_OF_YOUR_LDAP
+   adDomain: DOMAIN_AD
+   connectTimeout: 1000ms
+   readTimeout: 1000ms
+   userNameAttribute: sAMAccountName
+   userSearchBase: dc=mother,dc=com
+   roleSearchBase: ou=kikoo,dc=mother,dc=com
+   prodGroupName: HESPERIDES_PROD_GROUP        # Group allow modify platform production
+   techGroupName: HESPERIDES_TECH_GROUP        # Group allow to call technical API of Hesperides (reindex, cache...)
+   pool:                                       # Ldap Pool Configuration
+     initsize: 5
+     maxsize: 20
+     idleTimeout: 60000
+authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m 
+useDefaultUserWhenAuthentFails: true # allows you to bypass authent :true for development mode, false for production mode

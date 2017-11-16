@@ -21,6 +21,10 @@ import com.vsct.dt.strowgr.admin.core.TemplateLocator;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
+import com.vsct.dt.strowgr.admin.gui.security.model.User;
+
+import io.dropwizard.auth.Auth;
+
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.Valid;
@@ -61,7 +65,7 @@ public class HaproxyResources {
     @Path("/{haproxyId}/binding/{bindingId}")
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response setHaproxyBindings(@PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId, @NotEmpty String value) {
+    public Response setHaproxyBindings( @PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId, @NotEmpty String value) {
         repository.setHaproxyProperty(haproxyId, "binding/" + bindingId, value);
         return created(URI.create("/haproxy/" + haproxyId + "/binding/" + bindingId)).build();
     }
@@ -69,7 +73,7 @@ public class HaproxyResources {
     @GET
     @Path("/{haproxyId}/binding/{bindingId}")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getHaproxyBinding(@PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId) {
+    public Response getHaproxyBinding( @PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId) {
         return repository.getHaproxyProperty(haproxyId, "binding/" + bindingId)
                 .map(vip -> ok(vip).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy uri of " + haproxyId).build());
@@ -86,14 +90,14 @@ public class HaproxyResources {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getAll() {
+    public Response getAll(@Auth final User user) {
         return ok(repository.getHaproxyProperties()).build();
     }
 
     @GET
     @Path("/ids")
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<String> getHaproxyIds() {
+    public Set<String> getHaproxyIds(@Auth final User user) {
         return repository.getHaproxyIds();
     }
 
@@ -113,13 +117,13 @@ public class HaproxyResources {
     @GET
     @Path("/versions")
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<String> getHaproxyVersions(){
+    public Set<String> getHaproxyVersions(@Auth final User user){
         return repository.getHaproxyVersions();
     }
 
     @PUT
     @Path("/versions/{haproxyVersion}")
-    public void addHaproxyVersion(@PathParam("haproxyVersion") String haproxyVersion){
+    public void addHaproxyVersion(@Auth final User user, @PathParam("haproxyVersion") String haproxyVersion){
         repository.addVersion(haproxyVersion);
     }
 

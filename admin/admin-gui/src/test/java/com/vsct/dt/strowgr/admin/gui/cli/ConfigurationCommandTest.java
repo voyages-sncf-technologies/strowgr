@@ -29,6 +29,8 @@ public class ConfigurationCommandTest {
 
         // test
         String configuration = configurationCommand.generateConfiguration();
+        
+        System.out.println(configuration);
 
         // check
         assertFalse(configuration.contains("null"));

@@ -18,6 +18,8 @@ package com.vsct.dt.strowgr.admin.gui.mapping.json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.vsct.dt.strowgr.admin.gui.security.model.User;
+
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.constraints.NotNull;
@@ -34,13 +36,18 @@ public class HaproxyMappingJson {
     private final String              platform;
     @NotNull
     private final Boolean             autoreload;
+    @NotNull
+    private final User             		user;
 
+    
     @JsonCreator
-    public HaproxyMappingJson(@JsonProperty("name") String name,
+    public HaproxyMappingJson(@JsonProperty("user") User user,
+    						  @JsonProperty("name") String name,
                               @JsonProperty("bindings") Map<Integer, String> bindings,
                               @JsonProperty("platform") String platform,
                               @JsonProperty("autoreload") boolean autoreload) {
-        this.name = name;
+    	this.user = user;
+    	this.name = name;
         this.bindings = bindings;
         this.platform = platform;
         this.autoreload = autoreload;

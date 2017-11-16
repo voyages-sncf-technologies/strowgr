@@ -21,6 +21,8 @@ import com.vsct.dt.strowgr.admin.gui.ConsulMockRule;
 import com.vsct.dt.strowgr.admin.gui.StrowgrMain;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
+import com.vsct.dt.strowgr.admin.gui.security.model.User;
+
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
@@ -32,6 +34,7 @@ import org.junit.rules.RuleChain;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -42,6 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class EntryPointResourcesIT {
 
+	private static final User USER_PROD = new User("prod", true, false);
+	
     private static final ConsulMockRule CONSUL_MOCK_RULE = new ConsulMockRule();
 
     private static final DropwizardAppRule<StrowgrConfiguration> ADMIN_RULE = new DropwizardAppRule<>(
@@ -122,7 +127,7 @@ public class EntryPointResourcesIT {
     @Test
     public void update_entry_point_should_update_entry_point_in_consul() throws Exception {
         // given
-        UpdatedEntryPointMappingJson updatedEntryPointMappingJson = new UpdatedEntryPointMappingJson(
+        UpdatedEntryPointMappingJson updatedEntryPointMappingJson = new UpdatedEntryPointMappingJson(USER_PROD,
                 "newUser", "newVersion", 0, Collections.emptyMap(),
                 Collections.emptySet(), Collections.emptySet()
         );
@@ -134,7 +139,7 @@ public class EntryPointResourcesIT {
 
         // when
         Response response = adminAppTarget.path("/api/entrypoints/test/test")
-                .request()
+                .request().header(HttpHeaders.AUTHORIZATION, "bla")
                 .method("PATCH", Entity.entity(updatedEntryPointMappingJson, MediaType.APPLICATION_JSON));
 
         // then

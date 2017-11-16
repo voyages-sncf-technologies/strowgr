@@ -16,6 +16,7 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.CacheBuilderSpec;
 import com.vsct.dt.strowgr.admin.core.*;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
@@ -36,6 +37,10 @@ import com.vsct.dt.strowgr.admin.gui.managed.ManagedNSQProducer;
 import com.vsct.dt.strowgr.admin.gui.observable.HAProxyPublisher;
 import com.vsct.dt.strowgr.admin.gui.observable.HAProxySubscriber;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
+import com.vsct.dt.strowgr.admin.gui.security.CorrectedCachingAuthenticator;
+import com.vsct.dt.strowgr.admin.gui.security.LDAPAuthenticatorMock;
+import com.vsct.dt.strowgr.admin.gui.security.NoAuthValueFactoryProvider;
+import com.vsct.dt.strowgr.admin.gui.security.model.User;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
 import com.vsct.dt.strowgr.admin.nsq.producer.CommitRequestedSubscriber;
@@ -50,6 +55,12 @@ import fr.vsct.dt.nsq.NSQProducer;
 import fr.vsct.dt.nsq.lookup.NSQLookup;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthValueFactoryProvider;
+import io.dropwizard.auth.Authenticator;
+import io.dropwizard.auth.CachingAuthenticator;
+import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
+import io.dropwizard.auth.basic.BasicCredentials;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -58,7 +69,9 @@ import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
 import io.reactivex.processors.UnicastProcessor;
 import io.reactivex.schedulers.Schedulers;
+
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
@@ -67,6 +80,8 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class StrowgrMain extends Application<StrowgrConfiguration> {
@@ -196,6 +211,23 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 
         /* Exception mappers */
         environment.jersey().register(new IncompleteConfigurationExceptionMapper());
+        
+        LOGGER.info("authenticator is Present = {}", configuration.getAuthenticator().isPresent());
+        if (configuration.getAuthenticator().isPresent()) {
+        
+        	CorrectedCachingAuthenticator cachingAuthenticator	=	new CorrectedCachingAuthenticator<>(environment.metrics(), configuration.getAuthenticator().get(), configuration.getAuthenticationCachePolicy());
+        
+	        environment.jersey().register(new AuthDynamicFeature(new BasicCredentialAuthFilter.Builder<User>()
+	                .setAuthenticator(cachingAuthenticator)
+	                //.setAuthorizer(new LDAPAuthorizerMock())
+	                .setRealm("STROWGR LDAP")
+	                .buildAuthFilter()));
+	        environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
+	        environment.jersey().register(RolesAllowedDynamicFeature.class);
+        } else {
+        	environment.jersey().register(new NoAuthValueFactoryProvider.Binder<>(User.class));
+        	environment.jersey().register(RolesAllowedDynamicFeature.class);
+        }
     }
 
     private Publisher<HAProxyPublisher.HAProxyAction> haProxyActionPublisher(StrowgrConfiguration configuration, Environment environment, ConsulRepository repository) {
