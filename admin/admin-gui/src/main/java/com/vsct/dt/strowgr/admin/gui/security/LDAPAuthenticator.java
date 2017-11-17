@@ -96,6 +96,8 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
     private boolean checkIfUserBelongsToGroup(final AutoclosableDirContext context, final String userDN, final String groupName) throws
             NamingException,
             AuthenticationException {
+    	LOGGER.info("checkIfUserBelongsToGroup:{}" , groupName);
+    	
         String groupSearch = String.format("(CN=%s)", groupName);
 
         SearchControls searchControls = new SearchControls();
@@ -107,9 +109,10 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
 
         if (groupResults.hasMoreElements()) {
             groupSearchResult = groupResults.nextElement();
+            LOGGER.info("groupSearchResult current= {}, {}", groupSearchResult.getName(), groupSearchResult.toString());
 
             if (groupResults.hasMoreElements()) {
-                LOGGER.error("Expected to find only one group for " + configuration.getProdGroupName() + " but found more results");
+                LOGGER.error("Expected to find only one group for {} but found more results", configuration.getProdGroupName());
                 return false;
             }
 
@@ -146,13 +149,14 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
 
         if (results.hasMoreElements()) {
             searchResult = results.nextElement();
+            LOGGER.info("element name = {}, attributes= {}", searchResult.getName(), searchResult.toString());
 
             if (results.hasMoreElements()){
                 throw new AuthenticationException("Expected to find only one user for "+username+" but found more results");
             }
 
         } else {
-            throw new AuthenticationException("Unable to authenticate user "+username);
+            throw new AuthenticationException("Unable to authenticate user " + username);
         }
 
         return searchResult;
