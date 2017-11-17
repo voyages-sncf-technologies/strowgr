@@ -18,13 +18,13 @@ package com.vsct.dt.strowgr.admin.gui.configuration;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.cache.CacheBuilderSpec;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicSchedulerFactory;
 import com.vsct.dt.strowgr.admin.gui.security.LDAPAuthenticator;
 import com.vsct.dt.strowgr.admin.gui.security.LDAPAuthenticatorMock;
 import com.vsct.dt.strowgr.admin.gui.security.LdapConfiguration;
 import com.vsct.dt.strowgr.admin.gui.security.SimpleAuthenticator;
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
 
 import io.dropwizard.Configuration;
 import io.dropwizard.auth.Authenticator;
@@ -109,8 +109,6 @@ public class StrowgrConfiguration extends Configuration {
     
     @JsonIgnore
     public Optional<Authenticator<BasicCredentials, User>> getAuthenticator() {
-    	
-    	//return Optional.of(new LDAPAuthenticatorMock());
     	
         final String authType = authenticatorType.toLowerCase();
         

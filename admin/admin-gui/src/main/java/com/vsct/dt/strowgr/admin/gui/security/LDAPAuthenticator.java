@@ -22,8 +22,8 @@
 package com.vsct.dt.strowgr.admin.gui.security;
 
 import com.google.common.base.Optional;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.security.model.LdapPoolConfiguration;
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
 
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
@@ -85,7 +85,9 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
             }
 
         } catch (NamingException e) {
-            LOGGER.debug("{} failed to authenticate {}", username);
+        	// @DELETE
+        	LOGGER.error("failed to authenticate {}", e);
+            LOGGER.debug("failed to authenticate for username {}", username);
         }
 
         return Optional.absent();
@@ -161,6 +163,8 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
 
         env.put(Context.SECURITY_PRINCIPAL, configuration.getAdDomain() + "\\" + username);
         env.put(Context.SECURITY_CREDENTIALS, password);
+        
+        LOGGER.info("env={}", env);
 
         return new AutoclosableDirContext(env);
     }

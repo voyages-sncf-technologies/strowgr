@@ -24,6 +24,7 @@ import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
@@ -40,7 +41,6 @@ import com.vsct.dt.strowgr.admin.gui.resource.api.*;
 import com.vsct.dt.strowgr.admin.gui.security.CorrectedCachingAuthenticator;
 import com.vsct.dt.strowgr.admin.gui.security.LDAPAuthenticatorMock;
 import com.vsct.dt.strowgr.admin.gui.security.NoAuthValueFactoryProvider;
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
 import com.vsct.dt.strowgr.admin.nsq.producer.CommitRequestedSubscriber;
@@ -209,6 +209,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         environment.healthChecks().register("nsqproducer", new NsqHealthcheck(nsqdHttpClient));
         environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
 
+        
         /* Exception mappers */
         environment.jersey().register(new IncompleteConfigurationExceptionMapper());
         

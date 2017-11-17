@@ -11,7 +11,7 @@ import org.glassfish.jersey.server.internal.inject.ParamInjectionResolver;
 import org.glassfish.jersey.server.model.Parameter;
 import org.glassfish.jersey.server.spi.internal.ValueFactoryProvider;
 
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 
 import io.dropwizard.auth.Auth;
 

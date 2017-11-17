@@ -26,7 +26,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Optional;
 import com.google.common.cache.*;
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;

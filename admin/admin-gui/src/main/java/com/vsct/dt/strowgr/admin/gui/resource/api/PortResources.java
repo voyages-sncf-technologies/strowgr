@@ -16,7 +16,7 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 
 import io.dropwizard.auth.Auth;
 

@@ -26,10 +26,10 @@ import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
 import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
 
 import io.dropwizard.auth.Auth;

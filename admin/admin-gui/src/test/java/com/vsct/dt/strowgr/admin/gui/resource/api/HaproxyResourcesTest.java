@@ -18,10 +18,9 @@ package com.vsct.dt.strowgr.admin.gui.resource.api;
 import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
-import com.vsct.dt.strowgr.admin.gui.security.SimpleAuthenticator;
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 
 import io.dropwizard.testing.junit.ResourceTestRule;
@@ -45,10 +44,9 @@ public class HaproxyResourcesTest {
     static TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
     static HaproxyResources haproxyResources = new HaproxyResources(haproxyRepository, templateLocator, templateGenerator);
     
-    private static final User USER_PROD = new User("prod", true, false);
-
     @ClassRule
     public static ResourceTestRule resources = ResourceTestRule.builder()
+    		.addResource(User.UNTRACKED)
             .addResource(haproxyResources)
             .build();
 
@@ -67,7 +65,7 @@ public class HaproxyResourcesTest {
         bindings.put(0, "vip0");
         bindings.put(1, "vip1");
         
-        HaproxyMappingJson haproxyJson = new HaproxyMappingJson(USER_PROD,"name", bindings, "platform", true);
+        HaproxyMappingJson haproxyJson = new HaproxyMappingJson(User.UNTRACKED,"name", bindings, "platform", true);
 
         Response res = resources.client().target("/haproxy/id").request().put(Entity.json(haproxyJson));
 
@@ -166,7 +164,7 @@ public class HaproxyResourcesTest {
         //for unknown reason, this jersey testing has a problem when you set a number for the property syslogPort.
         //this may be due to class hierarchy with json mappings
         //For this reasons we pass null value.
-        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson(USER_PROD,"haproxy", "user", "haproxyVersion", 0, null, new HashSet<>(), new HashSet<>(), new HashMap<>());
+        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson(User.UNTRACKED,"haproxy", "user", "haproxyVersion", 0, null, new HashSet<>(), new HashSet<>(), new HashMap<>());
         when(templateLocator.readTemplate(ep)).thenReturn(Optional.of("A template"));
         when(templateGenerator.generate("A template", ep, ep.generatePortMapping())).thenReturn("A valorized template");
 
@@ -177,7 +175,7 @@ public class HaproxyResourcesTest {
 
     @Test
     public void get_haproxy_configuration_should_return_404_if_template_not_found(){
-        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson(USER_PROD, "haproxy", "user", "haproxyVersion", 0, null, new HashSet<>(), new HashSet<>(), new HashMap<>());
+        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson(User.UNTRACKED, "haproxy", "user", "haproxyVersion", 0, null, new HashSet<>(), new HashSet<>(), new HashMap<>());
         when(templateLocator.readTemplate(ep)).thenReturn(Optional.empty());
 
         Response res = resources.client().target("/haproxy/template/valorise").request().post(Entity.json(ep));
@@ -187,7 +185,7 @@ public class HaproxyResourcesTest {
 
     @Test
     public void get_haproxy_configuration_should_return_400_if_template_cannot_be_properly_valorised() throws IncompleteConfigurationException {
-        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson(USER_PROD, "haproxy", "user", "haproxyVersion", 0, null, new HashSet<>(), new HashSet<>(), new HashMap<>());
+        EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson(User.UNTRACKED, "haproxy", "user", "haproxyVersion", 0, null, new HashSet<>(), new HashSet<>(), new HashMap<>());
         when(templateLocator.readTemplate(ep)).thenReturn(Optional.of("A template"));
         IncompleteConfigurationException ex = new IncompleteConfigurationException(new HashSet<String>());
         when(templateGenerator.generate("A template", ep, ep.generatePortMapping())).thenThrow(ex);

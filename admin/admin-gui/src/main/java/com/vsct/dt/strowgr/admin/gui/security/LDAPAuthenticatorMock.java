@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;

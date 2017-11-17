@@ -19,9 +19,9 @@ import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.core.TemplateLocator;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
-import com.vsct.dt.strowgr.admin.gui.security.model.User;
 
 import io.dropwizard.auth.Auth;
 
@@ -53,7 +53,7 @@ public class HaproxyResources {
     @PUT
     @Path("/{haproxyId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createHaproxy(@PathParam("haproxyId") String haproxyId, @NotNull @Valid HaproxyMappingJson haproxyMappingJson) {
+    public Response createHaproxy(@Auth final User user, @PathParam("haproxyId") String haproxyId, @NotNull @Valid HaproxyMappingJson haproxyMappingJson) {
         repository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
         haproxyMappingJson.getBindings().forEach((key, value) -> repository.setHaproxyProperty(haproxyId, "binding/"+key, value));
         repository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
@@ -65,7 +65,7 @@ public class HaproxyResources {
     @Path("/{haproxyId}/binding/{bindingId}")
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response setHaproxyBindings( @PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId, @NotEmpty String value) {
+    public Response setHaproxyBindings(@Auth final User user,  @PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId, @NotEmpty String value) {
         repository.setHaproxyProperty(haproxyId, "binding/" + bindingId, value);
         return created(URI.create("/haproxy/" + haproxyId + "/binding/" + bindingId)).build();
     }
@@ -73,7 +73,7 @@ public class HaproxyResources {
     @GET
     @Path("/{haproxyId}/binding/{bindingId}")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getHaproxyBinding( @PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId) {
+    public Response getHaproxyBinding(@Auth final User user,  @PathParam("haproxyId") String haproxyId, @PathParam("bindingId") String bindingId) {
         return repository.getHaproxyProperty(haproxyId, "binding/" + bindingId)
                 .map(vip -> ok(vip).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy uri of " + haproxyId).build());
@@ -82,7 +82,7 @@ public class HaproxyResources {
     @GET
     @Path("{haproxyId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getHaproxy(@PathParam("haproxyId") String haproxyId) {
+    public Response getHaproxy(@Auth final User user, @PathParam("haproxyId") String haproxyId) {
         return repository.getHaproxyProperties(haproxyId)
                 .map(props -> ok(props).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy properties of " + haproxyId).build());
@@ -105,7 +105,7 @@ public class HaproxyResources {
     @Path("/template/valorise")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String getHaproxyConfiguration(@NotNull @Valid EntryPointWithPortsMappingJson configuration) {
+    public String getHaproxyConfiguration(@Auth final User user, @NotNull @Valid EntryPointWithPortsMappingJson configuration) {
         try {
             String template = templateLocator.readTemplate(configuration).orElseThrow(() -> new NotFoundException("Could not find any template for entrypoint " + configuration));
             return templateGenerator.generate(template, configuration, configuration.generatePortMapping());
