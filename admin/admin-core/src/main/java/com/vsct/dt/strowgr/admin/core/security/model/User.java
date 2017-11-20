@@ -19,7 +19,7 @@
  *
  */
 
-package com.vsct.dt.strowgr.admin.gui.security.model;
+package com.vsct.dt.strowgr.admin.core.security.model;
 
 import java.security.Principal;
 

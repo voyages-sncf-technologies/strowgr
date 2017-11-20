@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackendServer;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,14 +35,16 @@ public class EntryPoint {
     private final String hapUser;
     private final String hapVersion;
     private final int bindingId;
+    private final User user;
 
     private final HashMap<String, String> context;
 
     private final HashMap<String, EntryPointFrontend> frontends;
     private final HashMap<String, EntryPointBackend> backends;
 
-    public EntryPoint(String haproxy, String hapUser, String hapVersion, int bindingId,
+    public EntryPoint(User user, String haproxy, String hapUser, String hapVersion, int bindingId,
                       Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
+    	this.user	=	user;
         this.haproxy = checkStringNotEmpty(haproxy, "EntryPointConfiguration should have an haproxy id");
         this.hapUser = checkStringNotEmpty(hapUser, "EntryPointConfiguration should have a user for haproxy");
         this.bindingId = bindingId;
@@ -62,8 +65,9 @@ public class EntryPoint {
         this.context = new HashMap<>(checkNotNull(context));
     }
 
-    private EntryPoint(String haproxy, String hapUser, String hapVersion, int bindingId,
+    private EntryPoint(User user, String haproxy, String hapUser, String hapVersion, int bindingId,
                        HashMap<String, EntryPointFrontend> frontends, HashMap<String, EntryPointBackend> backends, HashMap<String, String> context) {
+    	this.user	=	user;    	
         this.haproxy = haproxy;
         this.bindingId = bindingId;
         this.hapUser = hapUser;
@@ -81,7 +85,7 @@ public class EntryPoint {
         checkNotNull(backend);
         HashMap<String, EntryPointBackend> newBackends = new HashMap<>(backends);
         newBackends.put(backend.getId(), backend);
-        return new EntryPoint(this.haproxy, this.hapUser, this.hapVersion, this.bindingId, this.frontends, newBackends, this.context);
+        return new EntryPoint(this.user, this.haproxy, this.hapUser, this.hapVersion, this.bindingId, this.frontends, newBackends, this.context);
     }
 
     public Optional<EntryPointBackend> getBackend(String id) {
@@ -164,8 +168,12 @@ public class EntryPoint {
     public String getHapVersion() {
         return hapVersion;
     }
+    
+    public User getUser() {
+		return user;
+	}
 
-    /**
+	/**
      * Merging rules :
      * - Updated global context replaces existing one
      * - Updated syslog user replaces existing one
@@ -299,7 +307,7 @@ public class EntryPoint {
 
         @Override
         public EntryPoint build() {
-            return new EntryPoint(haproxy, user, hapVersion, bindingId, frontends, backends, context);
+            return new EntryPoint(null, haproxy, user, hapVersion, bindingId, frontends, backends, context);
         }
     }
 
