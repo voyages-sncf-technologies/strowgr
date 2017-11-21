@@ -93,18 +93,32 @@ public class HaproxyResources {
     @Path("{haproxyId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getHaproxy(@Auth final User user, @PathParam("haproxyId") String haproxyId) {
-    	Optional<Map<String, String>> haProxy	=	 repository.getHaproxyProperties(haproxyId);
-    	LOGGER.error("user={},haProxy={}", user, haProxy);
-    	if ((haProxy.isPresent()) && (user!=null && 
-    				(user.isProdUser() || !user.getPlatformValue().equalsIgnoreCase(haProxy.get().get("platform"))))) {
-    		return haProxy
+
+        return repository.getHaproxyProperties(haproxyId)
                 .map(props -> ok(props).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy properties of " + haproxyId).build());
-    	} else  {
-    		return status(Response.Status.NOT_FOUND).entity("can't get haproxy properties of " + haproxyId).build();
-    	}
     }
 
+
+    /**
+     * Use only for {@link ProxyResources}: useful to get empty haproxy, and not error
+     * @param user
+     * @param haproxyId
+     * @return {@link Response}
+     */
+    public boolean getHaproxyAndAccepting404(@Auth final User user, @PathParam("haproxyId") String haproxyId) {
+
+    	Optional<Map<String, String>> haProxy	=	 repository.getHaproxyPropertiesAndAccepting404(haproxyId);
+    	
+    	LOGGER.error("user={},haProxy={}", user, haProxy);
+    	
+    	if (!haProxy.isPresent() || !user.getPlatformValue().equalsIgnoreCase(haProxy.get().get("platform")) || user.isProdUser()) {
+    		return true;
+    	} else {
+    		return false;
+    	}
+    }
+    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll(@Auth final User user) {

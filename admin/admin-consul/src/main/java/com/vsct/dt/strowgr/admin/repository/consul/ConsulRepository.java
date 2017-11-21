@@ -461,6 +461,24 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         return result;
     }
 
+    
+    @Override
+    public Optional<Map<String, String>> getHaproxyPropertiesAndAccepting404(String haproxyId) {
+        Optional<Map<String, String>> result;
+        try {
+            HttpGet getHaproxyURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/haproxy/" + haproxyId + "/?raw&recurse=true");
+            List<ConsulItem<String>> consulItems = client.execute(getHaproxyURI, httpResponse ->
+                    consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parseConsulItemsFromHttpEntity)
+                            .orElseGet(ArrayList::new));
+            Map<String, String> haproxyItems = consulItemsToMap(consulItems);
+            result = Optional.of(haproxyItems);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+    
+    
     @Override
     public Set<String> getHaproxyVersions() {
         Set<String> result;

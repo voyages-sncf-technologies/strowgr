@@ -41,7 +41,6 @@ public class EntryPoint {
 
     public EntryPoint(String haproxy, String hapUser, String hapVersion, int bindingId,
                       Set<EntryPointFrontend> frontends, Set<EntryPointBackend> backends, Map<String, String> context) {
-    	//this.user	=	user;
         this.haproxy = checkStringNotEmpty(haproxy, "EntryPointConfiguration should have an haproxy id");
         this.hapUser = checkStringNotEmpty(hapUser, "EntryPointConfiguration should have a user for haproxy");
         this.bindingId = bindingId;
@@ -64,7 +63,6 @@ public class EntryPoint {
 
     private EntryPoint(String haproxy, String hapUser, String hapVersion, int bindingId,
                        HashMap<String, EntryPointFrontend> frontends, HashMap<String, EntryPointBackend> backends, HashMap<String, String> context) {
-    	//this.user	=	user;    	
         this.haproxy = haproxy;
         this.bindingId = bindingId;
         this.hapUser = hapUser;
