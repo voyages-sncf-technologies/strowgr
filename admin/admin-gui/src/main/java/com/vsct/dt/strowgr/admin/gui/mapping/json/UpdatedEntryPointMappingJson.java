@@ -18,8 +18,6 @@ package com.vsct.dt.strowgr.admin.gui.mapping.json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPoint;
-import com.vsct.dt.strowgr.admin.core.security.model.User;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,11 +30,11 @@ import static java.util.function.Function.identity;
 public class UpdatedEntryPointMappingJson extends UpdatedEntryPoint {
 	
     @JsonCreator
-    public UpdatedEntryPointMappingJson(@JsonProperty("user") User user, @JsonProperty("hapUser") String hapUser, @JsonProperty("hapVersion") String hapVersion, @JsonProperty("bindingId") int bindingId,
+    public UpdatedEntryPointMappingJson( @JsonProperty("hapUser") String hapUser, @JsonProperty("hapVersion") String hapVersion, @JsonProperty("bindingId") int bindingId,
                                         @JsonProperty("context") Map<String, String> context,
                                         @JsonProperty("frontends") Set<UpdatedEntryPointFrontendMappingJson> frontends,
                                         @JsonProperty("backends") Set<UpdatedEntryPointBackendMappingJson> backends) {
-        super(user, bindingId, hapUser, context,
+        super( bindingId, hapUser, context,
                 frontends.stream().map(identity()).collect(Collectors.toSet()),
                 backends.stream().map(identity()).collect(Collectors.toSet()), hapVersion);
     }

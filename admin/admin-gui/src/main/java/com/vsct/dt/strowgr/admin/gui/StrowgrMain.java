@@ -211,7 +211,6 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         /* Exception mappers */
         environment.jersey().register(new IncompleteConfigurationExceptionMapper());
         
-        LOGGER.info("authenticator is Present = {}", configuration.getAuthenticator().isPresent());
         if (configuration.getAuthenticator().isPresent()) {
         
         	CorrectedCachingAuthenticator cachingAuthenticator	=	new CorrectedCachingAuthenticator<>(environment.metrics(), configuration.getAuthenticator().get(), configuration.getAuthenticationCachePolicy());

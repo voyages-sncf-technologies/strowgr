@@ -20,8 +20,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.vsct.dt.strowgr.admin.core.security.model.User;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.vsct.dt.strowgr.admin.Preconditions.checkStringNotEmpty;
 
@@ -30,15 +28,13 @@ public class UpdatedEntryPoint {
     private final String hapUser;
     private final String hapVersion;
     private final int bindingId;
-    private final User user;
 
     private final HashMap<String, String> context;
 
     private final HashMap<String, UpdatedEntryPointFrontend> frontends;
     private final HashMap<String, UpdatedEntryPointBackend> backends;
 
-    public UpdatedEntryPoint(User user,int bindingId, String hapUser, Map<String, String> context, Set<UpdatedEntryPointFrontend> frontends, Set<UpdatedEntryPointBackend> backends, String hapVersion) {
-    	this.user	=	user;
+    public UpdatedEntryPoint(int bindingId, String hapUser, Map<String, String> context, Set<UpdatedEntryPointFrontend> frontends, Set<UpdatedEntryPointBackend> backends, String hapVersion) {
         this.bindingId = bindingId;
         this.hapUser = checkStringNotEmpty(hapUser, "hapUser must be provided");
         this.context = new HashMap<>(checkNotNull(context));
@@ -79,8 +75,4 @@ public class UpdatedEntryPoint {
         return bindingId;
     }
 
-	public User getUser() {
-		return user;
-	}
-    
 }

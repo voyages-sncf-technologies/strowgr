@@ -4,9 +4,6 @@ import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointFrontend;
-import com.vsct.dt.strowgr.admin.core.security.model.User;
-
-import org.fest.assertions.Assertions;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -43,7 +40,7 @@ public class EntryPointTest {
             targetBackends.add(new UpdatedEntryPointBackend("backend", servers, new HashMap<String, String>()));
         }
 
-        UpdatedEntryPoint newEP = new UpdatedEntryPoint(User.UNTRACKED,1, "hapadm", new HashMap<String, String>(), new HashSet<UpdatedEntryPointFrontend>(), targetBackends, "0.0");
+        UpdatedEntryPoint newEP = new UpdatedEntryPoint(1, "hapadm", new HashMap<String, String>(), new HashSet<UpdatedEntryPointFrontend>(), targetBackends, "0.0");
         // test
         EntryPoint updatedEP = initialEP.mergeWithUpdate(newEP);
 

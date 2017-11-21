@@ -38,7 +38,7 @@ public class CommittingConfigurationJson extends EntryPoint {
                                        @JsonProperty("frontends") Set<EntryPointFrontendMappingJson> frontends,
                                        @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
                                        @JsonProperty("context") Map<String, String> context) {
-        super(	null,
+        super(
         		haproxy,
                 hapUser,
                 haproxyVersion,
@@ -50,7 +50,7 @@ public class CommittingConfigurationJson extends EntryPoint {
     }
 
     public CommittingConfigurationJson(String correlationId, EntryPoint configuration) {
-        super(null, 
+        super( 
         		configuration.getHaproxy(),
                 configuration.getHapUser(),
                 configuration.getHapVersion(),

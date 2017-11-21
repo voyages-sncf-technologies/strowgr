@@ -17,8 +17,6 @@ package com.vsct.dt.strowgr.admin.gui.mapping.json;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.vsct.dt.strowgr.admin.core.security.model.User;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -36,7 +34,7 @@ public class EntryPointWithPortsMappingJson extends EntryPointMappingJson {
     private final Integer syslogPort;
     
     @JsonCreator
-    public EntryPointWithPortsMappingJson(@JsonProperty("user") User user,
+    public EntryPointWithPortsMappingJson(
     									  @JsonProperty("haproxy") String haproxy,
                                           @JsonProperty("hapUser") String hapUser,
                                           @JsonProperty("haproxyVersion") String haproxyVersion,
@@ -46,7 +44,6 @@ public class EntryPointWithPortsMappingJson extends EntryPointMappingJson {
                                           @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
                                           @JsonProperty("context") Map<String, String> context) {
         super(
-        		user,
                 haproxy,
                 hapUser,
                 haproxyVersion,

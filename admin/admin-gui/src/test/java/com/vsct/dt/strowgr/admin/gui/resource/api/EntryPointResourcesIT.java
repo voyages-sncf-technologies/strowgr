@@ -17,12 +17,10 @@ package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
-import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.ConsulMockRule;
 import com.vsct.dt.strowgr.admin.gui.StrowgrMain;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
-
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
@@ -34,6 +32,7 @@ import org.junit.rules.RuleChain;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -45,6 +44,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class EntryPointResourcesIT {
 
     private static final ConsulMockRule CONSUL_MOCK_RULE = new ConsulMockRule();
+    
+    // Just for IT tests
+    private static final String AUTHORIZATION_VALUE_TU	=	"Basic Z29vZC1ndXk6c2VjcmV0";
 
     private static final DropwizardAppRule<StrowgrConfiguration> ADMIN_RULE = new DropwizardAppRule<>(
             StrowgrMain.class, "src/main/resources/configuration.yaml"
@@ -83,7 +85,7 @@ public class EntryPointResourcesIT {
 
         // when
         Response response = adminAppTarget.path("/api/entrypoints/test/test/autoreload/swap")
-                .request().method("PATCH");
+                .request().header(HttpHeaders.AUTHORIZATION, AUTHORIZATION_VALUE_TU).method("PATCH");
 
         // then
         assertThat(response.getStatus()).isEqualTo(Status.PARTIAL_CONTENT.getStatusCode());
@@ -111,7 +113,7 @@ public class EntryPointResourcesIT {
 
         // when
         Response response = adminAppTarget.path("/api/entrypoints/test/test")
-                .request().put(Entity.entity(entryPoint, MediaType.APPLICATION_JSON_TYPE));
+                .request().header(HttpHeaders.AUTHORIZATION, AUTHORIZATION_VALUE_TU).put(Entity.entity(entryPoint, MediaType.APPLICATION_JSON_TYPE));
 
         // then
         assertThat(response.getStatus()).isEqualTo(Status.CREATED.getStatusCode());
@@ -124,7 +126,7 @@ public class EntryPointResourcesIT {
     @Test
     public void update_entry_point_should_update_entry_point_in_consul() throws Exception {
         // given
-        UpdatedEntryPointMappingJson updatedEntryPointMappingJson = new UpdatedEntryPointMappingJson(User.UNTRACKED,
+        UpdatedEntryPointMappingJson updatedEntryPointMappingJson = new UpdatedEntryPointMappingJson(
                 "newUser", "newVersion", 0, Collections.emptyMap(),
                 Collections.emptySet(), Collections.emptySet()
         );
@@ -136,7 +138,7 @@ public class EntryPointResourcesIT {
 
         // when
         Response response = adminAppTarget.path("/api/entrypoints/test/test")
-                .request() //.header(HttpHeaders.AUTHORIZATION, "bla")
+                .request().header(HttpHeaders.AUTHORIZATION, AUTHORIZATION_VALUE_TU) //.header(HttpHeaders.AUTHORIZATION, "bla")
                 .method("PATCH", Entity.entity(updatedEntryPointMappingJson, MediaType.APPLICATION_JSON));
 
         // then
