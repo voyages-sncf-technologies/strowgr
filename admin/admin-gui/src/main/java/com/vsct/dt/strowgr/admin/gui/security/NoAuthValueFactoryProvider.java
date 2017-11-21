@@ -65,7 +65,8 @@ public class NoAuthValueFactoryProvider<T extends Principal> extends AbstractVal
             /**
              * @return {@link Principal} stored on the request, or {@code null} if no object was found.
              */
-            public Principal provide() {
+            @Override
+			public Principal provide() {
                 return User.UNTRACKED;
             }
         };

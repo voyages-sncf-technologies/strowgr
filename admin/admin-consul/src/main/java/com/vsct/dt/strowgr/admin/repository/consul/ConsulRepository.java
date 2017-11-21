@@ -203,6 +203,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
         try {
             HttpGet listKeysURI = new HttpGet("http://" + host + ":" + port + "/v1/kv/admin?keys");
             Optional<Set<String>> allKeys = client.execute(listKeysURI, httpResponse -> consulReader.parseHttpResponseAccepting404(httpResponse, consulReader::parseKeysFromHttpEntity));
+            LOGGER.info("allKeys={}", allKeys);
             return allKeys.orElseGet(HashSet::new).stream()
                     .filter(s -> !s.contains("lock"))
                     .map(s -> s.replace("admin/", ""))
@@ -236,7 +237,7 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
 
     @Override
     public Optional<EntryPoint> getCommittingConfiguration(EntryPointKey key) {
-        return getCommittingConfigurationWithCorrelationId(key).map(committingConfigurationJson -> new EntryPoint(committingConfigurationJson.getHaproxy(), committingConfigurationJson.getHapUser(), committingConfigurationJson.getHapVersion(), committingConfigurationJson.getBindingId(), committingConfigurationJson.getFrontends(), committingConfigurationJson.getBackends(), committingConfigurationJson.getContext()));
+        return getCommittingConfigurationWithCorrelationId(key).map(committingConfigurationJson -> new EntryPoint(null,committingConfigurationJson.getHaproxy(), committingConfigurationJson.getHapUser(), committingConfigurationJson.getHapVersion(), committingConfigurationJson.getBindingId(), committingConfigurationJson.getFrontends(), committingConfigurationJson.getBackends(), committingConfigurationJson.getContext()));
     }
 
     private Optional<CommittingConfigurationJson> getCommittingConfigurationWithCorrelationId(EntryPointKey key) {

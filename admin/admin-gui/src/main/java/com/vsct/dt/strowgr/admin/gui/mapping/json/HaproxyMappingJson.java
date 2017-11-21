@@ -36,7 +36,7 @@ public class HaproxyMappingJson {
     private final String              platform;
     @NotNull
     private final Boolean             autoreload;
-    @NotNull
+
     private final User             		user;
 
     
@@ -46,6 +46,7 @@ public class HaproxyMappingJson {
                               @JsonProperty("bindings") Map<Integer, String> bindings,
                               @JsonProperty("platform") String platform,
                               @JsonProperty("autoreload") boolean autoreload) {
+    	
     	this.user = user;
     	this.name = name;
         this.bindings = bindings;

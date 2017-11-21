@@ -49,7 +49,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint(null,"default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.standard.context.mustache").getFile());
@@ -88,7 +88,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend1, frontend2), Sets.newHashSet(backend1, backend2), epContext);
+        EntryPoint configuration = new EntryPoint(null,"default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend1, frontend2), Sets.newHashSet(backend1, backend2), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.iterate.servers.context.mustache").getFile());
@@ -129,7 +129,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint(null,"default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.user.context.on.server.mustache").getFile());
@@ -168,7 +168,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend1, frontend2), Sets.newHashSet(backend1, backend2), epContext);
+        EntryPoint configuration = new EntryPoint(null,"default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend1, frontend2), Sets.newHashSet(backend1, backend2), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.iterate.servers.context.mustache").getFile());
@@ -192,7 +192,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint(null,"default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.missing.property.1.context.mustache").getFile());
@@ -224,7 +224,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint(null,"default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.missing.property.2.context.mustache").getFile());
@@ -255,7 +255,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint(null,"default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.missing.property.3.context.mustache").getFile());
@@ -284,7 +284,7 @@ public class MustacheTemplateTest {
         Map<String, String> epContext = new HashMap<>();
         epContext.put("application", "OCE");
         epContext.put("platform", "REC1");
-        EntryPoint configuration = new EntryPoint("default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
+        EntryPoint configuration = new EntryPoint(null,"default-name", "hapocer1", "hapVersion", 0, Sets.newHashSet(frontend), Sets.newHashSet(backend), epContext);
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource("template.missing.property.with.default.mustache").getFile());

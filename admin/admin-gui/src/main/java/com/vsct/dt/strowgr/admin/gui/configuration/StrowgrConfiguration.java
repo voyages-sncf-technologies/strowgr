@@ -19,12 +19,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.cache.CacheBuilderSpec;
 import com.vsct.dt.strowgr.admin.core.security.model.User;
-import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicSchedulerFactory;
 import com.vsct.dt.strowgr.admin.gui.security.LDAPAuthenticator;
-import com.vsct.dt.strowgr.admin.gui.security.LDAPAuthenticatorMock;
 import com.vsct.dt.strowgr.admin.gui.security.LdapConfiguration;
-import com.vsct.dt.strowgr.admin.gui.security.SimpleAuthenticator;
+import com.vsct.dt.strowgr.admin.gui.security.NoProdAuthenticator;
+import com.vsct.dt.strowgr.admin.gui.security.ProdAuthenticator;
 
 import io.dropwizard.Configuration;
 import io.dropwizard.auth.Authenticator;
@@ -116,8 +115,10 @@ public class StrowgrConfiguration extends Configuration {
 
         if (authType.equals("none")) {
             return Optional.empty();
-        } else if (authType.equals("simple")) {
-            return Optional.of(new SimpleAuthenticator());
+        } else if (authType.equals("prod_mock")) {
+            return Optional.of(new ProdAuthenticator());
+        } else if (authType.equals("noprod_mock")) {
+            return Optional.of(new NoProdAuthenticator());
         } else if (authType.equals("ldap")) {
             if (ldapConfiguration == null) {
                 throw new IllegalArgumentException("Authenticator type is set to 'ldap' but ldap configuration is empty.");

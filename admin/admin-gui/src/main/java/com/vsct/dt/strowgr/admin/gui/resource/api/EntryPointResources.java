@@ -44,6 +44,7 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -100,10 +101,14 @@ public class EntryPointResources {
         this.commitFailureSubscriber = commitFailureSubscriber;
     }
 
+    
     @GET
     @Timed
-    public Set<String> getEntryPoints(@Auth final User user) {
-        return repository.getEntryPointsId();
+    public Set<String> getEntryPoints(@Auth final User user)  {
+    	LOGGER.info("call getEntryPoints");
+    	Set<String> entryPoints	=	repository.getEntryPointsId();
+   	
+    	return entryPoints;
     }
 
     @GET
@@ -136,7 +141,7 @@ public class EntryPointResources {
     @Path("/{id : .+}")
     @Timed
     public void addEntryPoint(@Auth final User user, @Suspended AsyncResponse asyncResponse, @PathParam("id") String key, @Valid EntryPointMappingJson configuration) {
-
+    	LOGGER.info("addEntryPoint for {}", key);
         EntryPointKey entryPointKey = new EntryPointKeyDefaultImpl(key);
 
         addEntryPointSubscriber.onNext(new AddEntryPointEvent(CorrelationId.newCorrelationId(), entryPointKey, configuration) {

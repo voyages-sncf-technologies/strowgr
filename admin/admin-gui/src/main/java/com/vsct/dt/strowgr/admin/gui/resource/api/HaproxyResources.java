@@ -19,6 +19,7 @@ import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.core.TemplateLocator;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.Platform;
 import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
@@ -26,6 +27,8 @@ import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
 import io.dropwizard.auth.Auth;
 
 import org.hibernate.validator.constraints.NotEmpty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -33,6 +36,10 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static javax.ws.rs.core.Response.*;
@@ -40,6 +47,8 @@ import static javax.ws.rs.core.Response.*;
 @Path("/haproxy")
 public class HaproxyResources {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(HaproxyResources.class);
+	
     private final TemplateLocator   templateLocator;
     private final HaproxyRepository repository;
     private final TemplateGenerator templateGenerator;
@@ -53,7 +62,8 @@ public class HaproxyResources {
     @PUT
     @Path("/{haproxyId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response createHaproxy(@Auth final User user, @PathParam("haproxyId") String haproxyId, @NotNull @Valid HaproxyMappingJson haproxyMappingJson) {
+    public Response createHaproxy(@Auth final User user, @PathParam("haproxyId") String haproxyId, @Valid HaproxyMappingJson haproxyMappingJson) {
+    	LOGGER.info("createHaproxy for haproxyId={}", haproxyId);
         repository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
         haproxyMappingJson.getBindings().forEach((key, value) -> repository.setHaproxyProperty(haproxyId, "binding/"+key, value));
         repository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
@@ -83,16 +93,53 @@ public class HaproxyResources {
     @Path("{haproxyId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getHaproxy(@Auth final User user, @PathParam("haproxyId") String haproxyId) {
-        return repository.getHaproxyProperties(haproxyId)
+    	Optional<Map<String, String>> haProxy	=	 repository.getHaproxyProperties(haproxyId);
+    	LOGGER.error("user={},haProxy={}", user, haProxy);
+    	if ((haProxy.isPresent()) && (user!=null && 
+    				(user.isProdUser() || !Platform.PRODUCTION.value().equalsIgnoreCase(haProxy.get().get("platform"))))) {
+    		return haProxy
                 .map(props -> ok(props).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy properties of " + haproxyId).build());
+    	} else  {
+    		return status(Response.Status.NOT_FOUND).entity("can't get haproxy properties of " + haproxyId).build();
+    	}
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll(@Auth final User user) {
-        return ok(repository.getHaproxyProperties()).build();
+    	List<Map<String, String>> haProxies	=	repository.getHaproxyProperties();
+    	if ((haProxies !=null && haProxies.size() > 0) && (user !=null && !user.isProdUser())) {
+    		haProxies.removeIf(haProxy -> Platform.PRODUCTION.value().equalsIgnoreCase(haProxy.get("platform")));
+    	}
+    	LOGGER.info("haProxies = {}", haProxies);
+        return ok(haProxies).build();
     }
+    
+    /**
+     * Return the list of plateform, previously hardcoded in view part :<br/>
+     * @TODO: see later to store theses values outside application, maybe in consul?
+     * @param user
+     * @return {@link Set} platform list
+     */
+    @GET
+    @Path("/platforms")    
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<String> getPlatforms(@Auth final User user) {
+    	Set<String> platforms	=	new HashSet<String>()  {{
+    	    add("assemblage");
+    	    add("performance");
+    	    add("integration");
+    	    add("recette");
+    	    add("preproduction");
+    	}};
+    	if (user!=null &&  user.isProdUser()) {
+        	LOGGER.info("add platform {}", Platform.PRODUCTION.value());
+    		platforms.add(Platform.PRODUCTION.value());
+    	}
+    	return platforms;
+    }
+    
 
     @GET
     @Path("/ids")

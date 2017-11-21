@@ -41,8 +41,9 @@ public class User implements Principal {
         this.prodUser = prodUser;
         this.techUser = techUser;
     }
+    
 
-    public String getUsername() {
+	public String getUsername() {
         return username;
     }
 
@@ -61,6 +62,13 @@ public class User implements Principal {
     public boolean isTechUser() {
         return techUser;
     }
+
+	@Override
+	public String toString() {
+		return "User [username=" + username + ", prodUser=" + prodUser + ", techUser=" + techUser + "]";
+	}
+    
+    
     
     
 }

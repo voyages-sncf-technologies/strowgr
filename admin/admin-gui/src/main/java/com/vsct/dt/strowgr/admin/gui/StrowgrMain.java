@@ -16,7 +16,6 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.CacheBuilderSpec;
 import com.vsct.dt.strowgr.admin.core.*;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
@@ -39,7 +38,6 @@ import com.vsct.dt.strowgr.admin.gui.observable.HAProxyPublisher;
 import com.vsct.dt.strowgr.admin.gui.observable.HAProxySubscriber;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
 import com.vsct.dt.strowgr.admin.gui.security.CorrectedCachingAuthenticator;
-import com.vsct.dt.strowgr.admin.gui.security.LDAPAuthenticatorMock;
 import com.vsct.dt.strowgr.admin.gui.security.NoAuthValueFactoryProvider;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
@@ -57,10 +55,7 @@ import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.auth.AuthDynamicFeature;
 import io.dropwizard.auth.AuthValueFactoryProvider;
-import io.dropwizard.auth.Authenticator;
-import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
-import io.dropwizard.auth.basic.BasicCredentials;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -81,7 +76,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class StrowgrMain extends Application<StrowgrConfiguration> {
@@ -191,6 +185,10 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         PortResources portResources = new PortResources(repository);
         environment.jersey().register(portResources);
 
+        ProxyResources proxyResources = new ProxyResources(restApiResource, haproxyResources);
+        environment.jersey().register(proxyResources);
+
+        
         UriTemplateResources uriTemplateResources = new UriTemplateResources(templateLocator, templateGenerator);
         environment.jersey().register(uriTemplateResources);
 
