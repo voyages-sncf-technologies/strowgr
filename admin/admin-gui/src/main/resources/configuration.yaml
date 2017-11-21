@@ -28,12 +28,17 @@ logging:
     level: INFO
     loggers:
       com.vsct.dt: DEBUG
+      com.vsct.dt.strowgr.admin.repository.consul: INFO
+      com.vsct.dt.strowgr.admin.core.EntryPointEventHandler: INFO
+      com.vsct.dt.strowgr.admin.core.EntryPointStateManager: INFO
+      com.vsct.dt.nsq: ERROR
+      com.vsct.dt.strowgr.admin.nsq: ERROR      
     appenders:
       - type: console
 commitTimeout: 10
 handledHaproxyRefreshPeriodSecond: 20
 #nsqChannel: admin
-authenticatorType: ldap # allowed values : none, simple, LDAP
+authenticatorType: noprod_mock # allowed values : none, LDAP, prod_mock, noprod_mock
 ##########################
 # for ldap configuration #
 ##########################
