@@ -38,6 +38,7 @@ logging:
 commitTimeout: 10
 handledHaproxyRefreshPeriodSecond: 20
 #nsqChannel: admin
+platformValue: preproduction # default production, but can be changed by adequate value for testing non prod environment.
 authenticatorType: noprod_mock # allowed values : none, LDAP, prod_mock, noprod_mock
 ##########################
 # for ldap configuration #
