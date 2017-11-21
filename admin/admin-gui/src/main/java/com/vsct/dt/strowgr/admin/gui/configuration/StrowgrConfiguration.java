@@ -106,6 +106,12 @@ public class StrowgrConfiguration extends Configuration {
     @JsonProperty
     private CacheBuilderSpec authenticationCachePolicy;
     
+    // the value for haproxy.platform attribute to filter (SRE-81)
+    @Valid
+    @NotEmpty
+    private String platformValue;
+
+    
     @JsonIgnore
     public Optional<Authenticator<BasicCredentials, User>> getAuthenticator() {
     	
@@ -116,15 +122,15 @@ public class StrowgrConfiguration extends Configuration {
         if (authType.equals("none")) {
             return Optional.empty();
         } else if (authType.equals("prod_mock")) {
-            return Optional.of(new ProdAuthenticator());
+            return Optional.of(new ProdAuthenticator(platformValue));
         } else if (authType.equals("noprod_mock")) {
-            return Optional.of(new NoProdAuthenticator());
+            return Optional.of(new NoProdAuthenticator(platformValue));
         } else if (authType.equals("ldap")) {
             if (ldapConfiguration == null) {
                 throw new IllegalArgumentException("Authenticator type is set to 'ldap' but ldap configuration is empty.");
             }
 
-            return Optional.of(new LDAPAuthenticator(ldapConfiguration));
+            return Optional.of(new LDAPAuthenticator(platformValue,ldapConfiguration));
         } else {
             throw new IllegalArgumentException("Authenticator " + authenticatorType + " is unknow. Use one of ['none', 'simple', 'ldap']");
         }
@@ -283,5 +289,11 @@ public class StrowgrConfiguration extends Configuration {
 	public void setAuthenticationCachePolicy(CacheBuilderSpec authenticationCachePolicy) {
 		this.authenticationCachePolicy = authenticationCachePolicy;
 	}
+
+
+	public void setPlatformValue(String platformValue) {
+		this.platformValue = platformValue;
+	}
+	
     
 }

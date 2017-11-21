@@ -21,6 +21,7 @@ import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.Platform;
 import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
@@ -87,7 +88,7 @@ public class EntryPointResourcesTest {
             tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber, registerServerSubscriber,
             commitSuccessSubscriber, commitFailureSubscriber);
 
-    private static final User USER_PROD = new User("prod", true, false);
+    private static final User USER_PROD = new User(Platform.PRODUCTION.value(),"prod", true, false);
     
     @Test
     public void swap_auto_reload_should_return_partial_response_on_handler_success() throws Exception {

@@ -32,10 +32,17 @@ import io.dropwizard.auth.basic.BasicCredentials;
  * Created by SRE: Used to simulate user not in prod grou^p
  */
 public final class NoProdAuthenticator implements Authenticator<BasicCredentials, User> {
+	
+	private final String platformValue;
 
 	@Override
     public Optional<User> authenticate(final BasicCredentials basicCredentials) throws AuthenticationException {
-        return Optional.of(new User(basicCredentials.getUsername(), false, true));
+        return Optional.of(new User(platformValue, basicCredentials.getUsername(), false, true));
     }
+
+	public NoProdAuthenticator(String platformValue) {
+		super();
+		this.platformValue = platformValue;
+	}
     
 }

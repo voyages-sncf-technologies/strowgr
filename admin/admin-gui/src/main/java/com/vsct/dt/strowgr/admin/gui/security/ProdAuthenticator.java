@@ -32,8 +32,18 @@ import io.dropwizard.auth.basic.BasicCredentials;
  * Created by william_montaz on 12/11/2014.
  */
 public final class ProdAuthenticator implements Authenticator<BasicCredentials, User> {
+	
+	private final String platformValue;
+	
     @Override
     public Optional<User> authenticate(final BasicCredentials basicCredentials) throws AuthenticationException {
-        return Optional.of(new User(basicCredentials.getUsername(), true, true));
+        return Optional.of(new User(platformValue, basicCredentials.getUsername(), true, true));
     }
+
+	public ProdAuthenticator(String platformValue) {
+		super();
+		this.platformValue	=	platformValue;
+	}
+    
+    
 }

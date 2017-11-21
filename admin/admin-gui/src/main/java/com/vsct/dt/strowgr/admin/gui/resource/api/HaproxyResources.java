@@ -96,7 +96,7 @@ public class HaproxyResources {
     	Optional<Map<String, String>> haProxy	=	 repository.getHaproxyProperties(haproxyId);
     	LOGGER.error("user={},haProxy={}", user, haProxy);
     	if ((haProxy.isPresent()) && (user!=null && 
-    				(user.isProdUser() || !Platform.PRODUCTION.value().equalsIgnoreCase(haProxy.get().get("platform"))))) {
+    				(user.isProdUser() || !user.getPlatformValue().equalsIgnoreCase(haProxy.get().get("platform"))))) {
     		return haProxy
                 .map(props -> ok(props).build())
                 .orElseGet(() -> status(Response.Status.NOT_FOUND).entity("can't get haproxy properties of " + haproxyId).build());
@@ -110,7 +110,7 @@ public class HaproxyResources {
     public Response getAll(@Auth final User user) {
     	List<Map<String, String>> haProxies	=	repository.getHaproxyProperties();
     	if ((haProxies !=null && haProxies.size() > 0) && (user !=null && !user.isProdUser())) {
-    		haProxies.removeIf(haProxy -> Platform.PRODUCTION.value().equalsIgnoreCase(haProxy.get("platform")));
+    		haProxies.removeIf(haProxy -> user.getPlatformValue().equalsIgnoreCase(haProxy.get("platform")));
     	}
     	LOGGER.info("haProxies = {}", haProxies);
         return ok(haProxies).build();
@@ -126,16 +126,18 @@ public class HaproxyResources {
     @Path("/platforms")    
     @Produces(MediaType.APPLICATION_JSON)
     public Set<String> getPlatforms(@Auth final User user) {
+    	LOGGER.info("getPlatforms for user {}", user);
     	Set<String> platforms	=	new HashSet<String>()  {{
     	    add("assemblage");
     	    add("performance");
     	    add("integration");
     	    add("recette");
     	    add("preproduction");
+    	    add("production");
     	}};
-    	if (user!=null &&  user.isProdUser()) {
-        	LOGGER.info("add platform {}", Platform.PRODUCTION.value());
-    		platforms.add(Platform.PRODUCTION.value());
+    	if (user!=null &&  !user.isProdUser()) {
+        	LOGGER.info("remove platform {}", user.getPlatformValue());
+    		platforms.remove(user.getPlatformValue());
     	}
     	return platforms;
     }

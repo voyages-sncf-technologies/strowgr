@@ -221,11 +221,11 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
 	                .setRealm("STROWGR LDAP")
 	                .buildAuthFilter()));
 	        environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
-	        environment.jersey().register(RolesAllowedDynamicFeature.class);
         } else {
         	environment.jersey().register(new NoAuthValueFactoryProvider.Binder<>(User.class));
-        	environment.jersey().register(RolesAllowedDynamicFeature.class);
+
         }
+    	environment.jersey().register(RolesAllowedDynamicFeature.class);
     }
 
     private Publisher<HAProxyPublisher.HAProxyAction> haProxyActionPublisher(StrowgrConfiguration configuration, Environment environment, ConsulRepository repository) {

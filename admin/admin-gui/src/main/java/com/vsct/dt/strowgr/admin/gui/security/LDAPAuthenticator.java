@@ -44,6 +44,8 @@ import java.util.Hashtable;
 public final class LDAPAuthenticator implements Authenticator<BasicCredentials, User> {
 
     private static final Logger LOGGER                          = LoggerFactory.getLogger(LDAPAuthenticator.class);
+    
+	private String platformValue	=	null;
 
     /**
      * AD matching rule.
@@ -53,6 +55,11 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
 
     private final LdapConfiguration configuration;
 
+    public LDAPAuthenticator(String platformValue, LdapConfiguration configuration) {
+    	this(configuration);
+    	this.platformValue	=	platformValue;
+    }
+    
     public LDAPAuthenticator(LdapConfiguration configuration) {
         this.configuration = configuration;
 
@@ -81,7 +88,7 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
                 final boolean prodUser = checkIfUserBelongsToGroup(context, userSearched.getNameInNamespace(), configuration.getProdGroupName());
                 final boolean techUser = checkIfUserBelongsToGroup(context, userSearched.getNameInNamespace(), configuration.getTechGroupName());
 
-                Optional<User> optional	=	Optional.of(new User(username, prodUser, techUser));
+                Optional<User> optional	=	Optional.of(new User(platformValue, username, prodUser, techUser));
                 
                 LOGGER.info("got user:{}", optional);
                 return optional;
