@@ -185,7 +185,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         PortResources portResources = new PortResources(repository);
         environment.jersey().register(portResources);
 
-        ProxyResources proxyResources = new ProxyResources(restApiResource, haproxyResources);
+        AggregateProxyResources proxyResources = new AggregateProxyResources(restApiResource, haproxyResources);
         environment.jersey().register(proxyResources);
 
         

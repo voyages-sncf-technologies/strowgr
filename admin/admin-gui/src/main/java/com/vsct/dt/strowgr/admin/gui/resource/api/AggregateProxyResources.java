@@ -40,21 +40,21 @@ import java.util.Set;
  *
  */
 @Path("/entrypoints")
-public class ProxyResources {
+public class AggregateProxyResources {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyResources.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AggregateProxyResources.class);
 
     private final EntryPointResources entryPointResources;
     
     private final HaproxyResources haproxyResources;    
 
-    public ProxyResources(EntryPointResources entryPointResources, HaproxyResources haproxyResources) {
+    public AggregateProxyResources(EntryPointResources entryPointResources, HaproxyResources haproxyResources) {
         this.entryPointResources	=	entryPointResources;
         this.haproxyResources	=	haproxyResources;
     }
 
     @GET
-    @Path("/filtered")
+    @Path("/protected")
     @Produces(MediaType.APPLICATION_JSON)
     public Set<String>  getEntryPoints(@Auth final User user) throws JsonProcessingException {
     	

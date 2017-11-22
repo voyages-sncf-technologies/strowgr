@@ -144,7 +144,7 @@
         adminApp.factory('Entrypoint', ['$http', 'Notification', function ($http, Notification) {
             return {
                 all: function () {
-                    return $http.get('/api/entrypoints/filtered').then(function (response) {
+                    return $http.get('/api/entrypoints/protected').then(function (response) {
                         return response.data;
                     }, function (error) {
                         if (error.status >= 500) {

@@ -23,6 +23,7 @@ import com.vsct.dt.strowgr.admin.core.security.model.Platform;
 import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
+import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
 
 import io.dropwizard.auth.Auth;
 
@@ -101,7 +102,7 @@ public class HaproxyResources {
 
 
     /**
-     * Use only for {@link ProxyResources}: useful to get empty haproxy, and not error
+     * Use only for {@link AggregateProxyResources}: useful to get empty haproxy, and not error 404 ( {@link ConsulRepository#getHaproxyProperties()} throw {@link RuntimeException} ) 
      * @param user
      * @param haproxyId
      * @return {@link Response}
