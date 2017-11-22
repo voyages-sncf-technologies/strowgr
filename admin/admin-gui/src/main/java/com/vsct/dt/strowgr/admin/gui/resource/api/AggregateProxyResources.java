@@ -61,28 +61,22 @@ public class AggregateProxyResources {
     	Set<String> entryPointsFinal	=	new HashSet<>();
     	Set<String> entryPoints	=	entryPointResources.getEntryPoints(user);
     	
-    	LOGGER.info("Found entryPoints {}", entryPoints);
+    	LOGGER.trace("Found entryPoints {}", entryPoints);
     	
     	if (entryPoints!=null) {
     		for (String entryPoint: entryPoints) {
     			
-    			LOGGER.info("Process entryPoint {}", entryPoint);
     			// Récupération du détail de entryPoint, dont l'id du haproxy
     			EntryPointMappingJson entryPointMappingJson =	 entryPointResources.getCurrent(user, entryPoint);
-    			LOGGER.info("Process entryPoint {}, entryPointMappingJson {}", entryPoint, entryPointMappingJson);
     			String haproxyId	=	entryPointMappingJson.getHaproxy();
-    			LOGGER.info("haproxyId={}", haproxyId);
     			if (StringUtils.isEmpty(haproxyId)) {
     				entryPointsFinal.add(entryPoint);
     			} else {
-	    			LOGGER.info("Process haproxy detail for id {}", haproxyId);
 	    			// Récupération du détail du ha proxy: null si non autorisé.
 	    			boolean accept	=	haproxyResources.getHaproxyAndAccepting404(user, haproxyId);
 	    			if (accept) {
 	    				entryPointsFinal.add(entryPoint);
 	    			}
-	    			LOGGER.info("Response haproxyId {}, response {}", haproxyId, accept);
-	    			// Suppose it is 404: to evolve
     			}
     		}
     	}

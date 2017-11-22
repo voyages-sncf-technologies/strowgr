@@ -105,7 +105,7 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
     private boolean checkIfUserBelongsToGroup(final AutoclosableDirContext context, final String userDN, final String groupName) throws
             NamingException,
             AuthenticationException {
-    	LOGGER.info("checkIfUserBelongsToGroup:{}" , groupName);
+    	LOGGER.trace("checkIfUserBelongsToGroup:{}" , groupName);
     	
         String groupSearch = String.format("(CN=%s)", groupName);
 
@@ -118,7 +118,6 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
 
         if (groupResults.hasMoreElements()) {
             groupSearchResult = groupResults.nextElement();
-            LOGGER.info("groupSearchResult current= {}, {}", groupSearchResult.getName(), groupSearchResult.toString());
 
             if (groupResults.hasMoreElements()) {
                 LOGGER.error("Expected to find only one group for {} but found more results", configuration.getProdGroupName());
@@ -158,7 +157,6 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
 
         if (results.hasMoreElements()) {
             searchResult = results.nextElement();
-            LOGGER.info("element name = {}, attributes= {}", searchResult.getName(), searchResult.toString());
 
             if (results.hasMoreElements()){
                 throw new AuthenticationException("Expected to find only one user for "+username+" but found more results");
@@ -177,7 +175,7 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
         env.put(Context.SECURITY_PRINCIPAL, configuration.getAdDomain() + "\\" + username);
         env.put(Context.SECURITY_CREDENTIALS, password);
         
-        LOGGER.info("env={}", env);
+        LOGGER.trace("ldap connection env values={}", env);
 
         return new AutoclosableDirContext(env);
     }

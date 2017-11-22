@@ -105,7 +105,6 @@ public class EntryPointResources {
     @GET
     @Timed
     public Set<String> getEntryPoints(@Auth final User user)  {
-    	LOGGER.info("call getEntryPoints");
     	Set<String> entryPoints	=	repository.getEntryPointsId();
    	
     	return entryPoints;
@@ -141,7 +140,6 @@ public class EntryPointResources {
     @Path("/{id : .+}")
     @Timed
     public void addEntryPoint(@Auth final User user, @Suspended AsyncResponse asyncResponse, @PathParam("id") String key, @Valid EntryPointMappingJson configuration) {
-    	LOGGER.info("addEntryPoint for {}", key);
         EntryPointKey entryPointKey = new EntryPointKeyDefaultImpl(key);
 
         addEntryPointSubscriber.onNext(new AddEntryPointEvent(CorrelationId.newCorrelationId(), entryPointKey, configuration) {

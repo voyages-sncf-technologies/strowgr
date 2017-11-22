@@ -64,7 +64,6 @@ public class HaproxyResources {
     @Path("/{haproxyId}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createHaproxy(@Auth final User user, @PathParam("haproxyId") String haproxyId, @Valid HaproxyMappingJson haproxyMappingJson) {
-    	LOGGER.info("createHaproxy for haproxyId={}", haproxyId);
         repository.setHaproxyProperty(haproxyId, "name", haproxyMappingJson.getName());
         haproxyMappingJson.getBindings().forEach((key, value) -> repository.setHaproxyProperty(haproxyId, "binding/"+key, value));
         repository.setHaproxyProperty(haproxyId, "platform", haproxyMappingJson.getPlatform());
@@ -127,7 +126,6 @@ public class HaproxyResources {
     	if ((haProxies !=null && haProxies.size() > 0) && (user !=null && !user.isProdUser())) {
     		haProxies.removeIf(haProxy -> user.getPlatformValue().equalsIgnoreCase(haProxy.get("platform")));
     	}
-    	LOGGER.info("haProxies = {}", haProxies);
         return ok(haProxies).build();
     }
     
@@ -151,7 +149,7 @@ public class HaproxyResources {
     	    add("production");
     	}};
     	if (user!=null &&  !user.isProdUser()) {
-        	LOGGER.info("remove platform {}", user.getPlatformValue());
+        	LOGGER.trace("remove platform {}", user.getPlatformValue());
     		platforms.remove(user.getPlatformValue());
     	}
     	return platforms;

@@ -117,7 +117,7 @@ public class StrowgrConfiguration extends Configuration {
     	
         final String authType = authenticatorType.toLowerCase();
         
-        LOGGER.info("authenticatorType={}", authType);
+        LOGGER.trace("authenticatorType={}", authType);
 
         if (authType.equals("none")) {
             return Optional.empty();
