@@ -146,13 +146,14 @@ Strowgr command for generating default config yaml:
                              output file of generated configuration
       -h, --help             show this help message and exit
       
-    SRE-81: ajouter des ACLs à Strowgr: filtrer les entrypoints/haproxy de prod si le profil de consultation n'appartient au groupe prod.
-    Nouveaux éléments de configuration:
-      platformValue: par défaut production, mais possibilité de changer pour tester dans un environnemment non production.
-      authenticatorType: ldap cible de déploiement.
-                         none: pas d'authentification: dev en poste local.
-                         prod_mock: authentification systématique bouchonnée permettant de créer un profil appartenant au groupe production: pour test en local.
-                         noprod_mock: authentification systématique bouchonnée permettant de créer un profil n' appartenant au groupe production: pour test en local.
+    SRE-81: ajouter des ACLs à Strowgr: filtering entrypoints/haproxy whose platform value is production if user doesn't belong to specified confgi element 'prodGroupName'
+    New configuration elements:
+      platformValue: default production, but it is possible de change the value in order to test in non prod environement.
+      authenticatorType: ldap target deployment value.
+                         for dev in local desk: 
+                         none: no authentication
+                         prod_mock: authentication in success, creating a user belonging to production group.
+                         noprod_mock: authentication in success, creating a user not belonging to production group.
       
 ### Additional Informations
   strowgr/admin/admin-consul/insertDatas.bat is a windows command to insert datas for testing in local: it is actually a subset of production datas: enrich it with new use cases if useful  
