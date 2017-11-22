@@ -37,7 +37,7 @@ public final class NoProdAuthenticator implements Authenticator<BasicCredentials
 
 	@Override
     public Optional<User> authenticate(final BasicCredentials basicCredentials) throws AuthenticationException {
-        return Optional.of(new User(platformValue, basicCredentials.getUsername(), false, true));
+        return Optional.of(new User(platformValue, basicCredentials.getUsername(), false));
     }
 
 	public NoProdAuthenticator(String platformValue) {

@@ -30,17 +30,15 @@ public class User implements Principal {
     /**
      * Convenient 'untracked user' information
      */
-    public static final User UNTRACKED = new User(Platform.PRODUCTION.value(),"untracked", false, true);
+    public static final User UNTRACKED = new User(Platform.PRODUCTION.value(),"untracked", false);
 
     private final String  username;
     private final boolean prodUser;
-    private final boolean techUser;
     private final String  platformValue;
 
-    public User(final String  platformValue, final String username, boolean prodUser, boolean techUser) {
+    public User(final String  platformValue, final String username, boolean prodUser) {
         this.username = username;
         this.prodUser = prodUser;
-        this.techUser = techUser;
         this.platformValue	=	platformValue;
     }
 
@@ -60,18 +58,13 @@ public class User implements Principal {
         return prodUser;
     }
 
-    public boolean isTechUser() {
-        return techUser;
-    }
-
 	public String getPlatformValue() {
 		return platformValue;
 	}
 
 	@Override
 	public String toString() {
-		return "User [username=" + username + ", prodUser=" + prodUser + ", techUser=" + techUser + ", platformValue="
-				+ platformValue + "]";
+		return "User [username=" + username + ", prodUser=" + prodUser + ", platformValue=" + platformValue + "]";
 	}
     
     

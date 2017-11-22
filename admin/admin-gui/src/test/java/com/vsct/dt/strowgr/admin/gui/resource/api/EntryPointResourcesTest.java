@@ -88,7 +88,7 @@ public class EntryPointResourcesTest {
             tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber, registerServerSubscriber,
             commitSuccessSubscriber, commitFailureSubscriber);
 
-    private static final User USER_PROD = new User(Platform.PRODUCTION.value(),"prod", true, false);
+    private static final User USER_PROD = new User(Platform.PRODUCTION.value(),"prod", true);
     
     @Test
     public void swap_auto_reload_should_return_partial_response_on_handler_success() throws Exception {

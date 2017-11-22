@@ -60,7 +60,6 @@ public class LdapConfiguration {
     @JsonProperty
     private String prodGroupName;
 
-    @NotEmpty
     @JsonProperty
     private String techGroupName;
 
@@ -134,14 +133,6 @@ public class LdapConfiguration {
 
     public void setAdDomain(String adDomain) {
         this.adDomain = adDomain;
-    }
-
-    public String getTechGroupName() {
-        return techGroupName;
-    }
-
-    public void setTechGroupName(final String techGroupName) {
-        this.techGroupName = techGroupName;
     }
 
     public LdapPoolConfiguration getPool() {

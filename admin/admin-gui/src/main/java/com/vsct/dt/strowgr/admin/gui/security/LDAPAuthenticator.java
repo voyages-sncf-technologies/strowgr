@@ -86,9 +86,8 @@ public final class LDAPAuthenticator implements Authenticator<BasicCredentials, 
 
                 //Check if user is in the prod group
                 final boolean prodUser = checkIfUserBelongsToGroup(context, userSearched.getNameInNamespace(), configuration.getProdGroupName());
-                final boolean techUser = checkIfUserBelongsToGroup(context, userSearched.getNameInNamespace(), configuration.getTechGroupName());
 
-                Optional<User> optional	=	Optional.of(new User(platformValue, username, prodUser, techUser));
+                Optional<User> optional	=	Optional.of(new User(platformValue, username, prodUser));
                 
                 LOGGER.info("got user:{}", optional);
                 return optional;
