@@ -165,4 +165,4 @@ Strowgr command for generating default config yaml:
     consul.exe kv import -http-addr=http://localhost:8500  @ass_keys.json
   if not https....
   
-  consul.exe is here the windows download in local
+  consul.exe is here the windows download in local.
