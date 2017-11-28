@@ -18,16 +18,118 @@
 <head>
     <meta charset="UTF-8">
     <title>HAproxy as a service</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <script>
         function printRow(name, suffix) {
             var url = location.protocol + "//" + window.location.hostname + suffix;
             document.write('<tr><td>' + name + '</td><td><a target="_blank" href="' + url + '">' + url + '</a></td>')
         }
     </script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // submit new version
+            $('#newHAVersionSubmit').click(  function () {
+                var sendData = $('#newHAVersion').val();
+
+                $.ajax({
+                    url: 'http://'+window.location.hostname+':8080/api/haproxy/versions/'+sendData,
+                    type: 'PUT',
+                    data: {},
+                    success: function (html) {
+                    console.log('send new haproxy version '+ sendData+', html:'+html);
+                    },
+                    error: function (error) {
+                    console.error(error);
+                    },
+                })
+                ;
+            });
+            // submit new haproxy
+            $('#newHASubmit').click(  function () {
+                var sendData = $('#newHA').val();
+                var haId = $('#newHAId').val();
+
+                $.ajax({
+                    url: 'http://'+window.location.hostname+':8080/api/haproxy/'+haId,
+                    type: 'PUT',
+                    contentType: 'application/json; charset=utf-8',
+                    data: sendData,
+                    success: function (html) {
+                    console.log('send new haproxy version '+ sendData+', html:'+html);
+                    },
+                    error: function (error) {
+                    console.log('send data is '+sendData);
+                    console.error(error);
+                    },
+                })
+                ;
+            });
+            // submit new entry point
+            $('#newEPSubmit').click(  function () {
+                var sendData = $('#newEP').val();
+                var epId = $('#newEPId').val();
+
+                $.ajax({
+                    url: 'http://'+window.location.hostname+':8080/api/entrypoints/'+epId,
+                    type: 'PUT',
+                    contentType: 'application/json; charset=utf-8',
+                    data: sendData,
+                    success: function (html) {
+                    console.log('send new entrypoint '+ sendData+', html:'+html);
+                    },
+                    error: function (error) {
+                    console.log('send data is '+sendData);
+                    console.error(error);
+                    },
+                })
+                ;
+            });
+            // register server
+            $('#registerSubmit').click(  function () {
+                var sendData = $('#registerData').val();
+
+                $.ajax({
+                    url: 'http://'+window.location.hostname+':4151/pub?topic=register_server',
+                    type: 'POST',
+                    contentType: 'application/json; charset=utf-8',
+                    data: sendData,
+                    success: function (html) {
+                    console.log('send new entrypoint '+ sendData+', html:'+html);
+                    },
+                    error: function (error) {
+                    console.log('send data is '+sendData);
+                    console.error(error);
+                    },
+                })
+                ;
+            });
+        });
+
+
+    </script>
+
 </head>
 
 <body>
-<table>
+
+<h2>Start Strowgr</h2>
+
+If you are here, you certainly have a full environment with docker swarm on your local machine (haproxy, consul, sidekick, nsq etc...).
+
+Your can now start Strowgr (admin part with webapp) abd bind it to the full environment. You can find a configuration ready in the project
+(<a href="configuration.yaml">admin/admin-gui/src/main/resources/configuration.yaml</a>).
+
+So for starting Strowgr:
+
+<pre>
+    $ java -jar target/admin-gui-0.3.2-SNAPSHOT.jar server configuration.yaml
+</pre>
+
+Or configure your IDE :)
+
+<h2>Environment</h2>
+<table border="1">
     <thead>
     <tr>
         <th>app</th>
@@ -36,17 +138,134 @@
     </thead>
     <tbody>
     <script>
+        printRow('Strowgr application (aka Admin)', ':8080');
         printRow('consul', ':8500/ui/');
-        printRow('haproxy master', ':52000/stats');
-        printRow('haproxy slave', ':52001/stats');
         printRow('NSQ admin', ':4171');
-        printRow('NSQ producer slave', ':14150');
-        printRow('NSQ producer master', ':24150');
-        printRow('Sample web app', ':50180');
-        printRow('Gitlab', ':50280');
-        printRow('Admin', ':8080');
+        printRow('Haproxy front 1 (only if setup has created frontend on this port)', ':53001');
+        printRow('Haproxy front 2 (only if setup has created frontend on this port)', ':53002');
+        printRow('Haproxy front 3 (only if setup has created frontend on this port)', ':53003');
     </script>
     </tbody>
+</table>
+
+<h2>Notes</h2>
+
+<ul>
+    <li>just one sidekick (master)</li>
+    <li>this webapp is provided by a nginx container. You can change it in ./static/ directory of Strowgr project.</li>
+    <li>the template raw/master/VSH/haproxy_template.conf is contained in this webapp (simulating gitlab http call)</li>
+    <li>if you deploy an haproxy frontend, becareful that only 53001 to 53003 are binding to your host by default (see docker-compose.yml).</li>
+    <li>depending on your docker installation, you will need some times to replace localhost by docker ip</li>
+</ul>
+
+<h2>Setup</h2>
+
+<p>Follow these steps in order to setup Strowgr, add an entrypoint VSH/USN5 and register a server.</p>
+
+<table border="1">
+    <thead>
+    <tr>
+        <th>step</th>
+        <th>description</th>
+        <th>request</th>
+    </tr>
+    <tbody>
+    <tr>
+        <td>1</td>
+        <td>add haproxy version</td>
+        <td>
+            <form>
+                <input id="newHAVersion" type="text" name="newHAVersion" value="1.5.18">
+                <input id="newHAVersionSubmit" type="button" value="Submit">
+            </form>
+    </tr>
+    <tr>
+        <td>2</td>
+        <td>add an haproxy definition</td>
+        <td>
+            <form id="haFormId">
+                <label>id</label>
+                <input id="newHAId" type="text" name="newHAId" value="local" width="2">
+                <input id="newHASubmit" type="button" value="Submit">
+            </form>
+            <textarea id="newHA" cols="150" rows="7" form="haFormId">
+{
+    "name":"local",
+    "bindings":{"0":"localhost"},
+    "platform":"assemblage",
+    "autoreload":"true"
+}
+            </textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>3</td>
+        <td>add entrypoint</td>
+        <td>
+            <form id="epForm">
+                <label>id</label>
+                <input id="newEPId" type="text" name="newEPId" value="VSH/USN5" width="2">
+                <input id="newEPSubmit" type="button" value="Submit">
+            </form>
+            <textarea id="newEP" cols="150" rows="20">
+{
+    "haproxy": "local",
+    "hapUser": "root",
+    "hapVersion": "1.5.18",
+    "bindingId": 0,
+    "frontends": [{
+        "id":"WEBAPP","context":{}
+    }],
+    "backends": [{
+        "id":"WEBAPP","servers":[],"context":{}
+    }],
+    "context":{
+        "templateUri":"http://localhost:80/dt/haproxy-templates-horsprod/raw/master/VSH/haproxy_template.conf",
+        "application":"VSH",
+        "platform":"USN5"
+    }
+}
+            </textarea>
+        </td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>register server</td>
+        <td>
+            <!--
+            <form id="registerForm">
+                <input id="registerSubmit" type="button" value="Submit">
+            </form>
+            <textarea id="registerData">
+                {
+                    "header": {"application":"VSH","platform": "USN5"},
+                    "server":{
+                        "id": "VSHUSN51234",
+                        "backendId":"WEBAPP",
+                        "ip":"localhost",
+                        "port": 50080,
+                        "context":{"maxConn": 30}
+                    }
+                }
+            </textarea>
+            -->
+            <pre>
+curl -X POST http://localhost:4151/pub?topic=register_server -d '{
+    "header": {"application":"VSH","platform": "USN5"},
+    "server":{
+    "id": "VSHUSN51234",
+    "backendId":"WEBAPP",
+    "ip":"localhost",
+    "port": 80,
+    "context":{"maxConn": 30}
+    }
+}'
+            </pre>
+
+        </td>
+    </tr>
+    </tbody>
+    </thead>
 </table>
 
 </body>
