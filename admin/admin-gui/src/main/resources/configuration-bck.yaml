@@ -1,0 +1,61 @@
+server:
+  type: simple
+  rootPath: /api/
+  applicationContextPath: /
+  connector:
+    type: http
+    port: 8080
+  requestLog:
+    appenders:
+      - type: console
+threads: 20
+repository:
+  host: localhost
+  port: 8500
+nsqLookup:
+  host: localhost
+  port: 4161
+nsqProducer:
+  host: localhost
+  tcpPort: 4150
+  httpPort: 4151
+periodicScheduler:
+  current:
+    periodMilli: 11000
+  pending:
+    periodMilli: 7000
+logging:
+    level: INFO
+    loggers:
+      com.vsct.dt: DEBUG
+      com.vsct.dt.strowgr.admin.repository.consul: INFO
+      com.vsct.dt.strowgr.admin.core.EntryPointEventHandler: INFO
+      com.vsct.dt.strowgr.admin.core.EntryPointStateManager: INFO
+      com.vsct.dt.nsq: ERROR
+      com.vsct.dt.strowgr.admin.nsq: ERROR      
+    appenders:
+      - type: console
+commitTimeout: 10
+handledHaproxyRefreshPeriodSecond: 20
+#nsqChannel: admin
+platformValue: production # default production, but can be changed by adequate value for testing non prod environment.
+authenticatorType: noprod_mock # allowed values : none, LDAP, prod_mock, noprod_mock
+##########################
+# for ldap configuration #
+##########################
+ldapConfiguration:
+   uri: ldaps://usine-ldap-access:636
+   adDomain: groupevsc
+   connectTimeout: 1000ms
+   readTimeout: 1000ms
+   userNameAttribute: sAMAccountName
+   userSearchBase: DC=groupevsc,DC=com
+   roleSearchBase: OU=Groups,OU=ARCHITECTURE,DC=groupevsc,DC=com
+   prodGroupName: VSCT DT SRE INTERNE         # Group allow modify platform production
+   techGroupName: VSCT DT SRE INTERNE         # Group allow to call technical API of Strowgr (reindex, cache...)
+   pool:                                       # Ldap Pool Configuration
+     initsize: 5
+     maxsize: 20
+     idleTimeout: 60000
+authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+useDefaultUserWhenAuthentFails: true # allows you to bypass authent :true for development mode, false for production mode

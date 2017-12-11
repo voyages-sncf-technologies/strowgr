@@ -103,10 +103,6 @@
     </div>
     <div layout="row">
         <h3 class="md-title">FRONTENDS</h3>
-        <div layout layout-align="center center">
-            <md-icon class="material-icons" ng-click="addFrontend()" style="cursor:pointer;">add</md-icon>
-            <md-tooltip>Ajouter un frontend</md-tooltip>
-        </div>
     </div>
     <div id="frontends" flex>
         <div ng-repeat="frontend in conf.frontends" layout="row" layout-align="start center">
@@ -132,10 +128,6 @@
     </div>
     <div layout="row">
         <h3 class="md-title">BACKENDS</h3>
-        <div layout layout-align="center center">
-            <md-icon class="material-icons" ng-click="addBackend()" style="cursor:pointer;">add</md-icon>
-            <md-tooltip>Ajouter un backend</md-tooltip>
-        </div>
     </div>
     <div id="backends" flex>
         <div ng-repeat="backend in conf.backends" layout="column" layout-align="start start">
