@@ -165,8 +165,12 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentSubscriber = tryCommitCurrentConfigurationSubscriber(configuration, environment, repository, eventHandler);
 
         /* REST Resources */
+
+        HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);
+        environment.jersey().register(haproxyResources);
+        
         EntryPointResources restApiResource = new EntryPointResources(
-                repository,
+                repository, haproxyResources,
                 autoReloadConfigProcessor,
                 addEntryPointProcessor,
                 updateEntryPointProcessor,
@@ -178,17 +182,11 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 commitFailedSubscriber
         );
         environment.jersey().register(restApiResource);
-
-        HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);
-        environment.jersey().register(haproxyResources);
+        
 
         PortResources portResources = new PortResources(repository);
         environment.jersey().register(portResources);
 
-        AggregateProxyResources proxyResources = new AggregateProxyResources(restApiResource, haproxyResources);
-        environment.jersey().register(proxyResources);
-
-        
         UriTemplateResources uriTemplateResources = new UriTemplateResources(templateLocator, templateGenerator);
         environment.jersey().register(uriTemplateResources);
 

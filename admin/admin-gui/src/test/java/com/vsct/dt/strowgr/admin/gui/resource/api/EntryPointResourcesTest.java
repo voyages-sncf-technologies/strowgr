@@ -16,16 +16,19 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
+import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
 import com.vsct.dt.strowgr.admin.core.security.model.Platform;
 import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
+import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
 
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -46,6 +49,11 @@ import static org.mockito.Mockito.*;
 public class EntryPointResourcesTest {
 
     private final EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
+
+    static HaproxyRepository haproxyRepository = mock(HaproxyRepository.class);
+    static UriTemplateLocator templateLocator = mock(UriTemplateLocator.class);
+    static TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
+    static HaproxyResources haproxyResources = new HaproxyResources(haproxyRepository, templateLocator, templateGenerator);
 
     @SuppressWarnings("unchecked")
     private final Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber = mock(Subscriber.class);
@@ -83,7 +91,7 @@ public class EntryPointResourcesTest {
     @SuppressWarnings("unchecked")
     private ArgumentCaptor<UpdateEntryPointEvent> updateEntryPointEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
-    private final EntryPointResources entryPointResources = new EntryPointResources(entryPointRepository,
+    private final EntryPointResources entryPointResources = new EntryPointResources(entryPointRepository, haproxyResources,
             autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber, deleteEntryPointSubscriber,
             tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber, registerServerSubscriber,
             commitSuccessSubscriber, commitFailureSubscriber);

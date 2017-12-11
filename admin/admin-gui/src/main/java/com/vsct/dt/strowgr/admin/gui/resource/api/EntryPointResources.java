@@ -34,6 +34,8 @@ import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
 
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.PATCH;
+
+import org.apache.commons.lang3.StringUtils;
 import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +47,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -78,8 +81,11 @@ public class EntryPointResources {
     private final Subscriber<CommitCompletedEvent> commitSuccessSubscriber;
 
     private final Subscriber<CommitFailedEvent> commitFailureSubscriber;
+    
+    private final HaproxyResources haproxyResources;    
 
-    public EntryPointResources(EntryPointRepository repository,
+
+    public EntryPointResources(EntryPointRepository repository, HaproxyResources haproxyResources,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
                                Subscriber<AddEntryPointEvent> addEntryPointSubscriber,
                                Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber,
@@ -90,6 +96,7 @@ public class EntryPointResources {
                                Subscriber<CommitCompletedEvent> commitSuccessSubscriber,
                                Subscriber<CommitFailedEvent> commitFailureSubscriber) {
         this.repository = repository;
+        this.haproxyResources	=	haproxyResources;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
         this.addEntryPointSubscriber = addEntryPointSubscriber;
         this.updateEntryPointSubscriber = updateEntryPointSubscriber;
@@ -104,11 +111,32 @@ public class EntryPointResources {
     
     @GET
     @Timed
-    public Set<String> getEntryPoints(@Auth final User user)  {
-    	Set<String> entryPoints	=	repository.getEntryPointsId();
-   	
-    	return entryPoints;
+    public Set<String> getEntryPoints(@Auth final User user) throws JsonProcessingException  {
+    	Set<String> entryPointsFinal	=	new HashSet<>();
+    	Set<String> entryPoints	=	    	repository.getEntryPointsId();
+    	
+    	LOGGER.trace("Found entryPoints {}", entryPoints);
+    	
+    	if (entryPoints!=null) {
+    		for (String entryPoint: entryPoints) {
+    			
+    			// Récupération du détail de entryPoint, dont l'id du haproxy
+    			EntryPointMappingJson entryPointMappingJson =	 getCurrent(user, entryPoint);
+    			String haproxyId	=	entryPointMappingJson.getHaproxy();
+    			if (StringUtils.isEmpty(haproxyId)) {
+    				entryPointsFinal.add(entryPoint);
+    			} else {
+	    			// Récupération du détail du ha proxy: null si non autorisé.
+	    			boolean accept	=	haproxyResources.getHaproxyAndAccepting404(user, haproxyId);
+	    			if (accept) {
+	    				entryPointsFinal.add(entryPoint);
+	    			}
+    			}
+    		}
+    	}
+        return entryPointsFinal;
     }
+    
 
     @GET
     @Path("/{id : .+}/autoreload")

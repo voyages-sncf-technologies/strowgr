@@ -168,9 +168,10 @@ public class ConfigurationCommand extends Command {
     @Override
     public void run(Bootstrap bootstrap, Namespace namespace) throws Exception {
         String outputFile = namespace.getString("output-file");
-        FileWriter outFile = new FileWriter(outputFile);
+        try (FileWriter outFile = new FileWriter(outputFile)) {
+
         outFile.write(generateConfiguration());
         outFile.flush();
-        outFile.close();
+        }
     }
 }
