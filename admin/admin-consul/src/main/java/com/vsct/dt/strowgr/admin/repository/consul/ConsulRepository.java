@@ -414,6 +414,9 @@ public class ConsulRepository implements EntryPointRepository, PortRepository, H
                     if (rawPortsByEntrypoint.containsKey(key)) {
                         throw new IllegalStateException("Port for key " + key + " is already set. It's port " + rawPortsByEntrypoint.get(key));
                     }
+                    if (rawPortsByEntrypoint.size() >= (maxGeneratedPort - minGeneratedPort)) {
+                        throw new IllegalStateException("Can't create new port, all port are used between " + minGeneratedPort + " and " + maxGeneratedPort);
+                    }
 
                     boolean portAlreadyUsed = true;
                     while (portAlreadyUsed) {

@@ -15,6 +15,7 @@
  */
 package com.vsct.dt.strowgr.admin.repository.consul;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vsct.dt.strowgr.admin.core.EntryPointKeyDefaultImpl;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
@@ -25,8 +26,10 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
+import sun.misc.BASE64Encoder;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 import static java.lang.Boolean.FALSE;
@@ -170,14 +173,28 @@ public class ConsulRepositoryTest {
         verify(closeableHttpClient, times(1)).execute(argThat(httpPutAdmin), any(ResponseHandler.class));
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void should_throw_exception_if_all_port_used() throws IOException {
+        // given
+        ConsulReader consulReader = mock(ConsulReader.class);
+        CloseableHttpClient closeableHttpClient = mock(CloseableHttpClient.class);
+        try {
+            ConsulRepository consulRepository = new ConsulRepository("localhost", 50080, 32_000, 32_003, new ObjectMapper(), consulReader, closeableHttpClient);
+            ConsulItem<Map<String, Integer>> consulItem = new ConsulItem<>(1, "/key", 1L, new BASE64Encoder().encode("{\"ep1\":\"1\",\"ep2\":\"2\",\"ep3\":\"3\",\"ep4\":\"4\"}".getBytes()), 1L, 1L);
+            when(closeableHttpClient.execute(any(HttpRequestBase.class), any(ResponseHandler.class))).thenReturn(Optional.of(consulItem), Optional.empty(), Optional.empty());
+
+            // test
+            consulRepository.newPort("test");
+        } finally {
+            // check
+            verify(closeableHttpClient, times(1)).execute(any(HttpRequestBase.class), any(ResponseHandler.class));
+        }
+    }
+
     private class HttpMatcher extends ArgumentMatcher<HttpRequestBase> {
 
         private final String uri;
         private String method;
-
-        public HttpMatcher(String uri) {
-            this.uri = uri;
-        }
 
         private HttpMatcher(String uri, String method) {
             this.uri = uri;
