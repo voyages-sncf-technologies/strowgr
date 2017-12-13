@@ -20,6 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.nsq.payload.CommitRequested;
 import com.vsct.dt.strowgr.admin.nsq.payload.DeleteRequested;
+import com.vsct.dt.strowgr.admin.nsq.payload.ErrorRaised;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Header;
+import com.vsct.dt.strowgr.admin.nsq.payload.fragment.Reason;
 import fr.vsct.dt.nsq.NSQProducer;
 import fr.vsct.dt.nsq.exceptions.NSQException;
 import org.slf4j.Logger;
@@ -88,7 +91,8 @@ public class NSQDispatcher {
         nsqProducer.produce("delete_requested_" + haproxyName, mapper.writeValueAsBytes(deleteRequestedPayload));
     }
 
-    void sendError(String correlationId, String shortMessage, String longMessage){
-
+    void sendError(String correlationId, Reason.CODE code, String shortMessage, String longMessage) throws JsonProcessingException, NSQException, TimeoutException {
+        ErrorRaised errorRaised = new ErrorRaised(new Header(correlationId, null, null, null, "Strowgr admin"), new Reason(code.getCode(), shortMessage, longMessage));
+        nsqProducer.produce("error_raised",mapper.writeValueAsBytes(errorRaised));
     }
 }
