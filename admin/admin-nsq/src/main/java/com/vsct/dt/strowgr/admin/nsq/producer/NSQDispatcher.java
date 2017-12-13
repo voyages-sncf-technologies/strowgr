@@ -54,13 +54,13 @@ public class NSQDispatcher {
      * @param haproxyName          name of the targeted entrypoint
      * @param application          of the targeted entrypoint
      * @param platform             of the targeted entrypoint
-     * @param bind
+     * @param bind                 hostname of the haproxy or its associated VIP
      * @throws JsonProcessingException      during a Json serialization with Jackson
      * @throws NSQException                 during any problem with NSQ
      * @throws TimeoutException             during a too long response from NSQ
      * @throws UnsupportedEncodingException during the conversion to UTF-8
      */
-    public void sendCommitRequested(CommitRequestedEvent commitRequestedEvent, String haproxyName, String application, String platform, String bind) throws JsonProcessingException, NSQException, TimeoutException, UnsupportedEncodingException {
+    void sendCommitRequested(CommitRequestedEvent commitRequestedEvent, String haproxyName, String application, String platform, String bind) throws JsonProcessingException, NSQException, TimeoutException, UnsupportedEncodingException {
         String confBase64 = new String(Base64.getEncoder().encode(commitRequestedEvent.getConf().getBytes("UTF-8")));
         String syslogConfBase64 = new String(Base64.getEncoder().encode(commitRequestedEvent.getSyslogConf().getBytes("UTF-8")));
         CommitRequested payload = new CommitRequested(commitRequestedEvent.getCorrelationId(), application, platform, confBase64, syslogConfBase64, commitRequestedEvent.getConfiguration().getHapVersion(), bind);
@@ -83,8 +83,12 @@ public class NSQDispatcher {
      * @throws NSQException            during any problem with NSQ
      * @throws TimeoutException        during a too long response from NSQ
      */
-    public void sendDeleteRequested(String correlationId, String haproxyName, String application, String platform) throws JsonProcessingException, NSQException, TimeoutException {
+    void sendDeleteRequested(String correlationId, String haproxyName, String application, String platform) throws JsonProcessingException, NSQException, TimeoutException {
         DeleteRequested deleteRequestedPayload = new DeleteRequested(correlationId, application, platform);
         nsqProducer.produce("delete_requested_" + haproxyName, mapper.writeValueAsBytes(deleteRequestedPayload));
+    }
+
+    void sendError(String correlationId, String shortMessage, String longMessage){
+
     }
 }

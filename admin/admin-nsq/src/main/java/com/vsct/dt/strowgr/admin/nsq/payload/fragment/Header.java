@@ -32,7 +32,7 @@ public class Header {
     private final String correlationId;
     private final String application;
     private final String platform;
-    private final Long   timestamp;
+    private final Long timestamp;
     private final String source;
 
     @JsonCreator
@@ -42,13 +42,13 @@ public class Header {
                   @JsonProperty("timestamp") Long timestamp,
                   @JsonProperty("source") String source) {
         this.correlationId = Optional.ofNullable(correlationId).orElseGet(() -> UUID.randomUUID().toString());
-        this.application = checkNotNull(application);
-        this.platform = checkNotNull(platform);
-        this.timestamp = Optional.ofNullable(timestamp).orElseGet(() -> System.currentTimeMillis());
+        this.application = Optional.of(application).orElseGet(() -> "");
+        this.platform = Optional.of(platform).orElseGet(() -> "");
+        this.timestamp = Optional.ofNullable(timestamp).orElseGet(System::currentTimeMillis);
         this.source = Optional.ofNullable(source).orElseGet(() -> UNKNOWN_SOURCE);
     }
 
-    public Header(String correlationId, String application, String platform){
+    public Header(String correlationId, String application, String platform) {
         this(correlationId, application, platform, System.currentTimeMillis(), NSQ.SOURCE_NAME);
     }
 
