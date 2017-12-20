@@ -74,6 +74,7 @@
         }
 
 
+
     </style>
 
     <script type="text/javascript">
@@ -562,26 +563,11 @@
                 }
             };
 
-            $scope.addFrontend = function () {
-                $scope.conf.frontends.push({
-                    id: "",
-                    context: {}
-                });
-            };
-
             $scope.removeFrontend = function (frontend) {
                 var index = $scope.conf.frontends.indexOf(frontend);
                 if (index > -1) {
                     $scope.conf.frontends.splice(index, 1);
                 }
-            };
-
-            $scope.addBackend = function () {
-                $scope.conf.backends.push({
-                    id: "",
-                    servers: [],
-                    context: {}
-                });
             };
 
             $scope.removeBackend = function (backend) {
@@ -619,18 +605,21 @@
                                 });
                             }
                         }
-                        console.log("frontends " + JSON.stringify($scope.conf.frontends));
+                        console.log("frontends xxx " + JSON.stringify($scope.conf.frontends));
+                        console.log("backends length: "+response["backends"].length);
                         // update backends
                         for (var backendId = 0; backendId < response["backends"].length; backendId++) {
                             var alreadyLoaded = false;
                             var newbackend = response["backends"][backendId];
                             for (var f = 0; f < $scope.conf.backends.length; f++) {
+                                console.log("search newbackend "+ newbackend+ " equals? "+$scope.conf.backends[f]['id']);
                                 if (newbackend == $scope.conf.backends[f]['id']) {
                                     alreadyLoaded = true;
                                     break;
                                 }
                             }
                             if (!alreadyLoaded) {
+                                console.log("new backend"+ newbackend);
                                 $scope.conf.backends.push({
                                     id: newbackend,
                                     servers: [],
@@ -758,26 +747,11 @@
                         console.log("haproxy versions: " + data);
                     });
 
-                    scope.addFrontend = function () {
-                        scope.conf.frontends.push({
-                            id: "",
-                            context: {}
-                        });
-                    };
-
                     scope.removeFrontend = function (frontend) {
                         var index = scope.conf.frontends.indexOf(frontend);
                         if (index > -1) {
                             scope.conf.frontends.splice(index, 1);
                         }
-                    };
-
-                    scope.addBackend = function () {
-                        scope.conf.backends.push({
-                            id: "",
-                            servers: [],
-                            context: {}
-                        });
                     };
 
                     scope.removeBackend = function (backend) {
@@ -819,12 +793,29 @@
                                         });
                                     }
                                 }
-                                console.log("frontends " + JSON.stringify(scope.conf.frontends));
+                                for (var f = 0; f < scope.conf.frontends.length; f++) {
+                                    var toDelete = true;
+                                    for (var frontendId = 0; frontendId < response["frontends"].length; frontendId++) {
+                                        if (response["frontends"][frontendId] == scope.conf.frontends[f]['id']) {
+                                            toDelete=false;
+                                            break;
+                                        }
+                                    }
+                                    if (toDelete) {
+                                        scope.conf.frontends.splice(f,1);
+                                    }
+                                }
+
+                                console.log("frontends yyy " + JSON.stringify(scope.conf.frontends));
+                                console.log("backends length: " + response["backends"].length);
+
                                 // update backends
                                 for (var backendId = 0; backendId < response["backends"].length; backendId++) {
                                     var alreadyLoaded = false;
                                     var newbackend = response["backends"][backendId];
                                     for (var f = 0; f < scope.conf.backends.length; f++) {
+                                        console.log("new backend"+ newbackend);
+
                                         if (newbackend == scope.conf.backends[f]['id']) {
                                             alreadyLoaded = true;
                                             break;
@@ -833,8 +824,21 @@
                                     if (!alreadyLoaded) {
                                         scope.conf.backends.push({
                                             id: newbackend,
+                                            servers:[],
                                             context: {}
                                         });
+                                    }
+                                }
+                                for (var f = 0; f < scope.conf.backends.length; f++) {
+                                    var toDelete = true;
+                                    for (var backendId = 0; backendId < response["backends"].length; backendId++) {
+                                        if (response["backends"][backendId] == scope.conf.backends[f]['id']) {
+                                            toDelete=false;
+                                            break;
+                                        }
+                                    }
+                                    if (toDelete) {
+                                        scope.conf.backends.splice(f,1);
                                     }
                                 }
                             });
@@ -858,6 +862,9 @@
                         for (var i = 0; i < scope.conf.backends.length; i++) {
                             var b = scope.conf.backends[i];
                             var servers = [];
+                            /**if (typeof b.servers == 'undefined') {
+                                b.servers = []
+                            }**/
                             for (var j = 0; j < b.servers.length; j++) {
                                 servers.push({
                                     id: b.servers[j].id,
@@ -1140,6 +1147,7 @@
                     }
                 }
             }]);
+
 
 
     </script>

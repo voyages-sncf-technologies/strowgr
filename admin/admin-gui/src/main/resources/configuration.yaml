@@ -14,7 +14,7 @@ repository:
   host: localhost
   port: 8500
   minGeneratedPort: 53001
-  maxGeneratedPort: 53003
+  maxGeneratedPort: 53023
 nsqLookup:
   host: localhost
   port: 4161
