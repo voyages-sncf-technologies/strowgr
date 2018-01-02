@@ -15,11 +15,6 @@
  */
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
-import fr.vsct.dt.nsq.NSQConfig;
-import fr.vsct.dt.nsq.NSQConsumer;
-import fr.vsct.dt.nsq.NSQMessage;
-import fr.vsct.dt.nsq.exceptions.NSQException;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
 import io.netty.channel.EventLoopGroup;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -27,6 +22,12 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.brainlag.nsq.NSQConfig;
+import com.github.brainlag.nsq.NSQConsumer;
+import com.github.brainlag.nsq.NSQMessage;
+import com.github.brainlag.nsq.exceptions.NSQException;
+import com.github.brainlag.nsq.lookup.NSQLookup;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -16,7 +16,8 @@
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import fr.vsct.dt.nsq.NSQConfig;
+import com.github.brainlag.nsq.NSQConfig;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

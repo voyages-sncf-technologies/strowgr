@@ -16,8 +16,8 @@
 package com.vsct.dt.strowgr.admin.nsq.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQMessage;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitFailedEvent;
-import fr.vsct.dt.nsq.NSQMessage;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

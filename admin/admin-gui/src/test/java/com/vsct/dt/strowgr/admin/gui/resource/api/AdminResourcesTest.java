@@ -15,10 +15,11 @@
  */
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
-import fr.vsct.dt.nsq.ServerAddress;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.github.brainlag.nsq.ServerAddress;
+import com.github.brainlag.nsq.lookup.NSQLookup;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

@@ -12,7 +12,7 @@ services:
       - strowgr
 
   nsqlookupd:
-    image: nsqio/nsq:v0.3.7
+    image: nsqio/nsq:v1.0.0-compat
     command: /bin/sh -c "/nsqlookupd -http-address=0.0.0.0:4161 -tcp-address=0.0.0.0:4160 -broadcast-address=$local_ip"
     ports:
       - 4160:4160
@@ -21,7 +21,7 @@ services:
       - strowgr
 
   nsqd:
-    image: nsqio/nsq:v0.3.7
+    image: nsqio/nsq:v1.0.0-compat
     command: /bin/sh -c "/nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=$local_ip -http-address=0.0.0.0:4151 -tcp-address=0.0.0.0:4150"
     ports:
       - 4150:4150
@@ -32,7 +32,7 @@ services:
       - nsqlookupd
 
   nsqadmin:
-    image: nsqio/nsq:v0.3.7
+    image: nsqio/nsq:v1.0.0-compat
     command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
     ports:
       - 4171:4171
