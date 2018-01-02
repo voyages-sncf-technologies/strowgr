@@ -32,12 +32,18 @@
             <artifactId>admin-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-
+		
+		<dependency>
+			<groupId>com.github.brainlag</groupId>
+  			<artifactId>nsq-client</artifactId>
+  			<version>1.0.0.RC4</version>
+		</dependency>
+		<!--
         <dependency>
             <groupId>fr.vsct.dt</groupId>
             <artifactId>nsq-client</artifactId>
         </dependency>
-
+  		-->
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

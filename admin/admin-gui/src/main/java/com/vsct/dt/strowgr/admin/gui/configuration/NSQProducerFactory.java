@@ -16,7 +16,8 @@
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import fr.vsct.dt.nsq.NSQProducer;
+import com.github.brainlag.nsq.NSQProducer;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.hibernate.validator.constraints.NotEmpty;

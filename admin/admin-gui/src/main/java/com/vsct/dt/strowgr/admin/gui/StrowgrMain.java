@@ -16,6 +16,9 @@
 package com.vsct.dt.strowgr.admin.gui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQConfig;
+import com.github.brainlag.nsq.NSQProducer;
+import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.*;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
@@ -45,9 +48,6 @@ import com.vsct.dt.strowgr.admin.nsq.producer.NSQHttpClient;
 import com.vsct.dt.strowgr.admin.repository.consul.ConsulRepository;
 import com.vsct.dt.strowgr.admin.template.generator.MustacheTemplateGenerator;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
-import fr.vsct.dt.nsq.NSQConfig;
-import fr.vsct.dt.nsq.NSQProducer;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;

@@ -15,10 +15,11 @@
  */
 package com.vsct.dt.strowgr.admin.gui.managed;
 
-import fr.vsct.dt.nsq.NSQProducer;
 import io.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.brainlag.nsq.NSQProducer;
 
 /**
  * NSQ producer managed by DropWizard.

@@ -16,6 +16,8 @@
 package com.vsct.dt.strowgr.admin.gui.factory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.brainlag.nsq.NSQConfig;
+import com.github.brainlag.nsq.lookup.NSQLookup;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitCompletedEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.CommitFailedEvent;
 import com.vsct.dt.strowgr.admin.core.event.in.RegisterServerEvent;
@@ -24,8 +26,6 @@ import com.vsct.dt.strowgr.admin.nsq.consumer.CommitCompletedTransformer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.CommitFailedTransformer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
 import com.vsct.dt.strowgr.admin.nsq.consumer.RegisterServerTransformer;
-import fr.vsct.dt.nsq.NSQConfig;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
 
 public class NSQConsumersFactory {
 

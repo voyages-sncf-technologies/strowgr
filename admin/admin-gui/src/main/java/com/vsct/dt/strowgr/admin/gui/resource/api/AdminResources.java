@@ -15,10 +15,13 @@
  */
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
-import fr.vsct.dt.nsq.ServerAddress;
-import fr.vsct.dt.nsq.lookup.NSQLookup;
-
 import javax.ws.rs.*;
+
+import org.slf4j.LoggerFactory;
+
+import com.github.brainlag.nsq.ServerAddress;
+import com.github.brainlag.nsq.lookup.NSQLookup;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -45,6 +48,7 @@ public class AdminResources {
     @GET
     @Path("/nsqlookup/{topic : .+}")
     public String lookupTopic(@PathParam("topic") String topic) throws IOException, URISyntaxException {
+    	LoggerFactory.getLogger(AdminResources.class).debug("lookup for topic {}", topic);
         return nsqLookup.lookup(topic).stream().map(ServerAddress::toString).reduce((s, s2) -> s + "<br>" + s2).orElse("can't find topic on nsq lookups");
     }
 
