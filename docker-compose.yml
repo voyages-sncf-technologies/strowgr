@@ -43,7 +43,7 @@ services:
       - nsqd
 
   sidekick-master:
-    image: strowgr/sidekick:v0.3.4
+    image: strowgr/sidekick:v0.3.5
     ports:
       - 53000:53000
       # haproxy ports
