@@ -39,7 +39,7 @@ commitTimeout: 10
 handledHaproxyRefreshPeriodSecond: 20
 #nsqChannel: admin
 platformValue: production # default production, but can be changed by adequate value for testing non prod environment.
-authenticatorType: noprod_mock # allowed values : none, LDAP, prod_mock, noprod_mock
+authenticatorType: none # allowed values : none, LDAP, prod_mock, noprod_mock
 ##########################
 # for ldap configuration #
 ##########################
@@ -58,4 +58,4 @@ ldapConfiguration:
      maxsize: 20
      idleTimeout: 60000
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
-useDefaultUserWhenAuthentFails: true # allows you to bypass authent :true for development mode, false for production mode
+useDefaultUserWhenAuthentFails: false # allows you to bypass authent :true for development mode, false for production mode
