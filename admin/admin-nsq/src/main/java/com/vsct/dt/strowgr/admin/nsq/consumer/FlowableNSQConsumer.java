@@ -104,7 +104,8 @@ public class FlowableNSQConsumer<T> {
             return Optional.ofNullable(transformer.apply(nsqMessage));
         } catch (Exception e) {
             LOGGER.error("can't deserialize the payload of message at {}, id={}, payload={}", nsqMessage.getTimestamp(), new String(nsqMessage.getId()), new String(nsqMessage.getMessage()), e);
-            return Optional.empty();
+            throw new IllegalStateException("can't deserialize the payload of message at {}, id={}, payload={}",e);
+            //return Optional.empty();
         } finally {
             nsqMessage.finished();
         }

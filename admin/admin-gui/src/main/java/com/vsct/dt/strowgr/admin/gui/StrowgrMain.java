@@ -54,6 +54,7 @@ import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.reactivex.Flowable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
 import io.reactivex.processors.UnicastProcessor;
@@ -307,6 +308,13 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         registerServerProcessor
                 .mergeWith(registerServerConsumer.flowable())
                 .observeOn(Schedulers.io())
+                .doOnError(new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        System.out.println("error!!!!!!!!!!!!");
+                        throwable.printStackTrace();
+                    }
+                })
                 .subscribe(eventHandler::handle);
 
         return registerServerProcessor;
