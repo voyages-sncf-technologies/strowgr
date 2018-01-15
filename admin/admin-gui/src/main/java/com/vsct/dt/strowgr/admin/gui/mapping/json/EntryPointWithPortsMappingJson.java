@@ -17,7 +17,6 @@ package com.vsct.dt.strowgr.admin.gui.mapping.json;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -33,9 +32,10 @@ import static java.util.function.Function.identity;
 public class EntryPointWithPortsMappingJson extends EntryPointMappingJson {
 
     private final Integer syslogPort;
-
+    
     @JsonCreator
-    public EntryPointWithPortsMappingJson(@JsonProperty("haproxy") String haproxy,
+    public EntryPointWithPortsMappingJson(
+    									  @JsonProperty("haproxy") String haproxy,
                                           @JsonProperty("hapUser") String hapUser,
                                           @JsonProperty("haproxyVersion") String haproxyVersion,
                                           @JsonProperty("bindingId") int bindingId,
@@ -54,7 +54,8 @@ public class EntryPointWithPortsMappingJson extends EntryPointMappingJson {
         );
         this.syslogPort = syslogPort;
     }
-
+    
+    
     public Map<String, Integer> generatePortMapping() {
         HashMap<String, Integer> mapping = new HashMap<>();
         if (this.syslogPort != null) mapping.put(syslogPortId(), this.syslogPort);

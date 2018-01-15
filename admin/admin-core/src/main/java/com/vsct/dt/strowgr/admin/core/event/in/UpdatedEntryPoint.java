@@ -74,4 +74,5 @@ public class UpdatedEntryPoint {
     public int getBindingId() {
         return bindingId;
     }
+
 }

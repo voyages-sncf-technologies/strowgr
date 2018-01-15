@@ -23,6 +23,7 @@ import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.CommitRequestedEvent;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.cli.ConfigurationCommand;
 import com.vsct.dt.strowgr.admin.gui.cli.InitializationCommand;
 import com.vsct.dt.strowgr.admin.gui.configuration.StrowgrConfiguration;
@@ -36,6 +37,8 @@ import com.vsct.dt.strowgr.admin.gui.managed.ManagedNSQProducer;
 import com.vsct.dt.strowgr.admin.gui.observable.HAProxyPublisher;
 import com.vsct.dt.strowgr.admin.gui.observable.HAProxySubscriber;
 import com.vsct.dt.strowgr.admin.gui.resource.api.*;
+import com.vsct.dt.strowgr.admin.gui.security.CorrectedCachingAuthenticator;
+import com.vsct.dt.strowgr.admin.gui.security.NoAuthValueFactoryProvider;
 import com.vsct.dt.strowgr.admin.nsq.NSQ;
 import com.vsct.dt.strowgr.admin.nsq.consumer.FlowableNSQConsumer;
 import com.vsct.dt.strowgr.admin.nsq.producer.CommitRequestedSubscriber;
@@ -50,6 +53,9 @@ import fr.vsct.dt.nsq.NSQProducer;
 import fr.vsct.dt.nsq.lookup.NSQLookup;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthValueFactoryProvider;
+import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -58,8 +64,10 @@ import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
 import io.reactivex.processors.UnicastProcessor;
 import io.reactivex.schedulers.Schedulers;
+
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
@@ -160,8 +168,12 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         Subscriber<TryCommitCurrentConfigurationEvent> tryCommitCurrentSubscriber = tryCommitCurrentConfigurationSubscriber(configuration, environment, repository, eventHandler);
 
         /* REST Resources */
+
+        HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);
+        environment.jersey().register(haproxyResources);
+        
         EntryPointResources restApiResource = new EntryPointResources(
-                repository,
+                repository, haproxyResources,
                 autoReloadConfigProcessor,
                 addEntryPointProcessor,
                 updateEntryPointProcessor,
@@ -173,9 +185,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
                 commitFailedSubscriber
         );
         environment.jersey().register(restApiResource);
-
-        HaproxyResources haproxyResources = new HaproxyResources(repository, templateLocator, templateGenerator);
-        environment.jersey().register(haproxyResources);
+        
 
         PortResources portResources = new PortResources(repository);
         environment.jersey().register(portResources);
@@ -198,6 +208,7 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         environment.healthChecks().register("nsqproducer", new NsqHealthcheck(nsqdHttpClient));
         environment.healthChecks().register("consul", new ConsulHealthcheck(configuration.getConsulRepositoryFactory().getHost(), configuration.getConsulRepositoryFactory().getPort()));
 
+        
         /* Exception mappers */
         environment.jersey().register(new IncompleteConfigurationExceptionMapper());
 
@@ -211,7 +222,22 @@ public class StrowgrMain extends Application<StrowgrConfiguration> {
         cors.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "OPTIONS,GET,PUT,POST,DELETE,HEAD");
         cors.setInitParameter(CrossOriginFilter.ALLOW_CREDENTIALS_PARAM, "true");
         cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
+        
+        if (configuration.getAuthenticator().isPresent()) {
+        
+        	CorrectedCachingAuthenticator cachingAuthenticator	=	new CorrectedCachingAuthenticator<>(environment.metrics(), configuration.getAuthenticator().get(), configuration.getAuthenticationCachePolicy());
+        
+	        environment.jersey().register(new AuthDynamicFeature(new BasicCredentialAuthFilter.Builder<User>()
+	                .setAuthenticator(cachingAuthenticator)
+	                //.setAuthorizer(new LDAPAuthorizerMock())
+	                .setRealm("STROWGR LDAP")
+	                .buildAuthFilter()));
+	        environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
+        } else {
+        	environment.jersey().register(new NoAuthValueFactoryProvider.Binder<>(User.class));
 
+        }
+    	environment.jersey().register(RolesAllowedDynamicFeature.class);
     }
 
     private Publisher<HAProxyPublisher.HAProxyAction> haProxyActionPublisher(StrowgrConfiguration configuration, Environment environment, ConsulRepository repository) {

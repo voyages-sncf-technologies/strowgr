@@ -26,11 +26,16 @@ import com.vsct.dt.strowgr.admin.core.event.CorrelationId;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
 import com.vsct.dt.strowgr.admin.nsq.consumer.EntryPointKeyVsctImpl;
+
+import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.PATCH;
+
+import org.apache.commons.lang3.StringUtils;
 import org.reactivestreams.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +46,8 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -74,8 +81,11 @@ public class EntryPointResources {
     private final Subscriber<CommitCompletedEvent> commitSuccessSubscriber;
 
     private final Subscriber<CommitFailedEvent> commitFailureSubscriber;
+    
+    private final HaproxyResources haproxyResources;    
 
-    public EntryPointResources(EntryPointRepository repository,
+
+    public EntryPointResources(EntryPointRepository repository, HaproxyResources haproxyResources,
                                Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber,
                                Subscriber<AddEntryPointEvent> addEntryPointSubscriber,
                                Subscriber<UpdateEntryPointEvent> updateEntryPointSubscriber,
@@ -86,6 +96,7 @@ public class EntryPointResources {
                                Subscriber<CommitCompletedEvent> commitSuccessSubscriber,
                                Subscriber<CommitFailedEvent> commitFailureSubscriber) {
         this.repository = repository;
+        this.haproxyResources	=	haproxyResources;
         this.autoReloadConfigSubscriber = autoReloadConfigSubscriber;
         this.addEntryPointSubscriber = addEntryPointSubscriber;
         this.updateEntryPointSubscriber = updateEntryPointSubscriber;
@@ -97,21 +108,45 @@ public class EntryPointResources {
         this.commitFailureSubscriber = commitFailureSubscriber;
     }
 
+    
     @GET
     @Timed
-    public Set<String> getEntryPoints() {
-        return repository.getEntryPointsId();
+    public Set<String> getEntryPoints(@Auth final User user) throws JsonProcessingException  {
+    	Set<String> entryPointsFinal	=	new HashSet<>();
+    	Set<String> entryPoints	=	    	repository.getEntryPointsId();
+    	
+    	LOGGER.trace("Found entryPoints {}", entryPoints);
+    	
+    	if (entryPoints!=null) {
+    		for (String entryPoint: entryPoints) {
+    			
+    			// Récupération du détail de entryPoint, dont l'id du haproxy
+    			EntryPointMappingJson entryPointMappingJson =	 getCurrent(user, entryPoint);
+    			String haproxyId	=	entryPointMappingJson.getHaproxy();
+    			if (StringUtils.isEmpty(haproxyId)) {
+    				entryPointsFinal.add(entryPoint);
+    			} else {
+	    			// Récupération du détail du ha proxy: null si non autorisé.
+	    			boolean accept	=	haproxyResources.getHaproxyAndAccepting404(user, haproxyId);
+	    			if (accept) {
+	    				entryPointsFinal.add(entryPoint);
+	    			}
+    			}
+    		}
+    	}
+        return entryPointsFinal;
     }
+    
 
     @GET
     @Path("/{id : .+}/autoreload")
-    public Boolean isAutoreloaded(@PathParam("id") String entryPointKey) {
+    public Boolean isAutoreloaded(@Auth final User user, @PathParam("id") String entryPointKey) {
         return repository.isAutoreloaded(new EntryPointKeyDefaultImpl(entryPointKey));
     }
 
     @PATCH
     @Path("/{id : .+}/autoreload/swap")
-    public void swapAutoReload(@Suspended AsyncResponse asyncResponse, @PathParam("id") String key) {
+    public void swapAutoReload(@Auth final User user, @Suspended AsyncResponse asyncResponse, @PathParam("id") String key) {
 
         EntryPointKey entryPointKey = new EntryPointKeyDefaultImpl(key);
 
@@ -132,8 +167,7 @@ public class EntryPointResources {
     @PUT
     @Path("/{id : .+}")
     @Timed
-    public void addEntryPoint(@Suspended AsyncResponse asyncResponse, @PathParam("id") String key, @Valid EntryPointMappingJson configuration) {
-
+    public void addEntryPoint(@Auth final User user, @Suspended AsyncResponse asyncResponse, @PathParam("id") String key, @Valid EntryPointMappingJson configuration) {
         EntryPointKey entryPointKey = new EntryPointKeyDefaultImpl(key);
 
         addEntryPointSubscriber.onNext(new AddEntryPointEvent(CorrelationId.newCorrelationId(), entryPointKey, configuration) {
@@ -160,7 +194,7 @@ public class EntryPointResources {
     @PATCH
     @Path("/{id : .+}")
     @Timed
-    public void updateEntryPoint(@Suspended AsyncResponse asyncResponse, @PathParam("id") String id, @Valid UpdatedEntryPointMappingJson updatedConfiguration) {
+    public void updateEntryPoint(@Auth final User user, @Suspended AsyncResponse asyncResponse, @PathParam("id") String id, @Valid UpdatedEntryPointMappingJson updatedConfiguration) {
 
         updateEntryPointSubscriber.onNext(new UpdateEntryPointEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), updatedConfiguration) {
             @Override
@@ -179,7 +213,7 @@ public class EntryPointResources {
     @GET
     @Path("/{id : .+}/current")
     @Timed
-    public EntryPointMappingJson getCurrent(@PathParam("id") String id) throws JsonProcessingException {
+    public EntryPointMappingJson getCurrent(@Auth final User user, @PathParam("id") String id) throws JsonProcessingException {
         Optional<EntryPoint> configuration = repository.getCurrentConfiguration(new EntryPointKeyDefaultImpl(id));
 
         return new EntryPointMappingJson(configuration.orElseThrow(NotFoundException::new));
@@ -195,7 +229,7 @@ public class EntryPointResources {
     @DELETE
     @Path("/{id : .+}")
     @Timed
-    public Response deleteEntrypoint(@PathParam("id") String id) {
+    public Response deleteEntrypoint(@Auth final User user, @PathParam("id") String id) {
         final Response response;
 
         // first get the current entrypoint configuration, if exists
@@ -232,7 +266,7 @@ public class EntryPointResources {
     @GET
     @Path("/{id : .+}/pending")
     @Timed
-    public EntryPointMappingJson getPending(@PathParam("id") String id) throws JsonProcessingException {
+    public EntryPointMappingJson getPending(@Auth final User user, @PathParam("id") String id) throws JsonProcessingException {
         Optional<EntryPoint> configuration = repository.getPendingConfiguration(new EntryPointKeyDefaultImpl(id));
 
         return new EntryPointMappingJson(configuration.orElseThrow(NotFoundException::new));
@@ -241,7 +275,7 @@ public class EntryPointResources {
     @GET
     @Path("/{id : .+}/committing")
     @Timed
-    public EntryPointMappingJson getCommitting(@PathParam("id") String id) throws JsonProcessingException {
+    public EntryPointMappingJson getCommitting(@Auth final User user, @PathParam("id") String id) throws JsonProcessingException {
         Optional<EntryPoint> configuration = repository.getCommittingConfiguration(new EntryPointKeyDefaultImpl(id));
 
         return new EntryPointMappingJson(configuration.orElseThrow(NotFoundException::new));
@@ -251,7 +285,7 @@ public class EntryPointResources {
     @POST
     @Path("/{id : .+}/try-commit-current")
     @Produces(MediaType.TEXT_PLAIN)
-    public String tryCommitCurrent(@PathParam("id") String id) {
+    public String tryCommitCurrent(@Auth final User user, @PathParam("id") String id) {
         TryCommitCurrentConfigurationEvent event = new TryCommitCurrentConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
 
         tryCommitCurrentConfigurationSubscriber.onNext(event);
@@ -262,7 +296,7 @@ public class EntryPointResources {
     @POST
     @Path("/{id : .+}/try-commit-pending")
     @Produces(MediaType.TEXT_PLAIN)
-    public String tryCommitPending(@PathParam("id") String id) {
+    public String tryCommitPending(@Auth final User user, @PathParam("id") String id) {
         TryCommitPendingConfigurationEvent event = new TryCommitPendingConfigurationEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id));
 
         tryCommitPendingConfigurationSubscriber.onNext(event);
@@ -273,7 +307,8 @@ public class EntryPointResources {
     @POST
     @Path("/{id : .+}/backend/{backend}/register-server")
     @Produces(MediaType.TEXT_PLAIN)
-    public String registerServer(@PathParam("id") String id,
+    public String registerServer( @Auth final User user, 
+    							@PathParam("id") String id,
                                  @PathParam("backend") String backend,
                                  IncomingEntryPointBackendServerJsonRepresentation serverJson) {
         RegisterServerEvent event = new RegisterServerEvent(CorrelationId.newCorrelationId(), new EntryPointKeyDefaultImpl(id), backend, Sets.newHashSet(serverJson));
@@ -285,7 +320,8 @@ public class EntryPointResources {
     @POST
     @Path("/{id : .+}/send-commit-success/{correlationId}")
     @Produces(MediaType.TEXT_PLAIN)
-    public String sendCommitSuccess(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
+    public String sendCommitSuccess(@Auth final User user, 
+    									@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
         CommitCompletedEvent event = new CommitCompletedEvent(correlationId, new EntryPointKeyDefaultImpl(id));
         commitSuccessSubscriber.onNext(event);
         return "Request posted, look info to follow actions";
@@ -294,7 +330,8 @@ public class EntryPointResources {
     @POST
     @Path("/{id : .+}/send-commit-failure/{correlationId}")
     @Produces(MediaType.TEXT_PLAIN)
-    public String sendCommitFailure(@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
+    public String sendCommitFailure(@Auth final User user,
+    									@PathParam("id") String id, @PathParam("correlationId") String correlationId) {
         CommitFailedEvent event = new CommitFailedEvent(correlationId, new EntryPointKeyDefaultImpl(id));
         commitFailureSubscriber.onNext(event);
         return "Request posted, look info to follow actions";

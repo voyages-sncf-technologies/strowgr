@@ -16,14 +16,20 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.vsct.dt.strowgr.admin.core.EntryPointKey;
+import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
 import com.vsct.dt.strowgr.admin.core.entrypoint.*;
 import com.vsct.dt.strowgr.admin.core.event.in.*;
 import com.vsct.dt.strowgr.admin.core.event.out.DeleteEntryPointEvent;
 import com.vsct.dt.strowgr.admin.core.repository.EntryPointRepository;
+import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.Platform;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.UpdatedEntryPointMappingJson;
 import com.vsct.dt.strowgr.admin.gui.resource.IncomingEntryPointBackendServerJsonRepresentation;
+import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
+
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.reactivestreams.Subscriber;
@@ -43,6 +49,11 @@ import static org.mockito.Mockito.*;
 public class EntryPointResourcesTest {
 
     private final EntryPointRepository entryPointRepository = mock(EntryPointRepository.class);
+
+    static HaproxyRepository haproxyRepository = mock(HaproxyRepository.class);
+    static UriTemplateLocator templateLocator = mock(UriTemplateLocator.class);
+    static TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
+    static HaproxyResources haproxyResources = new HaproxyResources(haproxyRepository, templateLocator, templateGenerator);
 
     @SuppressWarnings("unchecked")
     private final Subscriber<AutoReloadConfigEvent> autoReloadConfigSubscriber = mock(Subscriber.class);
@@ -72,7 +83,7 @@ public class EntryPointResourcesTest {
     private Subscriber<CommitFailedEvent> commitFailureSubscriber = mock(Subscriber.class);
 
     @SuppressWarnings("unchecked")
-    private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
+    private ArgumentCaptor<AutoReloadConfigEvent> autoReloadEventCaptor = ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
     @SuppressWarnings("unchecked")
     private ArgumentCaptor<AddEntryPointEvent> addEntryPointEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
@@ -80,11 +91,13 @@ public class EntryPointResourcesTest {
     @SuppressWarnings("unchecked")
     private ArgumentCaptor<UpdateEntryPointEvent> updateEntryPointEventCaptor = (ArgumentCaptor) ArgumentCaptor.forClass(AutoReloadConfigEvent.class);
 
-    private final EntryPointResources entryPointResources = new EntryPointResources(entryPointRepository,
+    private final EntryPointResources entryPointResources = new EntryPointResources(entryPointRepository, haproxyResources,
             autoReloadConfigSubscriber, addEntryPointSubscriber, updatedEntryPointSubscriber, deleteEntryPointSubscriber,
             tryCommitPendingConfigurationSubscriber, tryCommitCurrentConfigurationSubscriber, registerServerSubscriber,
             commitSuccessSubscriber, commitFailureSubscriber);
 
+    private static final User USER_PROD = new User(Platform.PRODUCTION.value(),"prod", true);
+    
     @Test
     public void swap_auto_reload_should_return_partial_response_on_handler_success() throws Exception {
         // given
@@ -93,7 +106,7 @@ public class EntryPointResourcesTest {
         ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
 
         // when
-        entryPointResources.swapAutoReload(asyncResponse, entryPointKey);
+        entryPointResources.swapAutoReload(USER_PROD, asyncResponse, entryPointKey);
         verify(autoReloadConfigSubscriber).onNext(autoReloadEventCaptor.capture());
         autoReloadEventCaptor.getValue().onSuccess(mock(AutoReloadConfigResponse.class));
 
@@ -112,7 +125,7 @@ public class EntryPointResourcesTest {
         RuntimeException exception = new RuntimeException();
 
         // when
-        entryPointResources.swapAutoReload(asyncResponse, entryPointKey);
+        entryPointResources.swapAutoReload(USER_PROD, asyncResponse, entryPointKey);
         verify(autoReloadConfigSubscriber).onNext(autoReloadEventCaptor.capture());
         autoReloadEventCaptor.getValue().onError(exception);
 
@@ -132,7 +145,7 @@ public class EntryPointResourcesTest {
         when(responseBody.getConfiguration()).thenReturn(entryPoint);
 
         // when
-        entryPointResources.addEntryPoint(asyncResponse, entryPointKey, entryPoint);
+        entryPointResources.addEntryPoint(USER_PROD, asyncResponse, entryPointKey, entryPoint);
         verify(addEntryPointSubscriber).onNext(addEntryPointEventCaptor.capture());
         addEntryPointEventCaptor.getValue().onSuccess(responseBody);
 
@@ -154,7 +167,7 @@ public class EntryPointResourcesTest {
         RuntimeException exception = new RuntimeException();
 
         // when
-        entryPointResources.addEntryPoint(asyncResponse, entryPointKey, entryPoint);
+        entryPointResources.addEntryPoint(USER_PROD, asyncResponse, entryPointKey, entryPoint);
         verify(addEntryPointSubscriber).onNext(addEntryPointEventCaptor.capture());
         addEntryPointEventCaptor.getValue().onError(exception);
 
@@ -176,7 +189,7 @@ public class EntryPointResourcesTest {
         when(responseBody.getConfiguration()).thenReturn(expected);
 
         // when
-        entryPointResources.updateEntryPoint(asyncResponse, entryPointKey, updatedEntryPointMappingJson);
+        entryPointResources.updateEntryPoint(USER_PROD, asyncResponse, entryPointKey, updatedEntryPointMappingJson);
         verify(updatedEntryPointSubscriber).onNext(updateEntryPointEventCaptor.capture());
         updateEntryPointEventCaptor.getValue().onSuccess(responseBody);
 
@@ -197,7 +210,7 @@ public class EntryPointResourcesTest {
         RuntimeException exception = new RuntimeException();
 
         // when
-        entryPointResources.updateEntryPoint(asyncResponse, entryPointKey, updatedEntryPointMappingJson);
+        entryPointResources.updateEntryPoint(USER_PROD, asyncResponse, entryPointKey, updatedEntryPointMappingJson);
         verify(updatedEntryPointSubscriber).onNext(updateEntryPointEventCaptor.capture());
         updateEntryPointEventCaptor.getValue().onError(exception);
 
@@ -214,7 +227,7 @@ public class EntryPointResourcesTest {
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
 
         // test
-        Response response = entryPointResources.deleteEntrypoint("MY_APP/MY_PLTF");
+        Response response = entryPointResources.deleteEntrypoint(USER_PROD, "MY_APP/MY_PLTF");
 
         // check
         assertThat(response.getStatus()).isEqualTo(OK.getStatusCode());
@@ -229,7 +242,7 @@ public class EntryPointResourcesTest {
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.empty());
 
         // test
-        Response response = entryPointResources.deleteEntrypoint("MY_APP/MY_PLTF");
+        Response response = entryPointResources.deleteEntrypoint(USER_PROD, "MY_APP/MY_PLTF");
 
         // check
         assertThat(response.getStatus()).isEqualTo(NOT_FOUND.getStatusCode());
@@ -244,7 +257,7 @@ public class EntryPointResourcesTest {
         when(entryPointRepository.getCurrentConfiguration(any(EntryPointKey.class))).thenReturn(Optional.of(new EntryPoint("default-name", "hapadm", "hapVersion", 0, new HashSet<>(), new HashSet<>(), new HashMap<>())));
 
         // test
-        Response response = entryPointResources.deleteEntrypoint("MY_APP/MY_PLTF");
+        Response response = entryPointResources.deleteEntrypoint(USER_PROD, "MY_APP/MY_PLTF");
 
         // check
         assertThat(response.getStatus()).isEqualTo(INTERNAL_SERVER_ERROR.getStatusCode());
@@ -260,7 +273,7 @@ public class EntryPointResourcesTest {
 
 
         // when
-        String result = entryPointResources.tryCommitPending(entryPointKey);
+        String result = entryPointResources.tryCommitPending(USER_PROD, entryPointKey);
 
         // then
         assertThat(result).isNotNull();
@@ -276,7 +289,7 @@ public class EntryPointResourcesTest {
         ArgumentCaptor<TryCommitCurrentConfigurationEvent> tryCommitCurrentEntryPointCaptor = ArgumentCaptor.forClass(TryCommitCurrentConfigurationEvent.class);
 
         // when
-        String result = entryPointResources.tryCommitCurrent(entryPointKey);
+        String result = entryPointResources.tryCommitCurrent(USER_PROD, entryPointKey);
 
         // then
         assertThat(result).isNotNull();
@@ -291,7 +304,7 @@ public class EntryPointResourcesTest {
         ArgumentCaptor<RegisterServerEvent> registerServerCaptor = ArgumentCaptor.forClass(RegisterServerEvent.class);
 
         // when
-        entryPointResources.registerServer("id", "backend", incomingEntryPoint);
+        entryPointResources.registerServer(USER_PROD, "id", "backend", incomingEntryPoint);
 
         // then
         verify(registerServerSubscriber).onNext(registerServerCaptor.capture());
@@ -307,7 +320,7 @@ public class EntryPointResourcesTest {
         ArgumentCaptor<CommitCompletedEvent> commitSuccessCaptor = ArgumentCaptor.forClass(CommitCompletedEvent.class);
 
         // when
-        entryPointResources.sendCommitSuccess("id", "correlation-id");
+        entryPointResources.sendCommitSuccess(USER_PROD, "id", "correlation-id");
 
         // then
         verify(commitSuccessSubscriber).onNext(commitSuccessCaptor.capture());
@@ -322,7 +335,7 @@ public class EntryPointResourcesTest {
         ArgumentCaptor<CommitFailedEvent> commitFailureCaptor = ArgumentCaptor.forClass(CommitFailedEvent.class);
 
         // when
-        entryPointResources.sendCommitFailure("id", "correlation-id");
+        entryPointResources.sendCommitFailure(USER_PROD, "id", "correlation-id");
 
         // then
         verify(commitFailureSubscriber).onNext(commitFailureCaptor.capture());

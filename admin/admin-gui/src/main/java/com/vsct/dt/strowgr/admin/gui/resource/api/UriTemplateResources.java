@@ -16,7 +16,11 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
+
+import io.dropwizard.auth.Auth;
+
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.ws.rs.*;
@@ -40,7 +44,7 @@ public class UriTemplateResources {
     //TODO should be in its own resource
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getHaproxyTemplate(@QueryParam("uri") @NotEmpty String uri) {
+    public Response getHaproxyTemplate(@Auth final User user, @QueryParam("uri") @NotEmpty String uri) {
         if (uri == null || uri.equals("")) {
             throw new BadRequestException("You must provide 'uri' query param");
         }
@@ -53,7 +57,7 @@ public class UriTemplateResources {
     @GET
     @Path("/frontbackends")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getFrontAndBackends(@QueryParam("uri") @NotEmpty String uri) {
+    public Response getFrontAndBackends(@Auth final User user, @QueryParam("uri") @NotEmpty String uri) {
         if (uri == null || uri.equals("")) {
             throw new BadRequestException("You must provide 'uri' query param");
         }

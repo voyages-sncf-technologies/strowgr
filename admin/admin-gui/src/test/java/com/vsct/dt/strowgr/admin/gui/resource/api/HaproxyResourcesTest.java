@@ -18,10 +18,15 @@ package com.vsct.dt.strowgr.admin.gui.resource.api;
 import com.vsct.dt.strowgr.admin.core.IncompleteConfigurationException;
 import com.vsct.dt.strowgr.admin.core.TemplateGenerator;
 import com.vsct.dt.strowgr.admin.core.repository.HaproxyRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.EntryPointWithPortsMappingJson;
 import com.vsct.dt.strowgr.admin.gui.mapping.json.HaproxyMappingJson;
+import com.vsct.dt.strowgr.admin.gui.security.NoAuthValueFactoryProvider;
 import com.vsct.dt.strowgr.admin.template.locator.UriTemplateLocator;
+
 import io.dropwizard.testing.junit.ResourceTestRule;
+
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -41,9 +46,11 @@ public class HaproxyResourcesTest {
     static UriTemplateLocator templateLocator = mock(UriTemplateLocator.class);
     static TemplateGenerator templateGenerator = mock(TemplateGenerator.class);
     static HaproxyResources haproxyResources = new HaproxyResources(haproxyRepository, templateLocator, templateGenerator);
-
+    
     @ClassRule
     public static ResourceTestRule resources = ResourceTestRule.builder()
+    		.addProvider(RolesAllowedDynamicFeature.class)
+    		.addProvider(new NoAuthValueFactoryProvider.Binder<>(User.class))
             .addResource(haproxyResources)
             .build();
 
@@ -56,11 +63,13 @@ public class HaproxyResourcesTest {
         reset(haproxyRepository, templateLocator, templateGenerator);
     }
 
+    
     @Test
     public void should_create_haproxy_with_all_properties(){
         Map<Integer, String> bindings = new HashMap<>();
         bindings.put(0, "vip0");
         bindings.put(1, "vip1");
+        
         HaproxyMappingJson haproxyJson = new HaproxyMappingJson("name", bindings, "platform", true);
 
         Response res = resources.client().target("/haproxy/id").request().put(Entity.json(haproxyJson));
@@ -75,6 +84,7 @@ public class HaproxyResourcesTest {
         verify(haproxyRepository).setHaproxyProperty("id", "autoreload", "true");
     }
 
+    
     @Test
     public void should_set_haproxy_ip_binding(){
         Response res = resources.client().target("/haproxy/id/binding/0").request().put(Entity.text("192.168.0.1"));
@@ -85,6 +95,7 @@ public class HaproxyResourcesTest {
         verify(haproxyRepository).setHaproxyProperty("id", "binding/0", "192.168.0.1");
     }
 
+    
     @Test
     public void should_get_ip_bindings(){
         when(haproxyRepository.getHaproxyProperty("id", "binding/0")).thenReturn(Optional.of("vip1"));
@@ -93,6 +104,7 @@ public class HaproxyResourcesTest {
         assertThat(value, is("vip1"));
     }
 
+    
     @Test
     public void get_ip_bindings_with_invalid_id_should_return_400(){
         when(haproxyRepository.getHaproxyProperty("id", "binding/0")).thenReturn(Optional.empty());
@@ -101,6 +113,7 @@ public class HaproxyResourcesTest {
         assertThat(res.getStatus(), is(404));
     }
 
+    
     @Test
     public void should_get_haproxy(){
         Map<String, String> props = new HashMap<>();
@@ -114,6 +127,7 @@ public class HaproxyResourcesTest {
         assertThat(result, is(props));
     }
 
+    
     @Test
     public void get_haproxy_with_unknown_id_should_return_404(){
         when(haproxyRepository.getHaproxyProperties("id")).thenReturn(Optional.empty());
@@ -121,6 +135,7 @@ public class HaproxyResourcesTest {
         assertThat(res.getStatus(), is(404));
     }
 
+    
     @Test
     public void should_get_all_haproxies(){
         Map<String, String> pa = new HashMap<>();
@@ -142,6 +157,7 @@ public class HaproxyResourcesTest {
         assertThat(result, is(allProps));
     }
 
+    
     @Test
     public void should_get_all_ids(){
 
@@ -155,6 +171,7 @@ public class HaproxyResourcesTest {
         assertThat(result, is(ids));
     }
 
+    
     @Test
     public void should_get_haproxy_configuration_from_entrypoint_configuration() throws IncompleteConfigurationException {
         //for unknown reason, this jersey testing has a problem when you set a number for the property syslogPort.
@@ -169,6 +186,7 @@ public class HaproxyResourcesTest {
         assertThat(result, is("A valorized template"));
     }
 
+    
     @Test
     public void get_haproxy_configuration_should_return_404_if_template_not_found(){
         EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson("haproxy", "user", "haproxyVersion", 0, null, new HashSet<>(), new HashSet<>(), new HashMap<>());
@@ -179,6 +197,7 @@ public class HaproxyResourcesTest {
         assertThat(res.getStatus(), is(404));
     }
 
+    
     @Test
     public void get_haproxy_configuration_should_return_400_if_template_cannot_be_properly_valorised() throws IncompleteConfigurationException {
         EntryPointWithPortsMappingJson ep = new EntryPointWithPortsMappingJson("haproxy", "user", "haproxyVersion", 0, null, new HashSet<>(), new HashSet<>(), new HashMap<>());

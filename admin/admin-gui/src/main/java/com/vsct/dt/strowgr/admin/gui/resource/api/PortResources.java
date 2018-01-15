@@ -16,6 +16,9 @@
 package com.vsct.dt.strowgr.admin.gui.resource.api;
 
 import com.vsct.dt.strowgr.admin.core.repository.PortRepository;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
+
+import io.dropwizard.auth.Auth;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -33,19 +36,19 @@ public class PortResources {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Integer> getPorts() {
+    public Map<String, Integer> getPorts(@Auth final User user) {
         return portRepository.getPorts().orElseGet(HashMap::new);
     }
 
     @PUT
     @Path("/{id : .+}")
-    public String setPort(@PathParam("id") String id) {
+    public String setPort(@Auth final User user, @PathParam("id") String id) {
         return String.valueOf(portRepository.newPort(id));
     }
 
     @GET
     @Path("/{id : .+}")
-    public String getPort(@PathParam("id") String id) {
+    public String getPort(@Auth final User user, @PathParam("id") String id) {
         return portRepository.getPort(id)
                 .map(String::valueOf)
                 .orElseThrow(NotFoundException::new);

@@ -4,7 +4,6 @@ import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackendServer;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointFrontend;
-import org.fest.assertions.Assertions;
 import org.junit.Test;
 
 import java.util.HashMap;

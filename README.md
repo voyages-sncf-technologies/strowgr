@@ -153,4 +153,23 @@ Strowgr command for generating default config yaml:
                              output file of generated configuration
       -h, --help             show this help message and exit
       
+    SRE-81: ajouter des ACLs à Strowgr: filtering entrypoints/haproxy whose platform value is production if user doesn't belong to specified confgi element 'prodGroupName'
+    New configuration elements:
+      platformValue: default production, but it is possible de change the value in order to test in non prod environement.
+      authenticatorType: ldap target deployment value.
+                         for dev in local desk: 
+                         none: no authentication
+                         prod_mock: authentication in success, creating a user belonging to production group.
+                         noprod_mock: authentication in success, creating a user not belonging to production group.
       
+### Additional Informations
+  strowgr/admin/admin-consul/insertDatas.bat is a windows command to insert datas for testing in local: it is actually a subset of production datas: enrich it with new use cases if useful
+  You can export keys from an environment with the syntax:
+    consul.exe kv export -http-addr=url_of_consul > json_file   
+    Exemple for parisiancocktail:
+      consul.exe kv export -http-addr=http://parisiancocktail:52000 > ass_keys.json
+  You can import then in local environment with same "philosophy"
+    consul.exe kv import -http-addr=http://localhost:8500  @ass_keys.json
+  if not https....
+  
+  consul.exe is here the windows download in local.

@@ -55,12 +55,15 @@
         <md-input-container flex="10">
             <label>Plateforme</label>
             <md-select name="platform" ng-model="haproxy.platform" required>
+            	<md-option ng-repeat="platform in platforms" ng-selected="$first">{{platform}}</md-option>
+            	<!--
                 <md-option>assemblage</md-option>
                 <md-option>performance</md-option>
                 <md-option>integration</md-option>
                 <md-option>recette</md-option>
                 <md-option>preproduction</md-option>
                 <md-option>production</md-option>
+                  -->
             </md-select>
             <div ng-messages="newHaproxyForm.platform.$error">
                 <div ng-message="required">Il faut selectionner le type de plateforme</div>

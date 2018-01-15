@@ -15,17 +15,35 @@
  */
 package com.vsct.dt.strowgr.admin.gui.configuration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.cache.CacheBuilderSpec;
+import com.vsct.dt.strowgr.admin.core.security.model.User;
 import com.vsct.dt.strowgr.admin.gui.configuration.scheduler.PeriodicSchedulerFactory;
+import com.vsct.dt.strowgr.admin.gui.security.LDAPAuthenticator;
+import com.vsct.dt.strowgr.admin.gui.security.LdapConfiguration;
+import com.vsct.dt.strowgr.admin.gui.security.NoProdAuthenticator;
+import com.vsct.dt.strowgr.admin.gui.security.ProdAuthenticator;
+
 import io.dropwizard.Configuration;
+import io.dropwizard.auth.Authenticator;
+import io.dropwizard.auth.basic.BasicCredentials;
 import io.dropwizard.client.HttpClientConfiguration;
+
+import java.util.Optional;
 
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.validator.constraints.NotEmpty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class StrowgrConfiguration extends Configuration {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(StrowgrConfiguration.class);
 
     public StrowgrConfiguration() {
         super();
@@ -70,6 +88,55 @@ public class StrowgrConfiguration extends Configuration {
 
     @Nullable
     private String nsqChannel = "admin";
+    
+    @Valid
+    @NotEmpty
+    private String authenticatorType;
+
+    @Valid
+    @NotEmpty
+    private String useDefaultUserWhenAuthentFails;
+    
+    @Valid
+    @JsonProperty
+    private LdapConfiguration ldapConfiguration;
+    
+    @Valid
+    @NotNull
+    @JsonProperty
+    private CacheBuilderSpec authenticationCachePolicy;
+    
+    // the value for haproxy.platform attribute to filter (SRE-81)
+    @Valid
+    @NotEmpty
+    private String platformValue;
+
+    
+    @JsonIgnore
+    public Optional<Authenticator<BasicCredentials, User>> getAuthenticator() {
+    	
+        final String authType = authenticatorType.toLowerCase();
+        
+        LOGGER.trace("authenticatorType={}", authType);
+
+        if (authType.equals("none")) {
+            return Optional.empty();
+        } else if (authType.equals("prod_mock")) {
+            return Optional.of(new ProdAuthenticator(platformValue));
+        } else if (authType.equals("noprod_mock")) {
+            return Optional.of(new NoProdAuthenticator(platformValue));
+        } else if (authType.equals("ldap")) {
+            if (ldapConfiguration == null) {
+                throw new IllegalArgumentException("Authenticator type is set to 'ldap' but ldap configuration is empty.");
+            }
+
+            return Optional.of(new LDAPAuthenticator(platformValue,ldapConfiguration));
+        } else {
+            throw new IllegalArgumentException("Authenticator " + authenticatorType + " is unknow. Use one of ['none', 'simple', 'ldap']");
+        }
+        
+    }
+    
 
     @JsonProperty("nsqChannel")
     public String getNsqChannel() {
@@ -185,4 +252,48 @@ public class StrowgrConfiguration extends Configuration {
     public void setHandledHaproxyRefreshPeriodSecond(long handledHaproxyRefreshPeriodSecond) {
         this.handledHaproxyRefreshPeriodSecond = handledHaproxyRefreshPeriodSecond;
     }
+
+
+	public String getAuthenticatorType() {
+		return authenticatorType;
+	}
+
+	@JsonProperty
+	public void setAuthenticatorType(String authenticatorType) {
+		this.authenticatorType = authenticatorType;
+	}
+
+    public boolean useDefaultUserWhenAuthentFails() {
+        return useDefaultUserWhenAuthentFails.equals("true");
+    }
+
+    public void setUseDefaultUserWhenAuthentFails(String useDefaultUserWhenAuthentFails) {
+        this.useDefaultUserWhenAuthentFails = useDefaultUserWhenAuthentFails;
+    }
+
+	public LdapConfiguration getLdapConfiguration() {
+		return ldapConfiguration;
+	}
+
+
+	public void setLdapConfiguration(LdapConfiguration ldapConfiguration) {
+		this.ldapConfiguration = ldapConfiguration;
+	}
+
+
+	public CacheBuilderSpec getAuthenticationCachePolicy() {
+		return authenticationCachePolicy;
+	}
+
+
+	public void setAuthenticationCachePolicy(CacheBuilderSpec authenticationCachePolicy) {
+		this.authenticationCachePolicy = authenticationCachePolicy;
+	}
+
+
+	public void setPlatformValue(String platformValue) {
+		this.platformValue = platformValue;
+	}
+	
+    
 }

@@ -144,7 +144,7 @@
         adminApp.factory('Entrypoint', ['$http', 'Notification', function ($http, Notification) {
             return {
                 all: function () {
-                    return $http.get('/api/entrypoints').then(function (response) {
+                    return $http.get('/api/entrypoints/').then(function (response) {
                         return response.data;
                     }, function (error) {
                         if (error.status >= 500) {
@@ -297,6 +297,16 @@
                     return $http.put('/api/haproxy/' + id, conf).then(function (response) {
                         Notification.success('Load Balancer ' + id + ' créé');
                         return response.data;
+                    }, function (error) {
+                        if (error.status >= 500) {
+                            Notification.error('Erreur ' + error.status + ': ' + error.message);
+                        }
+                        throw error;
+                    });
+                },
+                platforms: function () {
+                    return $http.get('/api/haproxy/platforms').then(function (response) {
+                        return response.data.sort();
                     }, function (error) {
                         if (error.status >= 500) {
                             Notification.error('Erreur ' + error.status + ': ' + error.message);
@@ -708,6 +718,13 @@
                 console.log(data);
             });
 
+
+            Haproxy.platforms().then(function (data) {
+                $scope.platforms = data;
+                console.log(data);
+            });
+
+            
             $scope.loadHaproxy = function () {
                 if ($scope.haproxyId != "") {
                     console.log("load existing haproxy " + $scope.haproxyId + ": " + JSON.stringify($scope.availableHaproxies));

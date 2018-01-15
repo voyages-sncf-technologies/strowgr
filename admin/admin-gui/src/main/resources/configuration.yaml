@@ -39,3 +39,25 @@ logging:
         timeZone: UTC
 commitTimeout: 10
 handledHaproxyRefreshPeriodSecond: 20
+#nsqChannel: admin
+platformValue: production # default production, but can be changed by adequate value for testing non prod environment.
+authenticatorType: noprod_mock # allowed values : none, LDAP, prod_mock, noprod_mock
+##########################
+# for ldap configuration #
+##########################
+ldapConfiguration:
+   uri: ldaps://usine-ldap-access:636
+   adDomain: groupevsc
+   connectTimeout: 1000ms
+   readTimeout: 1000ms
+   userNameAttribute: sAMAccountName
+   userSearchBase: DC=groupevsc,DC=com
+   roleSearchBase: OU=Groups,OU=ARCHITECTURE,DC=groupevsc,DC=com
+   prodGroupName: VSCT DT SRE INTERNE         # Group allow modify platform production
+   techGroupName: VSCT DT SRE INTERNE         # Group allow to call technical API of Strowgr (reindex, cache...)
+   pool:                                       # Ldap Pool Configuration
+     initsize: 5
+     maxsize: 20
+     idleTimeout: 60000
+authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+useDefaultUserWhenAuthentFails: false # allows you to bypass authent :true for development mode, false for production mode

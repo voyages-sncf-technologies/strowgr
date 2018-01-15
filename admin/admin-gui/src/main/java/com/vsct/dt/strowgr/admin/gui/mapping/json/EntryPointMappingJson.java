@@ -18,7 +18,6 @@ package com.vsct.dt.strowgr.admin.gui.mapping.json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vsct.dt.strowgr.admin.core.configuration.EntryPoint;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,14 +32,16 @@ import static java.util.function.Function.identity;
 public class EntryPointMappingJson extends EntryPoint {
 
     @JsonCreator
-    public EntryPointMappingJson(@JsonProperty("haproxy") String haproxy,
+    public EntryPointMappingJson(
+    							 @JsonProperty("haproxy") String haproxy,
                                  @JsonProperty("hapUser") String hapUser,
                                  @JsonProperty("hapVersion") String hapVersion,
                                  @JsonProperty("bindingId") int bindingId,
                                  @JsonProperty("frontends") Set<EntryPointFrontendMappingJson> frontends,
                                  @JsonProperty("backends") Set<EntryPointBackendMappingJson> backends,
                                  @JsonProperty("context") Map<String, String> context) {
-        super(haproxy,
+        super(
+        		haproxy,
                 hapUser,
                 hapVersion,
                 bindingId,

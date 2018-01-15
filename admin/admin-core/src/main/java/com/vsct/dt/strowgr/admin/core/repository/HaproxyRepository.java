@@ -40,6 +40,9 @@ public interface HaproxyRepository {
      * @return haproxy properties map
      */
     Optional<Map<String, String>> getHaproxyProperties(String haproxyId);
+    
+    
+    Optional<Map<String, String>> getHaproxyPropertiesAndAccepting404(String haproxyId);
 
     /**
      * Check if this haproxy is on autoreload mode or not.

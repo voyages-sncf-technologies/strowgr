@@ -73,12 +73,19 @@ public class ConfigurationCommand extends Command {
         map.remove("metricsFactory");
         map.remove("metrics");
         map.remove("httpClient");
+        
+        buildRoot(map);
+        
         HashMap<String, Object> loggingValue = buildLoggingSnippet();
 
         // add custom dropwizard logging snippet
         map.put("logging", loggingValue);
         HashMap<String, Object> server = buildServerSnippet();
 
+        HashMap<String, Object> ldapConfiguration = buildLdapConfiguration();
+        map.put("ldapConfiguration", ldapConfiguration);
+        
+        
         // add custom dropwizard server snippet
         map.put("server", server);
         map.remove("nsqProducerConfigFactory");
@@ -87,6 +94,35 @@ public class ConfigurationCommand extends Command {
         return objectMapper.writeValueAsString(map);
     }
 
+    private void buildRoot( Map<String, Object> map) {
+        map.put("authenticatorType", "none");
+        map.put("authenticationCachePolicy", "maximumSize=10000, expireAfterAccess=10m");
+        map.put("useDefaultUserWhenAuthentFails", "false");
+    }
+
+    private HashMap<String, Object> buildLdapConfiguration() {
+        // server
+        HashMap<String, Object> ldapConfiguration = new HashMap<>();
+        ldapConfiguration.put("uri", "TODO");
+        ldapConfiguration.put("adDomain", "TODO");
+        ldapConfiguration.put("connectTimeout", "1000ms");
+        ldapConfiguration.put("readTimeout", "1000ms");
+        ldapConfiguration.put("userNameAttribute", "sAMAccountName");
+        ldapConfiguration.put("userSearchBase", "dc=mother,dc=com");
+        ldapConfiguration.put("roleSearchBase", "ou=kikoo,dc=mother,dc=com");
+        ldapConfiguration.put("prodGroupName", "HESPERIDES_PROD_GROUP");
+        ldapConfiguration.put("techGroupName", "HESPERIDES_TECH_GROUP");
+        
+        //// connector
+        HashMap<String, String> pool = new HashMap<>();
+        pool.put("initsize", "5");
+        pool.put("maxsize", "20");
+        ldapConfiguration.put("pool", pool);
+        
+        return ldapConfiguration;
+    }
+    
+    
     private HashMap<String, Object> buildServerSnippet() {
         // server
         HashMap<String, Object> server = new HashMap<>();
@@ -132,9 +168,10 @@ public class ConfigurationCommand extends Command {
     @Override
     public void run(Bootstrap bootstrap, Namespace namespace) throws Exception {
         String outputFile = namespace.getString("output-file");
-        FileWriter outFile = new FileWriter(outputFile);
+        try (FileWriter outFile = new FileWriter(outputFile)) {
+
         outFile.write(generateConfiguration());
         outFile.flush();
-        outFile.close();
+        }
     }
 }

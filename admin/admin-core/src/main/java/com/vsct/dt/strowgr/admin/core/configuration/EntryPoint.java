@@ -19,7 +19,6 @@ import com.google.common.collect.Sets;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPoint;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackend;
 import com.vsct.dt.strowgr.admin.core.event.in.UpdatedEntryPointBackendServer;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -81,7 +80,7 @@ public class EntryPoint {
         checkNotNull(backend);
         HashMap<String, EntryPointBackend> newBackends = new HashMap<>(backends);
         newBackends.put(backend.getId(), backend);
-        return new EntryPoint(this.haproxy, this.hapUser, this.hapVersion, this.bindingId, this.frontends, newBackends, this.context);
+        return new EntryPoint( this.haproxy, this.hapUser, this.hapVersion, this.bindingId, this.frontends, newBackends, this.context);
     }
 
     public Optional<EntryPointBackend> getBackend(String id) {
@@ -164,8 +163,8 @@ public class EntryPoint {
     public String getHapVersion() {
         return hapVersion;
     }
-
-    /**
+    
+	/**
      * Merging rules :
      * - Updated global context replaces existing one
      * - Updated syslog user replaces existing one
