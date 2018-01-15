@@ -8,10 +8,13 @@ server:
   requestLog:
     appenders:
       - type: console
+        threshold: WARN
 threads: 20
 repository:
   host: localhost
   port: 8500
+  minGeneratedPort: 53001
+  maxGeneratedPort: 53003
 nsqLookup:
   host: localhost
   port: 4161
@@ -28,7 +31,11 @@ logging:
     level: INFO
     loggers:
       com.vsct.dt: INFO
+      fr.vsct.dt.nsq: ERROR
     appenders:
       - type: console
+        threshold: INFO
+        logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%c] [%t] %logger{5} - %X{code} %msg %n"
+        timeZone: UTC
 commitTimeout: 10
 handledHaproxyRefreshPeriodSecond: 20

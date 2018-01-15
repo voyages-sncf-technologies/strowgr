@@ -1,11 +1,11 @@
-version: '3'
-
+version: '3.3'
+# test
 services:
 
   consul:
-    image: consul:v0.6.4
-    container_name: consul
-    command: consul agent -dev -ui -client 0.0.0.0 -data-dir /consul/data
+    image: consul:v0.6.4    
+    command:  /bin/sh -c "consul agent -dev -client 0.0.0.0 -bind=$$(hostname -i) -data-dir /consul/data"
+
     ports:
       - 8500:8500
     networks:
@@ -13,7 +13,7 @@ services:
 
   nsqlookupd:
     image: nsqio/nsq:v0.3.7
-    command: /nsqlookupd -http-address=nsqlookupd:4161 -tcp-address=nsqlookupd:4160
+    command: /bin/sh -c "/nsqlookupd -http-address=0.0.0.0:4161 -tcp-address=0.0.0.0:4160 -broadcast-address=$local_ip"
     ports:
       - 4160:4160
       - 4161:4161
@@ -22,7 +22,7 @@ services:
 
   nsqd:
     image: nsqio/nsq:v0.3.7
-    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd -http-address=nsqd:4151 -tcp-address=nsqd:4150
+    command: /bin/sh -c "/nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=$local_ip -http-address=0.0.0.0:4151 -tcp-address=0.0.0.0:4150"
     ports:
       - 4150:4150
       - 4151:4151
@@ -43,7 +43,7 @@ services:
       - nsqd
 
   sidekick-master:
-    image: strowgr/sidekick:0.2.6
+    image: strowgr/sidekick:v0.3.4
     ports:
       - 53000:53000
       # haproxy ports
@@ -57,31 +57,7 @@ services:
       - CLUSTER_ID=local
       - HTTP_PORT=50000
       - HAP_HOME=/data
-      - STATUS=master
       - ID=sidekick-master
-    networks:
-      - strowgr
-    depends_on:
-      - nsqlookupd
-      - nsqd
-
-  sidekick-slave:
-    image: strowgr/sidekick:0.2.6
-    ports:
-      - 54000:54000
-      # haproxy ports
-      - 54001:54001
-      - 54002:54002
-      - 54003:54003
-    environment:
-      - LOOKUP_ADDR=nsqlookupd:4161
-      - PRODUCER_ADDR=nsqd:4150
-      - PRODUCER_REST_ADDR=http://nsqd:4151
-      - CLUSTER_ID=local
-      - HTTP_PORT=50001
-      - HAP_HOME=/data
-      - STATUS=slave
-      - ID=sidekick-slave
     networks:
       - strowgr
     depends_on:
@@ -97,10 +73,13 @@ services:
     volumes:
       - ./static/:/usr/share/nginx/html
       - ./static/nginx.conf:/etc/nginx/nginx.conf
+      - ./admin/admin-gui/src/main/resources/configuration.yaml:/usr/share/nginx/html/configuration.yaml
 
-networks:
+networks:            
   strowgr:
     driver: overlay
+    attachable: true
+    
 
 volumes:
   static:

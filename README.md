@@ -33,22 +33,28 @@ All these steps could be done by _mvn release:prepare_ and _mvn release:perform_
 
 ## Start Admin locally
 
-
 ### start env with Docker
 CAUTION : build strowgr stack with Docker actually fails 
 
+Some components need to bind to an explicit interface in your machine. So docker compose defined here uses environment variable `local_ip`:
+
 ```bash
 
-# init a swarm
-docker swarm init
-
-# start side services
-docker stack deploy -c docker-compose.yml strowgr
-
-# check replicas with
-docker service ls
-
+$ export local_ip=1.2.3.4
+$ docker swarm init # init a swarm
+$ docker stack deploy -c docker-compose.yml strowgr # start side services
+$ docker service ls # check replicas with
+ID                  NAME                      MODE                REPLICAS            IMAGE                     PORTS
+weouwdzcpenf        strowgr_consul            replicated          1/1                 consul:v0.6.4             *:8500->8500/tcp
+j5grtmvaz3xm        strowgr_nsqadmin          replicated          1/1                 nsqio/nsq:v0.3.7          *:4171->4171/tcp
+59rrur8slmwr        strowgr_nsqd              replicated          1/1                 nsqio/nsq:v0.3.7          *:4150->4150/tcp,*:4151->4151/tcp
+0a3ktssdtigr        strowgr_nsqlookupd        replicated          1/1                 nsqio/nsq:v0.3.7          *:4160->4160/tcp,*:4161->4161/tcp
+w2t9quryyrcf        strowgr_sidekick-master   replicated          1/1                 strowgr/sidekick:v0.3.4   *:53000->53000/tcp,*:53001->53001/tcp,*:53002->53002/tcp,*:53003->53003/tcp
+pfuyrm0nyjqy        strowgr_webpage           replicated          1/1                 nginx:1.11.8-alpine       *:80->80/tcp
 ```
+
+If all your services are up (replicas 1/1), you can access to the [setup page](http://localhost:80). All information are here for a full setup on local.
+
 
 ### start env process by process
 ```bash
@@ -66,6 +72,7 @@ consul agent -dev
 ```
 
 ### start Strowgr admin
+
 ```bash
 # build
 mvn clean package -f admin
