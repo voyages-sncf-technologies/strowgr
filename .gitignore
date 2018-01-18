@@ -9,7 +9,7 @@ bin
 sidekick/haproxy-default-name.conf*
 **/admin.yaml
 **/*.versionsBackup
-.classpath
+**/.classpath
 **/.project
 **/.settings
 
