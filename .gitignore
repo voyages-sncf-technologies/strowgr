@@ -11,4 +11,4 @@ sidekick/haproxy-default-name.conf*
 **/*.versionsBackup
 **/.settings
 **/.classpath
-***/.project
+**/.project
